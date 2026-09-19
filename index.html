@@ -104,6 +104,14 @@
 
   .mini-empty{ color: var(--text-dim); font-size: 13px; padding: 6px 0 2px; }
 
+  .today-summary{ font-size: 12px; color: var(--text-dim); padding-bottom: 10px; }
+  .today-tech-section{ margin-bottom: 16px; }
+  .today-tech-section:last-child{ margin-bottom: 0; }
+  .today-tech-head{ display:flex; align-items:center; gap:8px; margin-bottom: 8px; }
+  .today-tech-name{ font-weight:600; font-size: 13.5px; }
+  .today-tech-count{ font-size: 12px; color: var(--text-dim); margin-left:auto; }
+  .today-tech-cards{ display:flex; flex-direction:column; gap:10px; }
+
   .mini-card{
     border-left: 3px solid var(--amber);
     background: rgba(36,31,27,0.035);
@@ -136,6 +144,7 @@
     font-family: var(--sans);
   }
   .pair-btn:hover{ border-color: var(--copper); color: var(--text); }
+  .pair-locked-note{ font-size: 11px; color: var(--text-dim); font-style: italic; }
   .pair-person-label{
     font-size: 11.5px; color: var(--copper); font-weight:600; text-transform:uppercase;
     letter-spacing:.4px; margin: 16px 0 6px; padding-top: 12px; border-top: 1px dashed var(--line);
@@ -155,7 +164,11 @@
   .mini-tag.em_andamento{ background: rgba(192,57,42,0.15); color: var(--copper); border-color: rgba(192,57,42,0.3); }
   .mini-tag.concluido{ background: rgba(62,107,76,0.12); color: #2E5A3D; border-color: rgba(62,107,76,0.35); }
 
-  .tabs{ display:flex; gap:8px; margin-bottom: 26px; }
+  .tabs{
+    display:flex; gap:8px; margin-bottom: 26px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
+    max-width: 100%;
+  }
   .tab-btn{
     background: transparent;
     border: 1px solid var(--line);
@@ -166,9 +179,44 @@
     font-size: 13.5px;
     cursor: pointer;
     transition: all 0.15s;
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
   .tab-btn:hover{ border-color: var(--teal); color: var(--text); }
   .tab-btn.active{ background: var(--panel-2); color: var(--text); border-color: var(--copper); }
+
+  .painel-period-row{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom: 14px; }
+  .painel-period-label{ font-size: 12.5px; color: var(--text-dim); font-weight:600; }
+  .painel-period-btns{ display:flex; gap:8px; flex-wrap:wrap; }
+  .period-btn{
+    background: transparent; border: 1px solid var(--line); color: var(--text-dim);
+    padding: 7px 14px; border-radius: var(--radius); font-family: var(--sans);
+    font-size: 12.5px; cursor: pointer; transition: all 0.15s; flex: 0 0 auto; white-space: nowrap;
+  }
+  .period-btn:hover{ border-color: var(--teal); color: var(--text); }
+  .period-btn.active{ background: var(--panel-2); color: var(--text); border-color: var(--copper); }
+  .painel-custom-row{ display:flex; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom: 22px; }
+  /* align-items: start faz cada card manter sua própria altura, sem esticar pelo vizinho mais
+     alto na mesma linha da grade (ex: Resumo da operação x Métricas por técnico). */
+  .painel-blocks{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  @media (max-width: 700px){ .painel-blocks{ grid-template-columns: 1fr; } }
+  .painel-block{ background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
+  /* Rolagem própria só na lista de Atividades por cliente — evita que ela estique a página
+     inteira quando há muitos clientes. Só aparece scrollbar quando o conteúdo realmente
+     ultrapassa a altura máxima; com poucos itens fica igual a antes. */
+  #painelBlockClientesLista{ max-height: 420px; overflow-y: auto; }
+  @media (max-width: 700px){ #painelBlockClientesLista{ max-height: 320px; } }
+  .painel-block-title{ font-size: 13.5px; font-weight:600; margin-bottom: 10px; }
+  .painel-block-body{ font-size: 12.5px; color: var(--text-dim); }
+  .painel-stat-row{ display:flex; justify-content:space-between; align-items:baseline; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .painel-stat-row:last-child{ border-bottom: none; }
+  .painel-stat-label{ font-size: 12.5px; color: var(--text-dim); }
+  .painel-stat-value{ font-size: 14px; font-weight:600; color: var(--text); }
+  .painel-tech-card{ border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
+  .painel-tech-card:last-child{ margin-bottom: 0; }
+  .painel-tech-head{ display:flex; align-items:center; gap:8px; margin-bottom: 6px; }
+  .painel-tech-name{ font-weight:600; font-size: 13px; }
+  .painel-tech-line{ font-size: 12px; color: var(--text-dim); line-height:1.6; }
 
   .tecnicos-head{
     display:flex; align-items:center; justify-content:space-between;
@@ -218,7 +266,6 @@
   .tecnico-empty{ color: var(--text-dim); font-size: 13px; }
   .tecnico-phone-row{ display:flex; gap:8px; margin-bottom: 12px; }
   .tecnico-phone-input{ flex: 2; font-size: 12px; padding: 7px 9px; }
-  .tecnico-pin-input{ flex: 1; width:auto; font-size: 12px; padding: 7px 9px; text-align:center; }
   .btn-whatsapp{
     margin-top: 10px; width: 100%;
     background: #25D366; color: #0B2B18; border: none;
@@ -407,6 +454,12 @@
   .service-controls{
     display:flex; align-items:center; gap:10px; margin-top: 14px; flex-wrap:wrap;
   }
+  /* Sem isso, o <select> some com largura maior que a viewport em telas estreitas, porque o
+     navegador dimensiona pelo texto da opção mais longa ("👥 Indicar dupla (2 técnicos)") em vez
+     de respeitar o espaço disponível — o mesmo problema que .mini-tech-select já evita com
+     width:100%. min-width:0 é necessário porque, dentro de um flex container, um item por
+     padrão nunca encolhe abaixo do seu conteúdo intrínseco. */
+  .tech-select{ max-width: 100%; min-width: 0; }
   .service-times{ display:flex; gap:16px; font-size: 11.5px; color: var(--text-dim); margin-top: 8px; }
   .service-times b{ color: var(--text); }
   .photo-row{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -586,7 +639,6 @@
   }
   .search-clear-btn:hover{ color: var(--text); }
   .search-clear-btn.show{ display:block; }
-  .search-results{ }
   #clientSearchResults{
     margin-top: 8px; background: var(--panel); border: 1px solid var(--line);
     border-radius: var(--radius); max-height: 320px; overflow-y:auto;
@@ -628,7 +680,6 @@
   .maint-alert-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .maint-alert-actions input[type="date"]{ padding:8px 10px; font-size:12.5px; }
   .maint-scheduled-tag{ font-size: 11.5px; color: #2E5A3D; font-family:'IBM Plex Mono', monospace; }
-  .maint-alert-hint{ font-size: 11px; color: var(--text-dim); margin: -4px 0 10px 2px; font-style:italic; }
   .field-hint{ font-style:italic; font-weight:400; text-transform:none; letter-spacing:0; color: var(--text-dim); font-size: 10.5px; }
 
   /* ===== Atividades não concluídas ===== */
@@ -879,6 +930,7 @@
     <button class="tab-btn" id="tabBtnOS">Cadastros e OS<span class="os-badge" id="osBadge" style="display:none;"></span></button>
     <button class="tab-btn" id="tabBtnClientes">Clientes</button>
     <button class="tab-btn" id="tabBtnAcessos">Acessos</button>
+    <button class="tab-btn" id="tabBtnPainel">Painel de Controle</button>
   </div>
 
   <div id="tabAgenda">
@@ -912,6 +964,13 @@
       <div id="tomorrowServices"></div>
       <button class="week-day-add" id="addTomorrowBtn">+ Adicionar</button>
     </div>
+  </div>
+
+  <div class="pending-section" id="todayIncompleteSection" style="display:none;">
+    <div class="pending-header">
+      <div class="pending-title">Atividades não concluídas hoje</div>
+    </div>
+    <div id="todayIncompleteList"></div>
   </div>
 
   <div class="pending-section" id="pendingSection" style="display:none;">
@@ -1100,6 +1159,72 @@
       <div class="access-settings-row" style="margin-top:12px;">
         <input type="text" id="newFinanceiroNameInput" placeholder="Nome da nova pessoa">
         <button class="btn-ghost" id="addFinanceiroBtn">+ Adicionar ao Financeiro</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tabPainel" style="display:none;">
+    <div class="tecnicos-head">
+      <div>
+        <div class="tecnicos-title">Painel de Controle</div>
+        <div class="tecnicos-date mono" id="painelRangeLabel"></div>
+      </div>
+    </div>
+
+    <div class="painel-period-row">
+      <div class="painel-period-label">Período</div>
+      <div class="painel-period-btns">
+        <button type="button" class="period-btn active" id="painelPeriodoHoje">Hoje</button>
+        <button type="button" class="period-btn" id="painelPeriodoSemana">Esta semana</button>
+        <button type="button" class="period-btn" id="painelPeriodoMes">Este mês</button>
+        <button type="button" class="period-btn" id="painelPeriodoTodo">Todo o período</button>
+        <button type="button" class="period-btn" id="painelPeriodoPersonalizado">Personalizado</button>
+      </div>
+    </div>
+    <div class="painel-custom-row" id="painelCustomRow" style="display:none;">
+      <div class="field">
+        <label for="painelCustomStart">Data inicial</label>
+        <input type="date" id="painelCustomStart">
+      </div>
+      <div class="field">
+        <label for="painelCustomEnd">Data final</label>
+        <input type="date" id="painelCustomEnd">
+      </div>
+      <button type="button" class="btn-primary" id="painelCustomApply">Aplicar</button>
+    </div>
+
+    <div class="painel-blocks">
+      <div class="painel-block">
+        <div class="painel-block-title">Resumo da operação</div>
+        <div class="painel-block-body" id="painelBlockResumo">Em breve.</div>
+      </div>
+      <div class="painel-block">
+        <div class="painel-block-title">Métricas por técnico</div>
+        <div class="painel-block-body" id="painelBlockTecnicos">Em breve.</div>
+      </div>
+      <div class="painel-block">
+        <div class="painel-block-title">Métricas de execução</div>
+        <div class="painel-block-body" id="painelBlockExecucao">Em breve.</div>
+      </div>
+      <div class="painel-block">
+        <div class="painel-block-title">Horários</div>
+        <div class="painel-block-body" id="painelBlockHorarios">Em breve.</div>
+      </div>
+      <div class="painel-block">
+        <div class="painel-block-title">Retornos</div>
+        <div class="painel-block-body" id="painelBlockRetornos">Em breve.</div>
+      </div>
+      <div class="painel-block">
+        <div class="painel-block-title">Manutenções preventivas</div>
+        <div class="painel-block-body" id="painelBlockManutencoes">Em breve.</div>
+      </div>
+      <div class="painel-block">
+        <div class="painel-block-title">Clientes</div>
+        <div class="painel-block-body" id="painelBlockClientes">Em breve.</div>
+      </div>
+      <div class="painel-block" style="grid-column: 1 / -1;">
+        <div class="painel-block-title">Atividades por cliente</div>
+        <div class="painel-block-body" id="painelBlockClientesLista">Em breve.</div>
       </div>
     </div>
   </div>
@@ -1407,10 +1532,19 @@ function mergeRemoteServices(remoteMap){
     servicesSnapshot[id] = JSON.stringify(remote);
   });
 
-  // Registros que só existem localmente ainda (ex: acabamos de criar e ainda não confirmou no servidor)
+  // Registros que só existem localmente e não vieram nesta atualização do servidor.
+  // Precisa distinguir dois casos bem diferentes:
+  // - Nunca foi confirmado (sem snapshot) -> é uma criação local ainda pendente, mantém.
+  // - Já tinha sido confirmado antes (tem snapshot) -> foi excluído remotamente por outro
+  //   dispositivo (ou pelo próprio), não é mais "pendente de criação" -> remove daqui também.
   services.forEach(s => {
     const id = String(s.id);
-    if(!handledIds.has(id)) merged.push(s);
+    if(handledIds.has(id)) return;
+    if(servicesSnapshot[id] === undefined){
+      merged.push(s);
+    } else {
+      delete servicesSnapshot[id];
+    }
   });
 
   return merged;
@@ -1476,24 +1610,36 @@ async function writeServicesDiff(attempt){
     if(!rtdb) throw new Error('Firebase indisponível');
     const currentIds = new Set(services.map(s => String(s.id)));
     const updates = {};
+    // Cópia exata do que está sendo enviado NESTA tentativa — usada depois pra confirmar
+    // só o que foi de fato transmitido, nunca o estado "atual" de services (que pode já
+    // ter mudado de novo enquanto o envio ainda estava em trânsito).
+    const sentSnapshot = {};
+    const removedIds = [];
     let hasChanges = false;
     services.forEach(s => {
       const json = JSON.stringify(s);
       if(servicesSnapshot[s.id] !== json){
-        updates['services/' + s.id] = s;
+        updates['services/' + s.id] = JSON.parse(json); // cópia independente, imune a mutações posteriores em services
+        sentSnapshot[s.id] = json;
         hasChanges = true;
       }
     });
     Object.keys(servicesSnapshot).forEach(id => {
       if(!currentIds.has(String(id))){
         updates['services/' + id] = null; // remove esse registro específico
+        removedIds.push(id);
         hasChanges = true;
       }
     });
     if(hasChanges){
       await rtdb.ref().update(updates);
-      services.forEach(s => { servicesSnapshot[s.id] = JSON.stringify(s); });
-      Object.keys(servicesSnapshot).forEach(id => { if(!currentIds.has(String(id))) delete servicesSnapshot[id]; });
+      // Confirma somente os ids/valores que realmente foram enviados nesta chamada.
+      // Se a atividade mudou de novo durante o await, essa mudança não está em
+      // sentSnapshot e portanto continua "pendente" — a próxima chamada da fila
+      // (saveServices) vai recalcular o diff a partir do services atual e pegar essa
+      // alteração mais recente.
+      Object.keys(sentSnapshot).forEach(id => { servicesSnapshot[id] = sentSnapshot[id]; });
+      removedIds.forEach(id => { delete servicesSnapshot[id]; });
     }
     return true;
   }catch(e){
@@ -1516,7 +1662,7 @@ function renderTechList(){
   const wrap = document.getElementById('techList');
   wrap.innerHTML = '';
   TECHS.forEach(t => {
-    const count = services.filter(s => s.technician === t.name && s.status !== 'concluido').length;
+    const count = services.filter(s => getServiceTechnicians(s).includes(t.name) && s.status !== 'concluido').length;
     const chip = document.createElement('div');
     chip.className = 'tech-chip';
     chip.innerHTML = `
@@ -1536,8 +1682,7 @@ function renderClientSearch(query){
     return;
   }
   const q = query.toLowerCase();
-  const matches = services
-    .filter(s => s.status === 'concluido' && s.client.toLowerCase().includes(q))
+  const matches = groupPaired(services.filter(s => s.status === 'concluido' && s.client.toLowerCase().includes(q)))
     .sort((a,b) => b.id - a.id);
 
   box.style.display = 'block';
@@ -1551,7 +1696,7 @@ function renderClientSearch(query){
         <div class="search-result-client">${escapeHtml(s.client)}</div>
         ${s.description ? `<div class="search-result-meta">${escapeHtml(s.description)}</div>` : ''}
       </div>
-      <div class="search-result-meta mono">${shortLabel(s.date)}${s.technician ? ' · ' + escapeHtml(s.technician) : ''}</div>
+      <div class="search-result-meta mono">${shortLabel(s.date)}${(() => { const lbl = s.isPair ? s.technicianLabel : getServiceTechnicians(s).join(' e '); return lbl ? ' · ' + escapeHtml(lbl) : ''; })()}</div>
     </div>
   `).join('');
   box.querySelectorAll('.search-result').forEach(row => {
@@ -1567,17 +1712,84 @@ attachClientAutocomplete(
   (name) => renderClientSearch(name)
 );
 
+// ===== Compatibilidade dupla: modelo novo (technicians[]) e modelo antigo (technician + pairId) =====
+// Retorna a lista de técnicos de uma atividade, não importa o formato (novo ou antigo).
+function getServiceTechnicians(s){
+  if(Array.isArray(s.technicians) && s.technicians.length > 0) return s.technicians;
+  if(s.technician) return [s.technician];
+  return [];
+}
+// Retorna os nomes do(s) parceiro(s) de dupla de um serviço, do ponto de vista de myName — cobre
+// tanto dupla nova (technicians[] no mesmo registro) quanto dupla antiga (pairId, registro
+// separado para o parceiro). Retorna array vazio pra serviço individual.
+function getDuplaPartnerNames(svc, myName){
+  if(svc.pairId){
+    const partner = services.find(x => x.pairId === svc.pairId && x.id !== svc.id);
+    return partner ? getServiceTechnicians(partner).filter(n => n && n !== myName) : [];
+  }
+  const all = getServiceTechnicians(svc);
+  if(all.length > 1){
+    return all.filter(n => n && n !== myName);
+  }
+  return [];
+}
+function isMultiTechRecord(s){
+  return Array.isArray(s.technicians) && s.technicians.length > 1;
+}
+
+// Função central de criação de retorno — usada por QUALQUER caminho de conclusão
+// (técnico concluindo normalmente, ou gestor preenchendo manualmente), pra nunca
+// duplicar lógica nem duplicar retorno. Funciona pra atividade individual, dupla
+// nova (technicians[]) e dupla antiga (pairId, cada registro seu próprio needsReturn).
+function createRetornoIfNeeded(svc){
+  if(!svc.needsReturn || svc.retornoCriado) return;
+  const jaExisteRetorno = services.some(s => s.retornoDeId === svc.id);
+  if(!jaExisteRetorno){
+    const retorno = {
+      id: Date.now() + 7000 + Math.floor(Math.random() * 1000),
+      date: '',
+      client: svc.client,
+      description: svc.description,
+      address: svc.address || '',
+      technician: svc.technician,
+      status: 'aguardando',
+      checkIn: '',
+      checkOut: '',
+      observations: `Retorno referente ao atendimento de ${shortLabel(svc.date)}. Motivo: ${(svc.returnReason && svc.returnReason.trim()) ? svc.returnReason.trim() : (svc.observations || '(sem observação)')}`,
+      photos: [],
+      audios: [],
+      isRetorno: true,
+      retornoDeId: svc.id
+    };
+    if(isMultiTechRecord(svc)){
+      retorno.technicians = svc.technicians.slice();
+    }
+    services.push(retorno);
+  }
+  svc.retornoCriado = true;
+}
+
 function groupPaired(list){
   const seen = new Set();
   const out = [];
   list.forEach(s => {
     if(seen.has(s.id)) return;
+    // Formato novo: já é um registro único com vários técnicos, não precisa juntar nada.
+    if(isMultiTechRecord(s)){
+      out.push(Object.assign({}, s, {
+        isPair: true,
+        technicianLabel: s.technicians.join(' e ')
+      }));
+      return;
+    }
+    // Formato antigo (legado): dois registros ligados por pairId, ainda precisam ser agrupados pra exibição.
     if(s.pairId){
       const partner = list.find(x => x.pairId === s.pairId && x.id !== s.id);
       if(partner){
         seen.add(s.id); seen.add(partner.id);
         out.push(Object.assign({}, s, {
           isPair: true,
+          isLegacyPair: true,
           pairMembers: [s, partner],
           technicianLabel: [s.technician, partner.technician].filter(Boolean).join(' e ')
         }));
@@ -1647,26 +1859,77 @@ function openDuplaPicker(svc, selectEl){
   document.getElementById('duplaOverlay').classList.add('open');
 }
 
-function openDuplaEditor(pairId){
-  const members = services.filter(s => s.pairId === pairId).sort((a,b) => a.id - b.id);
-  if(members.length < 2) return;
-  duplaContext = { mode: 'edit', pairId };
-  populateDuplaSelects();
-  if(members[0].technician) document.getElementById('dupla1').value = members[0].technician;
-  if(members[1].technician) document.getElementById('dupla2').value = members[1].technician;
-  document.getElementById('duplaOverlay').classList.add('open');
+function openDuplaEditor(anchorId){
+  const anchor = services.find(s => s.id === Number(anchorId));
+  if(!anchor) return;
+  if(anchor.status === 'concluido' || anchor.status === 'em_andamento'){
+    alert('Essa atividade já está ' + (anchor.status === 'concluido' ? 'concluída' : 'em andamento') + ' e não pode ter os técnicos alterados.');
+    return;
+  }
+
+  if(isMultiTechRecord(anchor)){
+    // Formato novo: um único registro com vários técnicos.
+    duplaContext = { mode: 'edit-new', serviceId: anchor.id };
+    populateDuplaSelects();
+    document.getElementById('dupla1').value = anchor.technicians[0] || TECHS[0].name;
+    document.getElementById('dupla2').value = anchor.technicians[1] || (TECHS[1] ? TECHS[1].name : TECHS[0].name);
+    document.getElementById('duplaOverlay').classList.add('open');
+    return;
+  }
+
+  if(anchor.pairId){
+    // Formato antigo (legado): dois registros ligados por pairId. Editar aqui já migra pro formato novo.
+    const members = services.filter(s => s.pairId === anchor.pairId).sort((a,b) => a.id - b.id);
+    if(members.length < 2) return;
+    const locked = members.find(m => m.status === 'concluido' || m.status === 'em_andamento');
+    if(locked){
+      alert('Essa atividade já está ' + (locked.status === 'concluido' ? 'concluída' : 'em andamento') + ' e não pode ter os técnicos alterados.');
+      return;
+    }
+    duplaContext = { mode: 'edit-legacy', pairId: anchor.pairId };
+    populateDuplaSelects();
+    if(members[0].technician) document.getElementById('dupla1').value = members[0].technician;
+    if(members[1].technician) document.getElementById('dupla2').value = members[1].technician;
+    document.getElementById('duplaOverlay').classList.add('open');
+  }
 }
 
-async function undoPair(pairId){
-  const members = services.filter(s => s.pairId === pairId).sort((a,b) => a.id - b.id);
-  if(members.length < 2) return;
-  customConfirm(`Desfazer a dupla? A parte de "${members[1].technician}" será removida, ficando só com "${members[0].technician}".`, async () => {
-    const keepId = members[0].id;
-    delete members[0].pairId;
-    services = services.filter(s => s.id === keepId || s.pairId !== pairId);
-    await saveServices();
-    renderAll();
-  });
+async function undoPair(anchorId){
+  const anchor = services.find(s => s.id === Number(anchorId));
+  if(!anchor) return;
+  if(anchor.status === 'concluido' || anchor.status === 'em_andamento'){
+    alert('Essa atividade já está ' + (anchor.status === 'concluido' ? 'concluída' : 'em andamento') + ' e não pode ter os técnicos alterados.');
+    return;
+  }
+
+  if(isMultiTechRecord(anchor)){
+    const keepTech = anchor.technicians[0];
+    const removedTech = anchor.technicians[1];
+    customConfirm(`Desfazer a dupla? A parte de "${removedTech}" será removida, ficando só com "${keepTech}".`, async () => {
+      anchor.technician = keepTech;
+      anchor.technicians = [keepTech];
+      await saveServices();
+      renderAll();
+    });
+    return;
+  }
+
+  if(anchor.pairId){
+    const members = services.filter(s => s.pairId === anchor.pairId).sort((a,b) => a.id - b.id);
+    if(members.length < 2) return;
+    const locked = members.find(m => m.status === 'concluido' || m.status === 'em_andamento');
+    if(locked){
+      alert('Essa atividade já está ' + (locked.status === 'concluido' ? 'concluída' : 'em andamento') + ' e não pode ter os técnicos alterados.');
+      return;
+    }
+    customConfirm(`Desfazer a dupla? A parte de "${members[1].technician}" será removida, ficando só com "${members[0].technician}".`, async () => {
+      const keepId = members[0].id;
+      delete members[0].pairId;
+      services = services.filter(s => s.id === keepId || s.pairId !== anchor.pairId);
+      await saveServices();
+      renderAll();
+    });
+  }
 }
 
 function closeDuplaPicker(revert){
@@ -1729,10 +1992,14 @@ function openServiceDetails(id){
   const s = services.find(x => x.id === id);
   if(!s) return;
 
+  // Formato antigo (legado): parceiro é um SEGUNDO registro ligado por pairId.
   const partner = s.pairId ? services.find(x => x.pairId === s.pairId && x.id !== s.id) : null;
+  const techList = getServiceTechnicians(s);
   const technicianLine = partner
     ? `👥 ${escapeHtml(s.technician || '—')} e ${escapeHtml(partner.technician || '—')}`
-    : (s.technician ? escapeHtml(s.technician) : 'sem técnico');
+    : (techList.length > 1
+      ? `👥 ${techList.map(t => escapeHtml(t)).join(' e ')}`
+      : (techList.length === 1 ? escapeHtml(techList[0]) : 'sem técnico'));
 
   const body = document.getElementById('detailsModalBody');
   body.innerHTML = `
@@ -1785,11 +2052,34 @@ function openServiceDetails(id){
       const ci = document.querySelector(`[data-mfcheckin="${svcId}"]`).value;
       const co = document.querySelector(`[data-mfcheckout="${svcId}"]`).value;
       const obs = document.querySelector(`[data-mfobs="${svcId}"]`).value;
-      target.checkIn = ci || target.checkIn || (wasAlreadyDone ? target.checkIn : nowTime());
-      target.checkOut = co || (wasAlreadyDone ? target.checkOut : nowTime());
+      const time = nowTime();
+      target.checkIn = ci || target.checkIn || (wasAlreadyDone ? target.checkIn : time);
+      target.checkOut = co || (wasAlreadyDone ? target.checkOut : time);
       target.observations = obs;
       if(!wasAlreadyDone){
         target.status = 'concluido';
+        createRetornoIfNeeded(target);
+
+        if(target.pairId){
+          const partner = services.find(x => x.pairId === target.pairId && x.id !== target.id);
+          if(partner && partner.status !== 'concluido'){
+            if(!partner.checkIn) partner.checkIn = time;
+            partner.checkOut = time;
+            partner.status = 'concluido';
+          }
+          if(partner){
+            // Mesma proteção contra retorno duplicado usada nos fluxos data-finish e data-savemanual:
+            // só cria o retorno do parceiro se a dupla ainda não tiver nenhum.
+            const jaTemRetornoDaDupla = target.retornoCriado || partner.retornoCriado;
+            if(!jaTemRetornoDaDupla && partner.needsReturn){
+              createRetornoIfNeeded(partner);
+            }
+            if(target.retornoCriado || partner.retornoCriado){
+              target.retornoCriado = true;
+              partner.retornoCriado = true;
+            }
+          }
+        }
       }
       const ok = await saveServices();
       if(ok && !wasAlreadyDone){
@@ -1809,31 +2099,65 @@ function openServiceDetails(id){
       openServiceDetails(id);
     });
   }
+  const repeatInFlight = { current: false };
   if(currentRole === 'manager'){
     document.getElementById('repeatTomorrowBtn').addEventListener('click', async () => {
-      repeatService(s, [addDays(s.date, 1)]);
-      await saveServices();
-      closeServiceDetails();
-      renderAll();
+      if(repeatInFlight.current) return; // já está processando esse clique, ignora repetição
+      repeatInFlight.current = true;
+      const btn = document.getElementById('repeatTomorrowBtn');
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+      const created = repeatService(s, [addDays(s.date, 1)]);
+      try{
+        const ok = await saveServices();
+        if(!ok){
+          // Não confirmou no servidor — desfaz as cópias locais pra não fingir que a repetição
+          // foi criada, e libera o botão pra uma nova tentativa legítima.
+          services = services.filter(x => !created.includes(x));
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+          return;
+        }
+        closeServiceDetails();
+        renderAll();
+      } finally {
+        repeatInFlight.current = false;
+      }
     });
     document.getElementById('repeatWeekBtn').addEventListener('click', async () => {
+      if(repeatInFlight.current) return; // já está processando esse clique, ignora repetição
+      repeatInFlight.current = true;
+      const btn = document.getElementById('repeatWeekBtn');
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
       const monday = startOfWeek(s.date);
       const weekDates = [];
       for(let i=0;i<5;i++){
         const d = addDays(monday, i);
         if(d !== s.date) weekDates.push(d);
       }
-      repeatService(s, weekDates);
-      await saveServices();
-      closeServiceDetails();
-      renderAll();
+      const created = repeatService(s, weekDates);
+      try{
+        const ok = await saveServices();
+        if(!ok){
+          services = services.filter(x => !created.includes(x));
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+          return;
+        }
+        closeServiceDetails();
+        renderAll();
+      } finally {
+        repeatInFlight.current = false;
+      }
     });
   }
   document.getElementById('deleteDetailsBtn').addEventListener('click', () => {
     customConfirm(`Excluir a atividade de "${s.client}"? Essa ação não pode ser desfeita.`, async () => {
-      if(s.maintenanceContractId){
-        const c = maintenanceContracts.find(x => x.id === s.maintenanceContractId);
-        if(c){ c.scheduledFor = null; await saveMaintenanceContracts(); }
+      if(clearScheduledForIfMatches(s)){
+        await saveMaintenanceContracts();
       }
       if(partner){
         services = services.filter(x => x.pairId !== s.pairId);
@@ -1854,28 +2178,50 @@ function closeServiceDetails(){
 }
 
 let repeatIdCounter = 0;
+const repeatServiceInFlight = new Set();
 function repeatService(svc, dates){
-  const partner = svc.pairId ? services.find(x => x.pairId === svc.pairId && x.id !== svc.id) : null;
-  dates.forEach(newDate => {
-    const sharedPairId = partner ? ('pair' + Date.now() + '-' + (++repeatIdCounter)) : undefined;
-    const makeCopy = (source) => {
-      repeatIdCounter++;
-      const copy = {
-        id: Date.now() + repeatIdCounter,
-        date: newDate,
-        client: source.client,
-        description: source.description,
-        address: source.address || '',
-        technician: source.technician,
-        status: source.technician ? 'atribuido' : 'aguardando',
-        checkIn: '', checkOut: '', observations: '', photos: [], audios: []
+  // Trava defensiva contra chamadas reentrantes pro mesmo serviço. Como a função é síncrona (sem
+  // await interno), na prática ela nunca é interrompida no meio por outra chamada — a proteção
+  // real contra duplo clique fica nos botões (que envolvem o await de saveServices()), mas mantém
+  // essa camada extra caso a função venha a ser chamada de outro lugar assíncrono no futuro.
+  if(repeatServiceInFlight.has(svc.id)) return [];
+  repeatServiceInFlight.add(svc.id);
+  try{
+    const partner = svc.pairId ? services.find(x => x.pairId === svc.pairId && x.id !== svc.id) : null;
+    const created = [];
+    dates.forEach(newDate => {
+      const sharedPairId = partner ? ('pair' + Date.now() + '-' + (++repeatIdCounter)) : undefined;
+      const makeCopy = (source) => {
+        repeatIdCounter++;
+        const copy = {
+          id: Date.now() + repeatIdCounter,
+          date: newDate,
+          client: source.client,
+          description: source.description,
+          address: source.address || '',
+          technician: source.technician,
+          status: source.technician ? 'atribuido' : 'aguardando',
+          checkIn: '', checkOut: '', observations: '', photos: [], audios: []
+        };
+        if(Array.isArray(source.technicians) && source.technicians.length > 0){
+          copy.technicians = source.technicians.slice();
+        }
+        if(sharedPairId) copy.pairId = sharedPairId;
+        return copy;
       };
-      if(sharedPairId) copy.pairId = sharedPairId;
-      return copy;
-    };
-    services.push(makeCopy(svc));
-    if(partner) services.push(makeCopy(partner));
-  });
+      const copy1 = makeCopy(svc);
+      services.push(copy1);
+      created.push(copy1);
+      if(partner){
+        const copy2 = makeCopy(partner);
+        services.push(copy2);
+        created.push(copy2);
+      }
+    });
+    return created;
+  } finally {
+    repeatServiceInFlight.delete(svc.id);
+  }
 }
 document.getElementById('detailsOverlay').addEventListener('click', (e) => {
   if(e.target.id === 'detailsOverlay') closeServiceDetails();
@@ -1898,33 +2244,50 @@ document.getElementById('confirmDupla').addEventListener('click', async () => {
     return;
   }
 
-  if(duplaContext.mode === 'edit'){
+  if(duplaContext.mode === 'edit-legacy'){
+    // Dupla antiga (2 registros ligados por pairId). Editar aqui já MIGRA pro formato novo
+    // (1 registro só, technicians[]), fundindo o que existir de fotos/áudios/observações do
+    // segundo registro pra não perder nada.
     const members = services.filter(s => s.pairId === duplaContext.pairId).sort((a,b) => a.id - b.id);
     if(members.length >= 2){
-      members[0].technician = t1;
-      members[1].technician = t2;
-      members[0].status = 'atribuido';
-      members[1].status = 'atribuido';
+      const keep = members[0];
+      const other = members[1];
+      keep.technicians = [t1, t2];
+      keep.technician = t1; // mantém compatibilidade com código que ainda lê o campo singular
+      // Nunca reabre uma atividade já concluída/em andamento — preserva o status atual nesse caso.
+      if(keep.status !== 'concluido' && keep.status !== 'em_andamento'){
+        keep.status = 'atribuido';
+      }
+      delete keep.pairId;
+      keep.photos = (keep.photos || []).concat(other.photos || []);
+      keep.audios = (keep.audios || []).concat(other.audios || []);
+      if(other.observations && other.observations.trim()){
+        keep.observations = (keep.observations ? keep.observations + '\n---\n' : '') + `[${other.technician || 'técnico 2'}] ${other.observations}`;
+      }
+      // Evita retorno órfão: se o registro removido tinha um retorno vinculado a ele, re-aponta
+      // essa referência pro registro que sobreviveu, sem apagar nem duplicar o retorno.
+      services.forEach(s => {
+        if(s.retornoDeId === other.id) s.retornoDeId = keep.id;
+      });
+      services = services.filter(s => s.id !== other.id);
+    }
+  } else if(duplaContext.mode === 'edit-new'){
+    // Dupla já no formato novo — só atualiza o array de técnicos do mesmo registro.
+    const svc = services.find(x => x.id === duplaContext.serviceId);
+    if(svc){
+      svc.technicians = [t1, t2];
+      svc.technician = t1;
+      if(svc.status !== 'concluido' && svc.status !== 'em_andamento'){
+        svc.status = 'atribuido';
+      }
     }
   } else {
+    // Criação nova: UM único registro, com os dois técnicos no array. Sem pairId, sem segundo registro.
     const svc = services.find(x => x.id === duplaContext.serviceId);
     if(!svc){ closeDuplaPicker(false); return; }
-
-    const pairId = 'pair' + Date.now();
+    svc.technicians = [t1, t2];
     svc.technician = t1;
     svc.status = 'atribuido';
-    svc.pairId = pairId;
-
-    services.push({
-      id: Date.now() + 1,
-      date: svc.date,
-      client: svc.client,
-      description: svc.description,
-      address: svc.address || '',
-      technician: t2,
-      status: 'atribuido',
-      pairId: pairId
-    });
   }
 
   document.getElementById('duplaOverlay').classList.remove('open');
@@ -1934,12 +2297,15 @@ document.getElementById('confirmDupla').addEventListener('click', async () => {
 });
 
 function pairRowHtml(s){
+  const locked = s.status === 'concluido' || s.status === 'em_andamento';
   return `
     <div class="pair-row">
       <div class="pair-label">👥 ${escapeHtml(s.technicianLabel)}</div>
       <div class="pair-actions">
-        <button type="button" class="pair-btn" data-pairedit="${s.pairId}">trocar</button>
-        <button type="button" class="pair-btn" data-pairundo="${s.pairId}">desfazer</button>
+        ${locked
+          ? `<span class="pair-locked-note">${s.status === 'concluido' ? 'concluída' : 'em andamento'} — não editável</span>`
+          : `<button type="button" class="pair-btn" data-pairedit="${s.id}">trocar</button>
+        <button type="button" class="pair-btn" data-pairundo="${s.id}">desfazer</button>`}
       </div>
     </div>
   `;
@@ -1954,6 +2320,49 @@ function wirePairButtons(container){
   });
 }
 
+function buildMiniCardElement(s){
+  let techOptions = `<option value="">Selecionar técnico...</option>`;
+  TECHS.forEach(t => {
+    techOptions += `<option value="${t.name}" ${s.technician === t.name ? 'selected' : ''}>${t.name}</option>`;
+  });
+  techOptions += `<option value="__dupla__">👥 Indicar dupla (2 técnicos)</option>`;
+
+  const el = document.createElement('div');
+  el.className = `mini-card status-${s.status}`;
+  el.dataset.id = s.id;
+  el.innerHTML = `
+    <div class="mini-card-top">
+      <div>
+        <div class="mini-client">${escapeHtml(s.client)}</div>
+        <div class="mini-desc">${escapeHtml(s.description)}</div>
+      </div>
+      <div class="mini-tag ${s.status}">${statusLabelOf(s.status)}</div>
+    </div>
+    <div class="mini-tech-row">
+      ${s.isPair
+        ? pairRowHtml(s)
+        : `<select class="mono mini-tech-select" data-id="${s.id}" ${(s.status === 'concluido' || s.status === 'em_andamento') ? 'disabled' : ''}>${techOptions}</select>`
+      }
+    </div>
+  `;
+  return el;
+}
+
+// Liga os mesmos handlers já usados pelos mini-cards (abrir detalhes, trocar/desfazer dupla,
+// selecionar técnico) — reaproveitável por qualquer container que contenha .mini-card.
+function wireMiniCardContainer(container){
+  wirePairButtons(container);
+  container.querySelectorAll('.mini-card').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if(e.target.closest('.mini-tech-select') || e.target.closest('button')) return;
+      openServiceDetails(Number(card.dataset.id));
+    });
+  });
+  container.querySelectorAll('.mini-tech-select').forEach(sel => {
+    sel.addEventListener('change', onTechSelectChange);
+  });
+}
+
 function renderMiniBox(containerId, dateStr){
   const container = document.getElementById(containerId);
   const dayServices = groupPaired(services.filter(s => s.date === dateStr).sort((a,b) => a.id - b.id));
@@ -1963,44 +2372,225 @@ function renderMiniBox(containerId, dateStr){
   }
   container.innerHTML = '';
   dayServices.forEach(s => {
-    let techOptions = `<option value="">Selecionar técnico...</option>`;
-    TECHS.forEach(t => {
-      techOptions += `<option value="${t.name}" ${s.technician === t.name ? 'selected' : ''}>${t.name}</option>`;
-    });
-    techOptions += `<option value="__dupla__">👥 Indicar dupla (2 técnicos)</option>`;
+    container.appendChild(buildMiniCardElement(s));
+  });
+  wireMiniCardContainer(container);
+}
 
-    const el = document.createElement('div');
-    el.className = `mini-card status-${s.status}`;
-    el.dataset.id = s.id;
-    el.innerHTML = `
-      <div class="mini-card-top">
-        <div>
-          <div class="mini-client">${escapeHtml(s.client)}</div>
-          <div class="mini-desc">${escapeHtml(s.description)}</div>
-        </div>
-        <div class="mini-tag ${s.status}">${statusLabelOf(s.status)}</div>
-      </div>
-      <div class="mini-tech-row">
-        ${s.isPair
-          ? pairRowHtml(s)
-          : `<select class="mono mini-tech-select" data-id="${s.id}" ${s.status === 'concluido' ? 'disabled' : ''}>${techOptions}</select>`
-        }
+// Retorna os nomes de técnico de uma atividade já processada por groupPaired() — cobre dupla nova
+// (technicians[] continua intacto no objeto agrupado), dupla antiga (usa pairMembers, que
+// groupPaired monta com os dois registros originais) e atividade individual (getServiceTechnicians
+// já resolve). Não é uma lógica paralela de identificação de dupla — só sabe onde achar os nomes
+// depois que groupPaired já fez a junção visual.
+function getGroupedServiceTechnicians(s){
+  if(s.isPair && s.isLegacyPair && Array.isArray(s.pairMembers)){
+    return s.pairMembers.map(m => m.technician).filter(Boolean);
+  }
+  return getServiceTechnicians(s);
+}
+
+
+// Converte "HH:MM" pra minutos desde a meia-noite, com validação segura — nunca deixa um valor
+// vazio ou mal formado contaminar um cálculo. Retorna null se o valor não for um horário válido.
+function timeToMinutes(t){
+  if(typeof t !== 'string') return null;
+  const m = t.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return null;
+  const hh = Number(m[1]), mm = Number(m[2]);
+  if(!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+  return hh * 60 + mm;
+}
+
+// Converte minutos de volta pra "HH:MM". Retorna null se a entrada não for um número válido.
+function minutesToTimeLabel(min){
+  if(min === null || min === undefined || !Number.isFinite(min)) return null;
+  const rounded = Math.round(min);
+  const h = Math.floor(rounded / 60);
+  const mm = ((rounded % 60) + 60) % 60;
+  return String(h).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+}
+
+// Calcula estatísticas de horário de operação a partir de uma lista de atividades. Função pura:
+// não olha a data/hora do navegador, só o que está gravado em cada atividade (svc.date,
+// svc.checkIn, svc.checkOut) — o chamador decide quais atividades entram (ex: filtrar por
+// período antes de passar pra cá), essa função só soma o que recebe.
+//
+// Duplas: uma dupla nova (technicians[]) é um registro só, então checkIn/checkOut já representam
+// uma janela de horário única — não há como saber o horário individual de cada integrante nesse
+// modelo (os dois sempre compartilham o mesmo checkIn/checkOut do registro). Dupla antiga
+// (pairId) também sempre sincroniza os dois registros pro mesmo horário (conferido no código:
+// toda conclusão copia checkIn/checkOut pro parceiro). Ou seja, hoje NÃO existe horário
+// individual por técnico dentro de uma dupla em nenhum dos dois formatos — essa é uma limitação
+// real do modelo de dados atual, não desta função. Por isso:
+// - pra métricas GERAIS (primeiro check-in do período, último check-out do período), a dupla é
+//   deduplicada via groupPaired() antes de entrar na conta, pra não contar a mesma janela de
+//   horário duas vezes só porque tecnicamente "pertence" a dois nomes;
+// - pra métricas POR TÉCNICO/DIA (primeira atividade média, última conclusão média, período
+//   operacional médio), a MESMA janela de horário da dupla entra na conta de CADA um dos dois
+//   técnicos naquele dia — porque os dois realmente trabalharam nesse intervalo, mesmo que o
+//   dado gravado seja compartilhado, não porque a dupla foi "contada duas vezes" indevidamente.
+//
+// Retornos (isRetorno: true) são excluídos: representam uma consequência da atividade original
+// (muitas vezes ainda nem foram executados, sem checkIn/checkOut), e somar a execução de um
+// retorno como se fosse mais um "dia de trabalho" independente infla as médias sem necessidade.
+function getScheduleStats(servicesList){
+  const deduped = groupPaired((servicesList || []).filter(s => !s.isRetorno));
+
+  let globalFirstCheckIn = null;
+  let globalLastCheckOut = null;
+  const perTechDay = {}; // { [nomeTecnico]: { [data]: { minCheckIn, maxCheckOut } } }
+
+  deduped.forEach(s => {
+    const ciMin = timeToMinutes(s.checkIn);
+    const coMin = timeToMinutes(s.checkOut);
+
+    if(ciMin !== null && (globalFirstCheckIn === null || ciMin < globalFirstCheckIn)){
+      globalFirstCheckIn = ciMin;
+    }
+    if(coMin !== null && (globalLastCheckOut === null || coMin > globalLastCheckOut)){
+      globalLastCheckOut = coMin;
+    }
+
+    if(ciMin === null && coMin === null) return; // nada aproveitável — atividade só atribuída/agendada, sem execução
+    if(!s.date) return;
+
+    const techs = getGroupedServiceTechnicians(s);
+    if(!techs || techs.length === 0) return; // sem técnico atribuído, não entra na métrica por técnico
+
+    techs.forEach(name => {
+      if(!name) return;
+      if(!perTechDay[name]) perTechDay[name] = {};
+      if(!perTechDay[name][s.date]) perTechDay[name][s.date] = { minCheckIn: null, maxCheckOut: null };
+      const bucket = perTechDay[name][s.date];
+      if(ciMin !== null && (bucket.minCheckIn === null || ciMin < bucket.minCheckIn)) bucket.minCheckIn = ciMin;
+      if(coMin !== null && (bucket.maxCheckOut === null || coMin > bucket.maxCheckOut)) bucket.maxCheckOut = coMin;
+    });
+  });
+
+  const firstCheckIns = [];
+  const lastCheckOuts = [];
+  const operationalPeriods = [];
+  Object.keys(perTechDay).forEach(name => {
+    Object.keys(perTechDay[name]).forEach(date => {
+      const bucket = perTechDay[name][date];
+      if(bucket.minCheckIn !== null) firstCheckIns.push(bucket.minCheckIn);
+      if(bucket.maxCheckOut !== null) lastCheckOuts.push(bucket.maxCheckOut);
+      if(bucket.minCheckIn !== null && bucket.maxCheckOut !== null && bucket.maxCheckOut >= bucket.minCheckIn){
+        operationalPeriods.push(bucket.maxCheckOut - bucket.minCheckIn);
+      }
+    });
+  });
+
+  function average(arr){
+    if(arr.length === 0) return null;
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+  }
+
+  const avgFirstCheckIn = average(firstCheckIns);
+  const avgLastCheckOut = average(lastCheckOuts);
+  const avgOperational = average(operationalPeriods);
+
+  return {
+    firstCheckIn: minutesToTimeLabel(globalFirstCheckIn),
+    lastCheckOut: minutesToTimeLabel(globalLastCheckOut),
+    averageFirstCheckIn: minutesToTimeLabel(avgFirstCheckIn),
+    averageLastCheckOut: minutesToTimeLabel(avgLastCheckOut),
+    averageOperationalMinutes: avgOperational !== null ? Math.round(avgOperational) : null,
+    operationalCount: operationalPeriods.length
+  };
+}
+
+// Agrupa as atividades de uma data por técnico. Uma atividade em dupla aparece na lista dos DOIS
+// técnicos (cada um precisa vê-la na própria agenda), mas o total de atividades distintas do dia
+// (services.length depois de groupPaired) conta ela só uma vez — os dois números são bem
+// diferentes e não devem ser confundidos.
+function getTodayByTechnician(dateStr){
+  const dayServices = services.filter(s => s.date === dateStr).sort((a,b) => a.id - b.id);
+  const grouped = groupPaired(dayServices);
+  const byTechnician = {};
+  TECHS.forEach(t => { byTechnician[t.name] = []; });
+  // Atividades sem nenhum técnico atribuído (getGroupedServiceTechnicians retorna lista vazia
+  // pra elas) ficam à parte, numa lista própria — nunca são atribuídas a um técnico artificial,
+  // e nunca somem do total (distinctCount continua contando TODAS as atividades de "grouped",
+  // com ou sem técnico).
+  const semTecnico = [];
+  grouped.forEach(s => {
+    const techs = getGroupedServiceTechnicians(s);
+    if(techs.length === 0){
+      semTecnico.push(s);
+      return;
+    }
+    techs.forEach(name => {
+      if(!byTechnician[name]) byTechnician[name] = []; // nome não está mais no roster atual, mas a atividade referencia ele
+      byTechnician[name].push(s);
+    });
+  });
+  return { byTechnician, semTecnico, groupedServices: grouped, distinctCount: grouped.length };
+}
+
+function renderTodayByTechnician(){
+  const t = todayStr();
+  const container = document.getElementById('todayServices');
+  const { byTechnician, semTecnico, distinctCount } = getTodayByTechnician(t);
+  const totalAtribuido = Object.values(byTechnician).reduce((sum, arr) => sum + arr.length, 0);
+
+  if(distinctCount === 0){
+    container.innerHTML = `<div class="mini-empty">Nenhum serviço agendado.</div>`;
+    return;
+  }
+
+  container.innerHTML = '';
+
+  const summary = document.createElement('div');
+  summary.className = 'today-summary mono';
+  summary.textContent = totalAtribuido !== distinctCount
+    ? `${distinctCount} atividade${distinctCount === 1 ? '' : 's'} distinta${distinctCount === 1 ? '' : 's'} hoje · ${totalAtribuido} atribuições no total (duplas contam para os dois técnicos)`
+    : `${distinctCount} atividade${distinctCount === 1 ? '' : 's'} hoje`;
+  container.appendChild(summary);
+
+  // Atividades sem técnico aparecem primeiro, numa seção própria — mesma estrutura visual das
+  // seções por técnico, só sem o ponto colorido (não tem técnico pra colorir) e sem participar
+  // da contagem de nenhum técnico.
+  if(semTecnico.length > 0){
+    const section = document.createElement('div');
+    section.className = 'today-tech-section';
+    section.innerHTML = `
+      <div class="today-tech-head">
+        <div class="today-tech-name">Atividades sem técnico</div>
+        <div class="today-tech-count mono">${semTecnico.length}</div>
       </div>
     `;
-    container.appendChild(el);
+    const cardsWrap = document.createElement('div');
+    cardsWrap.className = 'today-tech-cards';
+    semTecnico.forEach(s => cardsWrap.appendChild(buildMiniCardElement(s)));
+    section.appendChild(cardsWrap);
+    container.appendChild(section);
+  }
+
+  Object.keys(byTechnician).sort((a,b) => a.localeCompare(b)).forEach(name => {
+    const tasks = byTechnician[name];
+    const techObj = TECHS.find(x => x.name === name);
+    const section = document.createElement('div');
+    section.className = 'today-tech-section';
+    section.innerHTML = `
+      <div class="today-tech-head">
+        <div class="tech-dot" style="background:${techObj ? techObj.color : '#999'}"></div>
+        <div class="today-tech-name">${escapeHtml(name)}</div>
+        <div class="today-tech-count mono">${tasks.length}</div>
+      </div>
+    `;
+    const cardsWrap = document.createElement('div');
+    cardsWrap.className = 'today-tech-cards';
+    if(tasks.length === 0){
+      cardsWrap.innerHTML = `<div class="mini-empty">Nenhuma atividade hoje.</div>`;
+    } else {
+      tasks.forEach(s => cardsWrap.appendChild(buildMiniCardElement(s)));
+    }
+    section.appendChild(cardsWrap);
+    container.appendChild(section);
   });
 
-  wirePairButtons(container);
-  container.querySelectorAll('.mini-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      if(e.target.closest('.mini-tech-select') || e.target.closest('button')) return;
-      openServiceDetails(Number(card.dataset.id));
-    });
-  });
-
-  container.querySelectorAll('.mini-tech-select').forEach(sel => {
-    sel.addEventListener('change', onTechSelectChange);
-  });
+  wireMiniCardContainer(container);
 }
 
 function renderDayBoxes(){
@@ -2010,7 +2600,7 @@ function renderDayBoxes(){
   document.getElementById('todayDateLabel').textContent = shortLabel(t);
   document.getElementById('tomorrowDateLabel').textContent = shortLabel(tmr);
   document.getElementById('tomorrowBoxTitle').textContent = nwd.isTomorrow ? 'Amanhã' : capitalize(DOW_FULL[nwd.dowIdx]);
-  renderMiniBox('todayServices', t);
+  renderTodayByTechnician();
   renderMiniBox('tomorrowServices', tmr);
 }
 
@@ -2128,18 +2718,72 @@ function renderDayPanel(){
     sel.addEventListener('change', onTechSelectChange);
   });
 
+  const doneInFlight = {};
   list.querySelectorAll('[data-done]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const id = Number(e.target.dataset.done);
+      if(doneInFlight[id]) return; // já está processando esse clique, ignora repetição
       const svc = services.find(x => x.id === id);
       if(!svc) return;
-      const targets = e.target.dataset.pair && svc.pairId
-        ? services.filter(x => x.pairId === svc.pairId)
-        : [svc];
-      targets.forEach(t => { t.status = 'concluido'; });
-      await saveServices();
-      for(const t of targets){ await completeMaintenanceIfLinked(t); }
-      renderAll();
+      if(svc.status === 'concluido') return; // idempotente: já concluída, não repete nada
+
+      doneInFlight[id] = true;
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      const prevCheckIn = svc.checkIn;
+      const prevCheckOut = svc.checkOut;
+      const prevStatus = svc.status;
+      const partner = svc.pairId ? services.find(x => x.pairId === svc.pairId && x.id !== svc.id) : null;
+      const prevPartnerCheckIn = partner ? partner.checkIn : undefined;
+      const prevPartnerCheckOut = partner ? partner.checkOut : undefined;
+      const prevPartnerStatus = partner ? partner.status : undefined;
+      try{
+        const time = nowTime();
+        if(!svc.checkIn) svc.checkIn = time;
+        svc.checkOut = time;
+        svc.status = 'concluido';
+
+        createRetornoIfNeeded(svc);
+
+        if(partner && partner.status !== 'concluido'){
+          if(!partner.checkIn) partner.checkIn = time;
+          partner.checkOut = time;
+          partner.status = 'concluido';
+        }
+        if(partner){
+          // Mesma proteção contra retorno duplicado usada nos demais fluxos de conclusão:
+          // só cria o retorno do parceiro se a dupla ainda não tiver nenhum.
+          const jaTemRetornoDaDupla = svc.retornoCriado || partner.retornoCriado;
+          if(!jaTemRetornoDaDupla && partner.needsReturn){
+            createRetornoIfNeeded(partner);
+          }
+          if(svc.retornoCriado || partner.retornoCriado){
+            svc.retornoCriado = true;
+            partner.retornoCriado = true;
+          }
+        }
+
+        const ok = await saveServices();
+        if(!ok){
+          // Não confirmou no servidor — desfaz localmente pra não fingir que concluiu.
+          svc.checkIn = prevCheckIn;
+          svc.checkOut = prevCheckOut;
+          svc.status = prevStatus;
+          if(partner){
+            partner.checkIn = prevPartnerCheckIn;
+            partner.checkOut = prevPartnerCheckOut;
+            partner.status = prevPartnerStatus;
+          }
+          return;
+        }
+        const targets = partner ? [svc, partner] : [svc];
+        for(const t of targets){ await completeMaintenanceIfLinked(t); }
+      } finally {
+        delete doneInFlight[id];
+        renderAll();
+      }
     });
   });
 
@@ -2149,6 +2793,9 @@ function renderDayPanel(){
       const svc = services.find(x => x.id === id);
       const isPair = e.target.dataset.pair && svc && svc.pairId;
       customConfirm(isPair ? 'Remover as duas atividades da dupla?' : 'Remover esta atividade?', async () => {
+        if(svc && clearScheduledForIfMatches(svc)){
+          await saveMaintenanceContracts();
+        }
         if(isPair){
           services = services.filter(x => x.pairId !== svc.pairId);
         } else {
@@ -2168,26 +2815,566 @@ function startOfWeek(dateStr){
   return fmtDate(dt.getFullYear(), dt.getMonth(), dt.getDate());
 }
 
+// ===== Painel de Controle: filtro de período =====
+// Estado do filtro atualmente selecionado. 'personalizado' só fica com startDate/endDate
+// definidos depois que a pessoa escolhe as duas datas e clica em "Aplicar".
+let dashboardPeriod = 'hoje';
+let dashboardCustomStart = null;
+let dashboardCustomEnd = null;
+
+// Retorna o intervalo de datas (strings "YYYY-MM-DD", inclusivas nas duas pontas) correspondente
+// ao filtro de período selecionado no Painel de Controle. Função pura, baseada só em todayStr()
+// (data local do sistema, não em cálculo de fuso) e nas funções de data já existentes
+// (startOfWeek, addDays) — não inventa uma lógica de semana/mês paralela.
+function getDashboardDateRange(){
+  const t = todayStr();
+  if(dashboardPeriod === 'hoje'){
+    return { startDate: t, endDate: t };
+  }
+  if(dashboardPeriod === 'semana'){
+    const start = startOfWeek(t);
+    return { startDate: start, endDate: addDays(start, 6) };
+  }
+  if(dashboardPeriod === 'mes'){
+    const [y, m] = t.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate(); // m já vem 1-indexado da string, então isso dá o último dia do mês atual
+    return { startDate: `${y}-${pad(m)}-01`, endDate: `${y}-${pad(m)}-${pad(lastDay)}` };
+  }
+  if(dashboardPeriod === 'personalizado' && dashboardCustomStart && dashboardCustomEnd){
+    return { startDate: dashboardCustomStart, endDate: dashboardCustomEnd };
+  }
+  // 'todo' (todo o período), ou 'personalizado' ainda sem datas aplicadas: intervalo aberto,
+  // cobre qualquer data já usada no sistema sem precisar calcular mínimo/máximo real.
+  return { startDate: '0000-01-01', endDate: '9999-12-31' };
+}
+
+function painelPeriodLabel(){
+  const range = getDashboardDateRange();
+  if(dashboardPeriod === 'hoje') return `Hoje · ${shortLabel(range.startDate)}`;
+  if(dashboardPeriod === 'todo') return 'Todo o período';
+  if(dashboardPeriod === 'personalizado' && !(dashboardCustomStart && dashboardCustomEnd)) return 'Personalizado · escolha as datas e clique em Aplicar';
+  return `${shortLabel(range.startDate)} – ${shortLabel(range.endDate)}`;
+}
+
+// Estrutura visual do Painel de Controle (filtros + blocos vazios). As métricas dentro de cada
+// bloco serão implementadas numa etapa futura — por enquanto só calcula e mostra o intervalo de
+// datas selecionado, confirmando que o filtro está funcionando.
+// Retorna as atividades cujo services[].date cai dentro do intervalo (inclusive nas duas
+// pontas), sem nenhuma leitura nova do Firebase — só filtra o array já carregado em memória.
+// Atividades sem data (ex: um retorno ainda não agendado, date: '') ficam de fora de qualquer
+// período, porque não têm como pertencer a um intervalo de datas ainda.
+function getDashboardServices(startDate, endDate){
+  return services.filter(s => s.date && s.date >= startDate && s.date <= endDate);
+}
+
+// Resumo da operação pro período selecionado. Definição de cada categoria (deixado explícito
+// aqui de propósito, pra não haver ambiguidade depois):
+// - total: atividades DISTINTAS no período (dupla nova ou antiga conta 1, via groupPaired);
+// - concluídas: status === 'concluido';
+// - em andamento: status === 'em_andamento';
+// - não concluídas: status === 'aguardando' OU 'atribuido' (ainda nem começou) — categoria
+//   separada de "em andamento" de propósito, pra total = concluídas + em andamento + não
+//   concluídas bater exatamente, sem sobreposição;
+// - retornos: atividades distintas do período com isRetorno === true (contadas uma vez mesmo
+//   que a atividade original também tenha sido dupla nova, já que a deduplicação acontece antes
+//   do filtro de retorno);
+// - reagendadas: o sistema não guarda nenhum histórico ou flag de reagendamento — reagendar só
+//   sobrescreve services[].date direto, sem deixar rastro do valor anterior. Não dá pra calcular
+//   isso com segurança hoje, então a métrica fica como null (exibida como "N/D"). Pra medir
+//   reagendamentos de verdade no futuro, seria preciso o próprio reagendamento gravar um
+//   histórico (ex: um array com as datas anteriores, ou um contador), o que é uma mudança de
+//   modelo de dados fora do escopo desta etapa.
+function computeOperationSummary(startDate, endDate){
+  const inPeriod = getDashboardServices(startDate, endDate);
+  const distinct = groupPaired(inPeriod);
+
+  const total = distinct.length;
+  const concluidas = distinct.filter(s => s.status === 'concluido').length;
+  const emAndamento = distinct.filter(s => s.status === 'em_andamento').length;
+  const naoConcluidas = distinct.filter(s => s.status === 'aguardando' || s.status === 'atribuido').length;
+  const retornos = distinct.filter(s => s.isRetorno).length;
+
+  return {
+    total,
+    concluidas,
+    emAndamento,
+    naoConcluidas,
+    retornos,
+    reagendadas: null // N/D — ver explicação acima
+  };
+}
+
+function renderPainelBlockResumo(){
+  const range = getDashboardDateRange();
+  const stats = computeOperationSummary(range.startDate, range.endDate);
+  const box = document.getElementById('painelBlockResumo');
+  const row = (label, value) => `
+    <div class="painel-stat-row">
+      <div class="painel-stat-label">${label}</div>
+      <div class="painel-stat-value mono">${value}</div>
+    </div>`;
+  box.innerHTML = ''
+    + row('Total de atividades', stats.total)
+    + row('Concluídas', stats.concluidas)
+    + row('Em andamento', stats.emAndamento)
+    + row('Não concluídas', stats.naoConcluidas)
+    + row('Reagendadas', stats.reagendadas === null ? 'N/D' : stats.reagendadas)
+    + row('Retornos', stats.retornos);
+}
+
+// Estatísticas por técnico pro Painel de Controle. Não dá pra reaproveitar getScheduleStats()
+// direto filtrando a lista por técnico antes de chamá-la: ela mesma redescobre TODOS os técnicos
+// de cada atividade agrupada (via getGroupedServiceTechnicians), então numa dupla ela misturaria
+// o horário do parceiro junto — precisa de uma função própria que isole cada nome corretamente.
+// Reaproveita as mesmas peças já validadas: timeToMinutes, minutesToTimeLabel, groupPaired e
+// getGroupedServiceTechnicians — não duplica a lógica de conversão de horário nem de dupla.
+//
+// Regras (mesma convenção do Resumo da operação):
+// - "atividades"/"concluídas"/"pendentes"/"retornos" contam TODAS as atividades distintas do
+//   técnico no período, incluindo retornos (um retorno é uma atividade de verdade também);
+// - já as métricas de HORÁRIO (primeiro início, última conclusão, período operacional) excluem
+//   retorno de propósito, pra não inflar a operação com uma execução que é consequência de outra;
+// - "pendentes" = aguardando ou atribuido (mesma definição do Resumo, não inclui em andamento);
+// - período operacional é calculado por DIA (o menor checkIn até o maior checkOut daquele dia
+//   pra aquele técnico) e só depois tira a média dos dias válidos — nunca "primeiro do período
+//   inteiro até o último do período inteiro".
+function getTechnicianDashboardStats(startDate, endDate){
+  const inPeriod = getDashboardServices(startDate, endDate);
+  const distinct = groupPaired(inPeriod);
+
+  const perTech = {};
+  TECHS.forEach(t => { perTech[t.name] = { atividades: 0, concluidas: 0, pendentes: 0, retornos: 0, dias: {} }; });
+
+  distinct.forEach(s => {
+    const techs = getGroupedServiceTechnicians(s);
+    techs.forEach(name => {
+      if(!name) return;
+      if(!perTech[name]) perTech[name] = { atividades: 0, concluidas: 0, pendentes: 0, retornos: 0, dias: {} };
+      const bucket = perTech[name];
+      bucket.atividades++;
+      if(s.status === 'concluido') bucket.concluidas++;
+      if(s.status === 'aguardando' || s.status === 'atribuido') bucket.pendentes++;
+      if(s.isRetorno) bucket.retornos++;
+    });
+  });
+
+  distinct.filter(s => !s.isRetorno).forEach(s => {
+    if(!s.date) return;
+    const ciMin = timeToMinutes(s.checkIn);
+    const coMin = timeToMinutes(s.checkOut);
+    if(ciMin === null && coMin === null) return;
+    getGroupedServiceTechnicians(s).forEach(name => {
+      if(!name || !perTech[name]) return;
+      const dias = perTech[name].dias;
+      if(!dias[s.date]) dias[s.date] = { minCheckIn: null, maxCheckOut: null };
+      const dayBucket = dias[s.date];
+      if(ciMin !== null && (dayBucket.minCheckIn === null || ciMin < dayBucket.minCheckIn)) dayBucket.minCheckIn = ciMin;
+      if(coMin !== null && (dayBucket.maxCheckOut === null || coMin > dayBucket.maxCheckOut)) dayBucket.maxCheckOut = coMin;
+    });
+  });
+
+  const result = {};
+  Object.keys(perTech).forEach(name => {
+    const bucket = perTech[name];
+    const firstCheckIns = [];
+    const lastCheckOuts = [];
+    const operationalPeriods = [];
+    Object.keys(bucket.dias).forEach(date => {
+      const day = bucket.dias[date];
+      if(day.minCheckIn !== null) firstCheckIns.push(day.minCheckIn);
+      if(day.maxCheckOut !== null) lastCheckOuts.push(day.maxCheckOut);
+      if(day.minCheckIn !== null && day.maxCheckOut !== null && day.maxCheckOut >= day.minCheckIn){
+        operationalPeriods.push(day.maxCheckOut - day.minCheckIn);
+      }
+    });
+    const avgOperational = operationalPeriods.length
+      ? operationalPeriods.reduce((a, b) => a + b, 0) / operationalPeriods.length
+      : null;
+
+    result[name] = {
+      atividades: bucket.atividades,
+      concluidas: bucket.concluidas,
+      pendentes: bucket.pendentes,
+      retornos: bucket.retornos,
+      firstCheckIn: minutesToTimeLabel(firstCheckIns.length ? Math.min(...firstCheckIns) : null),
+      lastCheckOut: minutesToTimeLabel(lastCheckOuts.length ? Math.max(...lastCheckOuts) : null),
+      averageOperationalMinutes: avgOperational !== null ? Math.round(avgOperational) : null
+    };
+  });
+  return result;
+}
+
+// Formata minutos como "8h21" — usado só pra exibição do período operacional médio.
+function formatDurationLabel(min){
+  if(min === null || min === undefined || !Number.isFinite(min)) return '—';
+  const h = Math.floor(min / 60);
+  const mm = min % 60;
+  return h + 'h' + String(mm).padStart(2, '0');
+}
+
+function renderPainelBlockTecnicos(){
+  const range = getDashboardDateRange();
+  const statsByName = getTechnicianDashboardStats(range.startDate, range.endDate);
+  const box = document.getElementById('painelBlockTecnicos');
+
+  // Ordem neutra e estável: a ordem atual de TECHS, sem ranking nem ordenação por desempenho.
+  box.innerHTML = TECHS.map(t => {
+    const s = statsByName[t.name] || { atividades:0, concluidas:0, pendentes:0, retornos:0, firstCheckIn:null, lastCheckOut:null, averageOperationalMinutes:null };
+    return `
+      <div class="painel-tech-card">
+        <div class="painel-tech-head">
+          <div class="tech-dot" style="background:${t.color}"></div>
+          <div class="painel-tech-name">${escapeHtml(t.name)}</div>
+        </div>
+        <div class="painel-tech-line">${s.atividades} atividade${s.atividades === 1 ? '' : 's'}</div>
+        <div class="painel-tech-line">${s.concluidas} concluída${s.concluidas === 1 ? '' : 's'} · ${s.pendentes} pendente${s.pendentes === 1 ? '' : 's'}</div>
+        <div class="painel-tech-line">${s.retornos} retorno${s.retornos === 1 ? '' : 's'}</div>
+        <div class="painel-tech-line mono">Primeiro início: ${s.firstCheckIn || '—'}</div>
+        <div class="painel-tech-line mono">Última conclusão: ${s.lastCheckOut || '—'}</div>
+        <div class="painel-tech-line mono">Período operacional médio: ${formatDurationLabel(s.averageOperationalMinutes)}</div>
+      </div>`;
+  }).join('');
+}
+
+// Métricas de execução pro período. Reaproveita computeOperationSummary() pros quatro números
+// de status (total/concluídas/em andamento/não concluídas), então eles são, por construção, os
+// mesmos do Resumo da operação — nunca vão divergir. Só o que é específico de execução é
+// calculado aqui, sempre em cima da lista já deduplicada por groupPaired (dupla conta 1) e
+// validando horário com timeToMinutes() (horário vazio ou mal formado NÃO conta como execução).
+// - com check-in / com check-out: atividades distintas com o respectivo horário válido;
+// - sem execução: atividades distintas SEM check-in válido (nunca chegaram a começar);
+// - taxa de conclusão: concluídas / total × 100, com 0% quando total = 0 (sem divisão por zero);
+// - concluídas sem check-in/check-out: métrica extra possível porque status e checkIn/checkOut
+//   são campos independentes já existentes — serve pra apontar dados de conclusão sem horário
+//   registrado (ex: registros antigos ou preenchidos manualmente), sem criar campo novo.
+function computeExecutionSummary(startDate, endDate){
+  const base = computeOperationSummary(startDate, endDate);
+  const distinct = groupPaired(getDashboardServices(startDate, endDate));
+
+  const comCheckIn = distinct.filter(s => timeToMinutes(s.checkIn) !== null).length;
+  const comCheckOut = distinct.filter(s => timeToMinutes(s.checkOut) !== null).length;
+  const semExecucao = distinct.filter(s => timeToMinutes(s.checkIn) === null).length;
+  const concluidasSemCheckIn = distinct.filter(s => s.status === 'concluido' && timeToMinutes(s.checkIn) === null).length;
+  const concluidasSemCheckOut = distinct.filter(s => s.status === 'concluido' && timeToMinutes(s.checkOut) === null).length;
+  const taxaConclusao = base.total === 0 ? 0 : Math.round((base.concluidas / base.total) * 100);
+
+  return {
+    total: base.total,
+    concluidas: base.concluidas,
+    emAndamento: base.emAndamento,
+    naoConcluidas: base.naoConcluidas,
+    taxaConclusao,
+    comCheckIn,
+    comCheckOut,
+    semExecucao,
+    concluidasSemCheckIn,
+    concluidasSemCheckOut
+  };
+}
+
+function renderPainelBlockExecucao(){
+  const range = getDashboardDateRange();
+  const s = computeExecutionSummary(range.startDate, range.endDate);
+  const box = document.getElementById('painelBlockExecucao');
+  const row = (label, value) => `
+    <div class="painel-stat-row">
+      <div class="painel-stat-label">${label}</div>
+      <div class="painel-stat-value mono">${value}</div>
+    </div>`;
+  box.innerHTML = ''
+    + row('Total', s.total)
+    + row('Concluídas', s.concluidas)
+    + row('Taxa de conclusão', s.taxaConclusao + '%')
+    + row('Em andamento', s.emAndamento)
+    + row('Não concluídas', s.naoConcluidas)
+    + row('Com check-in', s.comCheckIn)
+    + row('Com check-out', s.comCheckOut)
+    + row('Sem execução', s.semExecucao)
+    + row('Concluídas sem check-in', s.concluidasSemCheckIn)
+    + row('Concluídas sem check-out', s.concluidasSemCheckOut);
+}
+
+// Bloco Horários: só encadeia o período selecionado (getDashboardDateRange ->
+// getDashboardServices) com getScheduleStats(), que já contém TODAS as regras validadas:
+// dedup de dupla via groupPaired, exclusão de retorno, validação de horário com timeToMinutes,
+// primeira/última média por técnico/dia e período operacional por dia. Nada é recalculado aqui.
+function renderPainelBlockHorarios(){
+  const range = getDashboardDateRange();
+  const stats = getScheduleStats(getDashboardServices(range.startDate, range.endDate));
+  const box = document.getElementById('painelBlockHorarios');
+  const row = (label, value) => `
+    <div class="painel-stat-row">
+      <div class="painel-stat-label">${label}</div>
+      <div class="painel-stat-value mono">${value}</div>
+    </div>`;
+  // getScheduleStats devolve null quando não há dado suficiente — exibido como "—", nunca "00:00".
+  box.innerHTML = ''
+    + row('Primeiro check-in', stats.firstCheckIn || '—')
+    + row('Último check-out', stats.lastCheckOut || '—')
+    + row('Primeira atividade média', stats.averageFirstCheckIn || '—')
+    + row('Última conclusão média', stats.averageLastCheckOut || '—')
+    + row('Período operacional médio', formatDurationLabel(stats.averageOperationalMinutes));
+}
+
+// Bloco Retornos. Campos reais usados: isRetorno (marca o registro de retorno), date e status.
+// A atividade original tem retornoCriado/needsReturn, mas NÃO é retorno — só isRetorno === true
+// entra aqui. Conta sobre a lista já filtrada pelo período (getDashboardServices, que já deixa
+// de fora retorno sem data) e deduplicada por groupPaired (retorno em dupla nova conta 1;
+// dupla antiga, se existisse, também 1). Status: mesmos valores reais do sistema.
+function computeRetornosSummary(startDate, endDate){
+  const retornos = groupPaired(getDashboardServices(startDate, endDate)).filter(s => s.isRetorno === true);
+  const total = retornos.length;
+  const concluidos = retornos.filter(s => s.status === 'concluido').length;
+  const emAndamento = retornos.filter(s => s.status === 'em_andamento').length;
+  const pendentes = retornos.filter(s => s.status === 'aguardando' || s.status === 'atribuido').length;
+  const taxaConclusao = total === 0 ? 0 : Math.round((concluidos / total) * 100);
+  return { total, concluidos, emAndamento, pendentes, taxaConclusao };
+}
+
+function renderPainelBlockRetornos(){
+  const range = getDashboardDateRange();
+  const s = computeRetornosSummary(range.startDate, range.endDate);
+  const box = document.getElementById('painelBlockRetornos');
+  const row = (label, value) => `
+    <div class="painel-stat-row">
+      <div class="painel-stat-label">${label}</div>
+      <div class="painel-stat-value mono">${value}</div>
+    </div>`;
+  box.innerHTML = ''
+    + row('Total de retornos', s.total)
+    + row('Concluídos', s.concluidos)
+    + row('Em andamento', s.emAndamento)
+    + row('Pendentes', s.pendentes)
+    + row('Taxa de conclusão', s.taxaConclusao + '%');
+}
+
+// Bloco Manutenções preventivas. Campos reais: maintenanceContracts (contratos, com scheduledFor
+// = data de uma visita FUTURA já agendada, não a data de uma visita realizada) e
+// services[].maintenanceContractId (liga uma atividade/visita ao contrato que a gerou).
+// Contrato e visita são contados separadamente de propósito: um contrato pode gerar várias
+// visitas ao longo do tempo, então "quantidade de contratos" nunca é a mesma coisa que
+// "quantidade de visitas no período".
+function computeManutencoesSummary(startDate, endDate){
+  const totalContratos = maintenanceContracts.length;
+  const comAgendamento = maintenanceContracts.filter(c => !!c.scheduledFor).length;
+  const semAgendamento = totalContratos - comAgendamento;
+
+  // Visita preventiva = atividade distinta (dupla deduplicada) com maintenanceContractId, cuja
+  // data (services[].date, nunca scheduledFor do contrato) cai no período selecionado.
+  const visitas = groupPaired(getDashboardServices(startDate, endDate)).filter(s => !!s.maintenanceContractId);
+  const totalVisitas = visitas.length;
+  const concluidas = visitas.filter(s => s.status === 'concluido').length;
+  const emAndamento = visitas.filter(s => s.status === 'em_andamento').length;
+  const pendentes = visitas.filter(s => s.status === 'aguardando' || s.status === 'atribuido').length;
+
+  return {
+    totalContratos,
+    totalVisitas,
+    concluidas,
+    emAndamento,
+    pendentes,
+    comAgendamento,
+    semAgendamento
+  };
+}
+
+function renderPainelBlockManutencoes(){
+  const range = getDashboardDateRange();
+  const s = computeManutencoesSummary(range.startDate, range.endDate);
+  const box = document.getElementById('painelBlockManutencoes');
+  const row = (label, value) => `
+    <div class="painel-stat-row">
+      <div class="painel-stat-label">${label}</div>
+      <div class="painel-stat-value mono">${value}</div>
+    </div>`;
+  box.innerHTML = ''
+    + row('Contratos', s.totalContratos)
+    + row('Visitas no período', s.totalVisitas)
+    + row('Concluídas', s.concluidas)
+    + row('Em andamento', s.emAndamento)
+    + row('Pendentes', s.pendentes)
+    + row('Contratos com visita agendada', s.comAgendamento)
+    + row('Contratos sem visita agendada', s.semAgendamento);
+}
+
+// Bloco Clientes. Campo real de vínculo: services[].client é TEXTO (nome), não um id — não
+// existe clientId em services. clients[].name é o cadastro. O rename de cliente já propaga pra
+// services[].client (confirmado em updateClientRecord), então o texto costuma ficar em sincronia
+// com o cadastro; a comparação usa trim+lowercase, igual serviceMatchesClient/updateClientRecord
+// já fazem. Visitas de manutenção gravam o cliente como "Preventiva – <nome>" (confirmado em
+// confirmMaintenanceDate) — por isso removemos esse prefixo antes de comparar, senão a mesma
+// pessoa apareceria como um "cliente" diferente só por causa da visita preventiva.
+function stripPreventivaPrefix(clientText){
+  const trimmed = (clientText || '').trim();
+  const lower = trimmed.toLowerCase();
+  if(lower.startsWith('preventiva – ')) return trimmed.slice('preventiva – '.length).trim();
+  if(lower.startsWith('preventiva - ')) return trimmed.slice('preventiva - '.length).trim();
+  return trimmed;
+}
+function normalizedClientKey(rawClient){
+  return stripPreventivaPrefix(rawClient).toLowerCase();
+}
+
+function computeClientesSummary(startDate, endDate){
+  const totalCadastrados = clients.length; // independente do período, igual "Contratos" no bloco de manutenções
+  const registeredByKey = {};
+  clients.forEach(cl => { registeredByKey[cl.name.trim().toLowerCase()] = cl.name; });
+
+  const distinct = groupPaired(getDashboardServices(startDate, endDate)).filter(s => !!s.client);
+
+  const attendedMap = {};
+  distinct.forEach(s => {
+    const key = normalizedClientKey(s.client);
+    if(!key) return;
+    if(!attendedMap[key]){
+      attendedMap[key] = { label: registeredByKey[key] || stripPreventivaPrefix(s.client), count: 0, pendente: false, retorno: false, manutencao: false };
+    }
+    const bucket = attendedMap[key];
+    bucket.count++;
+    if(s.status === 'aguardando' || s.status === 'atribuido') bucket.pendente = true;
+    if(s.isRetorno) bucket.retorno = true;
+    if(s.maintenanceContractId) bucket.manutencao = true;
+  });
+
+  const attendedKeys = Object.keys(attendedMap);
+  const totalAtendidos = attendedKeys.length;
+  const comPendencias = attendedKeys.filter(k => attendedMap[k].pendente).length;
+  const comRetorno = attendedKeys.filter(k => attendedMap[k].retorno).length;
+  const comManutencao = attendedKeys.filter(k => attendedMap[k].manutencao).length;
+
+  // "Sem atividade" = cadastrados - atendidos só é uma conta válida se TODO cliente atendido no
+  // período corresponder a um registro real em clients. Se existir nome atendido que não bate
+  // com nenhum cadastro (cliente antigo, digitado à mão, nunca cadastrado formalmente), a
+  // subtração fica ambígua — mostramos N/D em vez de inventar o número.
+  const orphanCount = attendedKeys.filter(k => !(k in registeredByKey)).length;
+  const semAtividade = orphanCount === 0 ? (totalCadastrados - totalAtendidos) : null;
+
+  const atividadesPorCliente = attendedKeys
+    .map(k => ({ label: attendedMap[k].label, count: attendedMap[k].count }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR')); // ordem alfabética — neutra, não é ranking
+
+  return { totalCadastrados, totalAtendidos, semAtividade, comPendencias, comRetorno, comManutencao, orphanCount, atividadesPorCliente };
+}
+
+function renderPainelBlockClientes(){
+  const range = getDashboardDateRange();
+  const s = computeClientesSummary(range.startDate, range.endDate);
+  const box = document.getElementById('painelBlockClientes');
+  const row = (label, value) => `
+    <div class="painel-stat-row">
+      <div class="painel-stat-label">${label}</div>
+      <div class="painel-stat-value mono">${value}</div>
+    </div>`;
+  box.innerHTML = ''
+    + row('Clientes cadastrados', s.totalCadastrados)
+    + row('Clientes atendidos no período', s.totalAtendidos)
+    + row('Clientes sem atividade', s.semAtividade === null ? 'N/D' : s.semAtividade)
+    + row('Clientes com pendências', s.comPendencias)
+    + row('Clientes com retorno', s.comRetorno)
+    + row('Clientes com manutenção preventiva', s.comManutencao);
+
+  const listBox = document.getElementById('painelBlockClientesLista');
+  if(s.atividadesPorCliente.length === 0){
+    listBox.innerHTML = 'Nenhuma atividade no período selecionado.';
+  } else {
+    listBox.innerHTML = s.atividadesPorCliente.map(item => `
+      <div class="painel-stat-row">
+        <div class="painel-stat-label">${escapeHtml(item.label)}</div>
+        <div class="painel-stat-value mono">${item.count}</div>
+      </div>`).join('');
+  }
+}
+
+function renderPainelDeControle(){
+  document.getElementById('painelPeriodoHoje').classList.toggle('active', dashboardPeriod === 'hoje');
+  document.getElementById('painelPeriodoSemana').classList.toggle('active', dashboardPeriod === 'semana');
+  document.getElementById('painelPeriodoMes').classList.toggle('active', dashboardPeriod === 'mes');
+  document.getElementById('painelPeriodoTodo').classList.toggle('active', dashboardPeriod === 'todo');
+  document.getElementById('painelPeriodoPersonalizado').classList.toggle('active', dashboardPeriod === 'personalizado');
+  document.getElementById('painelCustomRow').style.display = dashboardPeriod === 'personalizado' ? 'flex' : 'none';
+  document.getElementById('painelRangeLabel').textContent = painelPeriodLabel();
+  renderPainelBlockResumo();
+  renderPainelBlockTecnicos();
+  renderPainelBlockExecucao();
+  renderPainelBlockHorarios();
+  renderPainelBlockRetornos();
+  renderPainelBlockManutencoes();
+  renderPainelBlockClientes();
+}
+
+function setDashboardPeriod(period){
+  dashboardPeriod = period;
+  renderPainelDeControle();
+}
+document.getElementById('painelPeriodoHoje').addEventListener('click', () => setDashboardPeriod('hoje'));
+document.getElementById('painelPeriodoSemana').addEventListener('click', () => setDashboardPeriod('semana'));
+document.getElementById('painelPeriodoMes').addEventListener('click', () => setDashboardPeriod('mes'));
+document.getElementById('painelPeriodoTodo').addEventListener('click', () => setDashboardPeriod('todo'));
+document.getElementById('painelPeriodoPersonalizado').addEventListener('click', () => setDashboardPeriod('personalizado'));
+document.getElementById('painelCustomApply').addEventListener('click', () => {
+  const start = document.getElementById('painelCustomStart').value;
+  const end = document.getElementById('painelCustomEnd').value;
+  if(!start || !end){
+    alert('Escolha as duas datas antes de aplicar.');
+    return;
+  }
+  if(start > end){
+    alert('A data inicial não pode ser depois da data final.');
+    return;
+  }
+  dashboardCustomStart = start;
+  dashboardCustomEnd = end;
+  renderPainelDeControle();
+});
+
 function renderPendingSection(){
   const t = todayStr();
-  const pending = services.filter(s => (!s.date || s.date < t) && s.status !== 'concluido')
+  const pending = groupPaired(services.filter(s => (!s.date || s.date < t) && s.status !== 'concluido'))
     .sort((a,b) => (a.date || '').localeCompare(b.date || ''));
 
   const section = document.getElementById('pendingSection');
-  const list = document.getElementById('pendingList');
 
   if(pending.length === 0){
     section.style.display = 'none';
-    list.innerHTML = '';
+    document.getElementById('pendingList').innerHTML = '';
     return;
   }
   section.style.display = 'block';
+  renderPendingStyleList('pendingList', pending);
+}
 
-  list.innerHTML = pending.map(s => `
+// Mesma seção "atividades não concluídas", só que filtrando por HOJE em vez de atrasadas —
+// reaproveita a mesma lista/handlers de renderPendingSection, sem duplicar lógica.
+function renderTodayIncompleteSection(){
+  const t = todayStr();
+  const incomplete = groupPaired(services.filter(s => s.date === t && s.status !== 'concluido'))
+    .sort((a,b) => a.id - b.id);
+
+  const section = document.getElementById('todayIncompleteSection');
+  if(!section) return;
+
+  if(incomplete.length === 0){
+    section.style.display = 'none';
+    document.getElementById('todayIncompleteList').innerHTML = '';
+    return;
+  }
+  section.style.display = 'block';
+  renderPendingStyleList('todayIncompleteList', incomplete);
+}
+
+// Constrói as linhas e liga todos os controles (preencher conclusão, reagendar, apagar) pra
+// qualquer lista de atividades não concluídas já agrupada por groupPaired() — usada tanto pelas
+// atrasadas quanto pelas não concluídas de hoje, sem duplicar handlers.
+function renderPendingStyleList(containerId, pending){
+  const list = document.getElementById(containerId);
+
+  list.innerHTML = pending.map(s => {
+    const techLabel = s.isPair ? s.technicianLabel : (getServiceTechnicians(s)[0] || '');
+    return `
     <div class="pending-row">
       <div class="pending-row-top">
         <div class="pending-client">${escapeHtml(s.client)}${s.isRetorno ? ' <span class="os-retorno-tag">↩ RETORNO</span>' : ''}</div>
-        <div class="pending-meta mono">${shortLabel(s.date)}${s.technician ? ' · ' + escapeHtml(s.technician) : ' · sem técnico'} · ${statusLabelOf(s.status)}</div>
+        <div class="pending-meta mono">${shortLabel(s.date)}${techLabel ? ' · ' + escapeHtml(techLabel) : ' · sem técnico'} · ${statusLabelOf(s.status)}</div>
       </div>
       ${s.observations ? `<div class="pending-obs">${escapeHtml(s.observations)}</div>` : ''}
       <div class="pending-actions">
@@ -2217,7 +3404,8 @@ function renderPendingSection(){
         </div>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   list.querySelectorAll('[data-fillmanual]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -2235,6 +3423,7 @@ function renderPendingSection(){
       const id = Number(btn.dataset.savemanual);
       const svc = services.find(x => x.id === id);
       if(!svc) return;
+      const time = nowTime();
       const checkIn = document.querySelector(`[data-manualcheckin="${id}"]`).value;
       const checkOut = document.querySelector(`[data-manualcheckout="${id}"]`).value;
       const obs = document.querySelector(`[data-manualobs="${id}"]`).value;
@@ -2242,6 +3431,30 @@ function renderPendingSection(){
       if(checkOut) svc.checkOut = checkOut;
       svc.observations = obs;
       svc.status = 'concluido';
+
+      createRetornoIfNeeded(svc);
+
+      if(svc.pairId){
+        const partner = services.find(x => x.pairId === svc.pairId && x.id !== svc.id);
+        if(partner && partner.status !== 'concluido'){
+          if(!partner.checkIn) partner.checkIn = time;
+          partner.checkOut = time;
+          partner.status = 'concluido';
+        }
+        if(partner){
+          // Mesma proteção contra retorno duplicado usada no fluxo "Concluir serviço" do técnico:
+          // só cria o retorno do parceiro se a dupla ainda não tiver nenhum.
+          const jaTemRetornoDaDupla = svc.retornoCriado || partner.retornoCriado;
+          if(!jaTemRetornoDaDupla && partner.needsReturn){
+            createRetornoIfNeeded(partner);
+          }
+          if(svc.retornoCriado || partner.retornoCriado){
+            svc.retornoCriado = true;
+            partner.retornoCriado = true;
+          }
+        }
+      }
+
       await saveServices();
       await completeMaintenanceIfLinked(svc);
       renderAll();
@@ -2257,10 +3470,14 @@ function renderPendingSection(){
       }
       const svc = services.find(x => x.id === id);
       if(svc){
-        svc.date = dateInput.value;
+        const newDate = dateInput.value;
+        // Dupla antiga (pairId): reagenda os DOIS registros juntos, pra não deixar um na data
+        // velha enquanto o outro muda.
+        const targets = svc.pairId ? services.filter(x => x.pairId === svc.pairId) : [svc];
+        targets.forEach(t => { t.date = newDate; });
         if(svc.maintenanceContractId){
           const c = maintenanceContracts.find(x => x.id === svc.maintenanceContractId);
-          if(c){ c.scheduledFor = svc.date; await saveMaintenanceContracts(); }
+          if(c){ c.scheduledFor = newDate; await saveMaintenanceContracts(); }
         }
         await saveServices();
         renderAll();
@@ -2269,14 +3486,22 @@ function renderPendingSection(){
   });
   list.querySelectorAll('[data-deletepending]').forEach(btn => {
     btn.addEventListener('click', () => {
-      customConfirm('Apagar esta atividade definitivamente? Essa ação não pode ser desfeita.', async () => {
-        const id = Number(btn.dataset.deletepending);
-        const svc = services.find(s => s.id === id);
-        if(svc && svc.maintenanceContractId){
-          const c = maintenanceContracts.find(x => x.id === svc.maintenanceContractId);
-          if(c){ c.scheduledFor = null; await saveMaintenanceContracts(); }
+      const id = Number(btn.dataset.deletepending);
+      const svc = services.find(s => s.id === id);
+      const isPair = svc && svc.pairId;
+      const confirmMsg = isPair
+        ? 'Apagar esta atividade em dupla definitivamente (os dois registros)? Essa ação não pode ser desfeita.'
+        : 'Apagar esta atividade definitivamente? Essa ação não pode ser desfeita.';
+      customConfirm(confirmMsg, async () => {
+        if(svc && clearScheduledForIfMatches(svc)){
+          await saveMaintenanceContracts();
         }
-        services = services.filter(s => s.id !== id);
+        // Dupla antiga (pairId): remove os DOIS registros juntos, sem deixar nenhum órfão.
+        if(isPair){
+          services = services.filter(s => s.pairId !== svc.pairId);
+        } else {
+          services = services.filter(s => s.id !== id);
+        }
         await saveServices();
         renderAll();
       });
@@ -2312,7 +3537,7 @@ function renderWeekSummary(){
       dayServices.forEach(s => {
         const pairClass = s.isPair ? ' is-pair' : '';
         const label = s.isPair ? `${escapeHtml(s.client)} · 👥 ${escapeHtml(s.technicianLabel)}` : escapeHtml(s.client);
-        barsHtml += `<div class="week-client-bar status-${s.status}${pairClass}" data-id="${s.id}" data-partnerid="${s.isPair ? s.pairMembers[1].id : ''}" onclick="openServiceDetails(${s.id})">${label}</div>`;
+        barsHtml += `<div class="week-client-bar status-${s.status}${pairClass}" data-id="${s.id}" data-partnerid="${(s.isPair && s.isLegacyPair) ? s.pairMembers[1].id : ''}" onclick="openServiceDetails(${s.id})">${label}</div>`;
       });
     }
 
@@ -2389,26 +3614,241 @@ function openWhatsapp(phone, text){
   showWaFallback(url);
 }
 
+// Um nome de técnico vira segmento de caminho no Firebase (techRoster/<nome>, etc.) — o Firebase
+// não aceita '.', '#', '$', '[', ']', '/' numa chave. Nenhum dos técnicos cadastrados hoje usa
+// esses caracteres, mas valida aqui pra nunca deixar um nome inválido virar uma chave quebrada.
+function isValidTechnicianName(name){
+  return !!name && !/[.#$\[\]/]/.test(name);
+}
+
+let techRosterSnapshot = {};
+// Diferencia "techRoster nunca foi salvo no Firebase" de "techRoster existe e está vazio porque
+// os técnicos foram removidos de verdade". Só quando isso é true um techRoster remoto vazio pode
+// apagar os técnicos padrão locais — antes disso, eles ficam protegidos como "ainda não confirmados".
+let techRosterInitializedOnServer = false;
+
+async function migrateOldTechRoster(oldList){
+  const migrated = [];
+  for(const rawTech of oldList){
+    const name = (rawTech.name || '').trim();
+    if(!name) continue;
+    try{
+      const result = await rtdb.ref('techRoster/' + name).transaction((current) => {
+        if(current === null || current === undefined){
+          return { name, color: rawTech.color };
+        }
+        // Já existe (migrado por outro dispositivo) — mescla só os campos ausentes.
+        const merged = Object.assign({}, current);
+        if(!('name' in merged)) merged.name = name;
+        if(!('color' in merged)) merged.color = rawTech.color;
+        return merged;
+      });
+      const finalValue = (result && result.snapshot && typeof result.snapshot.val === 'function')
+        ? result.snapshot.val()
+        : { name, color: rawTech.color };
+      migrated.push(finalValue || { name, color: rawTech.color });
+    }catch(e){
+      console.error('Falha ao migrar o técnico do roster (' + name + '):', e);
+      migrated.push({ name, color: rawTech.color });
+    }
+  }
+  return migrated;
+}
+
 async function loadTechRoster(){
   try{
-    const res = await dbGetRaw('techRoster');
-    if(res && res.value){
-      const saved = JSON.parse(res.value);
-      if(Array.isArray(saved) && saved.length > 0){
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('techRoster').get();
+    if(snap.exists()){
+      techRosterInitializedOnServer = true;
+      const raw = snap.val();
+      if(typeof raw === 'string'){
+        let oldList = [];
+        try{ oldList = JSON.parse(raw) || []; }catch(e){ oldList = []; }
+        if(oldList.length > 0){
+          const migrated = await migrateOldTechRoster(oldList);
+          TECHS = migrated.map(t => ({ name: t.name, color: t.color, phone: '', pin: '0000' }));
+        } else {
+          TECHS = []; // formato antigo, mas já sem nenhum técnico — respeita a exclusão real.
+        }
+      } else if(raw && typeof raw === 'object'){
+        const saved = Object.values(raw);
+        // Não checa "saved.length > 0": o nó existe de verdade, então uma lista vazia aqui é uma
+        // exclusão real (todos os técnicos foram removidos), não "nunca foi salvo".
         TECHS = saved.map(t => ({ name: t.name, color: t.color, phone: '', pin: '0000' }));
       }
     }
-  }catch(e){ /* usa a lista padrão definida em TECHS */ }
+    // snap não existe: techRosterInitializedOnServer continua false, e a lista padrão já
+    // declarada em TECHS é mantida — tratada como criação local ainda não confirmada.
+  }catch(e){ /* usa a lista padrão definida em TECHS, sem marcar como inicializado */ }
+  techRosterSnapshot = {};
+  if(techRosterInitializedOnServer){
+    TECHS.forEach(t => { techRosterSnapshot[t.name] = { name: JSON.stringify(t.name), color: JSON.stringify(t.color) }; });
+  }
+  // Se ainda não inicializado no servidor, o snapshot fica vazio de propósito: os técnicos padrão
+  // ficam marcados como "ainda não confirmados", protegendo-os de serem apagados por um techRoster
+  // remoto vazio que só reflete "nunca foi salvo", não uma exclusão real.
 }
 
-async function saveTechRoster(){
-  const roster = TECHS.map(t => ({ name: t.name, color: t.color }));
-  return writeWithRetryAndAlert(() => dbSetRaw('techRoster', JSON.stringify(roster)), 'a lista de técnicos');
+// Mescla o roster que chega do servidor com o local, por campo — protege uma edição local (cor)
+// ainda não confirmada, e preserva phone/pin já carregados localmente (essa função só administra
+// name/color; telefone e PIN são geridos pelos listeners próprios).
+function mergeRemoteTechRoster(remoteMap){
+  const localByName = {};
+  TECHS.forEach(t => { localByName[t.name] = t; });
+  const merged = [];
+  const handledNames = new Set();
+
+  Object.keys(remoteMap).forEach(name => {
+    const remote = remoteMap[name];
+    handledNames.add(name);
+    const local = localByName[name];
+    const confirmedFields = techRosterSnapshot[name];
+    let finalColor = remote.color;
+    if(local && confirmedFields !== undefined){
+      const localColorJson = JSON.stringify(local.color);
+      const confirmedColorJson = confirmedFields.color;
+      if(confirmedColorJson !== undefined && localColorJson !== confirmedColorJson){
+        finalColor = local.color; // edição local pendente, não sobrescreve
+      }
+    }
+    merged.push({
+      name: remote.name,
+      color: finalColor,
+      phone: local ? local.phone : '',
+      pin: local ? local.pin : '0000'
+    });
+    techRosterSnapshot[name] = { name: JSON.stringify(remote.name), color: JSON.stringify(remote.color) };
+  });
+
+  TECHS.forEach(t => {
+    if(handledNames.has(t.name)) return;
+    if(techRosterSnapshot[t.name] === undefined){
+      merged.push(t); // criação local ainda não confirmada
+    } else {
+      delete techRosterSnapshot[t.name]; // removido remotamente
+    }
+  });
+
+  TECHS = merged;
+}
+
+let realtimeTechRosterAttached = false;
+function attachRealtimeTechRosterListener(){
+  if(!rtdb || realtimeTechRosterAttached) return;
+  realtimeTechRosterAttached = true;
+  rtdb.ref('techRoster').on('value', (snap) => {
+    if(!snap.exists()){
+      // O nó realmente não existe ainda no Firebase — não é uma exclusão de nada, é só "nunca foi
+      // salvo". Não mexe em TECHS nem no snapshot: os técnicos padrão continuam protegidos como
+      // "ainda não confirmados" até alguém salvar de verdade (ex: adicionar/remover um técnico).
+      return;
+    }
+    techRosterInitializedOnServer = true;
+    const raw = snap.val();
+    if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
+    mergeRemoteTechRoster(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      renderTechPinList();
+      renderTecnicosAmanha();
+      renderTechList();
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real do roster de técnicos:', err);
+  });
+}
+
+let techRosterSaveInFlight = false;
+let techRosterSaveQueued = false;
+
+async function saveTechRoster(silent){
+  if(techRosterSaveInFlight){
+    techRosterSaveQueued = true;
+    return true;
+  }
+  techRosterSaveInFlight = true;
+  let ok;
+  try{
+    ok = await writeTechRosterDiff();
+  } finally {
+    techRosterSaveInFlight = false;
+  }
+  if(techRosterSaveQueued){
+    techRosterSaveQueued = false;
+    await saveTechRoster(silent);
+  }
+  if(!ok && !silent){
+    alert('⚠️ Não foi possível salvar a lista de técnicos. Verifique sua internet e tente novamente.');
+  }
+  return ok;
+}
+
+// Grava só os campos que mudaram, um caminho por técnico/campo (techRoster/<nome>/<campo>) —
+// nunca a lista inteira. Detecta remoções comparando com o snapshot confirmado.
+async function writeTechRosterDiff(attempt){
+  attempt = attempt || 1;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const currentNames = new Set(TECHS.map(t => t.name));
+    const updates = {};
+    const sentFieldSnapshots = {};
+    const removedNames = [];
+    let hasChanges = false;
+
+    TECHS.forEach(t => {
+      const rec = { name: t.name, color: t.color };
+      const confirmedFields = techRosterSnapshot[t.name] || {};
+      let changed = false;
+      const changedFields = {};
+      Object.keys(rec).forEach(field => {
+        const fieldJson = JSON.stringify(rec[field]);
+        if(confirmedFields[field] !== fieldJson){
+          updates['techRoster/' + t.name + '/' + field] = rec[field];
+          changedFields[field] = fieldJson;
+          changed = true;
+        }
+      });
+      if(changed){
+        sentFieldSnapshots[t.name] = changedFields;
+        hasChanges = true;
+      }
+    });
+
+    Object.keys(techRosterSnapshot).forEach(name => {
+      if(!currentNames.has(name)){
+        updates['techRoster/' + name] = null;
+        removedNames.push(name);
+        hasChanges = true;
+      }
+    });
+
+    if(hasChanges){
+      await rtdb.ref().update(updates);
+      techRosterInitializedOnServer = true; // acabamos de confirmar que o nó existe de verdade
+      Object.keys(sentFieldSnapshots).forEach(name => {
+        techRosterSnapshot[name] = Object.assign({}, techRosterSnapshot[name], sentFieldSnapshots[name]);
+      });
+      removedNames.forEach(name => { delete techRosterSnapshot[name]; });
+    }
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar a lista de técnicos (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return writeTechRosterDiff(attempt + 1);
+    }
+    return false;
+  }
 }
 
 async function addTechnician(name){
   name = (name || '').trim();
   if(!name) return false;
+  if(!isValidTechnicianName(name)){
+    alert('Esse nome contém um caractere que não pode ser usado (., #, $, [, ], /). Tente outro nome.');
+    return false;
+  }
   if(TECHS.some(t => t.name.toLowerCase() === name.toLowerCase())){
     alert('Já existe um técnico com esse nome.');
     return false;
@@ -2420,39 +3860,372 @@ async function addTechnician(name){
   return true;
 }
 
+async function deleteTechPhoneAndPin(name, attempt){
+  attempt = attempt || 1;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    await rtdb.ref().update({ ['techPhones/' + name]: null, ['techPins/' + name]: null });
+    delete techPhonesSnapshot[name];
+    delete techPinsSnapshot[name];
+    return true;
+  }catch(e){
+    console.error('Falha ao remover telefone/PIN do técnico (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return deleteTechPhoneAndPin(name, attempt + 1);
+    }
+    return false;
+  }
+}
+
 async function removeTechnician(name){
   TECHS = TECHS.filter(t => t.name !== name);
   await saveTechRoster();
+  await deleteTechPhoneAndPin(name);
+}
+
+let techPhonesSnapshot = {};
+
+async function migrateOldTechPhones(oldMap){
+  const migrated = {};
+  for(const name of Object.keys(oldMap)){
+    if(!name) continue;
+    try{
+      const result = await rtdb.ref('techPhones/' + name).transaction((current) => {
+        if(current === null || current === undefined) return oldMap[name];
+        return current; // já tem um valor mais atual, não sobrescreve
+      });
+      migrated[name] = (result && result.snapshot && typeof result.snapshot.val === 'function')
+        ? result.snapshot.val()
+        : oldMap[name];
+    }catch(e){
+      console.error('Falha ao migrar o telefone do técnico (' + name + '):', e);
+      migrated[name] = oldMap[name];
+    }
+  }
+  return migrated;
 }
 
 async function loadTechPhones(){
   try{
-    const res = await dbGetRaw('techPhones');
-    if(res && res.value){
-      const saved = JSON.parse(res.value);
-      TECHS.forEach(t => { if(saved[t.name]) t.phone = saved[t.name]; });
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('techPhones').get();
+    const raw = snap.exists() ? snap.val() : null;
+    let phoneMap = {};
+    if(typeof raw === 'string'){
+      let oldMap = {};
+      try{ oldMap = JSON.parse(raw) || {}; }catch(e){ oldMap = {}; }
+      if(Object.keys(oldMap).length > 0){
+        phoneMap = await migrateOldTechPhones(oldMap);
+      }
+    } else if(raw && typeof raw === 'object'){
+      phoneMap = raw;
     }
+    TECHS.forEach(t => { if(phoneMap[t.name]) t.phone = phoneMap[t.name]; });
+    techPhonesSnapshot = {};
+    Object.keys(phoneMap).forEach(name => { techPhonesSnapshot[name] = JSON.stringify(phoneMap[name]); });
   }catch(e){ /* usa os números padrão definidos em TECHS */ }
 }
 
-async function saveTechPhone(name, phone){
+function mergeRemoteTechPhones(remoteMap){
+  Object.keys(remoteMap).forEach(name => {
+    const remoteValue = remoteMap[name];
+    const confirmedJson = techPhonesSnapshot[name];
+    const t = TECHS.find(x => x.name === name);
+    const localJson = JSON.stringify(t ? (t.phone || '') : '');
+    if(confirmedJson !== undefined && localJson !== confirmedJson){
+      // edição local pendente, não sobrescreve
+    } else if(t){
+      t.phone = remoteValue;
+    }
+    techPhonesSnapshot[name] = JSON.stringify(remoteValue);
+  });
+}
+
+let realtimeTechPhonesAttached = false;
+function attachRealtimeTechPhonesListener(){
+  if(!rtdb || realtimeTechPhonesAttached) return;
+  realtimeTechPhonesAttached = true;
+  rtdb.ref('techPhones').on('value', (snap) => {
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string') return;
+    mergeRemoteTechPhones(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      renderTecnicosAmanha();
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real dos telefones de técnicos:', err);
+  });
+}
+
+async function saveTechPhone(name, phone, attempt){
+  attempt = attempt || 1;
   TECHS.forEach(t => { if(t.name === name) t.phone = phone; });
-  const map = {};
-  TECHS.forEach(t => { map[t.name] = t.phone || ''; });
-  try{ await dbSetRaw('techPhones', JSON.stringify(map)); }catch(e){ /* ignora falha */ }
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    await rtdb.ref().update({ ['techPhones/' + name]: phone || '' });
+    techPhonesSnapshot[name] = JSON.stringify(phone || '');
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar o telefone do técnico (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return saveTechPhone(name, phone, attempt + 1);
+    }
+    alert('⚠️ Não foi possível salvar o telefone do técnico. Verifique sua internet e tente novamente.');
+    return false;
+  }
 }
 
 let clients = [];
 
-async function loadClients(){
-  try{
-    const res = await dbGetRaw('clients');
-    clients = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){ clients = []; }
+// ===== Persistência de clients: um registro por cliente (clients/<id>), com diffing por CAMPO —
+// mesmo princípio já aprovado em maintenanceContracts. O id é interno (gerado uma vez na criação,
+// nunca muda, mesmo que o cliente seja renomeado); o resto do sistema continua identificando
+// clientes pelo nome (services[].client, maintenanceContracts[].client seguem sendo strings). =====
+let nextClientIdCounter = 0;
+function snapshotClientFields(c){
+  const snap = {};
+  Object.keys(c).forEach(k => { snap[k] = JSON.stringify(c[k]); });
+  return snap;
 }
 
-async function saveClients(){
-  return writeWithRetryAndAlert(() => dbSetRaw('clients', JSON.stringify(clients)), 'os dados do cliente');
+// Hash determinístico do nome, usado SÓ na migração do formato antigo: garante que dois
+// dispositivos migrando o mesmo cliente (mesmo nome) cheguem ao mesmo id sem combinarem entre si,
+// evitando duplicar o mesmo cliente com dois ids diferentes. Depois de migrado, o id nunca muda,
+// mesmo que o cliente seja renomeado.
+function deterministicClientIdFromName(name){
+  const key = (name || '').trim().toLowerCase();
+  let hash = 5381;
+  for(let i = 0; i < key.length; i++){
+    hash = ((hash * 33) ^ key.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
+
+async function migrateOldClients(oldList){
+  const usedIds = new Set();
+  const migratedClients = [];
+  const failedClients = [];
+
+  for(const rawClient of oldList){
+    let oldClient = rawClient;
+    let id = deterministicClientIdFromName(oldClient.name);
+    while(usedIds.has(id)){
+      // Colisão de hash entre nomes diferentes nesta mesma leva — bem raro, mas resolve
+      // deslocando o id até achar um livre, sem nunca reaproveitar o de outro cliente.
+      id = id + 1;
+    }
+    usedIds.add(id);
+    oldClient = Object.assign({}, oldClient, { id });
+
+    try{
+      const result = await rtdb.ref('clients/' + id).transaction((current) => {
+        if(current === null || current === undefined){
+          return oldClient;
+        }
+        // Já existe (migrado por outro dispositivo, ou já editado no formato novo) — mescla só
+        // os campos que estiverem faltando lá, nunca sobrescreve o que já existe.
+        const merged = Object.assign({}, current);
+        Object.keys(oldClient).forEach(field => {
+          if(!(field in merged)){
+            merged[field] = oldClient[field];
+          }
+        });
+        return merged;
+      });
+      const finalValue = (result && result.snapshot && typeof result.snapshot.val === 'function')
+        ? result.snapshot.val()
+        : oldClient;
+      migratedClients.push(finalValue || oldClient);
+    }catch(e){
+      console.error('Falha ao migrar o cliente (id ' + id + ', nome ' + (oldClient.name || '?') + '):', e);
+      failedClients.push({ id, name: oldClient.name });
+      migratedClients.push(oldClient);
+    }
+  }
+
+  if(failedClients.length > 0){
+    console.error('Clientes que falharam ao migrar nesta tentativa (serão tentados de novo na próxima abertura do app):', failedClients);
+  }
+  return migratedClients;
+}
+
+let clientsSnapshot = {};
+
+async function loadClients(){
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('clients').get();
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string'){
+      // Formato antigo (lista inteira guardada como um texto só).
+      let oldList = [];
+      try{ oldList = JSON.parse(raw) || []; }catch(e){ oldList = []; }
+      if(oldList.length > 0){
+        clients = await migrateOldClients(oldList);
+      } else {
+        clients = [];
+      }
+    } else {
+      clients = Object.values(raw || {});
+    }
+  }catch(e){
+    console.error('Falha ao carregar clientes:', e);
+    clients = [];
+  }
+  clientsSnapshot = {};
+  clients.forEach(c => { clientsSnapshot[c.id] = snapshotClientFields(c); });
+}
+
+// Mescla os dados que chegam do servidor com o que existe localmente, campo a campo — mesmo
+// princípio de mergeRemoteMaintenanceContracts, pra não perder uma edição de campo local ainda
+// não confirmada quando outro campo do MESMO cliente foi alterado remotamente.
+function mergeRemoteClients(remoteMap){
+  const localById = {};
+  clients.forEach(c => { localById[String(c.id)] = c; });
+
+  const merged = [];
+  const handledIds = new Set();
+
+  Object.keys(remoteMap).forEach(key => {
+    const remote = remoteMap[key];
+    const id = String(remote.id);
+    handledIds.add(id);
+    const local = localById[id];
+    const confirmedFields = clientsSnapshot[id];
+
+    if(local && confirmedFields !== undefined){
+      const mergedClient = {};
+      const allFields = new Set([...Object.keys(remote), ...Object.keys(local)]);
+      allFields.forEach(field => {
+        const localFieldJson = JSON.stringify(local[field]);
+        const confirmedFieldJson = confirmedFields[field];
+        if(confirmedFieldJson !== undefined && localFieldJson !== confirmedFieldJson){
+          mergedClient[field] = local[field];
+        } else {
+          mergedClient[field] = remote[field];
+        }
+      });
+      merged.push(mergedClient);
+    } else {
+      merged.push(remote);
+    }
+    clientsSnapshot[id] = snapshotClientFields(remote);
+  });
+
+  clients.forEach(c => {
+    const id = String(c.id);
+    if(handledIds.has(id)) return;
+    if(clientsSnapshot[id] === undefined){
+      merged.push(c); // criação local ainda não confirmada
+    } else {
+      delete clientsSnapshot[id]; // excluído remotamente
+    }
+  });
+
+  return merged;
+}
+
+let realtimeClientsAttached = false;
+function attachRealtimeClientsListener(){
+  if(!rtdb || realtimeClientsAttached) return;
+  realtimeClientsAttached = true;
+  rtdb.ref('clients').on('value', (snap) => {
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
+    clients = mergeRemoteClients(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      renderClientes();
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real dos clientes:', err);
+  });
+}
+
+let clientsSaveInFlight = false;
+let clientsSaveQueued = false;
+
+async function saveClients(silent){
+  if(clientsSaveInFlight){
+    clientsSaveQueued = true;
+    return true;
+  }
+  clientsSaveInFlight = true;
+  let ok;
+  try{
+    ok = await writeClientsDiff();
+  } finally {
+    clientsSaveInFlight = false;
+  }
+  if(clientsSaveQueued){
+    clientsSaveQueued = false;
+    await saveClients(silent);
+  }
+  if(!ok && !silent){
+    alert('⚠️ Não foi possível salvar os dados do cliente. Verifique sua internet e tente novamente.');
+  }
+  return ok;
+}
+
+// Grava só os CAMPOS que realmente mudaram, um caminho por campo (clients/<id>/<campo>) — nunca
+// o cliente inteiro. Assim, dois gestores editando campos diferentes do mesmo cliente (ex: um
+// corrige o endereço enquanto o outro ajusta o nome) não se sobrescrevem.
+async function writeClientsDiff(attempt){
+  attempt = attempt || 1;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const currentIds = new Set(clients.map(c => String(c.id)));
+    const updates = {};
+    const sentFieldSnapshots = {};
+    const removedIds = [];
+    let hasChanges = false;
+
+    clients.forEach(c => {
+      const id = String(c.id);
+      const confirmedFields = clientsSnapshot[id] || {};
+      let clientChanged = false;
+      const changed = {};
+      Object.keys(c).forEach(field => {
+        const fieldJson = JSON.stringify(c[field]);
+        if(confirmedFields[field] !== fieldJson){
+          updates['clients/' + id + '/' + field] = c[field];
+          changed[field] = fieldJson;
+          clientChanged = true;
+        }
+      });
+      if(clientChanged){
+        sentFieldSnapshots[id] = changed;
+        hasChanges = true;
+      }
+    });
+
+    Object.keys(clientsSnapshot).forEach(id => {
+      if(!currentIds.has(String(id))){
+        updates['clients/' + id] = null;
+        removedIds.push(id);
+        hasChanges = true;
+      }
+    });
+
+    if(hasChanges){
+      await rtdb.ref().update(updates);
+      Object.keys(sentFieldSnapshots).forEach(id => {
+        clientsSnapshot[id] = Object.assign({}, clientsSnapshot[id], sentFieldSnapshots[id]);
+      });
+      removedIds.forEach(id => { delete clientsSnapshot[id]; });
+    }
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar clientes (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return writeClientsDiff(attempt + 1);
+    }
+    return false;
+  }
 }
 
 // Helper genérico: tenta salvar até 3 vezes: só alerta o usuário se todas falharem.
@@ -2489,7 +4262,7 @@ async function createNewClient(name, address){
     alert('Já existe um cliente com esse nome. Use a lista abaixo pra editar o endereço dele.');
     return false;
   }
-  clients.push({ name, address });
+  clients.push({ id: Date.now() + Math.floor(Math.random() * 1000000) + (nextClientIdCounter++), name, address });
   await saveClients();
   return true;
 }
@@ -2513,7 +4286,7 @@ function upsertClient(name, address){
       if(touched) saveServices();
     }
   } else {
-    clients.push({ name: name, address: (address || '').trim() });
+    clients.push({ id: Date.now() + Math.floor(Math.random() * 1000000) + (nextClientIdCounter++), name: name, address: (address || '').trim() });
   }
   saveClients();
 }
@@ -2596,14 +4369,271 @@ async function importPreventivasPlanilha(){
   try{ await dbSetRaw(FLAG, '1'); }catch(e){ /* segue mesmo se não salvar a flag */ }
 }
 
+// ===== Persistência de maintenanceContracts: um registro por contrato (maintenanceContracts/<id>),
+// com diffing por CAMPO (não por contrato inteiro) — assim, dois gestores editando campos
+// diferentes do MESMO contrato não se sobrescrevem. Segue o mesmo princípio de proteção contra
+// perda de edição local pendente já usado em services, adaptado pra granularidade de campo. =====
+let maintenanceContractsSnapshot = {}; // { [id]: { [campo]: jsonDoValorConfirmado } }
+
+function snapshotContractFields(c){
+  const snap = {};
+  Object.keys(c).forEach(k => { snap[k] = JSON.stringify(c[k]); });
+  return snap;
+}
+
+// Migra contratos do formato antigo (blob único) pro formato novo (um nó por contrato) de forma
+// SEGURA e NÃO DESTRUTIVA: usa transaction() em cada contrato, que garante atomicidade real
+// (leitura + decisão + escrita) mesmo com outro dispositivo migrando ou editando ao mesmo tempo.
+// Isso é diferente do salvamento normal (writeMaintenanceContractsDiff), que usa update() por
+// campo sem transaction() — ali não precisa, porque cada campo é escrito com o valor que o usuário
+// realmente quis definir agora. Aqui é diferente: pode haver um valor mais atual já gravado por
+// outro dispositivo entre o momento em que este dispositivo leu o blob antigo e o momento em que
+// termina de migrar, e transaction() garante que a decisão "só preencho o que estiver faltando"
+// é tomada em cima do dado mais recente possível, não de uma cópia desatualizada.
+async function migrateOldMaintenanceContracts(oldList){
+  const usedIds = new Set();
+  const migratedContracts = [];
+  const failedContracts = [];
+
+  for(const rawContract of oldList){
+    let oldContract = rawContract;
+    let id = oldContract.id;
+    if(id === undefined || id === null || id === ''){
+      id = Date.now() + Math.floor(Math.random() * 1000000) + usedIds.size;
+      console.warn('Contrato de manutenção sem id encontrado na migração — foi gerado um novo id:', id, 'para o contrato de', oldContract.client);
+      oldContract = Object.assign({}, oldContract, { id });
+    }
+    while(usedIds.has(String(id))){
+      // Colisão com um id já usado nesta mesma leva de migração (ex: outro contrato também sem id) —
+      // gera outro id até achar um livre, sem nunca reaproveitar o de outro contrato.
+      id = Date.now() + Math.floor(Math.random() * 1000000) + usedIds.size + 1;
+      oldContract = Object.assign({}, oldContract, { id });
+    }
+    usedIds.add(String(id));
+
+    try{
+      const result = await rtdb.ref('maintenanceContracts/' + id).transaction((current) => {
+        if(current === null || current === undefined){
+          // Ainda não existe no formato novo — cria o registro inteiro.
+          return oldContract;
+        }
+        // Já existe (migrado por outro dispositivo, ou já editado no formato novo depois da
+        // migração) — mescla só os campos que estiverem FALTANDO lá. Nunca sobrescreve um campo
+        // que já tem valor definido, mesmo que esse valor seja diferente do blob antigo.
+        const merged = Object.assign({}, current);
+        Object.keys(oldContract).forEach(field => {
+          if(!(field in merged)){
+            merged[field] = oldContract[field];
+          }
+        });
+        return merged;
+      });
+      const finalValue = (result && result.snapshot && typeof result.snapshot.val === 'function')
+        ? result.snapshot.val()
+        : oldContract;
+      migratedContracts.push(finalValue || oldContract);
+    }catch(e){
+      console.error('Falha ao migrar o contrato de manutenção (id ' + id + ', cliente ' + (oldContract.client || '?') + '):', e);
+      failedContracts.push({ id, client: oldContract.client });
+      // Não perde o dado localmente mesmo se a gravação falhar — o app continua funcionando com
+      // essa cópia em memória, e a migração desse contrato específico será tentada de novo na
+      // próxima abertura (idempotente: não faz mal tentar de novo).
+      migratedContracts.push(oldContract);
+    }
+  }
+
+  if(failedContracts.length > 0){
+    console.error('Contratos de manutenção que falharam ao migrar nesta tentativa (serão tentados de novo na próxima abertura do app):', failedContracts);
+  }
+  return migratedContracts;
+}
+
 async function loadMaintenanceContracts(){
   try{
-    const res = await dbGetRaw('maintenanceContracts');
-    maintenanceContracts = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){ maintenanceContracts = []; }
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('maintenanceContracts').get();
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string'){
+      // Formato antigo (lista inteira guardada como um texto só).
+      let oldList = [];
+      try{ oldList = JSON.parse(raw) || []; }catch(e){ oldList = []; }
+      if(oldList.length > 0){
+        maintenanceContracts = await migrateOldMaintenanceContracts(oldList);
+      } else {
+        maintenanceContracts = [];
+      }
+    } else {
+      maintenanceContracts = Object.values(raw || {});
+    }
+  }catch(e){
+    console.error('Falha ao carregar contratos de manutenção:', e);
+    maintenanceContracts = [];
+  }
+  maintenanceContractsSnapshot = {};
+  maintenanceContracts.forEach(c => { maintenanceContractsSnapshot[c.id] = snapshotContractFields(c); });
 }
-async function saveMaintenanceContracts(){
-  return writeWithRetryAndAlert(() => dbSetRaw('maintenanceContracts', JSON.stringify(maintenanceContracts)), 'o contrato de manutenção');
+
+// Mescla os dados que chegam do servidor com o que existe localmente, campo a campo — mesmo
+// princípio de mergeRemoteServices, mas na granularidade de campo (não do contrato inteiro),
+// pra não perder uma edição de campo local ainda não confirmada quando outro campo do MESMO
+// contrato foi alterado remotamente.
+function mergeRemoteMaintenanceContracts(remoteMap){
+  const localById = {};
+  maintenanceContracts.forEach(c => { localById[String(c.id)] = c; });
+
+  const merged = [];
+  const handledIds = new Set();
+
+  Object.keys(remoteMap).forEach(key => {
+    const remote = remoteMap[key];
+    const id = String(remote.id);
+    handledIds.add(id);
+    const local = localById[id];
+    const confirmedFields = maintenanceContractsSnapshot[id];
+
+    if(local && confirmedFields !== undefined){
+      const mergedContract = {};
+      const allFields = new Set([...Object.keys(remote), ...Object.keys(local)]);
+      allFields.forEach(field => {
+        const localFieldJson = JSON.stringify(local[field]);
+        const confirmedFieldJson = confirmedFields[field];
+        if(confirmedFieldJson !== undefined && localFieldJson !== confirmedFieldJson){
+          // Esse campo tem edição local ainda não confirmada — mantém local.
+          mergedContract[field] = local[field];
+        } else {
+          mergedContract[field] = remote[field];
+        }
+      });
+      merged.push(mergedContract);
+    } else {
+      merged.push(remote);
+    }
+    maintenanceContractsSnapshot[id] = snapshotContractFields(remote);
+  });
+
+  // Contratos que só existem localmente e não vieram nesta atualização: mesma distinção já usada
+  // em mergeRemoteServices — sem snapshot ainda = criação local pendente (mantém); com snapshot
+  // já confirmado antes = foi excluído remotamente (remove daqui também).
+  maintenanceContracts.forEach(c => {
+    const id = String(c.id);
+    if(handledIds.has(id)) return;
+    if(maintenanceContractsSnapshot[id] === undefined){
+      merged.push(c);
+    } else {
+      delete maintenanceContractsSnapshot[id];
+    }
+  });
+
+  return merged;
+}
+
+let realtimeMaintenanceContractsAttached = false;
+function attachRealtimeMaintenanceContractsListener(){
+  if(!rtdb || realtimeMaintenanceContractsAttached) return;
+  realtimeMaintenanceContractsAttached = true;
+  rtdb.ref('maintenanceContracts').on('value', (snap) => {
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
+    maintenanceContracts = mergeRemoteMaintenanceContracts(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      renderManutencoes();
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real dos contratos de manutenção:', err);
+  });
+}
+
+let maintenanceContractsSaveInFlight = false;
+let maintenanceContractsSaveQueued = false;
+
+async function saveMaintenanceContracts(silent){
+  if(maintenanceContractsSaveInFlight){
+    maintenanceContractsSaveQueued = true;
+    return true;
+  }
+  maintenanceContractsSaveInFlight = true;
+  let ok;
+  try{
+    ok = await writeMaintenanceContractsDiff();
+  } finally {
+    maintenanceContractsSaveInFlight = false;
+  }
+  if(maintenanceContractsSaveQueued){
+    maintenanceContractsSaveQueued = false;
+    await saveMaintenanceContracts(silent);
+  }
+  if(!ok && !silent){
+    alert('⚠️ Não foi possível salvar as alterações do contrato de manutenção. Verifique sua internet e tente novamente.');
+  }
+  return ok;
+}
+
+// Grava só os CAMPOS que realmente mudaram, um caminho por campo (maintenanceContracts/<id>/<campo>) —
+// nunca o contrato inteiro. Assim, se dois gestores mexerem em campos diferentes do mesmo contrato
+// quase ao mesmo tempo, os dois caminhos são independentes no Firebase e nenhum apaga o outro.
+async function writeMaintenanceContractsDiff(attempt){
+  attempt = attempt || 1;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const currentIds = new Set(maintenanceContracts.map(c => String(c.id)));
+    const updates = {};
+    const sentFieldSnapshots = {}; // { [id]: { [campo]: json } } — só os campos enviados nesta tentativa
+    const removedIds = [];
+    let hasChanges = false;
+
+    maintenanceContracts.forEach(c => {
+      const id = String(c.id);
+      const confirmedFields = maintenanceContractsSnapshot[id] || {};
+      let contractChanged = false;
+      const changed = {};
+      Object.keys(c).forEach(field => {
+        const fieldJson = JSON.stringify(c[field]);
+        if(confirmedFields[field] !== fieldJson){
+          updates['maintenanceContracts/' + id + '/' + field] = c[field];
+          changed[field] = fieldJson;
+          contractChanged = true;
+        }
+      });
+      if(contractChanged){
+        sentFieldSnapshots[id] = changed;
+        hasChanges = true;
+      }
+    });
+
+    Object.keys(maintenanceContractsSnapshot).forEach(id => {
+      if(!currentIds.has(String(id))){
+        updates['maintenanceContracts/' + id] = null; // remove o contrato inteiro
+        removedIds.push(id);
+        hasChanges = true;
+      }
+    });
+
+    if(hasChanges){
+      await rtdb.ref().update(updates);
+      // Confirma só os campos/ids que foram efetivamente enviados nesta chamada — se algum campo
+      // mudou de novo durante o envio, ele continua "pendente" e a próxima chamada da fila pega.
+      Object.keys(sentFieldSnapshots).forEach(id => {
+        maintenanceContractsSnapshot[id] = Object.assign({}, maintenanceContractsSnapshot[id], sentFieldSnapshots[id]);
+      });
+      removedIds.forEach(id => { delete maintenanceContractsSnapshot[id]; });
+    }
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar contratos de manutenção (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return writeMaintenanceContractsDiff(attempt + 1);
+    }
+    return false;
+  }
+}
+
+// Compara IDs de contrato de forma segura, funcionando tanto pra IDs numéricos quanto pra IDs
+// em texto — nunca converte o id de verdade do contrato, só normaliza a COMPARAÇÃO em si (já
+// que dataset.* sempre entrega o valor como texto, mesmo quando o id real é um número).
+function findMaintenanceContractByRawId(rawId){
+  return maintenanceContracts.find(c => String(c.id) === String(rawId));
 }
 
 function buildMaintenanceMessage(c){
@@ -2617,8 +4647,8 @@ function buildMaintenanceMessage(c){
   return `${greeting} Estamos entrando em contato para agendar a manutenção preventiva do(a) ${c.client}, prevista para ${shortLabel(nextDue)}. Poderia nos confirmar uma data disponível?`;
 }
 
-function sendMaintenanceWhatsapp(id){
-  const c = maintenanceContracts.find(x => x.id === id);
+function sendMaintenanceWhatsapp(rawId){
+  const c = findMaintenanceContractByRawId(rawId);
   if(!c || phoneDigits(c.contact).length < 10){
     alert('Esse cliente não tem um número de WhatsApp válido cadastrado (pode ser um e-mail). Confira o campo de contato antes de enviar.');
     return;
@@ -2627,32 +4657,79 @@ function sendMaintenanceWhatsapp(id){
   openWhatsapp(phoneDigits(c.contact), msg);
 }
 
+const confirmMaintenanceInFlight = {};
 async function confirmMaintenanceDate(contractId, date){
-  const c = maintenanceContracts.find(x => x.id === contractId);
+  const c = findMaintenanceContractByRawId(contractId);
   if(!c || !date) return;
-  services.push({
+  const realId = c.id; // id de verdade do contrato, com o tipo original preservado (número ou texto)
+  if(confirmMaintenanceInFlight[realId]) return; // já está processando essa manutenção, ignora clique repetido
+
+  // Verificação de duplicidade: se já existe uma atividade pra esse contrato nessa data
+  // (mesmo de uma confirmação anterior já salva), não cria outra.
+  const jaExisteAtividade = services.some(s => s.maintenanceContractId === realId && s.date === date);
+  if(jaExisteAtividade) return;
+
+  confirmMaintenanceInFlight[realId] = true;
+  const novoServico = {
     id: Date.now(),
     date: date,
     client: `Preventiva – ${c.client}`,
-    description: 'Manutenção preventiva trimestral',
+    description: `Manutenção preventiva ${freqLabel(c.intervalMonths)}`,
     address: findClientAddress(c.client),
     technician: null,
     status: 'aguardando',
-    maintenanceContractId: c.id
-  });
-  await saveServices(true);
-  upsertClient(c.client, findClientAddress(c.client));
-  c.scheduledFor = date;
-  await saveMaintenanceContracts();
-  renderAll();
+    maintenanceContractId: realId
+  };
+  try{
+    services.push(novoServico);
+    const ok = await saveServices(); // sem silent: avisa o usuário se falhar, igual os demais fluxos
+    if(!ok){
+      // Não confirmou no servidor — desfaz o estado local pra não fingir que a visita foi
+      // agendada, e não atualiza o contrato.
+      services = services.filter(s => s !== novoServico);
+      renderAll();
+      return;
+    }
+    // Reobtém o contrato depois do await: a sincronização em tempo real pode ter substituído os
+    // objetos de maintenanceContracts nesse meio-tempo (fusão de dados vindos do servidor), e a
+    // referência antiga capturada antes do await ficaria desatualizada, perdendo a alteração.
+    const currentContract = findMaintenanceContractByRawId(realId);
+    if(currentContract){
+      upsertClient(currentContract.client, findClientAddress(currentContract.client));
+      currentContract.scheduledFor = date;
+      await saveMaintenanceContracts();
+    }
+    renderAll();
+  } finally {
+    delete confirmMaintenanceInFlight[realId];
+  }
+}
+
+// Só limpa scheduledFor se a atividade em questão for justamente a visita atualmente agendada
+// pelo contrato — evita que excluir/concluir uma visita antiga e não relacionada apague o
+// agendamento de uma visita nova que ainda está pendente.
+function clearScheduledForIfMatches(svc){
+  if(!svc.maintenanceContractId) return null;
+  const c = maintenanceContracts.find(x => x.id === svc.maintenanceContractId);
+  if(c && c.scheduledFor === svc.date){
+    c.scheduledFor = null;
+    return c;
+  }
+  return null;
 }
 
 async function completeMaintenanceIfLinked(svc){
   if(!svc.maintenanceContractId) return;
   const c = maintenanceContracts.find(x => x.id === svc.maintenanceContractId);
   if(!c) return;
-  c.lastDate = svc.date;
-  c.scheduledFor = null;
+  // Nunca deixa lastDate retroceder: só atualiza se a data da visita concluída for igual ou
+  // mais recente que a já registrada (ou se ainda não houver nenhuma).
+  if(!c.lastDate || svc.date >= c.lastDate){
+    c.lastDate = svc.date;
+  }
+  if(c.scheduledFor === svc.date){
+    c.scheduledFor = null;
+  }
   await saveMaintenanceContracts();
 }
 
@@ -2699,11 +4776,11 @@ function renderManutencoes(){
       </div>
     `).join('');
     alertBox.querySelectorAll('[data-sendmaint]').forEach(btn => {
-      btn.addEventListener('click', () => sendMaintenanceWhatsapp(Number(btn.dataset.sendmaint)));
+      btn.addEventListener('click', () => sendMaintenanceWhatsapp(btn.dataset.sendmaint));
     });
     alertBox.querySelectorAll('[data-confirmschedule]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const id = Number(btn.dataset.confirmschedule);
+        const id = btn.dataset.confirmschedule;
         const dateInput = btn.closest('.maint-alert-actions').querySelector('[data-datepick]');
         if(!dateInput.value){
           alert('Escolha a data combinada com o cliente antes de confirmar.');
@@ -2764,39 +4841,39 @@ function renderManutencoes(){
 
     listBox.querySelectorAll('[data-contactname]').forEach(inp => {
       inp.addEventListener('blur', async (e) => {
-        const c = maintenanceContracts.find(x => x.id === Number(e.target.dataset.contactname));
+        const c = findMaintenanceContractByRawId(e.target.dataset.contactname);
         if(c){ c.contactName = e.target.value.trim(); await saveMaintenanceContracts(); }
       });
     });
     listBox.querySelectorAll('[data-freq]').forEach(sel => {
       sel.addEventListener('change', async (e) => {
-        const c = maintenanceContracts.find(x => x.id === Number(e.target.dataset.freq));
+        const c = findMaintenanceContractByRawId(e.target.dataset.freq);
         if(c){ c.intervalMonths = Number(e.target.value); await saveMaintenanceContracts(); renderManutencoes(); }
       });
     });
     listBox.querySelectorAll('[data-contact]').forEach(inp => {
       inp.addEventListener('blur', async (e) => {
-        const c = maintenanceContracts.find(x => x.id === Number(e.target.dataset.contact));
+        const c = findMaintenanceContractByRawId(e.target.dataset.contact);
         if(c){ c.contact = e.target.value.trim(); await saveMaintenanceContracts(); }
       });
     });
     listBox.querySelectorAll('[data-lastdate]').forEach(inp => {
       inp.addEventListener('change', async (e) => {
-        const c = maintenanceContracts.find(x => x.id === Number(e.target.dataset.lastdate));
+        const c = findMaintenanceContractByRawId(e.target.dataset.lastdate);
         if(c){ c.lastDate = e.target.value; await saveMaintenanceContracts(); renderManutencoes(); }
       });
     });
     listBox.querySelectorAll('[data-donetoday]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
-        const c = maintenanceContracts.find(x => x.id === Number(e.target.dataset.donetoday));
+        const c = findMaintenanceContractByRawId(e.target.dataset.donetoday);
         if(c){ c.lastDate = todayStr(); c.scheduledFor = null; await saveMaintenanceContracts(); renderManutencoes(); }
       });
     });
     listBox.querySelectorAll('[data-delcontract]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         customConfirm('Tem certeza que deseja excluir esta manutenção preventiva? O histórico de atividades já realizadas não será apagado.', async () => {
-          const id = Number(e.target.dataset.delcontract);
-          maintenanceContracts = maintenanceContracts.filter(c => c.id !== id);
+          const rawId = e.target.dataset.delcontract;
+          maintenanceContracts = maintenanceContracts.filter(c => String(c.id) !== String(rawId));
           await saveMaintenanceContracts();
           renderManutencoes();
         });
@@ -2872,24 +4949,204 @@ let MANAGERS = [
   { name: 'Marcelo', pin: '0000' }
 ];
 
+let managersSnapshot = {};
+
+async function migrateOldManagers(oldList){
+  const migrated = [];
+  for(const rawManager of oldList){
+    const name = (rawManager.name || '').trim();
+    if(!name) continue;
+    try{
+      const result = await rtdb.ref('managers/' + name).transaction((current) => {
+        if(current === null || current === undefined){
+          return { name, pin: rawManager.pin };
+        }
+        const merged = Object.assign({}, current);
+        if(!('name' in merged)) merged.name = name;
+        if(!('pin' in merged)) merged.pin = rawManager.pin;
+        return merged;
+      });
+      const finalValue = (result && result.snapshot && typeof result.snapshot.val === 'function')
+        ? result.snapshot.val()
+        : { name, pin: rawManager.pin };
+      migrated.push(finalValue || { name, pin: rawManager.pin });
+    }catch(e){
+      console.error('Falha ao migrar o gestor (' + name + '):', e);
+      migrated.push({ name, pin: rawManager.pin });
+    }
+  }
+  return migrated;
+}
+
 async function loadManagers(){
   try{
-    const res = await dbGetRaw('managers');
-    if(res && res.value){
-      const saved = JSON.parse(res.value);
-      if(Array.isArray(saved) && saved.length > 0){ MANAGERS = saved; return; }
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('managers').get();
+    const raw = snap.exists() ? snap.val() : null;
+    if(typeof raw === 'string'){
+      let oldList = [];
+      try{ oldList = JSON.parse(raw) || []; }catch(e){ oldList = []; }
+      if(oldList.length > 0){
+        MANAGERS = await migrateOldManagers(oldList);
+        managersSnapshot = {};
+        MANAGERS.forEach(m => { managersSnapshot[m.name] = { name: JSON.stringify(m.name), pin: JSON.stringify(m.pin) }; });
+        return;
+      }
+    } else if(raw && typeof raw === 'object'){
+      const saved = Object.values(raw);
+      if(saved.length > 0){
+        MANAGERS = saved;
+        managersSnapshot = {};
+        MANAGERS.forEach(m => { managersSnapshot[m.name] = { name: JSON.stringify(m.name), pin: JSON.stringify(m.pin) }; });
+        return;
+      }
     }
-  }catch(e){ /* segue pra migração abaixo */ }
+  }catch(e){ /* segue pra migração do PIN antigo abaixo */ }
   // Primeira vez rodando essa versão: migra o PIN antigo (adminPin) pro primeiro gestor da lista.
   try{
     const res2 = await dbGetRaw('adminPin');
     if(res2 && res2.value) MANAGERS[0].pin = res2.value;
   }catch(e){ /* usa o padrão */ }
   await saveManagers();
+  managersSnapshot = {};
+  MANAGERS.forEach(m => { managersSnapshot[m.name] = { name: JSON.stringify(m.name), pin: JSON.stringify(m.pin) }; });
 }
 
-async function saveManagers(){
-  return writeWithRetryAndAlert(() => dbSetRaw('managers', JSON.stringify(MANAGERS)), 'a lista de gestores');
+// Mescla a lista de gestores que chega do servidor com a local, por campo — protege uma edição
+// local (ex: PIN) ainda não confirmada.
+function mergeRemoteManagers(remoteMap){
+  const localByName = {};
+  MANAGERS.forEach(m => { localByName[m.name] = m; });
+  const merged = [];
+  const handledNames = new Set();
+
+  Object.keys(remoteMap).forEach(name => {
+    const remote = remoteMap[name];
+    handledNames.add(name);
+    const local = localByName[name];
+    const confirmedFields = managersSnapshot[name];
+    const mergedManager = { name: remote.name, pin: remote.pin };
+    if(local && confirmedFields !== undefined){
+      Object.keys(mergedManager).forEach(field => {
+        const localFieldJson = JSON.stringify(local[field]);
+        const confirmedFieldJson = confirmedFields[field];
+        if(confirmedFieldJson !== undefined && localFieldJson !== confirmedFieldJson){
+          mergedManager[field] = local[field]; // edição local pendente, não sobrescreve
+        }
+      });
+    }
+    merged.push(mergedManager);
+    managersSnapshot[name] = { name: JSON.stringify(remote.name), pin: JSON.stringify(remote.pin) };
+  });
+
+  MANAGERS.forEach(m => {
+    if(handledNames.has(m.name)) return;
+    if(managersSnapshot[m.name] === undefined){
+      merged.push(m); // criação local ainda não confirmada
+    } else {
+      delete managersSnapshot[m.name]; // removido remotamente
+    }
+  });
+
+  MANAGERS = merged;
+}
+
+let realtimeManagersAttached = false;
+function attachRealtimeManagersListener(){
+  if(!rtdb || realtimeManagersAttached) return;
+  realtimeManagersAttached = true;
+  rtdb.ref('managers').on('value', (snap) => {
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
+    mergeRemoteManagers(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      renderManagerPinList();
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real dos gestores:', err);
+  });
+}
+
+let managersSaveInFlight = false;
+let managersSaveQueued = false;
+
+async function saveManagers(silent){
+  if(managersSaveInFlight){
+    managersSaveQueued = true;
+    return true;
+  }
+  managersSaveInFlight = true;
+  let ok;
+  try{
+    ok = await writeManagersDiff();
+  } finally {
+    managersSaveInFlight = false;
+  }
+  if(managersSaveQueued){
+    managersSaveQueued = false;
+    await saveManagers(silent);
+  }
+  if(!ok && !silent){
+    alert('⚠️ Não foi possível salvar a lista de gestores. Verifique sua internet e tente novamente.');
+  }
+  return ok;
+}
+
+// Grava só os campos que mudaram, um caminho por gestor/campo (managers/<nome>/<campo>) — nunca
+// a lista inteira.
+async function writeManagersDiff(attempt){
+  attempt = attempt || 1;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const currentNames = new Set(MANAGERS.map(m => m.name));
+    const updates = {};
+    const sentFieldSnapshots = {};
+    const removedNames = [];
+    let hasChanges = false;
+
+    MANAGERS.forEach(m => {
+      const confirmedFields = managersSnapshot[m.name] || {};
+      let changed = false;
+      const changedFields = {};
+      ['name', 'pin'].forEach(field => {
+        const fieldJson = JSON.stringify(m[field]);
+        if(confirmedFields[field] !== fieldJson){
+          updates['managers/' + m.name + '/' + field] = m[field];
+          changedFields[field] = fieldJson;
+          changed = true;
+        }
+      });
+      if(changed){
+        sentFieldSnapshots[m.name] = changedFields;
+        hasChanges = true;
+      }
+    });
+
+    Object.keys(managersSnapshot).forEach(name => {
+      if(!currentNames.has(name)){
+        updates['managers/' + name] = null;
+        removedNames.push(name);
+        hasChanges = true;
+      }
+    });
+
+    if(hasChanges){
+      await rtdb.ref().update(updates);
+      Object.keys(sentFieldSnapshots).forEach(name => {
+        managersSnapshot[name] = Object.assign({}, managersSnapshot[name], sentFieldSnapshots[name]);
+      });
+      removedNames.forEach(name => { delete managersSnapshot[name]; });
+    }
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar a lista de gestores (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return writeManagersDiff(attempt + 1);
+    }
+    return false;
+  }
 }
 
 async function addManager(name){
@@ -2977,18 +5234,188 @@ let FINANCEIRO = [
   { name: 'Eliane', pin: '0000' }
 ];
 
-async function loadFinanceiro(){
-  try{
-    const res = await dbGetRaw('financeiro');
-    if(res && res.value){
-      const saved = JSON.parse(res.value);
-      if(Array.isArray(saved) && saved.length > 0){ FINANCEIRO = saved; return; }
+let financeiroSnapshot = {};
+
+async function migrateOldFinanceiro(oldList){
+  const migrated = [];
+  for(const rawPerson of oldList){
+    const name = (rawPerson.name || '').trim();
+    if(!name) continue;
+    try{
+      const result = await rtdb.ref('financeiro/' + name).transaction((current) => {
+        if(current === null || current === undefined){
+          return { name, pin: rawPerson.pin };
+        }
+        const merged = Object.assign({}, current);
+        if(!('name' in merged)) merged.name = name;
+        if(!('pin' in merged)) merged.pin = rawPerson.pin;
+        return merged;
+      });
+      const finalValue = (result && result.snapshot && typeof result.snapshot.val === 'function')
+        ? result.snapshot.val()
+        : { name, pin: rawPerson.pin };
+      migrated.push(finalValue || { name, pin: rawPerson.pin });
+    }catch(e){
+      console.error('Falha ao migrar o cadastro do Financeiro (' + name + '):', e);
+      migrated.push({ name, pin: rawPerson.pin });
     }
-  }catch(e){ /* usa a lista padrão */ }
+  }
+  return migrated;
 }
 
-async function saveFinanceiro(){
-  return writeWithRetryAndAlert(() => dbSetRaw('financeiro', JSON.stringify(FINANCEIRO)), 'a lista do financeiro');
+async function loadFinanceiro(){
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('financeiro').get();
+    const raw = snap.exists() ? snap.val() : null;
+    if(typeof raw === 'string'){
+      let oldList = [];
+      try{ oldList = JSON.parse(raw) || []; }catch(e){ oldList = []; }
+      if(oldList.length > 0){
+        FINANCEIRO = await migrateOldFinanceiro(oldList);
+      }
+    } else if(raw && typeof raw === 'object'){
+      const saved = Object.values(raw);
+      if(saved.length > 0){
+        FINANCEIRO = saved;
+      }
+    }
+  }catch(e){ /* usa a lista padrão */ }
+  financeiroSnapshot = {};
+  FINANCEIRO.forEach(f => { financeiroSnapshot[f.name] = { name: JSON.stringify(f.name), pin: JSON.stringify(f.pin) }; });
+}
+
+function mergeRemoteFinanceiro(remoteMap){
+  const localByName = {};
+  FINANCEIRO.forEach(f => { localByName[f.name] = f; });
+  const merged = [];
+  const handledNames = new Set();
+
+  Object.keys(remoteMap).forEach(name => {
+    const remote = remoteMap[name];
+    handledNames.add(name);
+    const local = localByName[name];
+    const confirmedFields = financeiroSnapshot[name];
+    const mergedPerson = { name: remote.name, pin: remote.pin };
+    if(local && confirmedFields !== undefined){
+      Object.keys(mergedPerson).forEach(field => {
+        const localFieldJson = JSON.stringify(local[field]);
+        const confirmedFieldJson = confirmedFields[field];
+        if(confirmedFieldJson !== undefined && localFieldJson !== confirmedFieldJson){
+          mergedPerson[field] = local[field]; // edição local pendente, não sobrescreve
+        }
+      });
+    }
+    merged.push(mergedPerson);
+    financeiroSnapshot[name] = { name: JSON.stringify(remote.name), pin: JSON.stringify(remote.pin) };
+  });
+
+  FINANCEIRO.forEach(f => {
+    if(handledNames.has(f.name)) return;
+    if(financeiroSnapshot[f.name] === undefined){
+      merged.push(f); // criação local ainda não confirmada
+    } else {
+      delete financeiroSnapshot[f.name]; // removido remotamente
+    }
+  });
+
+  FINANCEIRO = merged;
+}
+
+let realtimeFinanceiroAttached = false;
+function attachRealtimeFinanceiroListener(){
+  if(!rtdb || realtimeFinanceiroAttached) return;
+  realtimeFinanceiroAttached = true;
+  rtdb.ref('financeiro').on('value', (snap) => {
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string') return;
+    mergeRemoteFinanceiro(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      renderFinanceiroPinList();
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real do Financeiro:', err);
+  });
+}
+
+let financeiroSaveInFlight = false;
+let financeiroSaveQueued = false;
+
+async function saveFinanceiro(silent){
+  if(financeiroSaveInFlight){
+    financeiroSaveQueued = true;
+    return true;
+  }
+  financeiroSaveInFlight = true;
+  let ok;
+  try{
+    ok = await writeFinanceiroDiff();
+  } finally {
+    financeiroSaveInFlight = false;
+  }
+  if(financeiroSaveQueued){
+    financeiroSaveQueued = false;
+    await saveFinanceiro(silent);
+  }
+  if(!ok && !silent){
+    alert('⚠️ Não foi possível salvar a lista do Financeiro. Verifique sua internet e tente novamente.');
+  }
+  return ok;
+}
+
+async function writeFinanceiroDiff(attempt){
+  attempt = attempt || 1;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const currentNames = new Set(FINANCEIRO.map(f => f.name));
+    const updates = {};
+    const sentFieldSnapshots = {};
+    const removedNames = [];
+    let hasChanges = false;
+
+    FINANCEIRO.forEach(f => {
+      const confirmedFields = financeiroSnapshot[f.name] || {};
+      let changed = false;
+      const changedFields = {};
+      ['name', 'pin'].forEach(field => {
+        const fieldJson = JSON.stringify(f[field]);
+        if(confirmedFields[field] !== fieldJson){
+          updates['financeiro/' + f.name + '/' + field] = f[field];
+          changedFields[field] = fieldJson;
+          changed = true;
+        }
+      });
+      if(changed){
+        sentFieldSnapshots[f.name] = changedFields;
+        hasChanges = true;
+      }
+    });
+
+    Object.keys(financeiroSnapshot).forEach(name => {
+      if(!currentNames.has(name)){
+        updates['financeiro/' + name] = null;
+        removedNames.push(name);
+        hasChanges = true;
+      }
+    });
+
+    if(hasChanges){
+      await rtdb.ref().update(updates);
+      Object.keys(sentFieldSnapshots).forEach(name => {
+        financeiroSnapshot[name] = Object.assign({}, financeiroSnapshot[name], sentFieldSnapshots[name]);
+      });
+      removedNames.forEach(name => { delete financeiroSnapshot[name]; });
+    }
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar a lista do Financeiro (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return writeFinanceiroDiff(attempt + 1);
+    }
+    return false;
+  }
 }
 
 async function addFinanceiro(name){
@@ -3061,21 +5488,98 @@ async function saveAdminPin(pin){
   try{ await dbSetRaw('adminPin', pin); }catch(e){ /* ignora falha */ }
 }
 
+let techPinsSnapshot = {};
+
+async function migrateOldTechPins(oldMap){
+  const migrated = {};
+  for(const name of Object.keys(oldMap)){
+    if(!name) continue;
+    try{
+      const result = await rtdb.ref('techPins/' + name).transaction((current) => {
+        if(current === null || current === undefined) return oldMap[name];
+        return current;
+      });
+      migrated[name] = (result && result.snapshot && typeof result.snapshot.val === 'function')
+        ? result.snapshot.val()
+        : oldMap[name];
+    }catch(e){
+      console.error('Falha ao migrar o PIN do técnico (' + name + '):', e);
+      migrated[name] = oldMap[name];
+    }
+  }
+  return migrated;
+}
+
 async function loadTechPins(){
   try{
-    const res = await dbGetRaw('techPins');
-    if(res && res.value){
-      const saved = JSON.parse(res.value);
-      TECHS.forEach(t => { if(saved[t.name]) t.pin = saved[t.name]; });
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('techPins').get();
+    const raw = snap.exists() ? snap.val() : null;
+    let pinMap = {};
+    if(typeof raw === 'string'){
+      let oldMap = {};
+      try{ oldMap = JSON.parse(raw) || {}; }catch(e){ oldMap = {}; }
+      if(Object.keys(oldMap).length > 0){
+        pinMap = await migrateOldTechPins(oldMap);
+      }
+    } else if(raw && typeof raw === 'object'){
+      pinMap = raw;
     }
+    TECHS.forEach(t => { if(pinMap[t.name]) t.pin = pinMap[t.name]; });
+    techPinsSnapshot = {};
+    Object.keys(pinMap).forEach(name => { techPinsSnapshot[name] = JSON.stringify(pinMap[name]); });
   }catch(e){ /* usa os PINs padrão definidos em TECHS */ }
 }
 
-async function saveTechPin(name, pin){
+function mergeRemoteTechPins(remoteMap){
+  Object.keys(remoteMap).forEach(name => {
+    const remoteValue = remoteMap[name];
+    const confirmedJson = techPinsSnapshot[name];
+    const t = TECHS.find(x => x.name === name);
+    const localJson = JSON.stringify(t ? (t.pin || '0000') : '0000');
+    if(confirmedJson !== undefined && localJson !== confirmedJson){
+      // edição local pendente, não sobrescreve
+    } else if(t){
+      t.pin = remoteValue;
+    }
+    techPinsSnapshot[name] = JSON.stringify(remoteValue);
+  });
+}
+
+let realtimeTechPinsAttached = false;
+function attachRealtimeTechPinsListener(){
+  if(!rtdb || realtimeTechPinsAttached) return;
+  realtimeTechPinsAttached = true;
+  rtdb.ref('techPins').on('value', (snap) => {
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string') return;
+    mergeRemoteTechPins(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      renderTechPinList();
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real dos PINs de técnicos:', err);
+  });
+}
+
+async function saveTechPin(name, pin, attempt){
+  attempt = attempt || 1;
   TECHS.forEach(t => { if(t.name === name) t.pin = pin || '0000'; });
-  const map = {};
-  TECHS.forEach(t => { map[t.name] = t.pin || '0000'; });
-  try{ await dbSetRaw('techPins', JSON.stringify(map)); }catch(e){ /* ignora falha */ }
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    await rtdb.ref().update({ ['techPins/' + name]: pin || '0000' });
+    techPinsSnapshot[name] = JSON.stringify(pin || '0000');
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar o PIN do técnico (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return saveTechPin(name, pin, attempt + 1);
+    }
+    alert('⚠️ Não foi possível salvar o PIN do técnico. Verifique sua internet e tente novamente.');
+    return false;
+  }
 }
 
 let extraContacts = {
@@ -3083,18 +5587,110 @@ let extraContacts = {
   marcelo: { name: 'Marcelo Ratto', phone: '+55 24 998191938' }
 };
 
+// Snapshot do último telefone confirmado como salvo, por contato — protege uma edição local ainda
+// não confirmada contra ser sobrescrita por um dado remoto desatualizado (mesmo princípio já
+// aprovado nas outras estruturas, só que sem precisar de migração por transaction() nem de uma
+// arquitetura de cadastro: são só dois contatos fixos, nome nunca muda).
+let extraContactsSnapshot = {};
+
 async function loadExtraContacts(){
   try{
-    const res = await dbGetRaw('extraContacts');
-    if(res && res.value){
-      const saved = JSON.parse(res.value);
-      if(saved.alex && saved.alex.phone) extraContacts.alex.phone = saved.alex.phone;
-      if(saved.marcelo && saved.marcelo.phone) extraContacts.marcelo.phone = saved.marcelo.phone;
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const snap = await rtdb.ref('extraContacts').get();
+    const raw = snap.exists() ? snap.val() : null;
+    if(typeof raw === 'string'){
+      // Formato antigo (os dois contatos guardados juntos, como um texto só).
+      let oldData = {};
+      try{ oldData = JSON.parse(raw) || {}; }catch(e){ oldData = {}; }
+      if(oldData.alex && oldData.alex.phone) extraContacts.alex.phone = oldData.alex.phone;
+      if(oldData.marcelo && oldData.marcelo.phone) extraContacts.marcelo.phone = oldData.marcelo.phone;
+      // Migra pro formato novo sem apagar o antigo — só grava os telefones nos caminhos novos.
+      try{
+        await rtdb.ref().update({
+          'extraContacts/alex/phone': extraContacts.alex.phone,
+          'extraContacts/marcelo/phone': extraContacts.marcelo.phone
+        });
+      }catch(e){
+        console.error('Falha ao migrar os contatos extras pro formato novo (tentará de novo na próxima abertura):', e);
+      }
+    } else if(raw && typeof raw === 'object'){
+      if(raw.alex && raw.alex.phone) extraContacts.alex.phone = raw.alex.phone;
+      if(raw.marcelo && raw.marcelo.phone) extraContacts.marcelo.phone = raw.marcelo.phone;
     }
   }catch(e){ /* usa os padrões */ }
+  extraContactsSnapshot = {
+    alex: JSON.stringify(extraContacts.alex.phone),
+    marcelo: JSON.stringify(extraContacts.marcelo.phone)
+  };
 }
-async function saveExtraContacts(){
-  try{ await dbSetRaw('extraContacts', JSON.stringify(extraContacts)); }catch(e){ /* ignora falha */ }
+
+// Mescla o telefone que chega do servidor com o local — protege uma edição local ainda não
+// confirmada (ex: alguém ainda digitando) contra ser sobrescrita por um valor remoto desatualizado.
+function mergeRemoteExtraContacts(raw){
+  ['alex', 'marcelo'].forEach(key => {
+    if(!raw[key] || raw[key].phone === undefined) return;
+    const remotePhone = raw[key].phone;
+    const confirmedJson = extraContactsSnapshot[key];
+    const localJson = JSON.stringify(extraContacts[key].phone);
+    if(confirmedJson !== undefined && localJson !== confirmedJson){
+      // edição local pendente, não sobrescreve
+    } else {
+      extraContacts[key].phone = remotePhone;
+    }
+    extraContactsSnapshot[key] = JSON.stringify(remotePhone);
+  });
+}
+
+let realtimeExtraContactsAttached = false;
+function attachRealtimeExtraContactsListener(){
+  if(!rtdb || realtimeExtraContactsAttached) return;
+  realtimeExtraContactsAttached = true;
+  rtdb.ref('extraContacts').on('value', (snap) => {
+    const raw = snap.exists() ? snap.val() : {};
+    if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
+    mergeRemoteExtraContacts(raw || {});
+    if(isUserBusyTyping()) return;
+    if(currentRole === 'manager'){
+      const alexInput = document.getElementById('alexPhoneInput');
+      const marceloInput = document.getElementById('marceloPhoneInput');
+      if(alexInput) alexInput.value = extraContacts.alex.phone;
+      if(marceloInput) marceloInput.value = extraContacts.marcelo.phone;
+    }
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real dos contatos extras:', err);
+  });
+}
+
+// Grava só o(s) telefone(s) que realmente mudaram, um caminho por contato — nunca os dois juntos.
+async function saveExtraContacts(attempt){
+  attempt = attempt || 1;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    const updates = {};
+    const changedKeys = [];
+    ['alex', 'marcelo'].forEach(key => {
+      const phoneJson = JSON.stringify(extraContacts[key].phone);
+      if(extraContactsSnapshot[key] !== phoneJson){
+        updates['extraContacts/' + key + '/phone'] = extraContacts[key].phone;
+        changedKeys.push(key);
+      }
+    });
+    if(changedKeys.length > 0){
+      await rtdb.ref().update(updates);
+      changedKeys.forEach(key => {
+        extraContactsSnapshot[key] = JSON.stringify(extraContacts[key].phone);
+      });
+    }
+    return true;
+  }catch(e){
+    console.error('Falha ao salvar os contatos extras (tentativa ' + attempt + ')', e);
+    if(attempt < 3){
+      await new Promise(r => setTimeout(r, 500 * attempt));
+      return saveExtraContacts(attempt + 1);
+    }
+    alert('⚠️ Não foi possível salvar o telefone. Verifique sua internet e tente novamente.');
+    return false;
+  }
 }
 
 const ARRIVAL_WINDOWS = {
@@ -3121,7 +5717,7 @@ function buildAllTechniciansMessage(includeEstimates){
   let msg = `Agenda da equipe de ${dayWord} (${label}):\n\n`;
 
   TECHS.forEach(t => {
-    const tasks = services.filter(s => s.date === tomorrow && s.technician === t.name)
+    const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
       .sort((a,b) => {
         const ao = (typeof a.order === 'number') ? a.order : a.id;
         const bo = (typeof b.order === 'number') ? b.order : b.id;
@@ -3140,6 +5736,9 @@ function buildAllTechniciansMessage(includeEstimates){
       if(s.pairId){
         const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id);
         if(partner) line += ` [dupla com ${partner.technician}]`;
+      } else if(isMultiTechRecord(s)){
+        const others = s.technicians.filter(n => n !== t.name);
+        if(others.length) line += ` [dupla com ${others.join(', ')}]`;
       }
       msg += line + '\n';
     });
@@ -3177,7 +5776,7 @@ function buildAgendaMessage(t){
   const [y,m,d] = tomorrow.split('-').map(Number);
   const label = `${d} de ${MONTHS[m-1]}`;
   const dayWord = nwd.isToday ? 'hoje' : (nwd.isTomorrow ? 'amanhã' : DOW_FULL[nwd.dowIdx]);
-  const tasks = services.filter(s => s.date === tomorrow && s.technician === t.name)
+  const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
     .sort((a,b) => {
       const ao = (typeof a.order === 'number') ? a.order : a.id;
       const bo = (typeof b.order === 'number') ? b.order : b.id;
@@ -3193,6 +5792,9 @@ function buildAgendaMessage(t){
       if(s.pairId){
         const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id);
         if(partner) msg += `   👥 Em dupla com ${partner.technician}\n`;
+      } else if(isMultiTechRecord(s)){
+        const others = s.technicians.filter(n => n !== t.name);
+        if(others.length) msg += `   👥 Em dupla com ${others.join(', ')}\n`;
       }
       if(s.address) msg += `   📍 ${s.address}\n   🧭 Abrir rota no Waze: ${wazeLink(s.address)}\n`;
     });
@@ -3218,7 +5820,7 @@ function sendWhatsapp(techName){
 function openAddressConfirm(t){
   const nwd = getNextWorkDay();
   const tomorrow = nwd.date;
-  const tasks = services.filter(s => s.date === tomorrow && s.technician === t.name)
+  const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
     .sort((a,b) => {
       const ao = (typeof a.order === 'number') ? a.order : a.id;
       const bo = (typeof b.order === 'number') ? b.order : b.id;
@@ -3325,7 +5927,7 @@ function renderTecnicosAmanha(){
   grid.innerHTML = '';
 
   TECHS.forEach(t => {
-    const tasks = services.filter(s => s.date === tomorrow && s.technician === t.name)
+    const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
       .sort((a,b) => {
         const ao = (typeof a.order === 'number') ? a.order : a.id;
         const bo = (typeof b.order === 'number') ? b.order : b.id;
@@ -3413,8 +6015,7 @@ function renderOS(){
   const badge = document.getElementById('osBadge');
   if(!box) return;
 
-  const pending = services
-    .filter(s => s.status === 'concluido' && !s.processedForOS)
+  const pending = groupPaired(services.filter(s => s.status === 'concluido' && !s.processedForOS))
     .sort((a,b) => {
       const ak = (a.checkOut ? a.date + ' ' + a.checkOut : a.date);
       const bk = (b.checkOut ? b.date + ' ' + b.checkOut : b.date);
@@ -3433,12 +6034,13 @@ function renderOS(){
       const photosHtml = (s.photos || []).map(p => `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"></div>`).join('');
       const audiosHtml = (s.audios || []).map(a => `<div class="audio-item"><audio controls src="${a}"></audio></div>`).join('');
       const original = s.retornoDeId ? services.find(x => x.id === s.retornoDeId) : null;
+      const techLabel = s.isPair ? s.technicianLabel : (getServiceTechnicians(s)[0] || '—');
       return `
         <div class="os-row">
           <div class="os-row-top">
             <div>
               <div class="os-client">${escapeHtml(s.client)}</div>
-              <div class="os-meta">${shortLabel(s.date)} · Técnico: ${escapeHtml(s.technician || '—')}</div>
+              <div class="os-meta">${shortLabel(s.date)} · Técnico: ${escapeHtml(techLabel)}</div>
             </div>
             ${s.isRetorno ? `<span class="os-retorno-tag">↩ RETORNO${original ? ' de ' + shortLabel(original.date) : ''}</span>` : ''}
           </div>
@@ -3474,10 +6076,17 @@ function renderOS(){
             if(numeroInput) numeroInput.focus();
             return;
           }
-          svc.numeroOS = numero;
-          svc.processedForOS = true;
-          svc.processedForOSBy = currentManagerName || null;
-          svc.processedForOSAt = new Date().toISOString();
+          // Se for uma dupla no formato antigo (2 registros ligados por pairId), marca os dois
+          // juntos — pra não sobrar um "fantasma" pendente na fila.
+          const targets = svc.pairId
+            ? services.filter(x => x.pairId === svc.pairId)
+            : [svc];
+          targets.forEach(t => {
+            t.numeroOS = numero;
+            t.processedForOS = true;
+            t.processedForOSBy = currentManagerName || null;
+            t.processedForOSAt = new Date().toISOString();
+          });
           await saveServices();
           renderOS();
         }
@@ -3502,25 +6111,34 @@ function renderOS(){
   }
 }
 
+// Rastreia qual aba principal está visível agora, pra saber se vale a pena recalcular o Painel
+// de Controle sempre que renderAll() rodar (evita recalcular um bloco que nem está na tela).
+let activeTab = 'agenda';
+
 function switchTab(tab){
+  activeTab = tab;
   document.getElementById('tabAgenda').style.display = tab === 'agenda' ? '' : 'none';
   document.getElementById('tabTecnicos').style.display = tab === 'tecnicos' ? '' : 'none';
   document.getElementById('tabManutencoes').style.display = tab === 'manutencoes' ? '' : 'none';
   document.getElementById('tabOS').style.display = tab === 'os' ? '' : 'none';
   document.getElementById('tabClientes').style.display = tab === 'clientes' ? '' : 'none';
   document.getElementById('tabAcessos').style.display = tab === 'acessos' ? '' : 'none';
+  document.getElementById('tabPainel').style.display = tab === 'painel' ? '' : 'none';
   document.getElementById('tabBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('tabBtnTecnicos').classList.toggle('active', tab === 'tecnicos');
   document.getElementById('tabBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
   document.getElementById('tabBtnOS').classList.toggle('active', tab === 'os');
   document.getElementById('tabBtnClientes').classList.toggle('active', tab === 'clientes');
   document.getElementById('tabBtnAcessos').classList.toggle('active', tab === 'acessos');
+  document.getElementById('tabBtnPainel').classList.toggle('active', tab === 'painel');
   if(tab === 'clientes') renderClientes();
   if(tab === 'acessos'){ renderManagerPinList(); renderTechPinList(); renderFinanceiroPinList(); }
+  if(tab === 'painel') renderPainelDeControle();
 }
 document.getElementById('tabBtnAgenda').addEventListener('click', () => switchTab('agenda'));
 document.getElementById('tabBtnTecnicos').addEventListener('click', () => switchTab('tecnicos'));
 document.getElementById('tabBtnAcessos').addEventListener('click', () => switchTab('acessos'));
+document.getElementById('tabBtnPainel').addEventListener('click', () => switchTab('painel'));
 document.getElementById('sendAgendaPrev').addEventListener('click', () => {
   sendAgendaMode = sendAgendaMode === 'hoje' ? 'amanha' : 'hoje';
   renderTecnicosAmanha();
@@ -3557,14 +6175,15 @@ document.getElementById('tabBtnManutencoes').addEventListener('click', () => swi
 document.getElementById('tabBtnOS').addEventListener('click', () => switchTab('os'));
 document.getElementById('tabBtnClientes').addEventListener('click', () => switchTab('clientes'));
 
-async function updateClientRecord(oldName, newNameRaw, newAddressRaw){
+async function updateClientRecord(id, newNameRaw, newAddressRaw){
   const newName = (newNameRaw || '').trim();
   const newAddress = (newAddressRaw || '').trim();
   if(!newName) { alert('O nome do cliente não pode ficar vazio.'); return false; }
 
-  const c = clients.find(x => x.name.toLowerCase() === oldName.toLowerCase());
+  const c = clients.find(x => String(x.id) === String(id));
   if(!c) return false;
 
+  const oldName = c.name;
   const nameChanged = c.name.toLowerCase() !== newName.toLowerCase();
   c.name = newName;
   c.address = newAddress;
@@ -3608,7 +6227,7 @@ function renderClientes(){
   }
 
   box.innerHTML = list.map((c, idx) => `
-    <div class="cliente-row" data-clienterow="${escapeHtml(c.name)}">
+    <div class="cliente-row" data-clienterow="${c.id}">
       <div class="field">
         <label>Cliente</label>
         <input type="text" data-clientename value="${escapeHtml(c.name)}">
@@ -3618,7 +6237,7 @@ function renderClientes(){
         <input type="text" data-clienteaddress value="${escapeHtml(c.address || '')}" placeholder="Rua, número, bairro, cidade/UF">
       </div>
       <div class="cliente-row-actions">
-        <button type="button" class="btn-primary" data-clientesave="${escapeHtml(c.name)}">Salvar</button>
+        <button type="button" class="btn-primary" data-clientesave="${c.id}">Salvar</button>
         <span class="cliente-saved-tag" data-clientesavedtag style="display:none;">Salvo ✓</span>
       </div>
     </div>
@@ -3626,11 +6245,11 @@ function renderClientes(){
 
   box.querySelectorAll('[data-clientesave]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
-      const oldName = e.target.dataset.clientesave;
+      const id = e.target.dataset.clientesave;
       const row = e.target.closest('.cliente-row');
       const newName = row.querySelector('[data-clientename]').value;
       const newAddress = row.querySelector('[data-clienteaddress]').value;
-      const ok = await updateClientRecord(oldName, newName, newAddress);
+      const ok = await updateClientRecord(id, newName, newAddress);
       if(ok){
         renderClientes();
       }
@@ -3653,6 +6272,7 @@ document.getElementById('sendAgendaBtn').addEventListener('click', generateAgend
 function renderAll(){
   renderTechList();
   renderDayBoxes();
+  renderTodayIncompleteSection();
   renderPendingSection();
   renderWeekSummary();
   renderCalendar();
@@ -3661,6 +6281,7 @@ function renderAll(){
   renderManutencoes();
   renderOS();
   if(currentRole === 'tech') renderTechView();
+  if(activeTab === 'painel') renderPainelDeControle();
 }
 
 // Modal handling
@@ -3754,31 +6375,6 @@ document.getElementById('nextMonth').addEventListener('click', () => {
   renderCalendar();
 });
 
-function seedDemoData(){
-  const t = todayStr();
-  const demo = [
-    { offset: 0,  client: 'Condomínio Vila das Acácias', description: 'Instalação de aquecedor a gás para área da piscina', address: 'Av. das Acácias, 340 – Bloco B', technician: 'Adão', status: 'atribuido' },
-    { offset: 0,  client: 'Roberto Fagundes', description: 'Manutenção preventiva em bomba de pressurização', address: 'Rua Tucumã, 88', technician: 'Ricardo', status: 'atribuido' },
-    { offset: 0,  client: 'Sauna Zen Spa', description: 'Revisão do gerador de vapor da sauna úmida', address: 'Rua das Palmeiras, 512', technician: null, status: 'aguardando' },
-    { offset: 1,  client: 'Marcela Tavares', description: 'Instalação de bomba de piscina 1/2 CV', address: 'Rua Orquídeas, 77', technician: 'Paulo', status: 'atribuido' },
-    { offset: 1,  client: 'Clube Recreativo Bela Vista', description: 'Troca do trocador de calor do aquecedor a lenha', address: 'Estrada do Bela Vista, km 4', technician: null, status: 'aguardando' },
-    { offset: 1,  client: 'Fernando Dutra', description: 'Manutenção de pressurizador residencial', address: 'Rua Cedro, 145', technician: 'Aldir', status: 'atribuido' },
-    { offset: -1, client: 'Hotel Fazenda Boa Esperança', description: 'Instalação completa de sistema de aquecimento solar', address: 'Rodovia RJ-145, km 12', technician: 'Pedro', status: 'concluido' },
-    { offset: -1, client: 'Juliana Prado', description: 'Manutenção em aquecedor elétrico de piscina', address: 'Rua Girassóis, 210', technician: 'Adão', status: 'concluido' },
-    { offset: 3,  client: 'Residencial Terras do Vale', description: 'Instalação de bomba e filtro para piscina nova', address: 'Alameda das Tipuanas, 900', technician: null, status: 'aguardando' },
-    { offset: 4,  client: 'Carlos Eduardo Nogueira', description: 'Revisão anual de aquecedor a gás', address: 'Rua Bromélias, 63', technician: 'Ricardo', status: 'atribuido' },
-    { offset: 5,  client: 'Espaço Wellness Aquazen', description: 'Instalação de sauna a vapor e pressurizador', address: 'Av. Beira Rio, 1200', technician: null, status: 'aguardando' },
-  ];
-  services = demo.map((s, i) => ({
-    id: Date.now() + i,
-    date: addDays(t, s.offset),
-    client: s.client,
-    description: s.description,
-    address: s.address,
-    technician: s.technician,
-    status: s.status
-  }));
-}
 
 async function importPreAgendados(){
   var FLAG = 'imported_2026-09-15_v1';
@@ -3977,7 +6573,12 @@ document.getElementById('importDataInput').addEventListener('change', (e) => {
     }
     customConfirm('Importar esse backup vai substituir TODOS os dados atuais (clientes, atividades e contratos). Continuar?', async () => {
       if(Array.isArray(data.services)) services = data.services;
-      if(Array.isArray(data.clients)) clients = data.clients;
+      if(Array.isArray(data.clients)){
+        // Backups antigos podem não ter "id" nos clientes (formato anterior a essa migração) —
+        // atribui um id estável na hora de importar, pra não cair na mesma armadilha de usar
+        // "undefined" como chave ao salvar.
+        clients = data.clients.map(c => (c && c.id !== undefined && c.id !== null) ? c : Object.assign({}, c, { id: deterministicClientIdFromName(c && c.name) }));
+      }
       if(Array.isArray(data.maintenanceContracts)) maintenanceContracts = data.maintenanceContracts;
       if(data.techPhones){ TECHS.forEach(t => { if(data.techPhones[t.name]) t.phone = data.techPhones[t.name]; }); }
       if(data.techPins){ TECHS.forEach(t => { if(data.techPins[t.name]) t.pin = data.techPins[t.name]; }); }
@@ -3987,10 +6588,10 @@ document.getElementById('importDataInput').addEventListener('change', (e) => {
       await saveServices();
       await saveClients();
       await saveMaintenanceContracts();
-      const phoneMap = {}; TECHS.forEach(t => { phoneMap[t.name] = t.phone || ''; });
-      try{ await dbSetRaw('techPhones', JSON.stringify(phoneMap)); }catch(err){}
-      const pinMap = {}; TECHS.forEach(t => { pinMap[t.name] = t.pin || '0000'; });
-      try{ await dbSetRaw('techPins', JSON.stringify(pinMap)); }catch(err){}
+      // Grava telefone/PIN por técnico, usando as mesmas funções já corrigidas (com retry e
+      // caminho próprio por técnico) — nunca mais o nó inteiro de uma vez.
+      for(const t of TECHS){ await saveTechPhone(t.name, t.phone || ''); }
+      for(const t of TECHS){ await saveTechPin(t.name, t.pin || '0000'); }
       try{ await dbSetRaw('adminPin', adminPin); }catch(err){}
       await saveManagers();
 
@@ -4046,7 +6647,7 @@ function renderTechView(){
   document.getElementById('techDayDate').textContent = `${DOW_FULL[dowIdx]}, ${d} de ${MONTHS[m-1]}`;
 
   const list = document.getElementById('techTaskList');
-  const tasks = services.filter(s => s.date === t && s.technician === currentTechName)
+  const tasks = services.filter(s => s.date === t && getServiceTechnicians(s).includes(currentTechName))
     .sort((a,b) => {
       const ao = (typeof a.order === 'number') ? a.order : a.id;
       const bo = (typeof b.order === 'number') ? b.order : b.id;
@@ -4079,6 +6680,11 @@ function renderTechView(){
       actionHtml = `<button class="btn-ghost done" data-finish="${s.id}">Concluir serviço</button>`;
     }
 
+    const duplaPartners = getDuplaPartnerNames(s, currentTechName);
+    const duplaLabelHtml = duplaPartners.length > 0
+      ? `<div class="pair-label" style="display:inline-block; margin-top:6px;">👥 Dupla com ${escapeHtml(duplaPartners.join(' e '))}</div>`
+      : '';
+
     const card = document.createElement('div');
     card.className = `service-card status-${s.status}`;
     card.innerHTML = `
@@ -4087,6 +6693,7 @@ function renderTechView(){
           <div class="service-client">${i + 1}. ${escapeHtml(s.client)}</div>
           ${s.description ? `<div class="service-desc">${escapeHtml(s.description)}</div>` : ''}
           ${s.address ? `<div class="service-addr">${escapeHtml(s.address)}</div>` : ''}
+          ${duplaLabelHtml}
         </div>
         <div class="status-tag ${s.status}">${statusLabelOf(s.status)}</div>
       </div>
@@ -4127,22 +6734,47 @@ function renderTechView(){
     list.appendChild(card);
   });
 
+  const startingInFlight = {};
   list.querySelectorAll('[data-start]').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       const id = Number(e.target.dataset.start);
+      if(startingInFlight[id]) return; // já está processando esse clique, ignora repetição
       const svc = services.find(x => x.id === id);
-      if(svc){
+      if(!svc) return;
+      if(svc.checkIn) return; // idempotente: já foi iniciada, não reescreve o horário
+
+      startingInFlight[id] = true;
+      const originalLabel = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      const prevCheckIn = svc.checkIn;
+      const prevStatus = svc.status;
+      const partner = svc.pairId ? services.find(x => x.pairId === svc.pairId && x.id !== svc.id) : null;
+      const prevPartnerCheckIn = partner ? partner.checkIn : undefined;
+      const prevPartnerStatus = partner ? partner.status : undefined;
+      try{
         const time = nowTime();
         svc.checkIn = time;
         svc.status = 'em_andamento';
-        if(svc.pairId){
-          const partner = services.find(x => x.pairId === svc.pairId && x.id !== svc.id);
-          if(partner && !partner.checkIn){
-            partner.checkIn = time;
-            partner.status = 'em_andamento';
-          }
+        if(partner && !partner.checkIn){
+          partner.checkIn = time;
+          partner.status = 'em_andamento';
         }
-        await saveServices();
+        const ok = await saveServices();
+        if(!ok){
+          // Não confirmou no servidor — desfaz localmente pra não fingir que iniciou,
+          // e libera a trava pra permitir uma nova tentativa legítima.
+          svc.checkIn = prevCheckIn;
+          svc.status = prevStatus;
+          if(partner){
+            partner.checkIn = prevPartnerCheckIn;
+            partner.status = prevPartnerStatus;
+          }
+          return;
+        }
+      } finally {
+        delete startingInFlight[id];
         renderTechView();
       }
     });
@@ -4190,29 +6822,7 @@ function renderTechView(){
         svc.checkOut = time;
         svc.status = 'concluido';
 
-        // Idempotência do retorno: só cria um retorno se ainda não existir nenhum pra essa atividade.
-        if(svc.needsReturn && !svc.retornoCriado){
-          const jaExisteRetorno = services.some(s => s.retornoDeId === svc.id);
-          if(!jaExisteRetorno){
-            services.push({
-              id: Date.now() + 7000 + Math.floor(Math.random() * 1000),
-              date: '',
-              client: svc.client,
-              description: svc.description,
-              address: svc.address || '',
-              technician: svc.technician,
-              status: 'aguardando',
-              checkIn: '',
-              checkOut: '',
-              observations: `Retorno referente ao atendimento de ${shortLabel(svc.date)}. Motivo: ${(svc.returnReason && svc.returnReason.trim()) ? svc.returnReason.trim() : (svc.observations || '(sem observação)')}`,
-              photos: [],
-              audios: [],
-              isRetorno: true,
-              retornoDeId: svc.id
-            });
-          }
-          svc.retornoCriado = true;
-        }
+        createRetornoIfNeeded(svc);
 
         if(svc.pairId){
           const partner = services.find(x => x.pairId === svc.pairId && x.id !== svc.id);
@@ -4220,6 +6830,20 @@ function renderTechView(){
             if(!partner.checkIn) partner.checkIn = time;
             partner.checkOut = time;
             partner.status = 'concluido';
+          }
+          if(partner){
+            // Dupla antiga: cada registro tem seu próprio "precisa retornar". Garante UM único
+            // retorno pra dupla — se quem concluiu já gerou o retorno, o parceiro não gera outro;
+            // se só o parceiro precisava, cria o retorno dele agora (referente à necessidade dele).
+            const jaTemRetornoDaDupla = svc.retornoCriado || partner.retornoCriado;
+            if(!jaTemRetornoDaDupla && partner.needsReturn){
+              createRetornoIfNeeded(partner);
+            }
+            // Sincroniza a flag pros dois lados, pra nenhum dos dois criar outro depois.
+            if(svc.retornoCriado || partner.retornoCriado){
+              svc.retornoCriado = true;
+              partner.retornoCriado = true;
+            }
           }
         }
 
@@ -4267,30 +6891,34 @@ function renderTechView(){
     });
   });
   list.querySelectorAll('[data-rmphoto]').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       const id = Number(e.target.dataset.rmphoto);
       const idx = Number(e.target.dataset.idx);
-      const svc = services.find(x => x.id === id);
-      if(svc && svc.photos){
-        svc.photos.splice(idx, 1);
-        await saveServices();
-        renderTechView();
-      }
+      customConfirm('Excluir esta foto? Essa ação não pode ser desfeita.', async () => {
+        const svc = services.find(x => x.id === id);
+        if(svc && svc.photos){
+          svc.photos.splice(idx, 1);
+          await saveServices();
+          renderTechView();
+        }
+      });
     });
   });
   list.querySelectorAll('[data-recordbtn]').forEach(btn => {
     btn.addEventListener('click', () => toggleAudioRecording(Number(btn.dataset.recordbtn)));
   });
   list.querySelectorAll('[data-rmaudio]').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       const id = Number(e.target.dataset.rmaudio);
       const idx = Number(e.target.dataset.idx);
-      const svc = services.find(x => x.id === id);
-      if(svc && svc.audios){
-        svc.audios.splice(idx, 1);
-        await saveServices();
-        renderTechView();
-      }
+      customConfirm('Excluir este áudio? Essa ação não pode ser desfeita.', async () => {
+        const svc = services.find(x => x.id === id);
+        if(svc && svc.audios){
+          svc.audios.splice(idx, 1);
+          await saveServices();
+          renderTechView();
+        }
+      });
     });
   });
 }
@@ -4447,6 +7075,14 @@ async function initSequence(){
   selectedDate = todayStr();
   renderAll();
   attachRealtimeServicesListener();
+  attachRealtimeMaintenanceContractsListener();
+  attachRealtimeClientsListener();
+  attachRealtimeTechRosterListener();
+  attachRealtimeTechPhonesListener();
+  attachRealtimeTechPinsListener();
+  attachRealtimeManagersListener();
+  attachRealtimeFinanceiroListener();
+  attachRealtimeExtraContactsListener();
 }
 document.getElementById('appRetryBtn').addEventListener('click', init);
 window.addEventListener('error', (e) => {
