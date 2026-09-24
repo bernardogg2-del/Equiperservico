@@ -2515,6 +2515,198 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
+// =====================================================================================
+// INSTRUMENTAÇÃO TEMPORÁRIA DE DIAGNÓSTICO — PERF_DIAG (Etapa 1 criou; Etapa 2 ampliou).
+// Só MEDE: timestamps, durações, tamanho aproximado de snapshots (JSON.stringify().length),
+// contagem de registros e de disparos de listener. NUNCA guarda nem imprime conteúdo de
+// foto/áudio/Base64, PIN, senha ou objeto inteiro — só números. Não altera nenhum
+// comportamento: os wrappers abaixo só observam get()/on()/escritas e repassam tudo
+// exatamente como está. Pode ser removida inteira depois (procure "PERF_DIAG").
+//
+// Como usar na medição real (console do navegador, depois de logar e usar o app):
+//   PERF_DIAG.report()                      → imprime o relatório (só métricas)
+//   copy(JSON.stringify(PERF_DIAG.summary())) → copia o mesmo resumo pra colar num chat
+// =====================================================================================
+const PERF_DIAG = {
+  events: [],        // marcos de fase (perfMark)
+  ops: [],           // cada get() / anexação / disparo de listener
+  listeners: {},     // por nó: { attachedAt, fires }
+  lastWrite: {},     // por nó: tMs da última escrita local (pra sugerir a causa de um disparo)
+  phase: 'pre',      // 'pre' | 'A' (bootstrap) | 'B' (dados do perfil) | 'uso'
+  openedAt: new Date().toISOString(),
+  role: null
+};
+window.PERF_DIAG = PERF_DIAG;
+function perfNow(){ return Math.round(performance.now()); }
+function perfMark(label, extra){
+  if(label === 'auth_bootstrap_start') PERF_DIAG.phase = 'A';
+  if(label === 'role_data_start'){ PERF_DIAG.phase = 'B'; PERF_DIAG.role = extra && extra.role; }
+  if(label === 'role_data_done') PERF_DIAG.phase = 'uso';
+  PERF_DIAG.events.push(Object.assign({ label, tMs: perfNow() }, extra || {}));
+}
+function perfApproxKB(value){
+  try{ return Math.round(JSON.stringify(value).length / 1024 * 10) / 10; }catch(e){ return 0; }
+}
+function perfSnapInfo(snap){
+  try{
+    const v = snap && typeof snap.val === 'function' ? snap.val() : undefined;
+    if(v === undefined || v === null) return { kb: 0, records: 0 };
+    const kb = perfApproxKB(v);
+    const records = (v && typeof v === 'object') ? Object.keys(v).length : 0;
+    return { kb, records };
+  }catch(e){ return { kb: 0, records: 0 }; }
+}
+function perfListenerState(node){
+  if(!PERF_DIAG.listeners[node]) PERF_DIAG.listeners[node] = { attachedAt: null, fires: 0 };
+  return PERF_DIAG.listeners[node];
+}
+function perfNoteWrite(node, op, arg){
+  const t = perfNow();
+  if(node === '(root)' && arg && typeof arg === 'object'){
+    Object.keys(arg).forEach(k => { PERF_DIAG.lastWrite[k.split('/')[0]] = t; });
+  } else PERF_DIAG.lastWrite[node] = t;
+}
+function perfCausaDisparo(node, fireIndex){
+  if(fireIndex === 1) return 'primeiro disparo (anexação do listener)';
+  const w = PERF_DIAG.lastWrite[node];
+  if(w !== undefined && perfNow() - w < 3000) return 'provável eco da própria escrita local';
+  return 'atualização remota (outro dispositivo) ou reconexão';
+}
+function perfRecordOp(o){
+  const rec = { phase: PERF_DIAG.phase, role: PERF_DIAG.role, tMs: perfNow(), op: o.op, node: o.node, path: o.path };
+  if(o.durMs !== undefined) rec.durMs = Math.round(o.durMs);
+  if(o.snap){ const i = perfSnapInfo(o.snap); rec.kb = i.kb; rec.records = i.records; }
+  if(o.fireIndex !== undefined){ rec.fireIndex = o.fireIndex; rec.causa = perfCausaDisparo(o.node, o.fireIndex); }
+  PERF_DIAG.ops.push(rec);
+}
+// Envolve as referências do Firebase: get(), on(), e as escritas (só pra anotar o momento).
+function perfWrapRef(ref, path){
+  const node = path ? path.split('/')[0] : '(root)';
+  return new Proxy(ref, {
+    get(target, prop){
+      if(prop === 'get') return async function(){
+        const t0 = performance.now();
+        const snap = await target.get();
+        perfRecordOp({ op: 'get', node, path, durMs: performance.now() - t0, snap });
+        return snap;
+      };
+      if(prop === 'on') return function(ev, cb, errCb){
+        const st = perfListenerState(node);
+        st.attachedAt = perfNow();
+        perfRecordOp({ op: 'on_attach', node, path });
+        const wrapped = function(snap){
+          st.fires++;
+          perfRecordOp({ op: 'on_fire', node, path, snap, fireIndex: st.fires });
+          return cb(snap);
+        };
+        return target.on(ev, wrapped, errCb);
+      };
+      if(prop === 'update' || prop === 'set' || prop === 'remove' || prop === 'transaction'){
+        const fn = target[prop].bind(target);
+        return function(){ perfNoteWrite(node, prop, arguments[0]); return fn.apply(null, arguments); };
+      }
+      const v = Reflect.get(target, prop);
+      return typeof v === 'function' ? v.bind(target) : v;
+    }
+  });
+}
+function perfWrapDatabase(db){
+  if(!db || typeof db.ref !== 'function') return db;
+  const origRef = db.ref.bind(db);
+  return new Proxy(db, {
+    get(target, prop){
+      if(prop === 'ref') return (p) => perfWrapRef(origRef(p), p == null ? '' : String(p));
+      const v = Reflect.get(target, prop);
+      return typeof v === 'function' ? v.bind(target) : v;
+    }
+  });
+}
+// ---- Análise de mídia (só tamanhos e contagens; nunca o conteúdo) ----
+function perfMediaChars(arr){
+  if(!Array.isArray(arr)) return { chars: 0, n: 0, max: 0 };
+  let chars = 0, max = 0;
+  arr.forEach(x => { const l = typeof x === 'string' ? x.length : perfApproxKB(x) * 1024; chars += l; if(l > max) max = l; });
+  return { chars, n: arr.length, max };
+}
+function perfKB(chars){ return Math.round(chars / 1024 * 10) / 10; }
+function perfAnalyzeRecords(list, mediaFields, idField){
+  const out = { registros: (list || []).length, totalKB: perfKB(perfApproxKB(list || []) * 1024), comMidia: 0, maior: null, campos: {} };
+  mediaFields.forEach(f => { out.campos[f] = { chars: 0, arquivos: 0, registros: 0, maiorArquivo: 0 }; });
+  let mediaCharsTotal = 0;
+  (list || []).forEach(r => {
+    let recMedia = 0, temMidia = false;
+    mediaFields.forEach(f => {
+      const m = perfMediaChars(r[f]);
+      if(m.n){ temMidia = true; out.campos[f].registros++; out.campos[f].arquivos += m.n; out.campos[f].chars += m.chars; if(m.max > out.campos[f].maiorArquivo) out.campos[f].maiorArquivo = m.max; recMedia += m.chars; }
+    });
+    if(temMidia) out.comMidia++;
+    mediaCharsTotal += recMedia;
+    const recTotal = perfApproxKB(r) * 1024;
+    if(!out.maior || recTotal > out.maior.bytes) out.maior = { id: r[idField || 'id'], bytes: Math.round(recTotal), kb: perfKB(recTotal), midiaKB: perfKB(recMedia) };
+  });
+  out.midiaKB = perfKB(mediaCharsTotal);
+  out.semMidiaKB = Math.max(0, Math.round((out.totalKB - out.midiaKB) * 10) / 10);
+  Object.keys(out.campos).forEach(f => { const c = out.campos[f]; c.kb = perfKB(c.chars); c.mediaKB = c.arquivos ? Math.round(c.chars / c.arquivos / 1024 * 10) / 10 : 0; c.maiorArquivoKB = perfKB(c.maiorArquivo); delete c.chars; delete c.maiorArquivo; });
+  return out;
+}
+PERF_DIAG.analyzeServices = () => perfAnalyzeRecords(typeof services !== 'undefined' ? services : [], ['photos','audios','technicianInstructionPhotos','technicianInstructionAudios']);
+PERF_DIAG.analyzeOficina = () => perfAnalyzeRecords(typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : [], ['vistoriaPhotos','vistoriaAudios','manutencaoPhotos','manutencaoAudios','testePhotos','testeAudios']);
+PERF_DIAG.analyzeGallery = () => {
+  const g = typeof galleryPhotos !== 'undefined' ? galleryPhotos : [];
+  const m = perfMediaChars(g.map(r => r.photo));
+  return { registros: g.length, totalKB: perfKB(perfApproxKB(g) * 1024), fotos: m.n, fotosKB: perfKB(m.chars), mediaKB: m.n ? Math.round(m.chars / m.n / 1024 * 10) / 10 : 0, maiorFotoKB: perfKB(m.max) };
+};
+PERF_DIAG.summary = function(){
+  const ev = PERF_DIAG.events, ops = PERF_DIAG.ops;
+  const find = l => ev.find(e => e.label === l);
+  const inPhase = ph => ops.filter(o => o.phase === ph);
+  const gets = ph => inPhase(ph).filter(o => o.op === 'get');
+  const kb = list => Math.round(list.reduce((s, o) => s + (o.kb || 0), 0) * 10) / 10;
+  const porNo = {};
+  ops.forEach(o => {
+    const n = porNo[o.node] = porNo[o.node] || { node: o.node, getKB: 0, getMs: 0, gets: 0, attachAt: null, primeiroFireKB: null, primeiroFireAt: null, fires: 0, firesDepois: [] };
+    if(o.op === 'get'){ n.gets++; n.getKB = o.kb; n.getMs = o.durMs; n.records = o.records; }
+    if(o.op === 'on_attach') n.attachAt = o.tMs;
+    if(o.op === 'on_fire'){ n.fires++; if(o.fireIndex === 1){ n.primeiroFireKB = o.kb; n.primeiroFireAt = o.tMs; } else n.firesDepois.push({ tMs: o.tMs, kb: o.kb, causa: o.causa, role: o.role }); }
+  });
+  const bootstrapDone = find('auth_bootstrap_done'), start = find('role_data_start'), done = find('role_data_done');
+  return {
+    abertoEm: PERF_DIAG.openedAt, perfil: PERF_DIAG.role,
+    marcos: { bootstrapConcluidoMs: bootstrapDone && bootstrapDone.tMs, loginClickMs: start && start.tMs, perfilCarregadoMs: done && done.tMs },
+    faseA: { ms: bootstrapDone ? bootstrapDone.tMs - (find('auth_bootstrap_start') || {tMs:0}).tMs : null, leituras: gets('A').length, kbGet: kb(gets('A')), kbPrimeiroFire: kb(inPhase('A').filter(o => o.op === 'on_fire' && o.fireIndex === 1)) },
+    faseB: { ms: (start && done) ? done.tMs - start.tMs : null, leituras: gets('B').length, kbGet: kb(gets('B')), kbPrimeiroFire: kb(inPhase('B').filter(o => o.op === 'on_fire' && o.fireIndex === 1)), listeners: done && done.listenersOnAfter },
+    nos: Object.values(porNo).sort((a, b) => (b.getKB || 0) - (a.getKB || 0)),
+    services: PERF_DIAG.analyzeServices(), oficinaEquipamentos: PERF_DIAG.analyzeOficina(), galleryPhotos: PERF_DIAG.analyzeGallery()
+  };
+};
+PERF_DIAG.report = function(){
+  const s = PERF_DIAG.summary();
+  const L = [];
+  L.push(`=== PERF_DIAG — perfil: ${s.perfil || '(nenhum)'} — aberto em ${s.abertoEm} ===`);
+  L.push(`Marcos (ms desde a abertura): bootstrap concluído ${s.marcos.bootstrapConcluidoMs} | clique de login ${s.marcos.loginClickMs} | perfil carregado ${s.marcos.perfilCarregadoMs}`);
+  L.push(`Fase A: ${s.faseA.ms} ms | ${s.faseA.leituras} get() | ${s.faseA.kbGet} KB via get | ${s.faseA.kbPrimeiroFire} KB no 1º disparo dos listeners`);
+  L.push(`Fase B: ${s.faseB.ms} ms | ${s.faseB.leituras} get() | ${s.faseB.kbGet} KB via get | ${s.faseB.kbPrimeiroFire} KB no 1º disparo dos listeners | ${s.faseB.listeners} listeners ativos`);
+  L.push('--- Por nó: get() vs 1º on(value) vs disparos posteriores ---');
+  s.nos.forEach(n => L.push(`${n.node.padEnd(26)} get ${String(n.getKB ?? '-').padStart(8)} KB em ${String(n.getMs ?? '-').padStart(5)} ms (${n.records ?? '-'} reg) | listener anexado em ${n.attachAt ?? '-'} ms | 1º disparo ${n.primeiroFireKB ?? '-'} KB em ${n.primeiroFireAt ?? '-'} ms | disparos posteriores: ${n.firesDepois.length}`));
+  const fires = s.nos.flatMap(n => n.firesDepois.map(f => Object.assign({ node: n.node }, f)));
+  if(fires.length){ L.push('--- Disparos posteriores de listeners (crescimento durante o uso) ---'); fires.sort((a,b)=>a.tMs-b.tMs).forEach(f => L.push(`${f.tMs} ms | ${f.node} | ${f.kb} KB | ${f.role} | ${f.causa}`)); }
+  const sv = s.services;
+  L.push('--- services ---');
+  L.push(`total ${sv.totalKB} KB | sem mídia ${sv.semMidiaKB} KB | mídia ${sv.midiaKB} KB | atividades ${sv.registros} | com mídia ${sv.comMidia}`);
+  Object.keys(sv.campos).forEach(f => { const c = sv.campos[f]; L.push(`  ${f.padEnd(28)} ${String(c.kb).padStart(8)} KB | ${c.arquivos} arquivos em ${c.registros} atividades | média ${c.mediaKB} KB | maior ${c.maiorArquivoKB} KB`); });
+  if(sv.maior) L.push(`  maior atividade: id ${sv.maior.id} — ${sv.maior.kb} KB (mídia ${sv.maior.midiaKB} KB)`);
+  const of = s.oficinaEquipamentos;
+  L.push('--- oficinaEquipamentos ---');
+  L.push(`total ${of.totalKB} KB | sem mídia ${of.semMidiaKB} KB | mídia ${of.midiaKB} KB | equipamentos ${of.registros} | com mídia ${of.comMidia}`);
+  Object.keys(of.campos).forEach(f => { const c = of.campos[f]; L.push(`  ${f.padEnd(28)} ${String(c.kb).padStart(8)} KB | ${c.arquivos} arquivos em ${c.registros} equipamentos | média ${c.mediaKB} KB | maior ${c.maiorArquivoKB} KB`); });
+  const g = s.galleryPhotos;
+  L.push('--- galleryPhotos ---');
+  L.push(`total ${g.totalKB} KB | registros ${g.registros} | fotos ${g.fotos} | fotos ${g.fotosKB} KB | média ${g.mediaKB} KB | maior ${g.maiorFotoKB} KB`);
+  L.push(`galleryPhotos foi carregado nesta sessão? ${PERF_DIAG.listeners.galleryPhotos ? 'sim (listener anexado em ' + PERF_DIAG.listeners.galleryPhotos.attachedAt + ' ms, independentemente de abrir a Galeria)' : 'não'}`);
+  console.log(L.join('\n'));
+  return L.join('\n');
+};
+
 // ===== Camada de persistência (Firebase Realtime Database) =====
 const firebaseConfig = {
   apiKey: "AIzaSyA1R5kw2Qtex9XFNkJqZyy0UeitG5CEdQ4",
@@ -2528,7 +2720,7 @@ let rtdb = null;
 try{
   if(typeof firebase !== 'undefined'){
     firebase.initializeApp(firebaseConfig);
-    rtdb = firebase.database();
+    rtdb = perfWrapDatabase(firebase.database()); // PERF_DIAG: só observa get()/on()/escritas, repassa tudo
   } else {
     console.error('SDK do Firebase não carregou (script bloqueado ou sem internet).');
   }
@@ -10220,6 +10412,28 @@ document.getElementById('roleCardOficina').addEventListener('click', () => {
   setTimeout(() => document.getElementById('oficinaPinInput').focus(), 50);
 });
 document.getElementById('backFromOficina').addEventListener('click', () => showLoginStep('role'));
+// Carrega os dados do perfil escolhido (Fase B) só depois do PIN validado, com o mesmo
+// "circuit breaker" de 15s que a Fase A já usa — se a rede travar, o usuário não fica preso
+// num botão girando pra sempre; tenta de novo ao clicar novamente.
+async function loadRoleDataWithTimeout(role, btn, errBoxId, onSuccess){
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+  try{
+    await Promise.race([
+      ensureRoleDataLoaded(role),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo esgotado ao carregar. Verifique sua internet.')), 15000))
+    ]);
+    onSuccess();
+  }catch(e){
+    console.error('Falha ao carregar dados do perfil ' + role + ':', e);
+    const errBox = document.getElementById(errBoxId);
+    if(errBox) errBox.textContent = 'Não foi possível carregar os dados. Verifique sua internet e tente novamente.';
+  }finally{
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+}
 document.getElementById('oficinaLoginBtn').addEventListener('click', () => {
   if(appInitState !== 'ready'){ alert('Aguarde o carregamento dos dados para acessar o sistema.'); return; }
   const name = document.getElementById('oficinaLoginSelect').value;
@@ -10230,7 +10444,7 @@ document.getElementById('oficinaLoginBtn').addEventListener('click', () => {
   const person = MANAGERS.find(x => x.name === name) || TECHS.find(x => x.name === name);
   if(person && val === (person.pin || '0000')){
     saveLastLogin('oficina', name);
-    enterOficina(name);
+    loadRoleDataWithTimeout('oficina', document.getElementById('oficinaLoginBtn'), 'oficinaLoginErr', () => enterOficina(name));
   } else {
     document.getElementById('oficinaLoginErr').textContent = 'PIN incorreto.';
   }
@@ -10244,7 +10458,7 @@ document.getElementById('managerLoginBtn').addEventListener('click', () => {
   const m = MANAGERS.find(x => x.name === name);
   if(m && val === (m.pin || '0000')){
     saveLastLogin('manager', name);
-    enterManager(name);
+    loadRoleDataWithTimeout('manager', document.getElementById('managerLoginBtn'), 'managerLoginErr', () => enterManager(name));
   } else {
     document.getElementById('managerLoginErr').textContent = 'PIN incorreto.';
   }
@@ -10256,7 +10470,7 @@ document.getElementById('financeiroLoginBtn').addEventListener('click', () => {
   const f = FINANCEIRO.find(x => x.name === name);
   if(f && val === (f.pin || '0000')){
     saveLastLogin('financeiro', name);
-    enterFinanceiro(name);
+    loadRoleDataWithTimeout('financeiro', document.getElementById('financeiroLoginBtn'), 'financeiroLoginErr', () => enterFinanceiro(name));
   } else {
     document.getElementById('financeiroLoginErr').textContent = 'PIN incorreto.';
   }
@@ -10268,7 +10482,7 @@ document.getElementById('techLoginBtn').addEventListener('click', () => {
   const t = TECHS.find(x => x.name === name);
   if(t && val === (t.pin || '0000')){
     saveLastLogin('tech', name);
-    enterTech(name);
+    loadRoleDataWithTimeout('tech', document.getElementById('techLoginBtn'), 'techLoginErr', () => enterTech(name));
   } else {
     document.getElementById('techLoginErr').textContent = 'PIN incorreto.';
   }
@@ -12021,13 +12235,15 @@ async function init(){
   document.getElementById('appLoadError').style.display = 'none';
   try{
     await Promise.race([
-      initSequence(),
+      initAuthBootstrap(),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo esgotado ao carregar. Verifique sua internet.')), 15000))
     ]);
-    // READY: os quatro perfis existem em memória com os dados reais do Firebase (initSequence
-    // já terminou todos os awaits de carregamento). A partir daqui, e só a partir daqui, os
-    // cards e o PIN podem ser usados — nada é selecionado automaticamente; o usuário escolhe.
+    // READY: os dados de autenticação (nome + PIN dos 4 perfis) já estão em memória — o
+    // suficiente pra popular os cards/seletores e validar o PIN. Os demais dados de cada perfil
+    // (Agenda, Estoque, Oficina, Galeria...) só carregam DEPOIS que o perfil for escolhido e
+    // autenticado (ver ensureRoleDataLoaded) — nada é selecionado automaticamente antes disso.
     appInitState = 'ready';
+    perfMark('login_screen_ready');
     document.getElementById('appLoadStatus').style.display = 'none';
     document.getElementById('roleGrid').classList.remove('disabled');
   }catch(e){
@@ -12940,55 +13156,192 @@ document.getElementById('estoqueOpenBtnTech').addEventListener('click', () => op
 document.getElementById('sidebarBtnEstoque').addEventListener('click', () => switchTab('estoque'));
 
 
-async function initSequence(){
-  await loadServices();
-  await loadClients();
+// =====================================================================================
+// INSTRUMENTAÇÃO TEMPORÁRIA DE DIAGNÓSTICO — etapa de otimização de performance (Parte 8).
+// Só MEDE (timestamps e tamanho aproximado dos dados já carregados) — nunca altera nenhum
+// comportamento, nunca decide nada. Isolada nesta função e no objeto PERF_DIAG; pode ser
+// removida por completo mais tarde sem afetar nada do app. Procure "PERF_DIAG" pra achar
+// todos os pontos onde é usada.
+// =====================================================================================
+// (PERF_DIAG: núcleo movido pra antes da inicialização do Firebase — ver "INSTRUMENTAÇÃO PERF_DIAG")
+
+// =====================================================================================
+// CARREGAMENTO EM DUAS FASES (etapa de otimização de performance):
+//
+// FASE A (initAuthBootstrap) — roda ANTES do usuário escolher qualquer perfil. Carrega só o
+// suficiente pra popular os 4 seletores de login (Gestor/Técnico/Financeiro/Oficina — Oficina
+// reaproveita MANAGERS/TECHS, não tem cadastro próprio) e validar o PIN digitado:
+//   - techRoster  → TECHS (nome)
+//   - techPins    → sobrepõe o PIN em TECHS
+//   - managers    → MANAGERS (nome + PIN)
+//   - financeiro  → FINANCEIRO (nome + PIN)
+// Nenhum outro nó (services, clients, galleryPhotos, oficinaEquipamentos, estoque e seus
+// históricos, maintenanceContracts, techPhones, extraContacts, oficina legado, adminPin) é
+// necessário só pra chegar até aqui — ficam pra FASE B.
+//
+// FASE B (ensureRoleDataLoaded) — roda uma única vez por perfil, DEPOIS do PIN validado com
+// sucesso, antes de abrir a tela daquele perfil. Cada grupo de nó tem sua própria função
+// "ensureXLoaded", com flag de "já carregado" (nodeLoaded.*) — se o mesmo perfil (ou outro que
+// dependa do mesmo nó) logar de novo na mesma aba (logout/login), o nó não é lido de novo.
+// A ORDEM interna de cada grupo, os seeds/migrações/limpeza que dependem de um nó já carregado,
+// e a anexação do listener realtime logo após o load — tudo preservado exatamente como estava
+// em initSequence(); só a ORGANIZAÇÃO em grupos por nó mudou, não a lógica de cada carregamento.
+// =====================================================================================
+async function initAuthBootstrap(){
+  perfMark('auth_bootstrap_start');
   await loadTechRoster();
-  await loadTechPhones();
   await loadTechPins();
-  await loadAdminPin();
   await loadManagers();
   await loadFinanceiro();
-  await loadOficina();
+  attachRealtimeTechRosterListener();
+  attachRealtimeTechPinsListener();
+  attachRealtimeManagersListener();
+  attachRealtimeFinanceiroListener();
+  perfMark('auth_bootstrap_done', {
+    approxKB: perfApproxKB(TECHS) + perfApproxKB(MANAGERS) + perfApproxKB(FINANCEIRO)
+  });
+}
+
+const nodeLoaded = {
+  services: false, clients: false, techPhones: false, maintenanceContracts: false,
+  oficinaEquipamentos: false, galleryPhotos: false, estoqueCore: false, extraContactsEtc: false
+};
+
+async function ensureServicesLoaded(){
+  if(nodeLoaded.services) return;
+  nodeLoaded.services = true;
+  await loadServices();
+  await importPreAgendados(); // depende de services já carregado (evita duplicar o pré-agendado)
+  selectedDate = todayStr();
+  await runMediaCleanupOnce(); // limpeza de mídias expiradas — depende de services já carregado
+  attachRealtimeServicesListener();
+  perfMark('node_loaded', { node: 'services', approxKB: perfApproxKB(services) });
+}
+async function ensureClientsLoaded(){
+  if(nodeLoaded.clients) return;
+  nodeLoaded.clients = true;
+  await loadClients();
+  attachRealtimeClientsListener();
+  perfMark('node_loaded', { node: 'clients', approxKB: perfApproxKB(clients) });
+}
+async function ensureTechPhonesLoaded(){
+  if(nodeLoaded.techPhones) return;
+  nodeLoaded.techPhones = true;
+  await loadTechPhones();
+  attachRealtimeTechPhonesListener();
+  perfMark('node_loaded', { node: 'techPhones' });
+}
+async function ensureMaintenanceContractsLoaded(){
+  if(nodeLoaded.maintenanceContracts) return;
+  nodeLoaded.maintenanceContracts = true;
+  await loadMaintenanceContracts();
+  await importPreventivasPlanilha(); // migração única — grava em maintenanceContracts, precisa dele já carregado
+  attachRealtimeMaintenanceContractsListener();
+  perfMark('node_loaded', { node: 'maintenanceContracts', approxKB: perfApproxKB(maintenanceContracts) });
+}
+async function ensureOficinaEquipamentosLoaded(){
+  if(nodeLoaded.oficinaEquipamentos) return;
+  nodeLoaded.oficinaEquipamentos = true;
   await loadOficinaEquipamentos();
   await loadOficinaStaleThreshold();
+  attachRealtimeOficinaEquipamentosListener();
+  attachRealtimeOficinaStaleThresholdListener();
+  perfMark('node_loaded', { node: 'oficinaEquipamentos', approxKB: perfApproxKB(oficinaEquipamentos) });
+}
+async function ensureGalleryPhotosLoaded(){
+  if(nodeLoaded.galleryPhotos) return;
+  nodeLoaded.galleryPhotos = true;
   await loadGalleryPhotos();
+  attachRealtimeGalleryPhotosListener();
+  perfMark('node_loaded', { node: 'galleryPhotos', approxKB: perfApproxKB(galleryPhotos) });
+}
+async function ensureEstoqueLoaded(){
+  if(nodeLoaded.estoqueCore) return;
+  nodeLoaded.estoqueCore = true;
   await loadEstoqueItens();
   await loadEstoqueMovimentacoes();
   await estoqueCategoriasStore.load();
   await estoqueAjustesStore.load();
   await estoqueRetiradasStore.load();
   await oficinaPecasCatalogoStore.load();
-  await loadMaintenanceContracts();
-  await loadExtraContacts();
-  document.getElementById('alexPhoneInput').value = extraContacts.alex.phone;
-  document.getElementById('marceloPhoneInput').value = extraContacts.marcelo.phone;
-  await importPreventivasPlanilha();
-  await importPreAgendados();
-  await seedEstoqueInicial();
-  await runMediaCleanupOnce(); // limpeza de mídias expiradas (só grava se houver algo a remover)
-  selectedDate = todayStr();
-  renderAll();
-  attachRealtimeServicesListener();
-  attachRealtimeMaintenanceContractsListener();
-  attachRealtimeClientsListener();
-  attachRealtimeTechRosterListener();
-  attachRealtimeTechPhonesListener();
-  attachRealtimeTechPinsListener();
-  attachRealtimeManagersListener();
-  attachRealtimeFinanceiroListener();
-  attachRealtimeOficinaListener();
-  attachRealtimeOficinaEquipamentosListener();
-  attachRealtimeOficinaStaleThresholdListener();
-  attachRealtimeGalleryPhotosListener();
+  await seedEstoqueInicial(); // depende de estoqueItens/estoqueCategoriasStore já carregados
   attachRealtimeEstoqueListener();
   attachRealtimeEstoqueMovimentacoesListener();
   estoqueCategoriasStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
   estoqueAjustesStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
   estoqueRetiradasStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
   oficinaPecasCatalogoStore.attach(() => { if(oeCurrentDetalheId !== null) popularPecasCatalogoDatalist(); });
-  attachRealtimeExtraContactsListener();
+  perfMark('node_loaded', { node: 'estoque+históricos', approxKB: perfApproxKB(estoqueItens) + perfApproxKB(estoqueMovimentacoes) });
 }
+async function ensureExtraContactsEtcLoaded(){
+  if(nodeLoaded.extraContactsEtc) return;
+  nodeLoaded.extraContactsEtc = true;
+  await loadExtraContacts();
+  document.getElementById('alexPhoneInput').value = extraContacts.alex.phone;
+  document.getElementById('marceloPhoneInput').value = extraContacts.marcelo.phone;
+  attachRealtimeExtraContactsListener();
+  await loadOficina(); // nó legado (Acessos do Gestor) — nunca mais usado pra login
+  attachRealtimeOficinaListener();
+  await loadAdminPin(); // só usado na exportação/backup de Acessos do Gestor
+  perfMark('node_loaded', { node: 'extraContacts+oficina(legado)+adminPin' });
+}
+
+// Dados necessários por perfil, mapeados pelas funções realmente usadas por cada um (ver
+// relatório da auditoria): Gestor usa praticamente toda a tela; Técnico usa Agenda própria +
+// Estoque + Galeria (nunca Oficina, nunca Clientes — confirmado em galeriaVisibleClients e em
+// renderTechView, que não referenciam clients/oficinaEquipamentos em nenhum momento); Financeiro
+// usa Agenda/OS (dados já dentro de services) + Galeria, nunca Estoque/Oficina/Clientes
+// (canViewEstoque() já exclui financeiro; galeriaVisibleClients pra financeiro deriva de
+// services, não de clients); Oficina (perfil) usa equipamentos + Estoque + Galeria.
+async function ensureRoleDataLoaded(role){
+  perfMark('role_data_start', { role });
+  if(role === 'manager'){
+    await ensureServicesLoaded();
+    await ensureClientsLoaded();
+    await ensureTechPhonesLoaded();
+    await ensureMaintenanceContractsLoaded();
+    await ensureOficinaEquipamentosLoaded();
+    await ensureGalleryPhotosLoaded();
+    await ensureEstoqueLoaded();
+    await ensureExtraContactsEtcLoaded();
+  } else if(role === 'tech'){
+    await ensureServicesLoaded();
+    // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
+    // uma atividade (data-finish), completeMaintenanceIfLinked()/completeOficinaReinstallationIfLinked()
+    // são chamadas e precisam achar o contrato/equipamento vinculado (svc.maintenanceContractId /
+    // svc.oficinaEquipamentoId) pra atualizá-lo — sem isso carregado, a atualização falharia
+    // silenciosamente. Achado durante os testes desta etapa.
+    await ensureMaintenanceContractsLoaded();
+    await ensureOficinaEquipamentosLoaded();
+    await ensureGalleryPhotosLoaded();
+    await ensureEstoqueLoaded();
+  } else if(role === 'financeiro'){
+    await ensureServicesLoaded();
+    await ensureGalleryPhotosLoaded();
+  } else if(role === 'oficina'){
+    await ensureServicesLoaded();
+    await ensureOficinaEquipamentosLoaded();
+    await ensureGalleryPhotosLoaded();
+    await ensureEstoqueLoaded();
+  }
+  perfMark('role_data_done', { role, listenersOnAfter: countAttachedRealtimeListeners() });
+}
+
+// Só conta, pra instrumentação — não afeta nada. Lista as mesmas flags realtimeXAttached que já
+// existem no código (nenhuma criada aqui).
+function countAttachedRealtimeListeners(){
+  const flags = [
+    realtimeServicesAttached, realtimeMaintenanceContractsAttached, realtimeClientsAttached,
+    realtimeTechRosterAttached, realtimeTechPhonesAttached, realtimeTechPinsAttached,
+    realtimeManagersAttached, realtimeFinanceiroAttached, realtimeOficinaAttached,
+    realtimeOficinaEquipamentosAttached, realtimeOficinaStaleThresholdAttached,
+    realtimeGalleryPhotosAttached, realtimeEstoqueAttached, realtimeEstoqueMovimentacoesAttached,
+    realtimeExtraContactsAttached, estoqueCategoriasStore.attached, estoqueAjustesStore.attached,
+    estoqueRetiradasStore.attached, oficinaPecasCatalogoStore.attached
+  ];
+  return flags.filter(Boolean).length;
+}
+
 document.getElementById('appRetryBtn').addEventListener('click', init);
 window.addEventListener('error', (e) => {
   console.error('Erro não tratado na aplicação:', e.error || e.message);
