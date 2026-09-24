@@ -1040,6 +1040,23 @@
   .estoque-op-diff{ display:flex; flex-wrap:wrap; gap:14px; width:100%; font-size:12.5px; padding:10px 12px; margin-top:6px; background:rgba(0,0,0,0.025); border-radius:var(--radius-sm); }
   .estoque-op-diff b{ font-family:var(--mono); }
   @media (max-width:640px){ .estoque-op-row{ flex-direction:column; align-items:stretch; } }
+  /* Retirada/Devolução — card compacto de 2 linhas (nome em destaque; categoria/saldo em cinza) */
+  .estoque-op-row.compacta{ display:block; padding:10px 14px; margin-bottom:6px; }
+  .estoque-op-row.compacta .linha1{ display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 10px; font-size:12.5px; color:var(--text-dim); }
+  .estoque-op-row.compacta .linha1 .nome{ font-weight:700; font-size:14px; color:var(--ink); }
+  .estoque-op-row.compacta .linha2{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:6px; }
+  .estoque-op-row.compacta .linha2 .apos{ font-size:12.5px; color:var(--text-dim); font-family:var(--mono); }
+  .estoque-op-row.compacta .linha2 .apos b{ color:var(--ink); }
+  .estoque-op-row.compacta .linha2 .apos.excede{ color:var(--red); }
+  .estoque-confirm-modal{ width:min(520px, 94vw); }
+  .estoque-confirm-lista{ margin:10px 0; max-height:min(50vh, 420px); overflow-y:auto; border:1px solid var(--line); border-radius:var(--radius-sm); }
+  .estoque-confirm-item{ display:grid; grid-template-columns:1fr auto auto; gap:6px 14px; align-items:center; padding:9px 12px; border-bottom:1px solid var(--line); font-size:13px; }
+  .estoque-confirm-item:last-child{ border-bottom:none; }
+  .estoque-confirm-item .qtd{ font-family:var(--mono); font-weight:700; white-space:nowrap; }
+  .estoque-confirm-item .apos{ font-family:var(--mono); color:var(--text-dim); white-space:nowrap; }
+  .estoque-confirm-actions{ gap:12px; }
+  .estoque-confirm-actions button{ min-height:44px; min-width:130px; }
+  @media (max-width:640px){ .estoque-confirm-item{ grid-template-columns:1fr auto; } .estoque-confirm-item .apos{ grid-column:1 / -1; } .estoque-confirm-actions{ flex-direction:column-reverse; } .estoque-confirm-actions button{ width:100%; } }
   .wa-fallback a{ color:#fff; font-weight:700; text-decoration:underline; white-space:nowrap; }
   .wa-fallback button{
     background:none; border:none; color:#fff; opacity:0.6; cursor:pointer; font-size:14px; padding:0 2px;
@@ -1688,7 +1705,16 @@
         <div class="search-input-wrap" style="flex:1; min-width:200px;"><input type="text" id="estoqueDevolucaoSearch" placeholder="Buscar material ou código..."></div>
         <select id="estoqueDevolucaoCatFiltro"><option value="">Todas as categorias</option></select>
       </div>
-      <div id="estoqueDevolucaoMateriaisList" style="padding:0 20px 30px;"></div>
+      <!-- Envio único: as quantidades ficam locais até confirmar no modal -->
+      <div style="padding:0 20px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <button type="button" class="btn-primary" id="estoqueDevolucaoEnviarBtn">Enviar devolução</button>
+        <span class="sub" id="estoqueDevolucaoSelecionados" style="color:var(--text-dim); font-size:12.5px;"></span>
+      </div>
+      <div class="field-error" id="estoqueDevolucaoErr" style="padding:0 20px;"></div>
+      <div id="estoqueDevolucaoMateriaisList" style="padding:0 20px 12px;"></div>
+      <div style="padding:0 20px 30px;">
+        <div class="field"><label>Observação</label><textarea id="estoqueDevolucaoObs" placeholder="Opcional"></textarea></div>
+      </div>
     </div>
 
     <!-- ===== CATEGORIAS (Gestor) ===== -->
@@ -1736,14 +1762,19 @@
         <div class="tech-day-title">Registrar retirada</div>
       </div>
       <div style="padding:0 20px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-        <div class="search-input-wrap" style="flex:1; min-width:200px;"><input type="text" id="estoqueRetiradaSearch" placeholder="Buscar material"></div>
+        <div class="search-input-wrap" style="flex:1; min-width:200px;"><input type="text" id="estoqueRetiradaSearch" placeholder="Buscar material ou código..."></div>
         <select id="estoqueRetiradaCatFiltro"><option value="">Todas as categorias</option></select>
       </div>
+      <!-- Envio único: as quantidades ficam locais até confirmar no modal (mesmo botão/fluxo de
+           sempre — "Revisar retirada" virou "Enviar retirada" e subiu pro topo) -->
+      <div style="padding:0 20px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+        <button type="button" class="btn-primary" id="estoqueRetiradaRevisarBtn">Enviar retirada</button>
+        <span class="sub" id="estoqueRetiradaSelecionados" style="color:var(--text-dim); font-size:12.5px;"></span>
+      </div>
+      <div class="field-error" id="estoqueRetiradaErr" style="padding:0 20px;"></div>
       <div id="estoqueRetiradaList" style="padding:0 20px 12px;"></div>
       <div style="padding:0 20px 30px;">
         <div class="field"><label>Observação</label><textarea id="estoqueRetiradaObs" placeholder="Opcional"></textarea></div>
-        <div class="field-error" id="estoqueRetiradaErr"></div>
-        <div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-primary" id="estoqueRetiradaRevisarBtn">Revisar retirada</button></div>
       </div>
     </div>
   </div>
@@ -1751,14 +1782,28 @@
 
 <!-- Confirmação da retirada (resumo completo) -->
 <div class="overlay" id="estoqueRetiradaConfirmOverlay">
-  <div class="modal">
-    <h3>RETIRADA</h3>
+  <div class="modal estoque-confirm-modal">
+    <h3>Confirmar retirada</h3>
     <p class="modal-sub" id="estoqueRetiradaConfirmTecnico"></p>
-    <div id="estoqueRetiradaConfirmResumo" style="margin:10px 0;"></div>
+    <div id="estoqueRetiradaConfirmResumo" class="estoque-confirm-lista"></div>
     <div class="field-error" id="estoqueRetiradaConfirmErr"></div>
-    <div class="modal-actions">
-      <button type="button" class="btn-ghost" id="estoqueRetiradaConfirmCancelBtn">Voltar</button>
-      <button type="button" class="btn-primary" id="estoqueRetiradaConfirmBtn">Confirmar retirada</button>
+    <div class="modal-actions estoque-confirm-actions">
+      <button type="button" class="btn-ghost" id="estoqueRetiradaConfirmCancelBtn">Cancelar</button>
+      <button type="button" class="btn-primary" id="estoqueRetiradaConfirmBtn">Enviar retirada</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmação da devolução (envio único) -->
+<div class="overlay" id="estoqueDevolucaoConfirmOverlay">
+  <div class="modal estoque-confirm-modal">
+    <h3>Confirmar devolução</h3>
+    <p class="modal-sub" id="estoqueDevolucaoConfirmQuem"></p>
+    <div id="estoqueDevolucaoConfirmResumo" class="estoque-confirm-lista"></div>
+    <div class="field-error" id="estoqueDevolucaoConfirmErr"></div>
+    <div class="modal-actions estoque-confirm-actions">
+      <button type="button" class="btn-ghost" id="estoqueDevolucaoConfirmCancelBtn">Cancelar</button>
+      <button type="button" class="btn-primary" id="estoqueDevolucaoConfirmBtn">Enviar devolução</button>
     </div>
   </div>
 </div>
@@ -12626,8 +12671,8 @@ async function confirmarAjusteLinha(id){
 // ===== Registrar devolução — Gestor/Técnico/Oficina (etapa: devolução funcional) =====
 // Reaproveita applyEstoqueMovimento (que já usa atomicSetEstoqueQuantity) com type: 'devolucao',
 // registrando em estoqueMovimentacoes — NÃO em estoqueRetiradas. Nenhuma segunda lógica de saldo.
-let estoqueDevolucaoRowState = {}; // id -> string digitada (quantidade a devolver) — só linhas mexidas
-let estoqueDevolucaoRowInFlight = {}; // id -> bool, trava por linha (idempotência)
+let estoqueDevolucaoRowState = {}; // id -> string digitada (quantidade a devolver) — só linhas mexidas; local até confirmar
+let estoqueDevolucaoEnvioInFlight = false; // trava do envio único (duplo/triplo clique)
 
 function renderEstoqueDevolucaoTab(){
   const box = document.getElementById('estoqueDevolucaoMateriaisList');
@@ -12641,53 +12686,56 @@ function renderEstoqueDevolucaoTab(){
   items = items.slice().sort((a, b) => ((a.category || '') + a.name + a.unit).localeCompare((b.category || '') + b.name + b.unit, 'pt-BR'));
   box.innerHTML = items.length ? items.map(it => {
     const val = estoqueDevolucaoRowState[it.id] != null ? estoqueDevolucaoRowState[it.id] : '0';
-    return `<div class="estoque-op-row" data-devolucaorow="${it.id}">
-      <div class="estoque-row-main">
-        <div class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</div>
-        <div class="sub">${it.sku ? 'Código: ' + escapeHtml(it.sku) + '  ·  ' : ''}Categoria: ${escapeHtml(it.category || '—')}  ·  Saldo atual: <b>${it.quantity}</b></div>
-      </div>
-      <div class="estoque-op-block">
+    return `<div class="estoque-op-row compacta" data-devolucaorow="${it.id}">
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Atual: ${it.quantity}</span></div>
+      <div class="linha2">
         <div class="estoque-qty-stepper">
           <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
           <input type="number" class="estoque-qty-input" min="0" step="any" data-devolucaoqtd="${it.id}" data-qtybase="0" value="${val}">
           <button type="button" class="estoque-qty-btn" data-qtystep="1">+</button>
         </div>
-        <button type="button" class="btn-primary" data-devolucaosalvar="${it.id}" style="display:none;">Salvar</button>
+        <span class="apos" data-devolucaonovolabel="${it.id}"></span>
       </div>
-      <div class="estoque-op-diff" data-devolucaodiff="${it.id}" style="display:none;">
-        <div>Novo saldo: <b data-devolucaonovolabel="${it.id}"></b></div>
-        <div style="flex:1 1 200px; min-width:200px;"><input type="text" placeholder="Observação (opcional)" data-devolucaoobs="${it.id}" style="width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:var(--radius-sm); font-family:var(--sans); font-size:12.5px;"></div>
-      </div>
-      <div class="field-error" data-devolucaoerr="${it.id}" style="width:100%;"></div>
     </div>`;
   }).join('') : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
   box.querySelectorAll('[data-devolucaorow]').forEach(row => {
     const id = Number(row.dataset.devolucaorow);
     wireEstoqueQtyStepper(row, () => estoqueDevolucaoAtualizarLinha(id));
     estoqueDevolucaoAtualizarLinha(id);
-    const saveBtn = row.querySelector('[data-devolucaosalvar]');
-    if(saveBtn) saveBtn.addEventListener('click', () => confirmarDevolucaoLinha(id));
   });
+  estoqueDevolucaoAtualizarContagem();
 }
 document.getElementById('estoqueDevolucaoSearch').addEventListener('input', renderEstoqueDevolucaoTab);
 document.getElementById('estoqueDevolucaoCatFiltro').addEventListener('change', renderEstoqueDevolucaoTab);
 
+// Só atualiza estado local e o "Novo saldo" da linha — nunca toca no Firebase.
 function estoqueDevolucaoAtualizarLinha(id){
   const it = estoqueItens.find(x => x.id === id);
   const inp = document.querySelector(`[data-devolucaoqtd="${id}"]`);
   if(!it || !inp) return;
   const v = inp.value.trim();
   if(v === '' || Number(v) <= 0) delete estoqueDevolucaoRowState[id]; else estoqueDevolucaoRowState[id] = v;
+  estoqueDevolucaoAtualizarContagem();
   const qtd = Number(v);
-  const diffBox = document.querySelector(`[data-devolucaodiff="${id}"]`);
-  const saveBtn = document.querySelector(`[data-devolucaosalvar="${id}"]`);
-  const semQtd = v === '' || !Number.isFinite(qtd) || qtd <= 0;
-  if(diffBox) diffBox.style.display = semQtd ? 'none' : '';
-  if(saveBtn) saveBtn.style.display = semQtd ? 'none' : '';
-  if(!semQtd){
-    const novoLabel = document.querySelector(`[data-devolucaonovolabel="${id}"]`);
-    if(novoLabel) novoLabel.textContent = String((Number(it.quantity) || 0) + qtd);
-  }
+  const atual = Number(it.quantity) || 0;
+  const novoLabel = document.querySelector(`[data-devolucaonovolabel="${id}"]`);
+  if(novoLabel) novoLabel.innerHTML = `Novo saldo: <b>${(!Number.isFinite(qtd) || qtd <= 0) ? atual : atual + qtd}</b>`;
+}
+function estoqueDevolucaoAtualizarContagem(){
+  const el = document.getElementById('estoqueDevolucaoSelecionados'); if(!el) return;
+  const n = Object.keys(estoqueDevolucaoRowState).filter(id => Number(estoqueDevolucaoRowState[id]) > 0).length;
+  el.textContent = n ? `${n} material(is) selecionado(s)` : 'Nenhum material selecionado';
+}
+// Coleta só os itens com quantidade > 0 (mesmo espírito de montarPedidoRetirada).
+function montarPedidoDevolucao(){
+  const pedido = [], erros = [];
+  Object.keys(estoqueDevolucaoRowState).forEach(idStr => {
+    const id = Number(idStr); const it = estoqueItens.find(x => x.id === id); if(!it) return;
+    const n = Number(estoqueDevolucaoRowState[idStr]);
+    if(!Number.isFinite(n) || n <= 0){ erros.push(`Quantidade inválida em ${it.name}${it.unit ? ' — ' + it.unit : ''}.`); return; }
+    pedido.push({ estoqueItemId: id, name: it.name, unit: it.unit, quantity: n, atual: Number(it.quantity) || 0 });
+  });
+  return { pedido, erros };
 }
 
 // Validação + permissão na função de execução (mesmos perfis que já podem retirar: Gestor,
@@ -12697,31 +12745,50 @@ async function confirmarDevolucaoEstoque(itemId, quantidade, observacao){
   if(!Number.isFinite(quantidade) || quantidade <= 0) return { ok: false, reason: 'Quantidade devolvida deve ser um número maior que zero.' };
   return await applyEstoqueMovimento(itemId, 'devolucao', quantidade, observacao);
 }
-async function confirmarDevolucaoLinha(id){
-  if(estoqueDevolucaoRowInFlight[id]) return;
-  const errBox = document.querySelector(`[data-devolucaoerr="${id}"]`);
-  if(errBox) errBox.textContent = '';
-  const inp = document.querySelector(`[data-devolucaoqtd="${id}"]`);
-  const obsInp = document.querySelector(`[data-devolucaoobs="${id}"]`);
-  if(!inp) return;
-  const qtdRaw = inp.value;
-  if(qtdRaw.trim() === ''){ if(errBox) errBox.textContent = 'Informe a quantidade a devolver.'; return; }
-  const qtd = Number(qtdRaw);
-  const obs = obsInp ? obsInp.value.trim() : '';
-  estoqueDevolucaoRowInFlight[id] = true;
-  const btn = document.querySelector(`[data-devolucaosalvar="${id}"]`);
-  const lbl = btn ? btn.textContent : ''; if(btn){ btn.disabled = true; btn.textContent = 'Salvando...'; }
-  const r = await confirmarDevolucaoEstoque(id, qtd, obs);
-  estoqueDevolucaoRowInFlight[id] = false;
-  if(btn){ btn.disabled = false; btn.textContent = lbl; }
-  if(!r.ok){
-    if(errBox) errBox.textContent = r.reason === 'offline' || r.reason === 'falha de gravação' ? 'Não foi possível registrar a devolução. Verifique sua internet e tente novamente.' : r.reason;
+
+// 1) "Enviar devolução": NÃO grava — só coleta os itens > 0 e abre o modal de confirmação.
+document.getElementById('estoqueDevolucaoEnviarBtn').addEventListener('click', () => {
+  const errBox = document.getElementById('estoqueDevolucaoErr'); errBox.textContent = '';
+  const { pedido, erros } = montarPedidoDevolucao();
+  if(erros.length){ errBox.textContent = erros.join(' '); return; }
+  if(!pedido.length){ errBox.textContent = 'Selecione pelo menos um material (quantidade maior que zero).'; return; }
+  document.getElementById('estoqueDevolucaoConfirmQuem').textContent = 'Responsável: ' + (currentActingName() || '—');
+  document.getElementById('estoqueDevolucaoConfirmResumo').innerHTML = pedido.map(p =>
+    `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${p.quantity} un.</div><div class="apos">Novo saldo: ${p.atual + p.quantity}</div></div>`
+  ).join('');
+  document.getElementById('estoqueDevolucaoConfirmErr').textContent = '';
+  document.getElementById('estoqueDevolucaoConfirmOverlay').classList.add('open');
+});
+document.getElementById('estoqueDevolucaoConfirmCancelBtn').addEventListener('click', () => document.getElementById('estoqueDevolucaoConfirmOverlay').classList.remove('open'));
+
+// 2) Confirmação no modal: cada item passa pela lógica existente (applyEstoqueMovimento →
+// atomicSetEstoqueQuantity, saldo REAL da transaction). Se algum falhar, nada de sucesso falso:
+// os que deram certo são zerados, os que falharam continuam selecionados pra nova tentativa.
+document.getElementById('estoqueDevolucaoConfirmBtn').addEventListener('click', async () => {
+  if(estoqueDevolucaoEnvioInFlight || !canRetirarEstoque()) return;
+  const errBox = document.getElementById('estoqueDevolucaoConfirmErr'); errBox.textContent = '';
+  const { pedido, erros } = montarPedidoDevolucao();
+  if(erros.length || !pedido.length){ errBox.textContent = erros.join(' ') || 'Nenhum item.'; return; }
+  estoqueDevolucaoEnvioInFlight = true;
+  const btn = document.getElementById('estoqueDevolucaoConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
+  const obs = document.getElementById('estoqueDevolucaoObs').value.trim();
+  const falhas = [];
+  for(const p of pedido){
+    const r = await confirmarDevolucaoEstoque(p.estoqueItemId, p.quantity, obs);
+    if(r.ok) delete estoqueDevolucaoRowState[p.estoqueItemId];
+    else falhas.push(`${p.name}${p.unit ? ' — ' + p.unit : ''}: ${r.reason === 'offline' || r.reason === 'falha de gravação' ? 'sem conexão' : r.reason}`);
+  }
+  btn.disabled = false; btn.textContent = lbl; estoqueDevolucaoEnvioInFlight = false;
+  renderEstoqueDevolucaoTab();
+  if(falhas.length){
+    const okN = pedido.length - falhas.length;
+    errBox.textContent = (okN ? `${okN} de ${pedido.length} item(ns) registrado(s). ` : '') + `Não foi possível registrar: ${falhas.join('; ')}. Esses itens continuam selecionados — verifique sua internet e tente novamente.`;
     return;
   }
-  // Sucesso: zera só esta linha ("Salvo ✓" rápido) e re-renderiza com o saldo atualizado.
-  delete estoqueDevolucaoRowState[id];
-  renderEstoqueDevolucaoTab();
-}
+  document.getElementById('estoqueDevolucaoConfirmOverlay').classList.remove('open');
+  document.getElementById('estoqueDevolucaoObs').value = '';
+  alert('Devolução registrada com sucesso.');
+});
 
 function popularSelectCategorias(sel, comTodas){
   const cur = sel.value;
@@ -13061,18 +13128,15 @@ function renderEstoqueRetiradaList(){
   items = items.slice().sort((a, b) => ((a.category || '') + a.name + a.unit).localeCompare((b.category || '') + b.name + b.unit, 'pt-BR'));
   box.innerHTML = items.length ? items.map(it => {
     const val = estoqueRetiradaQtds[it.id] != null ? estoqueRetiradaQtds[it.id] : '0';
-    return `<div class="estoque-op-row" data-retiradarow="${it.id}">
-      <div class="estoque-row-main">
-        <div class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</div>
-        <div class="sub">${it.sku ? 'Código: ' + escapeHtml(it.sku) + '  ·  ' : ''}Categoria: ${escapeHtml(it.category || '—')}  ·  Saldo disponível: <b>${it.quantity}</b></div>
-      </div>
-      <div class="estoque-op-block">
+    return `<div class="estoque-op-row compacta" data-retiradarow="${it.id}">
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Disponível: ${it.quantity}</span></div>
+      <div class="linha2">
         <div class="estoque-qty-stepper">
           <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
           <input type="number" class="estoque-qty-input" min="0" step="any" data-retiradaqtd="${it.id}" data-qtybase="0" value="${val}">
           <button type="button" class="estoque-qty-btn" data-qtystep="1">+</button>
         </div>
-        <div class="sub mono" data-retiradasaldoapos="${it.id}" style="text-align:right;"></div>
+        <span class="apos" data-retiradasaldoapos="${it.id}"></span>
       </div>
     </div>`;
   }).join('') : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
@@ -13092,12 +13156,19 @@ function estoqueRetiradaOnQtyChange(id){
   // outro valor (mesmo inválido, como negativo) fica no pedido pra ser pego pela validação de
   // montarPedidoRetirada(), como já era — só "0"/vazio nunca foi um pedido de verdade.
   if(v === '' || Number(v) === 0) delete estoqueRetiradaQtds[id]; else estoqueRetiradaQtds[id] = v;
+  estoqueRetiradaAtualizarContagem();
   if(!label) return;
   const qtd = Number(v);
-  if(!Number.isFinite(qtd) || qtd <= 0){ label.textContent = ''; return; }
-  const saldoApos = (Number(it.quantity) || 0) - qtd;
-  label.textContent = `Saldo após retirada: ${saldoApos}` + (saldoApos < 0 ? ' — quantidade maior que o saldo disponível.' : '');
-  label.style.color = saldoApos < 0 ? 'var(--red)' : 'var(--text-dim)';
+  const atual = Number(it.quantity) || 0;
+  if(!Number.isFinite(qtd) || qtd <= 0){ label.innerHTML = `Após retirada: <b>${atual}</b>`; label.classList.remove('excede'); return; }
+  const saldoApos = atual - qtd;
+  label.innerHTML = `Após retirada: <b>${saldoApos}</b>` + (saldoApos < 0 ? ' — maior que o disponível' : '');
+  label.classList.toggle('excede', saldoApos < 0);
+}
+function estoqueRetiradaAtualizarContagem(){
+  const el = document.getElementById('estoqueRetiradaSelecionados'); if(!el) return;
+  const n = Object.keys(estoqueRetiradaQtds).filter(id => Number(estoqueRetiradaQtds[id]) > 0).length;
+  el.textContent = n ? `${n} material(is) selecionado(s)` : 'Nenhum material selecionado';
 }
 document.getElementById('estoqueRetiradaSearch').addEventListener('input', renderEstoqueRetiradaList);
 document.getElementById('estoqueRetiradaCatFiltro').addEventListener('change', renderEstoqueRetiradaList);
@@ -13120,8 +13191,13 @@ document.getElementById('estoqueRetiradaRevisarBtn').addEventListener('click', (
   if(erros.length){ errBox.textContent = erros.join(' '); return; }
   if(!pedido.length){ errBox.textContent = 'Informe a quantidade de pelo menos um material.'; return; }
   estoqueRetiradaIdAtual = estoqueRetiradaIdAtual || (Date.now() + Math.floor(Math.random() * 1000000));
-  document.getElementById('estoqueRetiradaConfirmTecnico').textContent = 'Técnico: ' + (currentTechName || '—');
-  document.getElementById('estoqueRetiradaConfirmResumo').innerHTML = pedido.map(p => `<div class="painel-stat-row"><div class="painel-stat-label">${escapeHtml(p.name)} — ${escapeHtml(p.unit)}</div><div class="painel-stat-value mono">${p.quantity}</div></div>`).join('');
+  // Responsável = quem está agindo (currentActingName: Oficina/Gestor/Técnico), não só o Técnico —
+  // antes usava currentTechName e ficava vazio para Gestor/Oficina.
+  document.getElementById('estoqueRetiradaConfirmTecnico').textContent = 'Responsável: ' + (currentActingName() || '—');
+  document.getElementById('estoqueRetiradaConfirmResumo').innerHTML = pedido.map(p => {
+    const it = estoqueItens.find(x => x.id === p.estoqueItemId); const atual = it ? (Number(it.quantity) || 0) : 0;
+    return `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${p.quantity} un.</div><div class="apos">Após: ${atual - p.quantity}</div></div>`;
+  }).join('');
   document.getElementById('estoqueRetiradaConfirmErr').textContent = '';
   document.getElementById('estoqueRetiradaConfirmOverlay').classList.add('open');
 });
@@ -13133,8 +13209,8 @@ document.getElementById('estoqueRetiradaConfirmBtn').addEventListener('click', a
   const errBox = document.getElementById('estoqueRetiradaConfirmErr'); errBox.textContent = '';
   if(erros.length || !pedido.length){ errBox.textContent = erros.join(' ') || 'Nenhum item.'; return; }
   estoqueRetiradaConfirmInFlight = true;
-  const btn = document.getElementById('estoqueRetiradaConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Registrando...';
-  const r = await executarRetirada(estoqueRetiradaIdAtual, pedido, currentTechName, document.getElementById('estoqueRetiradaObs').value);
+  const btn = document.getElementById('estoqueRetiradaConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
+  const r = await executarRetirada(estoqueRetiradaIdAtual, pedido, currentActingName(), document.getElementById('estoqueRetiradaObs').value);
   btn.disabled = false; btn.textContent = lbl; estoqueRetiradaConfirmInFlight = false;
   if(!r.ok){
     let msg = r.reason;
