@@ -2741,7 +2741,7 @@ PERF_DIAG.summary = function(sessionIndex){
     faseA: { ms: bootstrapDone ? bootstrapDone.tMs - (find('auth_bootstrap_start') || {tMs:0}).tMs : null, leituras: gets('A').length, kbGet: kb(gets('A')), kbPrimeiroFire: kb(inPhase('A').filter(o => o.op === 'on_fire' && o.fireIndex === 1)) },
     faseB: { ms: (start && done) ? done.tMs - start.tMs : null, leituras: gets('B').length, kbGet: kb(gets('B')), kbPrimeiroFire: kb(inPhase('B').filter(o => o.op === 'on_fire' && o.fireIndex === 1)), listeners: done && done.listenersOnAfter },
     nos: Object.values(porNo).sort((a, b) => (b.getKB || 0) - (a.getKB || 0)),
-    servicesMedia: (sess ? (sess.media || []) : (PERF_DIAG.media || [])).map(m => ({ serviceId: m.serviceId, campo: m.campo, cache: m.cache, ms: m.ms, kb: m.kb, tMs: m.tMs })),
+    servicesMedia: (sess ? (sess.media || []) : (PERF_DIAG.media || [])).map(m => ({ serviceId: m.serviceId, campo: m.campo, cache: m.cache, ms: m.ms, kb: m.kb, kbCache: m.kbCache, tMs: m.tMs })),
     services: PERF_DIAG.analyzeServices(), oficinaEquipamentos: PERF_DIAG.analyzeOficina(), galleryPhotos: PERF_DIAG.analyzeGallery()
   };
 };
@@ -2759,7 +2759,9 @@ PERF_DIAG.report = function(sessionIndex){
   if(fires.length){ L.push('--- Disparos posteriores de listeners (crescimento durante o uso) ---'); fires.sort((a,b)=>a.tMs-b.tMs).forEach(f => L.push(`${f.tMs} ms | ${f.node} | ${f.kb} KB | ${f.role} | ${f.causa}`)); }
   if(s.servicesMedia && s.servicesMedia.length){
     L.push('--- servicesMedia (mídia sob demanda) ---');
-    s.servicesMedia.forEach(m => L.push(`${m.tMs} ms | atividade ${m.serviceId} | campo ${m.campo} | ${m.cache} | ${m.ms} ms | ${m.kb} KB`));
+    s.servicesMedia.forEach(m => L.push(m.cache === 'hit'
+      ? `${m.tMs} ms | atividade ${m.serviceId} | campo ${m.campo} | cache: hit | KB em cache: ${m.kbCache} | leitura real: 0 KB | ${m.ms} ms`
+      : `${m.tMs} ms | atividade ${m.serviceId} | campo ${m.campo} | cache: ${m.cache} | leitura real: ${m.kb} KB | ${m.ms} ms`));
     const lidos = s.servicesMedia.filter(m => m.cache === 'miss');
     L.push(`  leituras reais: ${lidos.length} | KB lidos: ${Math.round(lidos.reduce((a, m) => a + (m.kb || 0), 0) * 10) / 10} | hits: ${s.servicesMedia.filter(m => m.cache === 'hit').length}`);
   }
@@ -11961,7 +11963,7 @@ async function loadServiceMedia(id, motivo){
   if(!svc || serviceMediaModel(svc) === 'inline'){ perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'inline (sem leitura)', ms: 0, kb: 0 }); return serviceMediaCacheEntry(id); }
   if(!svc.mediaExternal){ perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'sem mídia (sem leitura)', ms: 0, kb: 0 }); return serviceMediaCacheEntry(id); }
   const c = serviceMediaCacheEntry(id);
-  if(c.loaded){ perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'hit', ms: 0, kb: 0 }); return c; }
+  if(c.loaded){ perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'hit', ms: 0, kb: 0, kbCache: perfApproxKB(c[motivo && SERVICE_MEDIA_FIELDS.includes(motivo) ? motivo : SERVICE_MEDIA_FIELDS.find(f => Array.isArray(c[f])) || 'photos'] || []), leituraRealKB: 0 }); return c; }
   if(serviceMediaLoading[k]) return serviceMediaLoading[k];
   serviceMediaLoading[k] = (async () => {
     try{
@@ -11980,6 +11982,121 @@ async function loadServiceMedia(id, motivo){
   })();
   return serviceMediaLoading[k];
 }
+// =====================================================================================
+// AUDITORIA (SOMENTE LEITURA) — preparação da migração das mídias inline de services.
+// Não grava nada em lugar nenhum, não lê servicesMedia (mapeia só o estado atual de services,
+// que já está inteiro em memória), não cria campo novo no Firebase. Executar manualmente pelo
+// Console: auditInlineServiceMediaMigration()
+// =====================================================================================
+function auditInlineServiceMediaMigration(){
+  const registros = [];
+  const inesperados = [];
+  let comMidia = 0, semMidia = 0;
+  let totItens = { photos: 0, audios: 0, technicianInstructionPhotos: 0, technicianInstructionAudios: 0 };
+  let totKB = { photos: 0, audios: 0, technicianInstructionPhotos: 0, technicianInstructionAudios: 0 };
+  let mediaExternalComInline = 0, semCriterioAlteracao = 0;
+
+  services.forEach(svc => {
+    if(!svc || typeof svc !== 'object' || svc.id == null){
+      inesperados.push({ motivo: 'registro sem id ou não-objeto', amostra: svc && typeof svc === 'object' ? { client: svc.client, date: svc.date } : String(svc) });
+      return;
+    }
+    const fields = {};
+    let temInline = false, totalItems = 0, totalKB = 0;
+    SERVICE_MEDIA_FIELDS.forEach(f => {
+      const raw = svc[f];
+      const exists = f in svc;
+      let items = 0, kb = 0, estruturaInesperada = false;
+      if(exists){
+        if(Array.isArray(raw)){
+          items = raw.length;
+          const m = perfMediaChars(raw);
+          kb = perfKB(m.chars);
+        } else if(raw !== undefined && raw !== null){
+          // campo presente mas não é array — estrutura fora do esperado (não é Base64, não conta como mídia)
+          estruturaInesperada = true;
+        }
+      }
+      fields[f] = { exists, items, kb };
+      if(items > 0){ temInline = true; totalItems += items; totalKB += kb; totItens[f] += items; totKB[f] += kb; }
+      if(exists && items === 0 && !estruturaInesperada){
+        // campo presente mas vazio (array []) — não é mídia, só sinalizamos como situação a observar
+        fields[f].vazio = true;
+      }
+      if(estruturaInesperada){
+        inesperados.push({ serviceId: svc.id, campo: f, motivo: 'campo presente mas não é array', tipo: typeof raw });
+      }
+    });
+
+    if(!temInline){ semMidia++; return; } // só entram no relatório os que TÊM mídia inline (pedido explícito)
+    comMidia++;
+
+    const situacoes = [];
+    if(svc.mediaExternal === true){ situacoes.push('mediaExternal===true com mídia inline presente'); mediaExternalComInline++; }
+    // "existência aparente de mídia externa": não lemos servicesMedia (proibido nesta auditoria),
+    // então o único sinal disponível em services é o próprio mediaExternal — já coberto acima.
+    if(Object.values(fields).some(f => f.vazio)) situacoes.push('há campo(s) de mídia presente(s) porém vazio(s) — sem impacto, mas fora do padrão "campo ausente" dos registros novos');
+
+    const recentlyChanged = svc.completedAt || 'unknown';
+    if(recentlyChanged === 'unknown') semCriterioAlteracao++;
+
+    registros.push({
+      serviceId: svc.id, client: svc.client, date: svc.date, status: svc.status, mediaExternal: svc.mediaExternal === true,
+      fields, totalItems, totalKB: Math.round(totalKB * 10) / 10, recentlyChanged,
+      situacoesParaAtencao: situacoes
+    });
+  });
+
+  const totalGeralKB = Math.round(Object.values(totKB).reduce((a, b) => a + b, 0) * 10) / 10;
+  const estruturalTotalKB = perfKB(perfApproxKB(services) * 1024 - Object.values(totKB).reduce((a, b) => a + b * 1024, 0));
+  const resumo = {
+    activitiesTotais: services.length, comMidiaInline: comMidia, semMidiaInline: semMidia,
+    totalPhotos: totItens.photos, totalAudios: totItens.audios,
+    totalTechnicianInstructionPhotos: totItens.technicianInstructionPhotos, totalTechnicianInstructionAudios: totItens.technicianInstructionAudios,
+    totalMidiaInlineKB: totalGeralKB,
+    servicesEstruturalKB: Math.max(0, Math.round(estruturalTotalKB * 10) / 10),
+    estimativaServicesAposMigracaoKB: Math.max(0, Math.round(estruturalTotalKB * 10) / 10), // sem a mídia, só estrutural
+    estimativaServicesMediaKB: totalGeralKB,
+    mediaExternalComInline, estruturasInesperadas: inesperados.length, registrosSemCriterioAlteracao: semCriterioAlteracao
+  };
+
+  const L = [];
+  L.push('=== AUDITORIA MIGRAÇÃO servicesMedia ===');
+  L.push('');
+  L.push(`Activities totais: ${resumo.activitiesTotais}`);
+  L.push(`Com mídia inline: ${resumo.comMidiaInline}`);
+  L.push(`Sem mídia inline: ${resumo.semMidiaInline}`);
+  L.push('');
+  L.push(`Photos: ${totItens.photos} itens / ${totKB.photos.toFixed(1)} KB`);
+  L.push(`Audios: ${totItens.audios} itens / ${totKB.audios.toFixed(1)} KB`);
+  L.push(`Instruction photos: ${totItens.technicianInstructionPhotos} itens / ${totKB.technicianInstructionPhotos.toFixed(1)} KB`);
+  L.push(`Instruction audios: ${totItens.technicianInstructionAudios} itens / ${totKB.technicianInstructionAudios.toFixed(1)} KB`);
+  L.push('');
+  L.push(`TOTAL MÍDIA INLINE: ${totalGeralKB.toFixed(1)} KB`);
+  L.push(`services estrutural (estimado): ${resumo.servicesEstruturalKB.toFixed(1)} KB`);
+  L.push(`services após migração (estimado): ${resumo.estimativaServicesAposMigracaoKB.toFixed(1)} KB`);
+  L.push(`servicesMedia após migração (estimado): ${resumo.estimativaServicesMediaKB.toFixed(1)} KB`);
+  L.push('');
+  L.push('ATENÇÃO:');
+  L.push(`- mediaExternal + mídia inline: ${mediaExternalComInline}`);
+  L.push(`- estruturas inesperadas: ${inesperados.length}`);
+  L.push(`- registros sem critério confiável de alteração: ${semCriterioAlteracao}`);
+  L.push('');
+  L.push('ID'.padEnd(16) + 'Cliente'.padEnd(22) + 'Status'.padEnd(16) + 'Campos'.padEnd(10) + 'Itens'.padEnd(7) + 'KB'.padEnd(9) + 'mediaExternal');
+  registros.slice().sort((a, b) => b.totalKB - a.totalKB).forEach(r => {
+    const campos = SERVICE_MEDIA_FIELDS.filter(f => r.fields[f].items > 0).length;
+    L.push(String(r.serviceId).padEnd(16) + String(r.client || '—').slice(0, 20).padEnd(22) + String(r.status || '—').padEnd(16) + String(campos).padEnd(10) + String(r.totalItems).padEnd(7) + String(r.totalKB).padEnd(9) + String(r.mediaExternal));
+  });
+  if(inesperados.length){
+    L.push('');
+    L.push('Estruturas inesperadas encontradas:');
+    inesperados.forEach(i => L.push('  ' + JSON.stringify(i)));
+  }
+  console.log(L.join('\n'));
+
+  return { resumo, registros, estruturasInesperadas: inesperados };
+}
+
 async function loadServiceMediaForMany(list, motivo){
   for(const s of (list || [])){ if(s && s.mediaExternal && !serviceMediaIsLoaded(s)) await loadServiceMedia(s.id, motivo); }
 }
