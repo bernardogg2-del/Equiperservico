@@ -2579,15 +2579,29 @@ const PERF_DIAG = {
   lastWrite: {},     // por nó: tMs da última escrita local (pra sugerir a causa de um disparo)
   phase: 'pre',      // 'pre' | 'A' (bootstrap) | 'B' (dados do perfil) | 'uso'
   openedAt: new Date().toISOString(),
-  role: null
+  role: null,
+  sessions: [],      // uma por login/perfil na mesma página (logout/login cria outra)
+  session: null      // sessão corrente
 };
 window.PERF_DIAG = PERF_DIAG;
 function perfNow(){ return Math.round(performance.now()); }
 function perfMark(label, extra){
   if(label === 'auth_bootstrap_start') PERF_DIAG.phase = 'A';
-  if(label === 'role_data_start'){ PERF_DIAG.phase = 'B'; PERF_DIAG.role = extra && extra.role; }
-  if(label === 'role_data_done') PERF_DIAG.phase = 'uso';
-  PERF_DIAG.events.push(Object.assign({ label, tMs: perfNow() }, extra || {}));
+  if(label === 'role_data_start'){
+    PERF_DIAG.phase = 'B'; PERF_DIAG.role = extra && extra.role;
+    // Nova sessão de diagnóstico a cada login (troca de perfil na mesma página não mistura números)
+    PERF_DIAG.session = { index: PERF_DIAG.sessions.length + 1, role: PERF_DIAG.role, loginAt: new Date().toISOString(), startMs: perfNow(), endMs: null, ops: [], listenersAttachedHere: 0, listenersActiveAtEnd: null, mediaKBAtEnd: null };
+    PERF_DIAG.sessions.push(PERF_DIAG.session);
+  }
+  if(label === 'role_data_done'){
+    PERF_DIAG.phase = 'uso';
+    if(PERF_DIAG.session){
+      PERF_DIAG.session.endMs = perfNow();
+      PERF_DIAG.session.listenersActiveAtEnd = extra && extra.listenersOnAfter;
+      try{ PERF_DIAG.session.mediaKBAtEnd = { services: PERF_DIAG.analyzeServices().midiaKB, oficinaEquipamentos: PERF_DIAG.analyzeOficina().midiaKB, galleryPhotos: PERF_DIAG.analyzeGallery().fotosKB }; }catch(e){}
+    }
+  }
+  PERF_DIAG.events.push(Object.assign({ label, tMs: perfNow(), session: PERF_DIAG.session ? PERF_DIAG.session.index : 0 }, extra || {}));
 }
 function perfApproxKB(value){
   try{ return Math.round(JSON.stringify(value).length / 1024 * 10) / 10; }catch(e){ return 0; }
@@ -2622,7 +2636,9 @@ function perfRecordOp(o){
   if(o.durMs !== undefined) rec.durMs = Math.round(o.durMs);
   if(o.snap){ const i = perfSnapInfo(o.snap); rec.kb = i.kb; rec.records = i.records; }
   if(o.fireIndex !== undefined){ rec.fireIndex = o.fireIndex; rec.causa = perfCausaDisparo(o.node, o.fireIndex); }
+  rec.session = PERF_DIAG.session ? PERF_DIAG.session.index : 0;
   PERF_DIAG.ops.push(rec);
+  if(PERF_DIAG.session){ PERF_DIAG.session.ops.push(rec); if(o.op === 'on_attach') PERF_DIAG.session.listenersAttachedHere++; }
 }
 // Envolve as referências do Firebase: get(), on(), e as escritas (só pra anotar o momento).
 function perfWrapRef(ref, path){
@@ -2701,9 +2717,12 @@ PERF_DIAG.analyzeGallery = () => {
   const m = perfMediaChars(g.map(r => r.photo));
   return { registros: g.length, totalKB: perfKB(perfApproxKB(g) * 1024), fotos: m.n, fotosKB: perfKB(m.chars), mediaKB: m.n ? Math.round(m.chars / m.n / 1024 * 10) / 10 : 0, maiorFotoKB: perfKB(m.max) };
 };
-PERF_DIAG.summary = function(){
-  const ev = PERF_DIAG.events, ops = PERF_DIAG.ops;
-  const find = l => ev.find(e => e.label === l);
+PERF_DIAG.summary = function(sessionIndex){
+  const sess = sessionIndex ? PERF_DIAG.sessions[sessionIndex - 1] : PERF_DIAG.session;
+  const sIdx = sess ? sess.index : 0;
+  const ev = PERF_DIAG.events.filter(e => e.session === sIdx || e.session === 0);
+  const ops = PERF_DIAG.ops.filter(o => o.session === sIdx || o.session === 0);
+  const find = l => { const list = ev.filter(e => e.label === l); return list[list.length - 1]; };
   const inPhase = ph => ops.filter(o => o.phase === ph);
   const gets = ph => inPhase(ph).filter(o => o.op === 'get');
   const kb = list => Math.round(list.reduce((s, o) => s + (o.kb || 0), 0) * 10) / 10;
@@ -2716,18 +2735,21 @@ PERF_DIAG.summary = function(){
   });
   const bootstrapDone = find('auth_bootstrap_done'), start = find('role_data_start'), done = find('role_data_done');
   return {
-    abertoEm: PERF_DIAG.openedAt, perfil: PERF_DIAG.role,
+    abertoEm: PERF_DIAG.openedAt, perfil: sess ? sess.role : PERF_DIAG.role, sessao: sIdx, totalSessoes: PERF_DIAG.sessions.length, loginEm: sess && sess.loginAt,
+    listenersAnexadosNestaSessao: sess ? sess.listenersAttachedHere : 0, midiaKBAoFimDoCarregamento: sess && sess.mediaKBAtEnd,
     marcos: { bootstrapConcluidoMs: bootstrapDone && bootstrapDone.tMs, loginClickMs: start && start.tMs, perfilCarregadoMs: done && done.tMs },
     faseA: { ms: bootstrapDone ? bootstrapDone.tMs - (find('auth_bootstrap_start') || {tMs:0}).tMs : null, leituras: gets('A').length, kbGet: kb(gets('A')), kbPrimeiroFire: kb(inPhase('A').filter(o => o.op === 'on_fire' && o.fireIndex === 1)) },
     faseB: { ms: (start && done) ? done.tMs - start.tMs : null, leituras: gets('B').length, kbGet: kb(gets('B')), kbPrimeiroFire: kb(inPhase('B').filter(o => o.op === 'on_fire' && o.fireIndex === 1)), listeners: done && done.listenersOnAfter },
     nos: Object.values(porNo).sort((a, b) => (b.getKB || 0) - (a.getKB || 0)),
+    servicesMedia: (sess ? (sess.media || []) : (PERF_DIAG.media || [])).map(m => ({ serviceId: m.serviceId, campo: m.campo, cache: m.cache, ms: m.ms, kb: m.kb, tMs: m.tMs })),
     services: PERF_DIAG.analyzeServices(), oficinaEquipamentos: PERF_DIAG.analyzeOficina(), galleryPhotos: PERF_DIAG.analyzeGallery()
   };
 };
-PERF_DIAG.report = function(){
-  const s = PERF_DIAG.summary();
+PERF_DIAG.report = function(sessionIndex){
+  const s = PERF_DIAG.summary(sessionIndex);
   const L = [];
-  L.push(`=== PERF_DIAG — perfil: ${s.perfil || '(nenhum)'} — aberto em ${s.abertoEm} ===`);
+  L.push(`=== PERF_DIAG — sessão ${s.sessao}/${s.totalSessoes} — perfil: ${s.perfil || '(nenhum)'} — login em ${s.loginEm || '—'} (página aberta em ${s.abertoEm}) ===`);
+  L.push(`Listeners anexados nesta sessão: ${s.listenersAnexadosNestaSessao} | mídia em memória ao fim do carregamento (KB): ${s.midiaKBAoFimDoCarregamento ? JSON.stringify(s.midiaKBAoFimDoCarregamento) : '—'}`);
   L.push(`Marcos (ms desde a abertura): bootstrap concluído ${s.marcos.bootstrapConcluidoMs} | clique de login ${s.marcos.loginClickMs} | perfil carregado ${s.marcos.perfilCarregadoMs}`);
   L.push(`Fase A: ${s.faseA.ms} ms | ${s.faseA.leituras} get() | ${s.faseA.kbGet} KB via get | ${s.faseA.kbPrimeiroFire} KB no 1º disparo dos listeners`);
   L.push(`Fase B: ${s.faseB.ms} ms | ${s.faseB.leituras} get() | ${s.faseB.kbGet} KB via get | ${s.faseB.kbPrimeiroFire} KB no 1º disparo dos listeners | ${s.faseB.listeners} listeners ativos`);
@@ -2735,6 +2757,12 @@ PERF_DIAG.report = function(){
   s.nos.forEach(n => L.push(`${n.node.padEnd(26)} get ${String(n.getKB ?? '-').padStart(8)} KB em ${String(n.getMs ?? '-').padStart(5)} ms (${n.records ?? '-'} reg) | listener anexado em ${n.attachAt ?? '-'} ms | 1º disparo ${n.primeiroFireKB ?? '-'} KB em ${n.primeiroFireAt ?? '-'} ms | disparos posteriores: ${n.firesDepois.length}`));
   const fires = s.nos.flatMap(n => n.firesDepois.map(f => Object.assign({ node: n.node }, f)));
   if(fires.length){ L.push('--- Disparos posteriores de listeners (crescimento durante o uso) ---'); fires.sort((a,b)=>a.tMs-b.tMs).forEach(f => L.push(`${f.tMs} ms | ${f.node} | ${f.kb} KB | ${f.role} | ${f.causa}`)); }
+  if(s.servicesMedia && s.servicesMedia.length){
+    L.push('--- servicesMedia (mídia sob demanda) ---');
+    s.servicesMedia.forEach(m => L.push(`${m.tMs} ms | atividade ${m.serviceId} | campo ${m.campo} | ${m.cache} | ${m.ms} ms | ${m.kb} KB`));
+    const lidos = s.servicesMedia.filter(m => m.cache === 'miss');
+    L.push(`  leituras reais: ${lidos.length} | KB lidos: ${Math.round(lidos.reduce((a, m) => a + (m.kb || 0), 0) * 10) / 10} | hits: ${s.servicesMedia.filter(m => m.cache === 'hit').length}`);
+  }
   const sv = s.services;
   L.push('--- services ---');
   L.push(`total ${sv.totalKB} KB | sem mídia ${sv.semMidiaKB} KB | mídia ${sv.midiaKB} KB | atividades ${sv.registros} | com mídia ${sv.comMidia}`);
@@ -3258,8 +3286,6 @@ async function createRetornoIfNeeded(svc){
       checkIn: '',
       checkOut: '',
       observations: `Retorno referente ao atendimento de ${shortLabel(svc.date)}. Motivo: ${(svc.returnReason && svc.returnReason.trim()) ? svc.returnReason.trim() : (svc.observations || '(sem observação)')}`,
-      photos: [],
-      audios: [],
       isRetorno: true,
       retornoDeId: svc.id
     };
@@ -3451,8 +3477,8 @@ function statusLabelOf(status){
 }
 
 function renderPersonDetailsBlock(svc, label){
-  const photosHtml = (svc.photos || []).map(p => `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"></div>`).join('');
-  const audiosHtml = (svc.audios || []).map(a => `<div class="audio-item"><audio controls src="${a}"></audio></div>`).join('');
+  const photosHtml = getServiceMedia(svc, 'photos').map(p => `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"></div>`).join('');
+  const audiosHtml = getServiceMedia(svc, 'audios').map(a => `<div class="audio-item"><audio controls src="${a}"></audio></div>`).join('');
   const hasData = svc.checkIn || svc.observations || photosHtml || audiosHtml;
   const isManager = currentRole === 'manager';
   const isDone = svc.status === 'concluido';
@@ -3489,10 +3515,14 @@ function renderPersonDetailsBlock(svc, label){
 }
 
 let currentDetailsServiceId = null;
-function openServiceDetails(id){
+async function openServiceDetails(id){
   currentDetailsServiceId = id;
   const s = services.find(x => x.id === id);
   if(!s) return;
+  // Mídia sob demanda (modelo separado): carrega antes de montar; registro antigo não lê nada.
+  await loadServiceMedia(id, 'detalhes');
+  if(s.pairId){ await loadServiceMediaForMany(services.filter(x => x.pairId === s.pairId && x.id !== id), 'detalhes'); }
+  if(currentDetailsServiceId !== id) return; // outra atividade foi aberta enquanto carregava
 
   // Formato antigo (legado): parceiro é um SEGUNDO registro ligado por pairId.
   const partner = s.pairId ? services.find(x => x.pairId === s.pairId && x.id !== s.id) : null;
@@ -3565,7 +3595,7 @@ function openServiceDetails(id){
       }, async (d) => {
         const cur2 = services.find(x => x.id === id);
         if(!cur2) return;
-        applyInstructions(cur2, d);
+        await applyInstructions(cur2, d);
         await saveServices();
         renderInstrEditor();
       });
@@ -3672,6 +3702,7 @@ function openServiceDetails(id){
       btn.textContent = 'Salvando...';
       const created = repeatService(s, [addDays(s.date, 1)]);
       try{
+        await flushServiceMediaPending();
         const ok = await saveServices();
         if(!ok){
           // Não confirmou no servidor — desfaz as cópias locais pra não fingir que a repetição
@@ -3702,6 +3733,7 @@ function openServiceDetails(id){
       }
       const created = repeatService(s, weekDates);
       try{
+        await flushServiceMediaPending();
         const ok = await saveServices();
         if(!ok){
           services = services.filter(x => !created.includes(x));
@@ -3763,7 +3795,7 @@ function repeatService(svc, dates){
           address: source.address || '',
           technician: source.technician,
           status: source.technician ? 'atribuido' : 'aguardando',
-          checkIn: '', checkOut: '', observations: '', photos: [], audios: []
+          checkIn: '', checkOut: '', observations: ''
         };
         if(Array.isArray(source.technicians) && source.technicians.length > 0){
           copy.technicians = source.technicians.slice();
@@ -3774,8 +3806,15 @@ function repeatService(svc, dates){
         if(hasInstructions(source)){
           const ins = getInstructions(source);
           copy.technicianInstructionText = ins.text;
-          copy.technicianInstructionPhotos = ins.photos.slice();
-          copy.technicianInstructionAudios = ins.audios.slice();
+          if(ins.photos.length || ins.audios.length){
+            // Cópia nova = modelo separado: mídia vai pra servicesMedia/<novoId> (enviada por
+            // flushServiceMediaPending() nos botões de repetir, antes do saveServices).
+            const c = serviceMediaCacheEntry(copy.id);
+            c.technicianInstructionPhotos = ins.photos.slice(); c.technicianInstructionAudios = ins.audios.slice(); c.loaded = true;
+            copy.mediaExternal = true;
+            serviceMediaSnapshot[String(copy.id)] = {};
+            serviceMediaPending.add(copy.id);
+          }
         }
         return copy;
       };
@@ -3829,8 +3868,11 @@ document.getElementById('confirmDupla').addEventListener('click', async () => {
         keep.status = 'atribuido';
       }
       delete keep.pairId;
-      keep.photos = (keep.photos || []).concat(other.photos || []);
-      keep.audios = (keep.audios || []).concat(other.audios || []);
+      await loadServiceMediaForMany([keep, other], 'fusao');
+      const fotosFundidas = getServiceMedia(keep, 'photos').concat(getServiceMedia(other, 'photos'));
+      const audiosFundidos = getServiceMedia(keep, 'audios').concat(getServiceMedia(other, 'audios'));
+      if(fotosFundidas.length) await setServiceMedia(keep, 'photos', fotosFundidas);
+      if(audiosFundidos.length) await setServiceMedia(keep, 'audios', audiosFundidos);
       if(other.observations && other.observations.trim()){
         keep.observations = (keep.observations ? keep.observations + '\n---\n' : '') + `[${other.technician || 'técnico 2'}] ${other.observations}`;
       }
@@ -6226,7 +6268,7 @@ function galeriaServicePhotosForClient(clientName){
   const items = [];
   services.forEach(s => {
     if(s.client !== clientName) return;
-    (s.photos || []).forEach(p => {
+    getServiceMedia(s, 'photos').forEach(p => {
       if(seen.has(p)) return;
       seen.add(p);
       items.push({ src: p, date: s.date || '', source: 'service' });
@@ -8749,8 +8791,6 @@ async function releaseForReinstallation(equipId, btn, restoreLabel){
       checkIn: '',
       checkOut: '',
       observations: '',
-      photos: [],
-      audios: [],
       equipment: eq.equipment,
       oficinaEquipamentoId: eq.id,
       originServiceId: eq.originServiceId
@@ -9688,7 +9728,7 @@ document.getElementById('addressConfirmOverlay').addEventListener('click', (e) =
     addressConfirmContext = null;
   }
 });
-document.getElementById('confirmAddressSend').addEventListener('click', () => {
+document.getElementById('confirmAddressSend').addEventListener('click', async () => {
   if(!addressConfirmContext) return;
   const t = TECHS.find(x => x.name === addressConfirmContext.techName);
   document.querySelectorAll('[data-addrconfirm]').forEach(inp => {
@@ -9705,6 +9745,7 @@ document.getElementById('confirmAddressSend').addEventListener('click', () => {
   addressConfirmContext = null;
 
   if(t && phoneDigits(t.phone)){
+    await loadServiceMediaForMany(agendaTasksForTech(t.name), 'agenda'); // orientações no modelo separado
     const msg = buildAgendaMessage(t);
     openWhatsapp(phoneDigits(t.phone), msg);
     offerInstructionAttachments(t.name); // só aparece se alguma atividade do dia tiver foto/áudio de orientação
@@ -9888,8 +9929,10 @@ function renderOS(){
     box.innerHTML = `<p class="os-empty">Nenhuma atividade aguardando cadastro/OS no momento.</p>`;
   } else {
     box.innerHTML = pending.map(s => {
-      const photosHtml = (s.photos || []).map(p => `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"></div>`).join('');
-      const audiosHtml = (s.audios || []).map(a => `<div class="audio-item"><audio controls src="${a}"></audio></div>`).join('');
+      const midiaPendente = s.mediaExternal && !serviceMediaIsLoaded(s);
+      const photosHtml = midiaPendente ? '' : getServiceMedia(s, 'photos').map(p => `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"></div>`).join('');
+      const audiosHtml = midiaPendente ? '' : getServiceMedia(s, 'audios').map(a => `<div class="audio-item"><audio controls src="${a}"></audio></div>`).join('');
+      const midiaBtnHtml = midiaPendente ? `<div class="field"><button type="button" class="btn-ghost" data-loadmedia="${s.id}">Ver fotos/áudios do técnico</button></div>` : '';
       const original = s.retornoDeId ? services.find(x => x.id === s.retornoDeId) : null;
       const techLabel = s.isPair ? s.technicianLabel : (getServiceTechnicians(s)[0] || '—');
       const techLabelDisplay = s.isPair ? `👥 ${escapeHtml(techLabel)}` : escapeHtml(techLabel);
@@ -9909,6 +9952,7 @@ function renderOS(){
             <div class="mono">${s.checkIn ? `Início: <b>${s.checkIn}</b>` : '—'}${s.checkOut ? ` &nbsp;·&nbsp; Fim: <b>${s.checkOut}</b>` : ''}</div>
           </div>
           ${s.observations ? `<div class="field"><label>Observação do técnico</label><div>${escapeHtml(s.observations)}</div></div>` : ''}
+          ${midiaBtnHtml}
           ${photosHtml ? `<div class="field"><label>Fotos do técnico</label><div class="photo-row">${photosHtml}</div></div>` : ''}
           ${audiosHtml ? `<div class="field"><label>Áudios do técnico</label><div class="audio-row">${audiosHtml}</div></div>` : ''}
           <div class="field">
@@ -9921,6 +9965,11 @@ function renderOS(){
         </div>
       `;
     }).join('');
+    box.querySelectorAll('[data-loadmedia]').forEach(btn => btn.addEventListener('click', async () => {
+      btn.disabled = true; btn.textContent = 'Carregando...';
+      await loadServiceMedia(Number(btn.dataset.loadmedia), 'os');
+      renderOS();
+    }));
 
     box.querySelectorAll('[data-osdone]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -10272,8 +10321,14 @@ document.getElementById('submitAddBtn').addEventListener('click', (e) => {
     if(taNew) newInstr.text = taNew.value; // garante o texto mesmo sem o evento change ter disparado
     if(newInstr.text.trim() || newInstr.photos.length || newInstr.audios.length){
       newService.technicianInstructionText = newInstr.text.trim();
-      newService.technicianInstructionPhotos = newInstr.photos.slice();
-      newService.technicianInstructionAudios = newInstr.audios.slice();
+      if(newInstr.photos.length || newInstr.audios.length){
+        // Registro novo = modelo separado: a mídia da orientação vai pra servicesMedia/<id>
+        const c = serviceMediaCacheEntry(newService.id);
+        c.technicianInstructionPhotos = newInstr.photos.slice(); c.technicianInstructionAudios = newInstr.audios.slice(); c.loaded = true;
+        newService.mediaExternal = true;
+        serviceMediaSnapshot[String(newService.id)] = {};
+        serviceMediaPending.add(newService.id);
+      }
     }
     services.push(newService);
     upsertClient(client, address);
@@ -10284,7 +10339,8 @@ document.getElementById('submitAddBtn').addEventListener('click', (e) => {
     currentYear = y; currentMonth = m - 1;
     renderAll();
 
-    saveServices(); // salva em segundo plano, sem travar a tela
+    // Mídia da orientação (registro novo → servicesMedia) primeiro, depois o registro; em segundo plano.
+    flushServiceMediaPending().then(() => saveServices()); // salva em segundo plano, sem travar a tela
   }catch(err){
     console.error('Falha ao agendar serviço', err);
     alert('Não foi possível agendar. Tente novamente — se persistir, avise o suporte.');
@@ -11476,6 +11532,7 @@ function compressImageFile(file){
   });
 }
 
+const techMediaTentada = new Set();
 function renderTechView(){
   const t = todayStr();
   const [y,m,d] = t.split('-').map(Number);
@@ -11491,6 +11548,14 @@ function renderTechView(){
       return ao - bo;
     });
 
+  // Mídia sob demanda (modelo separado): carrega uma vez as externas do dia e redesenha; registro
+  // antigo (inline) não lê nada. Uma tentativa por atividade por sessão aqui (upload/detalhes tentam de novo).
+  const externasPendentes = tasks.filter(s => s.mediaExternal && !serviceMediaIsLoaded(s) && !techMediaTentada.has(s.id));
+  if(externasPendentes.length){
+    externasPendentes.forEach(s => techMediaTentada.add(s.id));
+    loadServiceMediaForMany(externasPendentes, 'tecnico').finally(() => { if(currentRole === 'tech') renderTechView(); });
+  }
+
   if(tasks.length === 0){
     list.innerHTML = `<div class="empty-state">Nenhum serviço agendado para hoje.</div>`;
     return;
@@ -11498,15 +11563,15 @@ function renderTechView(){
 
   list.innerHTML = '';
   tasks.forEach((s, i) => {
-    s.photos = s.photos || [];
-    const photosHtml = s.photos.map((p, idx) =>
+    const techPhotos = getServiceMedia(s, 'photos');
+    const photosHtml = techPhotos.map((p, idx) =>
       `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"><button class="photo-rm" data-rmphoto="${s.id}" data-idx="${idx}">✕</button></div>`
     ).join('');
-    const photoAdd = s.photos.length < 4
+    const photoAdd = techPhotos.length < 4
       ? `<label class="photo-add">+<input type="file" accept="image/*" multiple style="display:none;" data-addphoto="${s.id}"></label>`
       : '';
-    s.audios = s.audios || [];
-    const audiosHtml = s.audios.map((a, idx) =>
+    const techAudios = getServiceMedia(s, 'audios');
+    const audiosHtml = techAudios.map((a, idx) =>
       `<div class="audio-item"><audio controls src="${a}"></audio><button class="photo-rm" data-rmaudio="${s.id}" data-idx="${idx}">✕ remover</button></div>`
     ).join('');
 
@@ -11734,17 +11799,19 @@ function renderTechView(){
       const id = Number(e.target.dataset.addphoto);
       const svc = services.find(x => x.id === id);
       if(!svc) return;
-      svc.photos = svc.photos || [];
-      const room = 4 - svc.photos.length;
+      await loadServiceMedia(svc.id, 'photos');
+      const atuais = getServiceMedia(svc, 'photos').slice();
+      const room = 4 - atuais.length;
       if(room <= 0) return;
       const files = Array.from(e.target.files).slice(0, room);
       for(const f of files){
         try{
           const url = await compressImageFile(f);
-          svc.photos.push(url);
+          atuais.push(url);
         }catch(err){ /* ignora arquivo que falhar */ }
       }
-      await saveServices();
+      const r = await setServiceMedia(svc, 'photos', atuais);
+      if(r.model === 'inline') await saveServices();
       renderTechView();
     });
   });
@@ -11754,9 +11821,10 @@ function renderTechView(){
       const idx = Number(e.target.dataset.idx);
       customConfirm('Excluir esta foto? Essa ação não pode ser desfeita.', async () => {
         const svc = services.find(x => x.id === id);
-        if(svc && svc.photos){
-          svc.photos.splice(idx, 1);
-          await saveServices();
+        if(svc){
+          const arr = getServiceMedia(svc, 'photos').slice(); arr.splice(idx, 1);
+          const r = await setServiceMedia(svc, 'photos', arr);
+          if(r.model === 'inline') await saveServices();
           renderTechView();
         }
       });
@@ -11771,9 +11839,10 @@ function renderTechView(){
       const idx = Number(e.target.dataset.idx);
       customConfirm('Excluir este áudio? Essa ação não pode ser desfeita.', async () => {
         const svc = services.find(x => x.id === id);
-        if(svc && svc.audios){
-          svc.audios.splice(idx, 1);
-          await saveServices();
+        if(svc){
+          const arr = getServiceMedia(svc, 'audios').slice(); arr.splice(idx, 1);
+          const r = await setServiceMedia(svc, 'audios', arr);
+          if(r.model === 'inline') await saveServices();
           renderTechView();
         }
       });
@@ -11819,9 +11888,10 @@ async function toggleAudioRecording(id, onDone){
     }
     const svc = services.find(x => x.id === id);
     if(svc){
-      svc.audios = svc.audios || [];
-      svc.audios.push(base64);
-      await saveServices();
+      await loadServiceMedia(svc.id, 'audios');
+      const arr = getServiceMedia(svc, 'audios').concat([base64]);
+      const r = await setServiceMedia(svc, 'audios', arr);
+      if(r.model === 'inline') await saveServices();
       renderTechView();
     }
   };
@@ -11852,6 +11922,122 @@ function stopAudioRecording(id){
 }
 
 
+// =====================================================================================
+// CAMADA ÚNICA DE ACESSO À MÍDIA DAS ATIVIDADES — services (inline, registros antigos) ×
+// servicesMedia/<id>/{photos,audios,technicianInstructionPhotos,technicianInstructionAudios}
+// (modelo separado). Regra: registro que ainda tem QUALQUER mídia inline não vazia é "inline" —
+// tudo dele continua inline, exatamente como sempre (compatibilidade, sem migração). Registro
+// sem mídia inline é "external": lê servicesMedia/<id> sob demanda, uma vez por sessão
+// (cache + dedupe), só quando svc.mediaExternal === true (marcado na primeira gravação externa,
+// no mesmo update() da mídia — sem isso não há nada lá e não se lê nada). Nunca lê os dois.
+// Nenhum registro existente é alterado por esta camada; ela só muda ONDE a mídia nova é gravada
+// quando o registro não tem mídia inline. Nenhum listener por atividade.
+// =====================================================================================
+const SERVICE_MEDIA_FIELDS = ['photos', 'audios', 'technicianInstructionPhotos', 'technicianInstructionAudios'];
+const serviceMediaCache = {};     // id -> { photos:[], ..., loaded:true }
+const serviceMediaSnapshot = {};  // id -> { campo: JSON confirmado no servidor } (diff por campo)
+const serviceMediaLoading = {};   // id -> Promise em andamento (dedupe)
+let serviceMediaPending = new Set(); // ids com mídia externa gravada localmente e ainda não enviada (repeatService)
+
+function serviceHasInlineMedia(svc, field){ return !!svc && Array.isArray(svc[field]) && svc[field].length > 0; }
+function serviceMediaModel(svc){ return SERVICE_MEDIA_FIELDS.some(f => serviceHasInlineMedia(svc, f)) ? 'inline' : 'external'; }
+function serviceMediaCacheEntry(id){ const k = String(id); if(!serviceMediaCache[k]) serviceMediaCache[k] = { loaded: false }; return serviceMediaCache[k]; }
+function serviceMediaIsLoaded(svc){ return !svc || !svc.mediaExternal || serviceMediaModel(svc) === 'inline' || !!serviceMediaCacheEntry(svc.id).loaded; }
+
+// Leitura síncrona (o array já carregado). Para um registro external, chame loadServiceMedia antes.
+function getServiceMedia(svc, field){
+  if(!svc) return [];
+  if(serviceHasInlineMedia(svc, field)) return svc[field];
+  if(serviceMediaModel(svc) === 'inline') return []; // registro antigo: campo simplesmente não existe
+  if(svc.mediaExternal){ const c = serviceMediaCacheEntry(svc.id); if(Array.isArray(c[field])) return c[field]; }
+  return [];
+}
+// Carrega servicesMedia/<id> uma vez por sessão (só se o registro é external e marcado). Nunca quebra
+// a tela: em erro/offline devolve vazio e permite nova tentativa depois (cache não marcado).
+async function loadServiceMedia(id, motivo){
+  const svc = services.find(x => x.id === id);
+  const k = String(id);
+  const t0 = performance.now();
+  if(!svc || serviceMediaModel(svc) === 'inline'){ perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'inline (sem leitura)', ms: 0, kb: 0 }); return serviceMediaCacheEntry(id); }
+  if(!svc.mediaExternal){ perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'sem mídia (sem leitura)', ms: 0, kb: 0 }); return serviceMediaCacheEntry(id); }
+  const c = serviceMediaCacheEntry(id);
+  if(c.loaded){ perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'hit', ms: 0, kb: 0 }); return c; }
+  if(serviceMediaLoading[k]) return serviceMediaLoading[k];
+  serviceMediaLoading[k] = (async () => {
+    try{
+      if(!rtdb) throw new Error('Firebase indisponível');
+      const snap = await rtdb.ref('servicesMedia/' + k).get();
+      const raw = snap.exists() ? (snap.val() || {}) : {};
+      SERVICE_MEDIA_FIELDS.forEach(f => { c[f] = Array.isArray(raw[f]) ? raw[f].slice() : (raw[f] && typeof raw[f] === 'object' ? Object.values(raw[f]) : []); });
+      serviceMediaSnapshot[k] = {}; SERVICE_MEDIA_FIELDS.forEach(f => { serviceMediaSnapshot[k][f] = c[f].length ? JSON.stringify(c[f]) : undefined; });
+      c.loaded = true;
+      perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'miss', ms: performance.now() - t0, kb: perfApproxKB(raw) });
+    }catch(e){
+      console.error('Falha ao carregar mídia da atividade ' + k + ':', e);
+      perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'erro', ms: performance.now() - t0, kb: 0 });
+    }finally{ delete serviceMediaLoading[k]; }
+    return c;
+  })();
+  return serviceMediaLoading[k];
+}
+async function loadServiceMediaForMany(list, motivo){
+  for(const s of (list || [])){ if(s && s.mediaExternal && !serviceMediaIsLoaded(s)) await loadServiceMedia(s.id, motivo); }
+}
+// Define o valor de um campo de mídia respeitando o modelo do registro. Inline → grava no próprio
+// registro (persistido pelo diff de saveServices(), como sempre). External → grava em
+// servicesMedia/<id>/<campo> (saveServiceMediaDiff) e marca svc.mediaExternal no mesmo update().
+async function setServiceMedia(svc, field, arr){
+  arr = Array.isArray(arr) ? arr.slice() : [];
+  if(serviceMediaModel(svc) === 'inline'){ svc[field] = arr; return { ok: true, model: 'inline' }; }
+  SERVICE_MEDIA_FIELDS.forEach(f => { if(Array.isArray(svc[f]) && svc[f].length === 0) delete svc[f]; }); // sem array vazio inline "fantasma"
+  if(svc.mediaExternal) await loadServiceMedia(svc.id, field); // nunca sobrescreve o que ainda não foi lido
+  const c = serviceMediaCacheEntry(svc.id);
+  c[field] = arr; c.loaded = true;
+  const ok = await saveServiceMediaDiff(svc.id);
+  return { ok, model: 'external' };
+}
+// Diff por campo de servicesMedia/<id> (mesmo princípio de writeServicesDiff), com retry curto.
+async function saveServiceMediaDiff(id, attempt){
+  attempt = attempt || 1;
+  const k = String(id);
+  const svc = services.find(x => x.id === id);
+  const c = serviceMediaCacheEntry(id);
+  const confirmed = serviceMediaSnapshot[k] || {};
+  const updates = {}; const sent = {};
+  SERVICE_MEDIA_FIELDS.forEach(f => {
+    const arr = Array.isArray(c[f]) ? c[f] : [];
+    const json = arr.length ? JSON.stringify(arr) : undefined;
+    if(confirmed[f] !== json){ updates['servicesMedia/' + k + '/' + f] = arr.length ? arr.slice() : null; sent[f] = json; }
+  });
+  const marcar = svc && !svc.mediaExternal;
+  if(marcar) updates['services/' + k + '/mediaExternal'] = true;
+  if(!Object.keys(updates).length) return true;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    await rtdb.ref().update(updates);
+    serviceMediaSnapshot[k] = Object.assign({}, confirmed, sent);
+    if(marcar){ svc.mediaExternal = true; servicesSnapshot[k] = Object.assign({}, servicesSnapshot[k] || {}, { mediaExternal: JSON.stringify(true) }); }
+    serviceMediaPending.delete(id);
+    return true;
+  }catch(e){
+    console.error('Falha ao gravar mídia da atividade ' + k + ' (tentativa ' + attempt + '):', e);
+    if(attempt < 3){ await new Promise(r => setTimeout(r, 500 * attempt)); return saveServiceMediaDiff(id, attempt + 1); }
+    return false;
+  }
+}
+async function flushServiceMediaPending(){
+  let ok = true;
+  for(const id of Array.from(serviceMediaPending)){ if(!(await saveServiceMediaDiff(id))) ok = false; }
+  return ok;
+}
+// Diagnóstico (PERF_DIAG): só números — serviceId, campo, hit/miss, ms, KB. Nunca conteúdo.
+function perfMediaEvent(e){
+  if(typeof PERF_DIAG === 'undefined') return;
+  const rec = Object.assign({ tMs: perfNow(), role: PERF_DIAG.role, session: PERF_DIAG.session ? PERF_DIAG.session.index : 0 }, e, { ms: Math.round(e.ms || 0) });
+  PERF_DIAG.media = PERF_DIAG.media || []; PERF_DIAG.media.push(rec);
+  if(PERF_DIAG.session){ PERF_DIAG.session.media = PERF_DIAG.session.media || []; PERF_DIAG.session.media.push(rec); }
+}
+
 // ===== Orientações para o técnico (gestor) =====
 // Três campos de topo no registro da atividade, separados das mídias do técnico:
 //   technicianInstructionText (string), technicianInstructionPhotos ([]), technicianInstructionAudios ([])
@@ -11865,24 +12051,28 @@ let newInstr = { text: '', photos: [], audios: [] }; // estado do editor no moda
 
 function hasInstructions(svc){
   return !!(svc && ((svc.technicianInstructionText || '').trim() ||
-    (Array.isArray(svc.technicianInstructionPhotos) && svc.technicianInstructionPhotos.length) ||
-    (Array.isArray(svc.technicianInstructionAudios) && svc.technicianInstructionAudios.length)));
+    getServiceMedia(svc, 'technicianInstructionPhotos').length ||
+    getServiceMedia(svc, 'technicianInstructionAudios').length));
 }
 function getInstructions(svc){
   return {
     text: (svc && svc.technicianInstructionText) || '',
-    photos: (svc && Array.isArray(svc.technicianInstructionPhotos)) ? svc.technicianInstructionPhotos : [],
-    audios: (svc && Array.isArray(svc.technicianInstructionAudios)) ? svc.technicianInstructionAudios : []
+    photos: getServiceMedia(svc, 'technicianInstructionPhotos'),
+    audios: getServiceMedia(svc, 'technicianInstructionAudios')
   };
 }
-// Grava a orientação no registro (e no parceiro de dupla antiga, igual à descrição).
-function applyInstructions(svc, data){
+// Grava a orientação no registro (e no parceiro de dupla antiga, igual à descrição). O texto é
+// estrutural (fica em services, via saveServices do chamador); as mídias vão pela camada única —
+// inline no registro antigo, servicesMedia no modelo separado.
+async function applyInstructions(svc, data){
   const targets = svc.pairId ? services.filter(x => x.pairId === svc.pairId) : [svc];
-  targets.forEach(t => {
+  let ok = true;
+  for(const t of targets){
     t.technicianInstructionText = data.text || '';
-    t.technicianInstructionPhotos = data.photos.slice();
-    t.technicianInstructionAudios = data.audios.slice();
-  });
+    if(!(await setServiceMedia(t, 'technicianInstructionPhotos', data.photos)).ok) ok = false;
+    if(!(await setServiceMedia(t, 'technicianInstructionAudios', data.audios)).ok) ok = false;
+  }
+  return ok;
 }
 
 // Editor do gestor (criação e detalhes). key: 'new' ou id da atividade.
@@ -12126,12 +12316,35 @@ function cleanupExpiredMedia(){
     if(now > instrDeadline){
       if(Array.isArray(svc.technicianInstructionPhotos) && svc.technicianInstructionPhotos.length){ delete svc.technicianInstructionPhotos; changed++; }
       if(Array.isArray(svc.technicianInstructionAudios) && svc.technicianInstructionAudios.length){ delete svc.technicianInstructionAudios; changed++; }
+      if(svc.mediaExternal && !serviceMediaExpiredDone.has(svc.id + ':instr')){ cleanupExternalUpdates['servicesMedia/' + svc.id + '/technicianInstructionPhotos'] = null; cleanupExternalUpdates['servicesMedia/' + svc.id + '/technicianInstructionAudios'] = null; }
     }
     if(now > audioDeadline){
       if(Array.isArray(svc.audios) && svc.audios.length){ delete svc.audios; changed++; }
+      if(svc.mediaExternal && !serviceMediaExpiredDone.has(svc.id + ':audios')){ cleanupExternalUpdates['servicesMedia/' + svc.id + '/audios'] = null; }
     }
   });
   return changed;
+}
+// Mídia expirada no modelo separado: mesma política de retenção, gravada com null direto em
+// servicesMedia/<id>/<campo> (sem ler o nó — só o marcador mediaExternal diz que pode haver algo).
+// Uma vez por sessão; o cache local é ajustado pra tela refletir na hora.
+const serviceMediaExpiredDone = new Set();
+let cleanupExternalUpdates = {};
+async function cleanupExpiredExternalMedia(){
+  const updates = cleanupExternalUpdates; cleanupExternalUpdates = {};
+  const paths = Object.keys(updates);
+  if(!paths.length) return 0;
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+    await rtdb.ref().update(updates);
+    paths.forEach(p => {
+      const [, id, field] = p.split('/');
+      const c = serviceMediaCacheEntry(id); c[field] = [];
+      serviceMediaSnapshot[id] = serviceMediaSnapshot[id] || {}; serviceMediaSnapshot[id][field] = undefined;
+      serviceMediaExpiredDone.add(Number(id) + (field === 'audios' ? ':audios' : ':instr'));
+    });
+    return paths.length;
+  }catch(e){ console.error('Limpeza de mídias (servicesMedia) falhou', e); return 0; }
 }
 // Roda uma vez por sessão, após a carga inicial. Só escreve se algo expirou; a escrita é o diff por
 // campo normal (só os campos removidos vão para o servidor; alterações remotas em outros campos
@@ -12144,6 +12357,7 @@ async function runMediaCleanupOnce(){
   if(changed > 0){
     try{ await saveServices(true); }catch(e){ /* retry já existe em saveServices; sem alerta: rotina de fundo */ }
   }
+  try{ changed += await cleanupExpiredExternalMedia(); }catch(e){ /* rotina de fundo */ }
   return changed;
 }
 
@@ -12306,13 +12520,21 @@ let galeriaSelectedClient = null;
 let galeriaClientSearch = '';
 let galeriaAddPhotoInFlight = false;
 
-function openGaleria(fromViewId){
+async function openGaleria(fromViewId){
   galeriaReturnViewId = fromViewId;
   document.getElementById(fromViewId).style.display = 'none';
   document.getElementById('galeriaView').style.display = '';
   galeriaSelectedClient = null;
   galeriaClientSearch = '';
   document.getElementById('galeriaClientSearchInput').value = '';
+  // galleryPhotos só é lido do Firebase aqui, na primeira abertura da Galeria da sessão (não no
+  // login). Espera real (não é loading falso): a lista só é montada depois que os dados chegam;
+  // nas aberturas seguintes ensureGalleryPhotosLoaded() retorna na hora (já carregado + listener
+  // realtime já anexado, mantendo a sincronização como sempre).
+  const box = document.getElementById('galeriaClientList');
+  if(!nodeLoaded.galleryPhotos && box) box.innerHTML = '<div class="empty-state">Carregando fotos da galeria...</div>';
+  try{ await ensureGalleryPhotosLoaded(); }catch(e){ console.error('Falha ao carregar galleryPhotos:', e); }
+  if(document.getElementById('galeriaView').style.display === 'none') return; // usuário já fechou
   showGaleriaClientListScreen();
 }
 function closeGaleria(){
@@ -12328,12 +12550,15 @@ function showGaleriaClientListScreen(){
   document.getElementById('galeriaClientPhotosScreen').style.display = 'none';
   renderGaleriaClientList();
 }
-function showGaleriaClientPhotosScreen(clientName){
+async function showGaleriaClientPhotosScreen(clientName){
   galeriaSelectedClient = clientName;
   document.getElementById('galeriaClientListScreen').style.display = 'none';
   document.getElementById('galeriaClientPhotosScreen').style.display = '';
   document.getElementById('galeriaClientPhotosTitle').textContent = clientName;
   renderGaleriaClientPhotos();
+  // Galeria por cliente: carrega sob demanda só a mídia externa das atividades DESTE cliente
+  await loadServiceMediaForMany(services.filter(s => s.client === clientName), 'galeria');
+  if(galeriaSelectedClient === clientName) renderGaleriaClientPhotos();
 }
 document.getElementById('galeriaBackToClientsBtn').addEventListener('click', showGaleriaClientListScreen);
 
@@ -13377,7 +13602,6 @@ async function ensureRoleDataLoaded(role){
     await ensureTechPhonesLoaded();
     await ensureMaintenanceContractsLoaded();
     await ensureOficinaEquipamentosLoaded();
-    await ensureGalleryPhotosLoaded();
     await ensureEstoqueLoaded();
     await ensureExtraContactsEtcLoaded();
   } else if(role === 'tech'){
@@ -13389,17 +13613,15 @@ async function ensureRoleDataLoaded(role){
     // silenciosamente. Achado durante os testes desta etapa.
     await ensureMaintenanceContractsLoaded();
     await ensureOficinaEquipamentosLoaded();
-    await ensureGalleryPhotosLoaded();
     await ensureEstoqueLoaded();
   } else if(role === 'financeiro'){
     await ensureServicesLoaded();
-    await ensureGalleryPhotosLoaded();
   } else if(role === 'oficina'){
     await ensureServicesLoaded();
     await ensureOficinaEquipamentosLoaded();
-    await ensureGalleryPhotosLoaded();
     await ensureEstoqueLoaded();
   }
+  // galleryPhotos: nenhum perfil carrega no login — só quando a Galeria é aberta (openGaleria).
   perfMark('role_data_done', { role, listenersOnAfter: countAttachedRealtimeListeners() });
 }
 
