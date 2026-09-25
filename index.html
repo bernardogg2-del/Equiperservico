@@ -12314,6 +12314,133 @@ async function migrateInlineServiceMedia(){
   return { inicio, fim, totalConsideradas: candidatos.length, migradas: contagem.migrado, jaMigradas: contagem.ja_migrado, semMidia: contagem.sem_midia, conflitos, erros, posMigracaoInconsistente: contagem.pos_migracao_inconsistente, detalhes };
 }
 
+// =====================================================================================
+// AUDITORIA PÓS-MIGRAÇÃO (SOMENTE LEITURA) — confere, contra o manifesto pré-migração já
+// existente (gerado por manifestInlineServiceMedia() ANTES da migração rodar), que cada
+// activity migrada: perdeu a mídia inline, ganhou mediaExternal:true, e tem em servicesMedia
+// exatamente o mesmo conteúdo de antes (mesmo hash, mesma quantidade, nenhum item a mais ou a
+// menos). Só get() — nenhum set/update/transaction/remove em lugar nenhum. Nunca chamada
+// automaticamente. Execução manual: await verifyServicesMediaMigration(manifesto)
+// =====================================================================================
+async function verifyServicesMediaMigration(manifesto){
+  manifesto = manifesto || [];
+  const detalhes = [];
+  const contagem = { aprovado: 0, mediaExternal_ausente: 0, inline_residual: 0, servicesMedia_ausente: 0, campo_ausente: 0, campo_extra: 0, quantidade_divergente: 0, hash_divergente: 0, erro_leitura: 0 };
+  let kbManifesto = 0, kbEncontrado = 0, itensEsperadosTotal = 0, itensEncontradosTotal = 0;
+
+  // Prioridade de gravidade — a "resultado" da activity é o pior achado; todos ficam em divergencias.
+  const PRIORIDADE = ['erro_leitura', 'servicesMedia_ausente', 'mediaExternal_ausente', 'inline_residual', 'campo_ausente', 'campo_extra', 'quantidade_divergente', 'hash_divergente'];
+
+  for(const entry of manifesto){
+    const serviceId = entry.serviceId;
+    const detalhe = { serviceId, client: entry.client, resultado: null, camposVerificados: 0, itensEsperados: 0, itensEncontrados: 0, kbVerificados: 0, divergencias: [] };
+    const camposEsperados = Object.keys(entry.campos || {});
+    camposEsperados.forEach(f => { itensEsperadosTotal += entry.campos[f].itens || 0; kbManifesto += entry.campos[f].kb || 0; });
+
+    try{
+      if(!rtdb) throw new Error('Firebase indisponível');
+
+      // 1) services/<id> — mediaExternal e ausência de mídia inline residual.
+      const snapS = await rtdb.ref('services/' + serviceId).get();
+      if(!snapS.exists()){ detalhe.divergencias.push('services/' + serviceId + ' não existe'); detalhe.resultado = 'erro_leitura'; detalhes.push(detalhe); contagem.erro_leitura++; continue; }
+      const svc = snapS.val();
+      if(svc.mediaExternal !== true) detalhe.divergencias.push('mediaExternal_ausente: services/' + serviceId + '.mediaExternal não é true');
+      const inlineResidual = SERVICE_MEDIA_FIELDS.filter(f => firebaseArrayValue(svc[f]).length > 0);
+      if(inlineResidual.length) detalhe.divergencias.push('inline_residual: ainda há mídia inline em services nos campos ' + inlineResidual.join(', '));
+
+      // 3) servicesMedia/<id>
+      const snapSM = await rtdb.ref('servicesMedia/' + serviceId).get();
+      if(!snapSM.exists()){
+        detalhe.divergencias.push('servicesMedia_ausente: servicesMedia/' + serviceId + ' não existe');
+        detalhe.resultado = detalhe.divergencias.some(d => d.startsWith('mediaExternal_ausente')) ? 'mediaExternal_ausente' : 'servicesMedia_ausente';
+        detalhes.push(detalhe); contagem[detalhe.resultado]++; continue;
+      }
+      const smVal = snapSM.val() || {};
+
+      // Campos extras: presentes em servicesMedia com itens, mas não esperados pelo manifesto.
+      SERVICE_MEDIA_FIELDS.filter(f => !camposEsperados.includes(f) && firebaseArrayValue(smVal[f]).length > 0)
+        .forEach(f => detalhe.divergencias.push('campo_extra: campo "' + f + '" existe em servicesMedia mas não estava no manifesto pré-migração'));
+
+      // 4/5/6/7/8/9) por campo esperado: presença, quantidade, hash item a item.
+      for(const f of camposEsperados){
+        const esperado = entry.campos[f];
+        detalhe.itensEsperados += esperado.itens || 0;
+        detalhe.kbVerificados += esperado.kb || 0;
+        const encontrados = firebaseArrayValue(smVal[f]);
+        if(!(f in smVal) || encontrados.length === 0){
+          detalhe.divergencias.push('campo_ausente: campo "' + f + '" esperado (' + esperado.itens + ' item(ns)) não encontrado em servicesMedia');
+          continue;
+        }
+        detalhe.camposVerificados++;
+        detalhe.itensEncontrados += encontrados.length;
+        if(encontrados.length !== esperado.itens){
+          detalhe.divergencias.push('quantidade_divergente: campo "' + f + '" esperava ' + esperado.itens + ' item(ns), encontrou ' + encontrados.length);
+        }
+        const n = Math.min(encontrados.length, (esperado.digests || []).length);
+        for(let i = 0; i < n; i++){
+          const d = await digestString(String(encontrados[i]));
+          const esperadoDigest = esperado.digests[i];
+          if(!esperadoDigest || d.hash !== esperadoDigest.hash){
+            detalhe.divergencias.push('hash_divergente: campo "' + f + '" item ' + i + ' não bate com o hash do manifesto');
+          }
+        }
+        kbEncontrado += perfKB(perfMediaChars(encontrados).chars);
+      }
+
+      itensEncontradosTotal += detalhe.itensEncontrados;
+
+      detalhe.resultado = PRIORIDADE.find(r => detalhe.divergencias.some(d => d.startsWith(r))) || 'aprovado';
+      contagem[detalhe.resultado]++;
+    }catch(e){
+      detalhe.divergencias.push('erro_leitura: ' + (e && e.message));
+      detalhe.resultado = 'erro_leitura';
+      contagem.erro_leitura++;
+    }
+    detalhes.push(detalhe);
+  }
+
+  const totalManifesto = manifesto.length;
+  const verificados = detalhes.length;
+  const aprovados = contagem.aprovado;
+  const falhas = verificados - aprovados;
+  kbManifesto = Math.round(kbManifesto * 10) / 10;
+  kbEncontrado = Math.round(kbEncontrado * 10) / 10;
+  const diferencaKB = Math.round((kbEncontrado - kbManifesto) * 10) / 10;
+
+  const L = [];
+  L.push('=== VERIFICAÇÃO PÓS-MIGRAÇÃO servicesMedia ===');
+  L.push('');
+  L.push(`Manifesto: ${totalManifesto} | Verificados: ${verificados} | Aprovados: ${aprovados} | Falhas: ${falhas}`);
+  L.push(`mediaExternal ausente: ${contagem.mediaExternal_ausente} | mídia inline residual: ${contagem.inline_residual} | servicesMedia ausente: ${contagem.servicesMedia_ausente}`);
+  L.push(`Campo ausente: ${contagem.campo_ausente} | Campo extra: ${contagem.campo_extra} | Quantidade divergente: ${contagem.quantidade_divergente} | Hash divergente: ${contagem.hash_divergente} | Erros de leitura: ${contagem.erro_leitura}`);
+  L.push('');
+  L.push(`KB no manifesto (pré-migração): ${kbManifesto}`);
+  L.push(`KB encontrados em servicesMedia: ${kbEncontrado}`);
+  L.push(`Diferença: ${diferencaKB} KB`);
+  L.push(`Itens esperados: ${itensEsperadosTotal} | Itens encontrados: ${itensEncontradosTotal}`);
+  L.push('');
+  L.push('ID'.padEnd(16) + 'Cliente'.padEnd(22) + 'Resultado'.padEnd(24) + 'Campos'.padEnd(9) + 'Itens Esp.'.padEnd(12) + 'Itens Enc.');
+  detalhes.forEach(d => {
+    L.push(String(d.serviceId).padEnd(16) + String(d.client || '—').slice(0, 20).padEnd(22) + String(d.resultado).padEnd(24) + String(d.camposVerificados).padEnd(9) + String(d.itensEsperados).padEnd(12) + String(d.itensEncontrados));
+  });
+  const comDivergencia = detalhes.filter(d => d.divergencias.length);
+  if(comDivergencia.length){
+    L.push('');
+    L.push('Divergências encontradas:');
+    comDivergencia.forEach(d => d.divergencias.forEach(div => L.push(`  activity ${d.serviceId}: ${div}`)));
+  }
+  console.log(L.join('\n'));
+
+  return {
+    totalManifesto, verificados, aprovados, falhas,
+    semMediaExternal: contagem.mediaExternal_ausente, comInlineResidual: contagem.inline_residual,
+    hashDivergente: contagem.hash_divergente, campoAusente: contagem.campo_ausente, campoExtra: contagem.campo_extra,
+    quantidadeDivergente: contagem.quantidade_divergente,
+    resumoKB: { kbManifesto, kbEncontrado, diferencaKB, itensEsperadosTotal, itensEncontradosTotal },
+    detalhes
+  };
+}
+
 async function loadServiceMediaForMany(list, motivo){
   for(const s of (list || [])){ if(s && s.mediaExternal && !serviceMediaIsLoaded(s)) await loadServiceMedia(s.id, motivo); }
 }
