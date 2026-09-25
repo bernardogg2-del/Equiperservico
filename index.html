@@ -14001,11 +14001,13 @@ async function ensureMaintenanceContractsLoaded(){
   attachRealtimeMaintenanceContractsListener();
   perfMark('node_loaded', { node: 'maintenanceContracts', approxKB: perfApproxKB(maintenanceContracts) });
 }
+// Paralelização conservadora (etapa de otimização de performance): oficinaEquipamentos e
+// oficinaStaleThresholdDays não têm nenhuma dependência entre si (confirmado rastreando os dois
+// loaders — cada um só toca sua própria variável) — só ganham tempo, nada muda de comportamento.
 async function ensureOficinaEquipamentosLoaded(){
   if(nodeLoaded.oficinaEquipamentos) return;
   nodeLoaded.oficinaEquipamentos = true;
-  await loadOficinaEquipamentos();
-  await loadOficinaStaleThreshold();
+  await Promise.all([loadOficinaEquipamentos(), loadOficinaStaleThreshold()]);
   attachRealtimeOficinaEquipamentosListener();
   attachRealtimeOficinaStaleThresholdListener();
   perfMark('node_loaded', { node: 'oficinaEquipamentos', approxKB: perfApproxKB(oficinaEquipamentos) });
@@ -14017,16 +14019,24 @@ async function ensureGalleryPhotosLoaded(){
   attachRealtimeGalleryPhotosListener();
   perfMark('node_loaded', { node: 'galleryPhotos', approxKB: perfApproxKB(galleryPhotos) });
 }
+// Paralelização conservadora: a ÚNICA dependência real (rastreada em seedEstoqueInicial()) é que
+// ela lê estoqueItens e estoqueCategoriasStore.items — nada mais. estoqueMovimentacoes,
+// estoqueAjustes, estoqueRetiradas e oficinaPecasCatalogo não são tocados por ela nem por nada
+// aqui, então entram na mesma rodada paralela; o seed só espera o Promise.all inteiro terminar,
+// o que já garante que estoque+estoqueCategorias (e os demais) estão prontos — mesma ordem lógica
+// de antes (load → load → seed), só sem esperar cada um isoladamente.
 async function ensureEstoqueLoaded(){
   if(nodeLoaded.estoqueCore) return;
   nodeLoaded.estoqueCore = true;
-  await loadEstoqueItens();
-  await loadEstoqueMovimentacoes();
-  await estoqueCategoriasStore.load();
-  await estoqueAjustesStore.load();
-  await estoqueRetiradasStore.load();
-  await oficinaPecasCatalogoStore.load();
-  await seedEstoqueInicial(); // depende de estoqueItens/estoqueCategoriasStore já carregados
+  await Promise.all([
+    loadEstoqueItens(),
+    loadEstoqueMovimentacoes(),
+    estoqueCategoriasStore.load(),
+    estoqueAjustesStore.load(),
+    estoqueRetiradasStore.load(),
+    oficinaPecasCatalogoStore.load()
+  ]);
+  await seedEstoqueInicial(); // só agora — depende de estoqueItens e estoqueCategoriasStore, já prontos acima
   attachRealtimeEstoqueListener();
   attachRealtimeEstoqueMovimentacoesListener();
   estoqueCategoriasStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
@@ -14035,16 +14045,21 @@ async function ensureEstoqueLoaded(){
   oficinaPecasCatalogoStore.attach(() => { if(oeCurrentDetalheId !== null) popularPecasCatalogoDatalist(); });
   perfMark('node_loaded', { node: 'estoque+históricos', approxKB: perfApproxKB(estoqueItens) + perfApproxKB(estoqueMovimentacoes) });
 }
+// Paralelização conservadora: loadExtraContacts/loadOficina/loadAdminPin não têm dependência
+// entre si (rastreado — cada um só toca sua própria variável); o preenchimento dos campos de
+// telefone só precisa de extraContacts, que já está pronto quando o Promise.all resolve.
 async function ensureExtraContactsEtcLoaded(){
   if(nodeLoaded.extraContactsEtc) return;
   nodeLoaded.extraContactsEtc = true;
-  await loadExtraContacts();
+  await Promise.all([
+    loadExtraContacts(),
+    loadOficina(), // nó legado (Acessos do Gestor) — nunca mais usado pra login
+    loadAdminPin() // só usado na exportação/backup de Acessos do Gestor
+  ]);
   document.getElementById('alexPhoneInput').value = extraContacts.alex.phone;
   document.getElementById('marceloPhoneInput').value = extraContacts.marcelo.phone;
   attachRealtimeExtraContactsListener();
-  await loadOficina(); // nó legado (Acessos do Gestor) — nunca mais usado pra login
   attachRealtimeOficinaListener();
-  await loadAdminPin(); // só usado na exportação/backup de Acessos do Gestor
   perfMark('node_loaded', { node: 'extraContacts+oficina(legado)+adminPin' });
 }
 
@@ -14058,13 +14073,21 @@ async function ensureExtraContactsEtcLoaded(){
 async function ensureRoleDataLoaded(role){
   perfMark('role_data_start', { role });
   if(role === 'manager'){
+    // Etapa 1: services precisa terminar primeiro (importPreAgendados/runMediaCleanupOnce
+    // dependem dele já carregado — ordem interna de ensureServicesLoaded() intocada).
     await ensureServicesLoaded();
-    await ensureClientsLoaded();
-    await ensureTechPhonesLoaded();
-    await ensureMaintenanceContractsLoaded();
-    await ensureOficinaEquipamentosLoaded();
-    await ensureEstoqueLoaded();
-    await ensureExtraContactsEtcLoaded();
+    // Etapa 2: todo o resto da Fase B do Gestor é independente entre si (rastreado nó a nó na
+    // auditoria de latência) — roda em paralelo. Cada ensureXLoaded() preserva sua própria
+    // ordem/dependência interna exatamente como antes (ex.: maintenanceContracts→importPreventivasPlanilha,
+    // estoque+estoqueCategorias→seedEstoqueInicial); só a ESPERA entre os grupos deixou de ser sequencial.
+    await Promise.all([
+      ensureClientsLoaded(),
+      ensureTechPhonesLoaded(),
+      ensureMaintenanceContractsLoaded(),
+      ensureOficinaEquipamentosLoaded(),
+      ensureEstoqueLoaded(),
+      ensureExtraContactsEtcLoaded()
+    ]);
   } else if(role === 'tech'){
     await ensureServicesLoaded();
     // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
