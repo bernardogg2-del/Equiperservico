@@ -12097,6 +12097,223 @@ function auditInlineServiceMediaMigration(){
   return { resumo, registros, estruturasInesperadas: inesperados };
 }
 
+// =====================================================================================
+// MANIFESTO (SOMENTE LEITURA) — hash de conferência do conteúdo de mídia inline, pra auditar
+// depois que uma migração aconteceu que o conteúdo migrado bate com o original. Nunca guarda
+// Base64 — só tamanho e um digest. Usa crypto.subtle (SHA-256) quando disponível; se não
+// estiver (ambiente sem HTTPS/SubtleCrypto), cai num checksum simples e avisa que não é
+// criptográfico. Não lê nem grava servicesMedia — só o que já auditInlineServiceMediaMigration()
+// já enxerga em memória (mesmo princípio: sem leitura extra pra montar o manifesto).
+// Executar manualmente: await manifestInlineServiceMedia()
+// =====================================================================================
+async function digestString(str){
+  if(window.crypto && window.crypto.subtle && window.isSecureContext !== false){
+    try{
+      const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return { algoritmo: 'sha256', hash: Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('') };
+    }catch(e){ /* cai no fallback abaixo */ }
+  }
+  // Fallback não-criptográfico (só quando SubtleCrypto genuinamente não está disponível) — serve
+  // só pra detectar diferença grosseira de conteúdo, não substitui o SHA-256 como prova forte.
+  let h = 0; for(let i = 0; i < str.length; i++){ h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; }
+  return { algoritmo: 'checksum32-nao-criptografico', hash: (h >>> 0).toString(16) };
+}
+async function manifestInlineServiceMedia(){
+  const manifesto = [];
+  for(const svc of services){
+    const camposComMidia = SERVICE_MEDIA_FIELDS.filter(f => Array.isArray(svc[f]) && svc[f].length > 0);
+    if(!camposComMidia.length) continue;
+    const entry = { serviceId: svc.id, client: svc.client, campos: {} };
+    for(const f of camposComMidia){
+      const arr = svc[f];
+      const digests = [];
+      for(const item of arr){ digests.push(await digestString(String(item))); }
+      entry.campos[f] = { itens: arr.length, kb: perfKB(perfMediaChars(arr).chars), digests };
+    }
+    manifesto.push(entry);
+  }
+  console.log(`=== MANIFESTO servicesMedia (${manifesto.length} activities com mídia inline) === (sem Base64, só hash/tamanho)`);
+  return manifesto;
+}
+
+// Compara duas listas de mídia EXATAMENTE (conteúdo e ordem) — string a string, sem normalizar.
+function inlineMediaArraysIdenticos(a, b){
+  const arrA = Array.isArray(a) ? a : [];
+  const arrB = Array.isArray(b) ? b : [];
+  if(arrA.length !== arrB.length) return false;
+  for(let i = 0; i < arrA.length; i++){ if(String(arrA[i]) !== String(arrB[i])) return false; }
+  return true;
+}
+function firebaseArrayValue(raw){
+  if(Array.isArray(raw)) return raw;
+  if(raw && typeof raw === 'object') return Object.values(raw); // RTDB pode devolver objeto indexado
+  return [];
+}
+
+// =====================================================================================
+// MIGRAÇÃO MANUAL, AUDITÁVEL, RETOMÁVEL E IDEMPOTENTE — copia mídia inline de services pra
+// servicesMedia, uma activity por vez, com leitura real de confirmação antes e depois de cada
+// gravação. NUNCA roda sozinha (não é chamada em nenhum fluxo/login). Execução manual:
+// await migrateInlineServiceMedia()
+//
+// Cada etapa relê o Firebase de verdade (nunca confia só na memória) — ver comentários numerados
+// batendo com as 11 etapas de segurança pedidas.
+// =====================================================================================
+async function migrateOneServiceMedia(serviceId){
+  const detalhe = { serviceId, client: null, status: null, fieldsMigrated: [], kbMigrados: 0, resultado: null, motivo: null, timestamp: new Date().toISOString() };
+  try{
+    if(!rtdb) throw new Error('Firebase indisponível');
+
+    // 1) Leitura real ATUAL de services/<id> — nunca confia no que já está em memória.
+    const snap1 = await rtdb.ref('services/' + serviceId).get();
+    if(!snap1.exists()){ detalhe.resultado = 'erro_copia'; detalhe.motivo = 'services/' + serviceId + ' não existe mais'; return detalhe; }
+    const svc1 = snap1.val();
+    detalhe.client = svc1.client; detalhe.status = svc1.status;
+
+    // 2) Os 4 campos, e quais realmente têm mídia inline (array não-vazio) neste snapshot.
+    const inlineFields = SERVICE_MEDIA_FIELDS.filter(f => firebaseArrayValue(svc1[f]).length > 0);
+
+    // 3) Sem mídia inline: nada a fazer. Idempotência: já migrado (mediaExternal true) vs nunca teve mídia.
+    if(inlineFields.length === 0){
+      if(svc1.mediaExternal === true){ detalhe.resultado = 'ja_migrado'; detalhe.motivo = 'mediaExternal já é true e não há mídia inline'; }
+      else { detalhe.resultado = 'sem_midia'; detalhe.motivo = 'nenhum campo de mídia inline presente'; }
+      return detalhe;
+    }
+
+    // 4) mediaExternal===true COM mídia inline ainda presente → estado ambíguo, não resolve sozinho.
+    if(svc1.mediaExternal === true){
+      detalhe.resultado = 'conflito_mediaExternal_inline';
+      detalhe.motivo = 'mediaExternal===true mas ainda há mídia inline nos campos: ' + inlineFields.join(', ');
+      return detalhe;
+    }
+
+    // 5/6/7) Copia pra servicesMedia só o que faltar; se já existir lá, compara byte a byte antes
+    // de decidir se pode seguir (idempotência: reexecução não duplica nem sobrescreve às cegas).
+    let snapSM;
+    try{ snapSM = await rtdb.ref('servicesMedia/' + serviceId).get(); }
+    catch(e){ detalhe.resultado = 'erro_copia'; detalhe.motivo = 'falha ao ler servicesMedia antes de copiar: ' + e.message; return detalhe; }
+    const smAtual = snapSM.exists() ? (snapSM.val() || {}) : {};
+    const precisamGravar = [];
+    for(const f of inlineFields){
+      const inlineVal = firebaseArrayValue(svc1[f]);
+      const smVal = firebaseArrayValue(smAtual[f]);
+      if(smVal.length === 0){ precisamGravar.push(f); }
+      else if(inlineMediaArraysIdenticos(inlineVal, smVal)){ detalhe.fieldsMigrated.push(f); }
+      else {
+        detalhe.resultado = 'conflito_media_externa_diferente';
+        detalhe.motivo = 'campo "' + f + '" já existe em servicesMedia com conteúdo diferente do inline — não sobrescrito';
+        return detalhe;
+      }
+    }
+
+    if(precisamGravar.length){
+      const updatesSM = {};
+      precisamGravar.forEach(f => { updatesSM['servicesMedia/' + serviceId + '/' + f] = svc1[f]; }); // cópia literal, sem transformar
+      try{ await rtdb.ref().update(updatesSM); }
+      catch(e){ detalhe.resultado = 'erro_copia'; detalhe.motivo = 'falha ao gravar servicesMedia: ' + e.message; return detalhe; }
+
+      // 6) Leitura real pós-gravação (não confia no update() ter "dado certo" silenciosamente).
+      let snapSM2;
+      try{ snapSM2 = await rtdb.ref('servicesMedia/' + serviceId).get(); }
+      catch(e){ detalhe.resultado = 'erro_verificacao'; detalhe.motivo = 'falha ao reler servicesMedia após copiar: ' + e.message; return detalhe; }
+      const smVerif = snapSM2.exists() ? (snapSM2.val() || {}) : {};
+      // 7) Comparação campo a campo, item a item, conteúdo exato.
+      for(const f of precisamGravar){
+        if(!inlineMediaArraysIdenticos(svc1[f], firebaseArrayValue(smVerif[f]))){
+          detalhe.resultado = 'erro_verificacao';
+          detalhe.motivo = 'campo "' + f + '" não bateu na verificação pós-gravação em servicesMedia';
+          return detalhe;
+        }
+        detalhe.fieldsMigrated.push(f);
+      }
+    }
+
+    // 8) Nova leitura de services antes de remover qualquer coisa.
+    let snap2;
+    try{ snap2 = await rtdb.ref('services/' + serviceId).get(); }
+    catch(e){ detalhe.resultado = 'erro_verificacao'; detalhe.motivo = 'falha ao reler services antes da remoção: ' + e.message; return detalhe; }
+    if(!snap2.exists()){ detalhe.resultado = 'erro_verificacao'; detalhe.motivo = 'services/' + serviceId + ' desapareceu antes da remoção'; return detalhe; }
+    const svc2 = snap2.val();
+
+    // 9) Se QUALQUER um dos 4 campos mudou entre a 1ª leitura e agora, ou outro processo já
+    // marcou mediaExternal, é concorrência real — não mexe em nada e passa pra próxima activity.
+    const mudou = SERVICE_MEDIA_FIELDS.some(f => !inlineMediaArraysIdenticos(firebaseArrayValue(svc1[f]), firebaseArrayValue(svc2[f])));
+    if(mudou || svc2.mediaExternal === true){
+      detalhe.resultado = 'conflito_concorrencia';
+      detalhe.motivo = mudou ? 'um ou mais campos de mídia mudaram entre a leitura inicial e a verificação' : 'mediaExternal já foi marcado por outra execução nesse meio-tempo';
+      return detalhe;
+    }
+
+    // 10) Só agora, com tudo verificado igual, remove a mídia inline (só os campos que
+    // realmente tinham mídia no snapshot) e marca mediaExternal — numa única operação por activity.
+    const updatesFinal = {};
+    inlineFields.forEach(f => { updatesFinal['services/' + serviceId + '/' + f] = null; });
+    updatesFinal['services/' + serviceId + '/mediaExternal'] = true;
+    try{ await rtdb.ref().update(updatesFinal); }
+    catch(e){ detalhe.resultado = 'erro_remocao'; detalhe.motivo = 'falha ao remover mídia inline de services: ' + e.message; return detalhe; }
+
+    // 11) Leitura final de confirmação — campos removidos, mediaExternal certo, nada estrutural mudou.
+    let snap3;
+    try{ snap3 = await rtdb.ref('services/' + serviceId).get(); }
+    catch(e){ detalhe.resultado = 'pos_migracao_inconsistente'; detalhe.motivo = 'falha ao reler services após a remoção (não tentei desfazer nada)'; return detalhe; }
+    const svc3 = snap3.exists() ? snap3.val() : null;
+    const camposRemovidosOk = !!svc3 && inlineFields.every(f => !(f in svc3));
+    const estruturalOk = !!svc3 && Object.keys(svc2).filter(k => !SERVICE_MEDIA_FIELDS.includes(k) && k !== 'mediaExternal').every(k => JSON.stringify(svc3[k]) === JSON.stringify(svc2[k]));
+    if(!svc3 || !camposRemovidosOk || svc3.mediaExternal !== true || !estruturalOk){
+      detalhe.resultado = 'pos_migracao_inconsistente';
+      detalhe.motivo = 'confirmação final falhou (campo não removido, mediaExternal incorreto, ou dado estrutural mudou) — migração desta activity interrompida sem tentar reverter';
+      return detalhe;
+    }
+
+    detalhe.resultado = 'migrado';
+    detalhe.kbMigrados = Math.round(inlineFields.reduce((s, f) => s + perfMediaChars(svc1[f]).chars, 0) / 1024 * 10) / 10;
+    return detalhe;
+  }catch(e){
+    detalhe.resultado = 'erro_copia';
+    detalhe.motivo = 'erro inesperado: ' + (e && e.message);
+    return detalhe;
+  }
+}
+async function migrateInlineServiceMedia(){
+  const inicio = new Date().toISOString();
+  // Universo de activities a considerar: todo id conhecido localmente — cada um é relido do
+  // Firebase de verdade dentro de migrateOneServiceMedia (nunca decide com base só na memória).
+  // Uma de cada vez (nunca um update() gigante com várias activities juntas), pra ser retomável:
+  // se travar/cair no meio, as já migradas ficam migradas e o resto pode rodar numa próxima execução.
+  const candidatos = services.map(s => s.id);
+  const detalhes = [];
+  const contagem = { migrado: 0, ja_migrado: 0, sem_midia: 0, conflito_mediaExternal_inline: 0, conflito_concorrencia: 0, conflito_media_externa_diferente: 0, erro_copia: 0, erro_verificacao: 0, erro_remocao: 0, pos_migracao_inconsistente: 0 };
+  for(const id of candidatos){
+    const d = await migrateOneServiceMedia(id);
+    detalhes.push(d);
+    if(contagem[d.resultado] !== undefined) contagem[d.resultado]++;
+  }
+  const fim = new Date().toISOString();
+  const conflitos = contagem.conflito_mediaExternal_inline + contagem.conflito_concorrencia + contagem.conflito_media_externa_diferente;
+  const erros = contagem.erro_copia + contagem.erro_verificacao + contagem.erro_remocao;
+  const kbTotal = Math.round(detalhes.reduce((s, d) => s + (d.kbMigrados || 0), 0) * 10) / 10;
+
+  const L = [];
+  L.push('=== MIGRAÇÃO servicesMedia ===');
+  L.push('');
+  L.push(`Consideradas: ${candidatos.length}`);
+  L.push(`Migradas: ${contagem.migrado}`);
+  L.push(`Já migradas: ${contagem.ja_migrado}`);
+  L.push(`Sem mídia: ${contagem.sem_midia}`);
+  L.push(`Conflitos: ${conflitos}`);
+  L.push(`Erros: ${erros}`);
+  L.push(`KB migrados: ${kbTotal}`);
+  if(contagem.pos_migracao_inconsistente) L.push(`ATENÇÃO — pós-migração inconsistente: ${contagem.pos_migracao_inconsistente} (revisar manualmente antes de reexecutar)`);
+  L.push('');
+  L.push('ID'.padEnd(16) + 'Cliente'.padEnd(22) + 'Status'.padEnd(16) + 'Campos'.padEnd(10) + 'KB'.padEnd(9) + 'Resultado');
+  detalhes.filter(d => d.resultado !== 'sem_midia').forEach(d => {
+    L.push(String(d.serviceId).padEnd(16) + String(d.client || '—').slice(0, 20).padEnd(22) + String(d.status || '—').padEnd(16) + String(d.fieldsMigrated.length).padEnd(10) + String(d.kbMigrados).padEnd(9) + d.resultado);
+  });
+  console.log(L.join('\n'));
+
+  return { inicio, fim, totalConsideradas: candidatos.length, migradas: contagem.migrado, jaMigradas: contagem.ja_migrado, semMidia: contagem.sem_midia, conflitos, erros, posMigracaoInconsistente: contagem.pos_migracao_inconsistente, detalhes };
+}
+
 async function loadServiceMediaForMany(list, motivo){
   for(const s of (list || [])){ if(s && s.mediaExternal && !serviceMediaIsLoaded(s)) await loadServiceMedia(s.id, motivo); }
 }
