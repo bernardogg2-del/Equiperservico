@@ -1461,6 +1461,9 @@
       <div class="tech-day-title">Agenda de hoje</div>
       <div class="tech-day-date mono" id="techDayDate"></div>
     </div>
+    <!-- Cadastro de equipamento direto na Oficina (melhoria 1): fora da fileira de abas pra não
+         desequilibrar as 3 abas já padronizadas — o Técnico não tem tela própria de Oficina, só a ação. -->
+    <div style="padding:0 20px 10px;"><button type="button" class="btn-ghost" id="oficinaCriarEquipBtnTech">+ Equipamento (Oficina)</button></div>
     <div id="techTaskList"></div>
   </div>
 </div>
@@ -2187,20 +2190,39 @@
       <div class="tech-day-head">
         <div class="tech-day-title">Oficina</div>
       </div>
+      <!-- Sub-navegação (melhoria 2): Equipamentos = todo o conteúdo já existente, reparenteado
+           sem duplicação; Peças = placeholder preparado pra próxima etapa. Reaproveita a mesma
+           classe visual já usada pela sub-navegação do Estoque (.estoque-subnav-v2), sem CSS novo. -->
+      <div id="oficinaGestorSubnav" class="portal-tabs estoque-subnav-v2">
+        <button type="button" class="portal-tab" data-oficinagestortab="equipamentos">Equipamentos</button>
+        <button type="button" class="portal-tab" data-oficinagestortab="pecas">Peças</button>
+      </div>
+
+      <div id="oficinaGestorEquipamentosPane">
       <div style="padding:0 20px 16px;"><button type="button" class="btn-primary" id="oficinaGestorCriarEquipBtn">+ Criar equipamento</button></div>
 
       <!-- Resumo (4 contadores) — mesmo vocabulário de status já usado no restante da Oficina -->
       <div id="oficinaGestorResumoCards" style="padding:0 20px 20px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px;"></div>
 
       <div class="tech-day-head">
-        <div class="tech-day-title">Liberados para reinstalação<span class="access-count mono" id="oficinaGestorLiberadosCount"></span></div>
+        <div class="tech-day-title">Aguardando vistoria<span class="access-count mono" id="oficinaGestorGrupoVistoriaCount"></span></div>
       </div>
-      <div id="oficinaGestorLiberadosList" style="padding:0 20px 20px;"></div>
+      <div id="oficinaGestorGrupoVistoriaList" style="padding:0 20px 20px;"></div>
 
       <div class="tech-day-head">
-        <div class="tech-day-title">Equipamentos em atendimento<span class="access-count mono" id="oficinaGestorAtivosCount"></span></div>
+        <div class="tech-day-title">Aguardando manutenção<span class="access-count mono" id="oficinaGestorGrupoManutencaoCount"></span></div>
       </div>
-      <div id="oficinaGestorAtivosList" style="padding:0 20px 20px;"></div>
+      <div id="oficinaGestorGrupoManutencaoList" style="padding:0 20px 20px;"></div>
+
+      <div class="tech-day-head">
+        <div class="tech-day-title">Aguardando teste<span class="access-count mono" id="oficinaGestorGrupoTesteCount"></span></div>
+      </div>
+      <div id="oficinaGestorGrupoTesteList" style="padding:0 20px 20px;"></div>
+
+      <div class="tech-day-head">
+        <div class="tech-day-title">Liberado para reinstalação<span class="access-count mono" id="oficinaGestorGrupoReinstalacaoCount"></span></div>
+      </div>
+      <div id="oficinaGestorGrupoReinstalacaoList" style="padding:0 20px 20px;"></div>
 
       <div class="tech-day-head">
         <div class="tech-day-title">Histórico — reinstalados<span class="access-count mono" id="oficinaGestorHistoricoCount"></span></div>
@@ -2214,8 +2236,53 @@
         </div>
       </div>
       <div id="oficinaGestorHistoricoList" style="padding:0 20px 30px;"></div>
+      </div>
+
+      <!-- Peças (melhoria 3, futura): só placeholder nesta etapa — sem catálogo, CRUD, referência
+           ou persistência própria. -->
+      <div id="oficinaGestorPecasPane" style="display:none;">
+        <div class="tech-day-head">
+          <div class="tech-day-title">Peças</div>
+        </div>
+        <div style="padding:0 20px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+          <div class="search-input-wrap" style="flex:1; min-width:220px;"><input type="text" id="oficinaPecasSearchInput" placeholder="Buscar peça por nome ou referência..."></div>
+          <button type="button" class="btn-primary" id="oficinaPecasCriarBtn">+ Criar peça</button>
+        </div>
+        <div class="field-error" id="oficinaPecasErr" style="padding:0 20px;"></div>
+        <div id="oficinaPecasList" style="padding:0 20px 30px;"></div>
+      </div>
     </div>
   </div>
+
+<!-- Criar/editar peça (Oficina → Peças, melhoria 3) — mesmo padrão visual do modal de criar
+     equipamento (melhoria 1): overlay/modal/field/modal-actions, sem estilo novo. -->
+<div class="overlay" id="oficinaPecaModalOverlay">
+  <div class="modal">
+    <h3 id="oficinaPecaModalTitulo">Criar peça</h3>
+    <div class="field"><label>Nome / descrição</label><input type="text" id="oficinaPecaNomeInput" placeholder="Ex.: Selo mecânico"></div>
+    <div class="field"><label>Referência</label><input type="text" id="oficinaPecaReferenciaInput" placeholder="Ex.: SM-001"></div>
+    <div class="field-error" id="oficinaPecaModalErr"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="oficinaPecaModalCancelBtn">Cancelar</button>
+      <button type="button" class="btn-primary" id="oficinaPecaModalSalvarBtn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Agendar/reagendar reinstalação (melhoria 6) — mesmo padrão dos demais modais da Oficina. -->
+<div class="overlay" id="oficinaAgendarReinstalacaoOverlay">
+  <div class="modal">
+    <h3>Agendar reinstalação</h3>
+    <div class="field"><label>Equipamento</label><div id="oficinaAgendarReinstalacaoEquip" style="font-weight:600;"></div></div>
+    <div class="field"><label>Cliente</label><div id="oficinaAgendarReinstalacaoCliente"></div></div>
+    <div class="field"><label>Data da reinstalação</label><input type="date" id="oficinaAgendarReinstalacaoData"></div>
+    <div class="field-error" id="oficinaAgendarReinstalacaoErr"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="oficinaAgendarReinstalacaoCancelBtn">Cancelar</button>
+      <button type="button" class="btn-primary" id="oficinaAgendarReinstalacaoConfirmBtn">Confirmar data</button>
+    </div>
+  </div>
+</div>
 
   <!-- O conteúdo do Estoque (#estoqueView) é REALOCADO pra dentro daqui quando o Gestor navega
        até ele (mesmo elemento, sem duplicar HTML/JS/IDs) — veja openEstoqueGestorTab(). Volta a
@@ -2490,14 +2557,25 @@
 <div class="overlay" id="oficinaCriarEquipOverlay">
   <div class="modal">
     <h3>Criar equipamento</h3>
-    <p class="modal-sub">Para equipamentos que chegaram à Oficina sem uma atividade de origem.</p>
-    <div class="field"><label>Cliente *</label><input type="text" id="oficinaCriarEquipCliente" list="oficinaCriarEquipClientes" placeholder="Nome do cliente"><datalist id="oficinaCriarEquipClientes"></datalist></div>
-    <div class="field"><label>Equipamento *</label><input type="text" id="oficinaCriarEquipNome" placeholder="Ex: Bomba de piscina"></div>
-    <div class="field"><label>Observação</label><textarea id="oficinaCriarEquipObs" placeholder="Opcional"></textarea></div>
+    <div class="field">
+      <label>Cliente</label>
+      <input type="text" id="oficinaCriarEquipCliente" list="oficinaCriarEquipClientes" placeholder="Buscar cliente...">
+      <datalist id="oficinaCriarEquipClientes"></datalist>
+    </div>
+    <div class="field" style="background:var(--surface-2, #f5f5f5); border-radius:8px; padding:10px 12px;">
+      <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:6px;">Cliente não encontrado? Informe o nome do cliente aqui (será salvo junto ao equipamento).</div>
+      <input type="text" id="oficinaCriarEquipClienteManual" placeholder="Nome do cliente">
+    </div>
+    <div class="field"><label>Equipamento</label><input type="text" id="oficinaCriarEquipNome" placeholder="Ex.: Bomba d'água 1/2 CV, Pressurizador, Inversor, etc."></div>
+    <div class="field">
+      <label>Observação</label>
+      <textarea id="oficinaCriarEquipObs" maxlength="500" placeholder="Observações sobre o equipamento..."></textarea>
+      <div class="mono" id="oficinaCriarEquipObsCount" style="text-align:right; font-size:11px; color:var(--text-dim); margin-top:2px;">0/500</div>
+    </div>
     <div class="field-error" id="oficinaCriarEquipErr"></div>
     <div class="modal-actions">
       <button type="button" class="btn-ghost" id="oficinaCriarEquipCancelBtn">Cancelar</button>
-      <button type="button" class="btn-primary" id="oficinaCriarEquipConfirmBtn">Criar equipamento</button>
+      <button type="button" class="btn-primary" id="oficinaCriarEquipConfirmBtn">Salvar</button>
     </div>
   </div>
 </div>
@@ -8827,6 +8905,59 @@ async function releaseForReinstallation(equipId, btn, restoreLabel){
   if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab();
 }
 
+// ---- Agendamento da reinstalação (melhoria 6) ----
+// Reaproveita 100% da arquitetura já existente: releaseForReinstallation() continua sendo a
+// ÚNICA função que cria a atividade e vincula reinstallationServiceId (intocada — mesma máquina
+// de estados, mesma idempotência por eq.reinstallationServiceId); rescheduleService() continua
+// sendo a ÚNICA função que grava uma data em services[].date (o mesmo campo usado por qualquer
+// outra atividade da Agenda — scheduledFor é um campo de maintenanceContracts, não de services,
+// confirmado na auditoria; reinstalação não tem contrato, então nunca toca nesse campo). Nenhuma
+// lógica de agendamento nova: esta função só ORQUESTRA as duas já existentes, sem duplicá-las.
+async function agendarReinstalacaoComData(equipId, date){
+  const eq = oficinaEquipamentos.find(x => x.id === equipId);
+  if(!eq) return { ok: false, reason: 'Equipamento não encontrado.' };
+  if(!date) return { ok: false, reason: 'Escolha uma data.' };
+  if(!eq.reinstallationServiceId){
+    await releaseForReinstallation(equipId, null); // cria a atividade + vincula (idempotente, já existente)
+    if(!eq.reinstallationServiceId) return { ok: false, reason: 'Não foi possível criar a atividade de reinstalação. Verifique sua internet e tente novamente.' };
+  }
+  const ok = await rescheduleService(eq.reinstallationServiceId, date); // mesma função usada por qualquer reagendamento da Agenda
+  if(!ok) return { ok: false, reason: 'Não foi possível salvar a data. Verifique sua internet e tente novamente.' };
+  return { ok: true, serviceId: eq.reinstallationServiceId };
+}
+let oficinaAgendarReinstalacaoEquipId = null;
+let oficinaAgendarReinstalacaoInFlight = false;
+function abrirAgendarReinstalacaoModal(equipId){
+  const eq = oficinaEquipamentos.find(x => x.id === equipId);
+  if(!eq) return;
+  oficinaAgendarReinstalacaoEquipId = equipId;
+  document.getElementById('oficinaAgendarReinstalacaoEquip').textContent = eq.equipment;
+  document.getElementById('oficinaAgendarReinstalacaoCliente').textContent = eq.client;
+  const svcExistente = eq.reinstallationServiceId ? services.find(s => s.id === eq.reinstallationServiceId) : null;
+  document.getElementById('oficinaAgendarReinstalacaoData').value = (svcExistente && svcExistente.date) || '';
+  document.getElementById('oficinaAgendarReinstalacaoErr').textContent = '';
+  document.getElementById('oficinaAgendarReinstalacaoOverlay').classList.add('open');
+}
+function fecharAgendarReinstalacaoModal(){ document.getElementById('oficinaAgendarReinstalacaoOverlay').classList.remove('open'); oficinaAgendarReinstalacaoEquipId = null; }
+document.getElementById('oficinaAgendarReinstalacaoCancelBtn').addEventListener('click', fecharAgendarReinstalacaoModal);
+document.getElementById('oficinaAgendarReinstalacaoOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharAgendarReinstalacaoModal(); });
+document.getElementById('oficinaAgendarReinstalacaoConfirmBtn').addEventListener('click', async () => {
+  if(oficinaAgendarReinstalacaoInFlight) return;
+  const equipId = oficinaAgendarReinstalacaoEquipId;
+  const data = document.getElementById('oficinaAgendarReinstalacaoData').value;
+  const errBox = document.getElementById('oficinaAgendarReinstalacaoErr');
+  if(!data){ errBox.textContent = 'Escolha uma data.'; return; }
+  oficinaAgendarReinstalacaoInFlight = true;
+  const btn = document.getElementById('oficinaAgendarReinstalacaoConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
+  const r = await agendarReinstalacaoComData(equipId, data);
+  btn.disabled = false; btn.textContent = lbl; oficinaAgendarReinstalacaoInFlight = false;
+  if(!r.ok){ errBox.textContent = r.reason; return; }
+  fecharAgendarReinstalacaoModal();
+  renderAll();
+  if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab();
+  if(currentRole === 'oficina') renderOficinaView();
+});
+
 // ===== Alerta de equipamento parado na Oficina (etapa 8) =====
 // Configuração é um único valor (dias), salvo com o mesmo helper simples já usado pra outros
 // valores avulsos do projeto (dbGetRaw/dbSetRaw, como adminPin) — sem nó/estrutura nova. Não
@@ -9021,23 +9152,118 @@ document.querySelectorAll('[data-oehistfiltro]').forEach(btn => {
   });
 });
 
+// Sub-abas Equipamentos/Peças (melhoria 2) — troca só de visibilidade, sem nenhuma leitura
+// Firebase nem re-render: o conteúdo de Equipamentos já foi montado por renderOficinaGestorTab()
+// e continua no DOM intacto ao alternar. Peças é só o placeholder desta etapa.
+function oficinaGestorSwitchSubTab(tab){
+  document.getElementById('oficinaGestorEquipamentosPane').style.display = (tab === 'equipamentos') ? '' : 'none';
+  document.getElementById('oficinaGestorPecasPane').style.display = (tab === 'pecas') ? '' : 'none';
+  document.querySelectorAll('#oficinaGestorSubnav [data-oficinagestortab]').forEach(b => b.classList.toggle('active', b.dataset.oficinagestortab === tab));
+  if(tab === 'pecas') renderOficinaPecasList(); // catálogo já carregado (mesmo listener de sempre); sem leitura nova
+}
+document.querySelectorAll('#oficinaGestorSubnav [data-oficinagestortab]').forEach(b => b.addEventListener('click', () => oficinaGestorSwitchSubTab(b.dataset.oficinagestortab)));
+
+// ---- Auditoria de status (melhoria 4): mapeia cada status já existente pra exatamente UM dos
+// 4 grupos pedidos, derivado do status real — nenhum código interno de status foi alterado, só
+// a leitura/apresentação. Mapeamento completo dos status de oficinaEquipamentos:
+//   aguardando_vistoria        -> vistoria    (inicial, ao entrar/criar)
+//   vistoria_iniciada          -> vistoria    (vistoria em andamento)
+//   vistoria_concluida         -> manutencao  (aguardando manutenção começar)
+//   manutencao_iniciada        -> manutencao  (manutenção em andamento)
+//   manutencao_concluida       -> teste       (aguardando teste começar)
+//   teste_iniciado             -> teste       (teste em andamento)
+//   liberado_para_reinstalacao -> reinstalacao (liberado, aguardando agendar)
+//   reinstalacao_pendente      -> reinstalacao (atividade de reinstalação já criada, aguardando o técnico)
+//   reinstalado                -> (fora dos 4 grupos — só no Histórico, como já era)
+//   removido_oficina           -> (fora dos 4 grupos — só no Histórico, como já era)
+const OE_GRUPO_POR_STATUS = {
+  aguardando_vistoria: 'vistoria', vistoria_iniciada: 'vistoria',
+  vistoria_concluida: 'manutencao', manutencao_iniciada: 'manutencao',
+  manutencao_concluida: 'teste', teste_iniciado: 'teste',
+  liberado_para_reinstalacao: 'reinstalacao', reinstalacao_pendente: 'reinstalacao'
+};
+const OE_GRUPO_LABEL = { vistoria: 'Aguardando vistoria', manutencao: 'Aguardando manutenção', teste: 'Aguardando teste', reinstalacao: 'Liberado para reinstalação' };
+function oficinaEquipGrupo(eq){ return OE_GRUPO_POR_STATUS[eq.status] || null; }
+
+// ---- Orçamento dos equipamentos liberados para reinstalação (melhoria 5) ----
+// Campos novos no PRÓPRIO objeto de oficinaEquipamentos (auditei: não existia nada equivalente;
+// nenhum nó Firebase novo, nenhuma estrutura paralela). Equipamentos antigos sem esses campos
+// são lidos como orcamentoNumero:'' / orcamentoEnviado:false (nunca migrados em massa).
+// Persistência 100% reaproveitada de saveOficinaEquipamentos()/writeOficinaEquipamentosDiff() —
+// como só esses 2 campos são alterados no objeto, o diff por campo já existente garante que
+// nenhum outro campo (status, vistoria, manutenção, teste, observações, fotos, áudios, peças,
+// timestamps) é reenviado ou sobrescrito.
+let oficinaOrcamentoInFlight = new Set();
+// Única porta de entrada pro estado do orçamento: reforça aqui, não só na interface, que
+// orcamentoEnviado nunca fica true com orcamentoNumero vazio — mesmo que uma chamada tente.
+async function salvarOrcamentoEquip(id, patch){
+  if(oficinaOrcamentoInFlight.has(id)) return { ok: true, skipped: true }; // duplo clique/blur duplicado: ignora silenciosamente
+  const eq = oficinaEquipamentos.find(x => x.id === id);
+  if(!eq) return { ok: false, reason: 'Equipamento não encontrado.' };
+  const numeroAtual = eq.orcamentoNumero || '', enviadoAtual = !!eq.orcamentoEnviado;
+  const novoNumero = ('orcamentoNumero' in patch) ? (patch.orcamentoNumero || '').trim() : numeroAtual;
+  const novoEnviado = novoNumero ? (('orcamentoEnviado' in patch) ? !!patch.orcamentoEnviado : enviadoAtual) : false;
+  if(novoNumero === numeroAtual && novoEnviado === enviadoAtual) return { ok: true }; // nada mudou, não escreve à toa
+  oficinaOrcamentoInFlight.add(id);
+  eq.orcamentoNumero = novoNumero; eq.orcamentoEnviado = novoEnviado;
+  let ok;
+  try{ ok = await saveOficinaEquipamentos(true); } finally { oficinaOrcamentoInFlight.delete(id); }
+  if(!ok){ eq.orcamentoNumero = numeroAtual; eq.orcamentoEnviado = enviadoAtual; return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+  return { ok: true };
+}
+async function salvarOrcamentoNumeroUI(id, inputEl){
+  const errBox = document.querySelector(`[data-orcamentoerr="${id}"]`);
+  inputEl.disabled = true;
+  const r = await salvarOrcamentoEquip(id, { orcamentoNumero: inputEl.value });
+  inputEl.disabled = false;
+  if(!r.ok){
+    if(errBox) errBox.textContent = r.reason;
+    const eq = oficinaEquipamentos.find(x => x.id === id);
+    if(eq) inputEl.value = eq.orcamentoNumero || ''; // restaura o valor confirmado, sem falso sucesso
+    return;
+  }
+  if(errBox) errBox.textContent = '';
+  // Reflete no checkbox (pode ter sido desmarcado/desabilitado automaticamente ao apagar o número).
+  const eq = oficinaEquipamentos.find(x => x.id === id);
+  const checkbox = document.querySelector(`[data-orcamentoenviado="${id}"]`);
+  if(eq && checkbox){ checkbox.checked = !!eq.orcamentoEnviado; checkbox.disabled = !eq.orcamentoNumero; }
+}
+async function salvarOrcamentoEnviadoUI(id, checkboxEl){
+  const errBox = document.querySelector(`[data-orcamentoerr="${id}"]`);
+  const desejado = checkboxEl.checked;
+  checkboxEl.disabled = true;
+  const r = await salvarOrcamentoEquip(id, { orcamentoEnviado: desejado });
+  const eq = oficinaEquipamentos.find(x => x.id === id);
+  checkboxEl.disabled = !(eq && eq.orcamentoNumero);
+  if(!r.ok){
+    if(errBox) errBox.textContent = r.reason;
+    checkboxEl.checked = !desejado; // reverte a marcação — sem falso sucesso
+    return;
+  }
+  if(errBox) errBox.textContent = '';
+}
+
 function renderOficinaGestorTab(){
+  // Toda vez que o Gestor entra na Oficina, a aba padrão é Equipamentos (igual a um reload).
+  oficinaGestorSwitchSubTab('equipamentos');
   const fmt = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
 
-  // Resumo: 4 contadores fixos (vocabulário do próprio pedido), derivados só do status real —
-  // nenhum campo novo de status/contagem persistido.
+  // Resumo: 4 contadores — cada um conta TODOS os status do grupo correspondente (não só um
+  // status isolado), pra refletir de verdade quanto está parado em cada etapa do fluxo.
+  const gruposCount = { vistoria: 0, manutencao: 0, teste: 0, reinstalacao: 0 };
+  oficinaEquipamentos.forEach(eq => { const g = oficinaEquipGrupo(eq); if(g) gruposCount[g]++; });
   const resumoBuckets = [
-    { label: 'Aguardando vistoria', tone: 'red', count: oficinaEquipamentos.filter(eq => eq.status === 'aguardando_vistoria').length },
-    { label: 'Em manutenção', tone: 'yellow', count: oficinaEquipamentos.filter(eq => eq.status === 'manutencao_iniciada').length },
-    { label: 'Em testes', tone: 'green', count: oficinaEquipamentos.filter(eq => eq.status === 'teste_iniciado').length },
-    { label: 'Liberados p/ reinstalação', tone: 'blue', count: oficinaEquipamentos.filter(eq => eq.status === 'liberado_para_reinstalacao').length }
+    { grupo: 'vistoria', tone: 'red', count: gruposCount.vistoria },
+    { grupo: 'manutencao', tone: 'yellow', count: gruposCount.manutencao },
+    { grupo: 'teste', tone: 'green', count: gruposCount.teste },
+    { grupo: 'reinstalacao', tone: 'blue', count: gruposCount.reinstalacao }
   ];
   const resumoBox = document.getElementById('oficinaGestorResumoCards');
   if(resumoBox){
     resumoBox.innerHTML = resumoBuckets.map(b => `
       <div class="oe-summary-card oe-${b.tone}">
         <div class="oe-summary-count">${b.count}</div>
-        <div class="oe-summary-label">${escapeHtml(b.label)}</div>
+        <div class="oe-summary-label">${escapeHtml(OE_GRUPO_LABEL[b.grupo])}</div>
       </div>`).join('');
   }
 
@@ -9059,57 +9285,85 @@ function renderOficinaGestorTab(){
     </div>`;
   };
 
-  // ===== Liberados para reinstalação — ACIMA da lista geral, como pedido =====
-  const liberados = oficinaEquipamentos.filter(eq => eq.status === 'liberado_para_reinstalacao');
-  const liberadosCountEl = document.getElementById('oficinaGestorLiberadosCount');
-  if(liberadosCountEl) liberadosCountEl.textContent = `(${liberados.length})`;
-  const liberadosBox = document.getElementById('oficinaGestorLiberadosList');
-  if(liberadosBox){
-    liberadosBox.innerHTML = liberados.length ? liberados.map(eq => cardHtml(eq,
-      `<div style="margin-top:8px;">Testado por ${escapeHtml(eq.testeCompletedBy || '—')} em ${fmt(eq.testeCompletedAt)}</div>
-       <button type="button" class="btn-primary" data-criaratividadereinstalacao="${eq.id}" style="margin-top:8px;">Agendar reinstalação</button>`
-    )).join('') : '<div class="painel-block-empty">Nenhum equipamento liberado no momento.</div>';
-  }
+  // ===== Os 4 grupos pedidos (melhoria 4) — cada equipamento aparece em exatamente UM deles,
+  // ordenado por tempo parado (mais antigo primeiro) dentro do grupo. reinstalado/removido_oficina
+  // ficam de fora dos 4 (continuam só no Histórico, como já era antes desta etapa). =====
+  const porTempoParado = (a, b) => { const da = getEquipmentStaleInfo(a).daysStopped; const db = getEquipmentStaleInfo(b).daysStopped; return (db !== null ? db : -1) - (da !== null ? da : -1); };
+  const gruposEquip = { vistoria: [], manutencao: [], teste: [], reinstalacao: [] };
+  oficinaEquipamentos.forEach(eq => { const g = oficinaEquipGrupo(eq); if(g) gruposEquip[g].push(eq); });
+  Object.keys(gruposEquip).forEach(g => gruposEquip[g].sort(porTempoParado));
 
-  // ===== Equipamentos em atendimento (tudo ativo, exceto o que já tem seção própria acima) =====
-  const ativos = oficinaEquipamentos.filter(eq => !['reinstalado', 'removido_oficina', 'liberado_para_reinstalacao'].includes(eq.status));
-  const ativosOrdenados = ativos.slice().sort((a, b) => {
-    const da = getEquipmentStaleInfo(a).daysStopped; const db = getEquipmentStaleInfo(b).daysStopped;
-    return (db !== null ? db : -1) - (da !== null ? da : -1);
-  });
-  const ativosCountEl = document.getElementById('oficinaGestorAtivosCount');
-  if(ativosCountEl) ativosCountEl.textContent = `(${ativos.length})`;
-  const ativosBox = document.getElementById('oficinaGestorAtivosList');
-  if(ativosBox){
-    ativosBox.innerHTML = ativosOrdenados.length ? ativosOrdenados.map(eq => {
-      // "Reinstalação pendente": a atividade já foi criada — abrir direto, sem passar pelo detalhe.
-      const abrirAtividadeHtml = (eq.status === 'reinstalacao_pendente' && eq.reinstallationServiceId)
-        ? `<button type="button" class="btn-ghost" data-abriratividadereinstalacao="${eq.reinstallationServiceId}" style="margin-top:8px;">Atividade de reinstalação criada — abrir</button>`
-        : '';
-      return cardHtml(eq, abrirAtividadeHtml);
-    }).join('') : '<div class="painel-block-empty">Nenhum equipamento em atendimento.</div>';
+  const extraHtmlPorEquip = (eq) => {
+    // Orçamento (melhoria 5): só nos equipamentos do grupo "Liberado para reinstalação" (os dois
+    // status dele). Checkbox desabilitado quando o número está vazio — reforçado também no
+    // salvamento (salvarOrcamentoEquip), nunca só na interface.
+    const orcamentoHtml = (oficinaEquipGrupo(eq) === 'reinstalacao') ? `
+      <div class="field" style="margin-top:10px;" data-orcamentoblock="${eq.id}">
+        <label>Nº do orçamento</label>
+        <input type="text" data-orcamentonumero="${eq.id}" value="${escapeHtml(eq.orcamentoNumero || '')}" placeholder="Ex.: 10554">
+        <label style="display:flex; align-items:center; gap:8px; margin-top:8px; font-weight:400; cursor:pointer;">
+          <input type="checkbox" data-orcamentoenviado="${eq.id}" style="width:auto;" ${eq.orcamentoEnviado ? 'checked' : ''} ${eq.orcamentoNumero ? '' : 'disabled'}>
+          Orçamento enviado
+        </label>
+        <div class="field-error" data-orcamentoerr="${eq.id}"></div>
+      </div>` : '';
+    if(eq.status === 'liberado_para_reinstalacao' || eq.status === 'reinstalacao_pendente'){
+      // Melhoria 6: mesma atividade (reinstallationServiceId) usada tanto pro 1º agendamento
+      // quanto pro reagendamento — nunca cria uma segunda. "Testado por" só faz sentido antes de
+      // ter atividade vinculada; depois disso a informação relevante é a data agendada.
+      const svcVinculado = eq.reinstallationServiceId ? services.find(s => s.id === eq.reinstallationServiceId) : null;
+      const testadoHtml = !svcVinculado ? `<div style="margin-top:8px;">Testado por ${escapeHtml(eq.testeCompletedBy || '—')} em ${fmt(eq.testeCompletedAt)}</div>` : '';
+      const agendamentoHtml = (svcVinculado && svcVinculado.date)
+        ? `<div style="margin-top:8px;">Reinstalação agendada<br><b>${shortLabel(svcVinculado.date)}</b></div>
+           <button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Reagendar reinstalação</button>`
+        : `<button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Agendar reinstalação</button>`;
+      return orcamentoHtml + testadoHtml + agendamentoHtml;
+    }
+    return '';
+  };
+  const renderGrupo = (grupo, boxId, countId, vazioMsg) => {
+    const lista = gruposEquip[grupo];
+    const countEl = document.getElementById(countId); if(countEl) countEl.textContent = `(${lista.length})`;
+    const box = document.getElementById(boxId); if(!box) return;
+    box.innerHTML = lista.length ? lista.map(eq => cardHtml(eq, extraHtmlPorEquip(eq))).join('') : `<div class="painel-block-empty">${vazioMsg}</div>`;
+  };
+  renderGrupo('vistoria', 'oficinaGestorGrupoVistoriaList', 'oficinaGestorGrupoVistoriaCount', 'Nenhum equipamento aguardando vistoria no momento.');
+  renderGrupo('manutencao', 'oficinaGestorGrupoManutencaoList', 'oficinaGestorGrupoManutencaoCount', 'Nenhum equipamento aguardando manutenção no momento.');
+  renderGrupo('teste', 'oficinaGestorGrupoTesteList', 'oficinaGestorGrupoTesteCount', 'Nenhum equipamento aguardando teste no momento.');
+  renderGrupo('reinstalacao', 'oficinaGestorGrupoReinstalacaoList', 'oficinaGestorGrupoReinstalacaoCount', 'Nenhum equipamento liberado no momento.');
+
+  // Orçamento (melhoria 5): campos e comportamento só existem dentro da seção "Liberado para
+  // reinstalação" — stopPropagation em tudo, pra digitar/marcar nunca abrir o modal de detalhe
+  // do card (que fica por baixo, clicável).
+  const orcamentoBox = document.getElementById('oficinaGestorGrupoReinstalacaoList');
+  if(orcamentoBox){
+    orcamentoBox.querySelectorAll('[data-orcamentoblock]').forEach(b => b.addEventListener('click', (e) => e.stopPropagation()));
+    orcamentoBox.querySelectorAll('[data-orcamentonumero]').forEach(inp => {
+      const id = Number(inp.dataset.orcamentonumero);
+      const checkbox = orcamentoBox.querySelector(`[data-orcamentoenviado="${id}"]`);
+      inp.addEventListener('input', () => { if(checkbox){ checkbox.disabled = !inp.value.trim(); if(!inp.value.trim()) checkbox.checked = false; } });
+      inp.addEventListener('blur', () => salvarOrcamentoNumeroUI(id, inp));
+      inp.addEventListener('keydown', (e) => { if(e.key === 'Enter') inp.blur(); });
+    });
+    orcamentoBox.querySelectorAll('[data-orcamentoenviado]').forEach(chk => {
+      chk.addEventListener('change', () => salvarOrcamentoEnviadoUI(Number(chk.dataset.orcamentoenviado), chk));
+    });
   }
 
   // ===== Histórico — reinstalados + removidos manualmente, com busca e filtro local =====
   renderOficinaGestorHistorico();
 
   // Clique no card inteiro → MESMO detalhe rico já usado pela própria Oficina (não duplica modal).
-  document.querySelectorAll('#oficinaGestorLiberadosList [data-oficinagestoritem], #oficinaGestorAtivosList [data-oficinagestoritem]').forEach(card => {
+  document.querySelectorAll('#oficinaGestorGrupoVistoriaList [data-oficinagestoritem], #oficinaGestorGrupoManutencaoList [data-oficinagestoritem], #oficinaGestorGrupoTesteList [data-oficinagestoritem], #oficinaGestorGrupoReinstalacaoList [data-oficinagestoritem]').forEach(card => {
     card.addEventListener('click', () => openOficinaEquipDetalhe(Number(card.dataset.oficinagestoritem)));
   });
   // Botões dentro dos cards: impedem que o clique "vaze" pro clique do card (que abriria o
   // detalhe em vez de executar a ação do botão).
-  document.querySelectorAll('[data-criaratividadereinstalacao]').forEach(btn => {
+  // Melhoria 6: o botão agora abre a seleção de data (não cria mais a atividade direto no clique).
+  document.querySelectorAll('[data-agendarreinstalacao]').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
-      releaseForReinstallation(Number(btn.dataset.criaratividadereinstalacao), btn, 'Agendar reinstalação');
-    });
-  });
-  document.querySelectorAll('[data-abriratividadereinstalacao]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const svcId = Number(btn.dataset.abriratividadereinstalacao);
-      if(services.some(s => s.id === svcId)) openServiceDetails(svcId);
+      abrirAgendarReinstalacaoModal(Number(btn.dataset.agendarreinstalacao));
     });
   });
 }
@@ -9172,13 +9426,16 @@ document.getElementById('oficinaGestorDetalheOverlay').addEventListener('click',
 let oficinaCriarEquipInFlight = false;
 function abrirCriarEquipamentoOficina(){
   document.getElementById('oficinaCriarEquipCliente').value = '';
+  document.getElementById('oficinaCriarEquipClienteManual').value = '';
   document.getElementById('oficinaCriarEquipNome').value = '';
   document.getElementById('oficinaCriarEquipObs').value = '';
+  document.getElementById('oficinaCriarEquipObsCount').textContent = '0/500';
   document.getElementById('oficinaCriarEquipErr').textContent = '';
   document.getElementById('oficinaCriarEquipClientes').innerHTML = clients.map(cl => `<option value="${escapeHtml(cl.name)}"></option>`).join('');
   document.getElementById('oficinaCriarEquipOverlay').classList.add('open');
   setTimeout(() => document.getElementById('oficinaCriarEquipCliente').focus(), 50);
 }
+document.getElementById('oficinaCriarEquipObs').addEventListener('input', (e) => { document.getElementById('oficinaCriarEquipObsCount').textContent = e.target.value.length + '/500'; });
 function fecharCriarEquipamentoOficina(){ document.getElementById('oficinaCriarEquipOverlay').classList.remove('open'); }
 async function criarEquipamentoOficina(dados){
   const client = (dados.client || '').trim(), equipment = (dados.equipment || '').trim(), observation = (dados.observation || '').trim();
@@ -9198,18 +9455,24 @@ async function criarEquipamentoOficina(dados){
 }
 document.getElementById('oficinaCriarEquipBtn').addEventListener('click', abrirCriarEquipamentoOficina);
 document.getElementById('oficinaGestorCriarEquipBtn').addEventListener('click', abrirCriarEquipamentoOficina);
+document.getElementById('oficinaCriarEquipBtnTech').addEventListener('click', abrirCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipCancelBtn').addEventListener('click', fecharCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharCriarEquipamentoOficina(); });
 document.getElementById('oficinaCriarEquipConfirmBtn').addEventListener('click', async () => {
   if(oficinaCriarEquipInFlight) return;
   oficinaCriarEquipInFlight = true;
   const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
-  const r = await criarEquipamentoOficina({ client: document.getElementById('oficinaCriarEquipCliente').value, equipment: document.getElementById('oficinaCriarEquipNome').value, observation: document.getElementById('oficinaCriarEquipObs').value });
+  const clienteManual = document.getElementById('oficinaCriarEquipClienteManual').value.trim();
+  const clienteBusca = document.getElementById('oficinaCriarEquipCliente').value.trim();
+  const r = await criarEquipamentoOficina({ client: clienteManual || clienteBusca, equipment: document.getElementById('oficinaCriarEquipNome').value, observation: document.getElementById('oficinaCriarEquipObs').value });
   btn.disabled = false; btn.textContent = lbl; oficinaCriarEquipInFlight = false;
   if(!r.ok){ document.getElementById('oficinaCriarEquipErr').textContent = r.reason; return; }
   fecharCriarEquipamentoOficina();
   if(currentRole === 'oficina') renderOficinaView();
   if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab();
+  // Técnico não tem lista de equipamentos na própria tela pra servir de confirmação visual —
+  // mesmo padrão de confirmação já usado em Estoque (alert de sucesso).
+  if(currentRole === 'tech') alert('Equipamento cadastrado com sucesso.');
 });
 
 function renderOficinaStaleSection(){
@@ -10920,8 +11183,116 @@ async function registrarPecaNoCatalogo(nome){
 function popularPecasCatalogoDatalist(){
   const dl = document.getElementById('oePecasCatalogoList');
   if(!dl) return;
-  dl.innerHTML = oficinaPecasCatalogoStore.items.slice().sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(p => `<option value="${escapeHtml(p.name)}"></option>`).join('');
+  // Só peças ativas: uma peça excluída/inativada não deve aparecer como opção para novas utilizações.
+  dl.innerHTML = pecasAtivas().map(p => `<option value="${escapeHtml(p.name)}"></option>`).join('');
 }
+
+// ---- Catálogo de peças (melhoria 3): CRUD reutilizando oficinaPecasCatalogoStore (mesma fábrica/
+// diff-por-campo/retry/merge/listener já usados por estoqueCategoriasStore/estoqueAjustesStore/
+// estoqueRetiradasStore) - nenhum nó Firebase novo, nenhuma camada de persistência nova.
+// Exclusão lógica (active:false), mesmo padrão de excluirCategoria(): auditei addOePeca/updateOePeca
+// (uso de peça numa manutenção, logo acima) e confirmei que eq.partsUsed guarda uma CÓPIA do nome
+// no momento do uso, com um id PRÓPRIO gerado ali (nunca referencia o catálogo por id) - então
+// inativar uma peça aqui nunca apaga nem altera nenhum histórico de manutenção já existente.
+function pecasAtivas(){
+  return oficinaPecasCatalogoStore.items.filter(p => p.active !== false).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
+}
+async function criarPeca(nome, referencia){
+  nome = (nome || '').trim().replace(/\s+/g, ' '); referencia = (referencia || '').trim();
+  if(!nome) return { ok: false, reason: 'Informe o nome/descrição da peça.' };
+  if(!referencia) return { ok: false, reason: 'Informe a referência da peça.' };
+  if(pecasAtivas().some(p => normPecaKey(p.name) === normPecaKey(nome))) return { ok: false, reason: 'Já existe uma peça com esse nome.' };
+  const now = new Date().toISOString(), who = currentActingName();
+  const peca = { id: Date.now() + Math.floor(Math.random() * 1000000), name: nome, referencia, active: true, createdAt: now, createdBy: who, updatedAt: now, updatedBy: who };
+  oficinaPecasCatalogoStore.items.push(peca);
+  const ok = await oficinaPecasCatalogoStore.save();
+  if(!ok){ oficinaPecasCatalogoStore.items = oficinaPecasCatalogoStore.items.filter(p => p !== peca); return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+  return { ok: true, peca };
+}
+async function editarPeca(id, nome, referencia){
+  nome = (nome || '').trim().replace(/\s+/g, ' '); referencia = (referencia || '').trim();
+  const peca = oficinaPecasCatalogoStore.items.find(p => p.id === id);
+  if(!peca) return { ok: false, reason: 'Peça não encontrada.' };
+  if(!nome) return { ok: false, reason: 'Informe o nome/descrição da peça.' };
+  if(!referencia) return { ok: false, reason: 'Informe a referência da peça.' };
+  if(pecasAtivas().some(p => p.id !== id && normPecaKey(p.name) === normPecaKey(nome))) return { ok: false, reason: 'Já existe uma peça com esse nome.' };
+  const prev = Object.assign({}, peca);
+  peca.name = nome; peca.referencia = referencia; peca.updatedAt = new Date().toISOString(); peca.updatedBy = currentActingName();
+  const ok = await oficinaPecasCatalogoStore.save();
+  if(!ok){ Object.assign(peca, prev); return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+  return { ok: true };
+}
+async function excluirPeca(id){
+  const peca = oficinaPecasCatalogoStore.items.find(p => p.id === id);
+  if(!peca) return { ok: false, reason: 'Peça não encontrada.' };
+  const prev = Object.assign({}, peca);
+  peca.active = false; peca.deletedAt = new Date().toISOString(); peca.deletedBy = currentActingName();
+  const ok = await oficinaPecasCatalogoStore.save();
+  if(!ok){ Object.assign(peca, prev); delete peca.deletedAt; delete peca.deletedBy; peca.active = prev.active; return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+  return { ok: true };
+}
+// Busca instantânea no catálogo já carregado (sem leitura Firebase); tolerante a acentos.
+function pecaFold(s){ return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+let oficinaPecasSearch = '';
+function renderOficinaPecasList(){
+  const box = document.getElementById('oficinaPecasList'); if(!box) return;
+  const q = pecaFold(oficinaPecasSearch.trim());
+  let pecas = pecasAtivas();
+  if(q) pecas = pecas.filter(p => pecaFold(p.name).includes(q) || pecaFold(p.referencia).includes(q));
+  box.innerHTML = pecas.length ? pecas.map(p => `<div class="estoque-row-v2" data-oficinapeca="${p.id}">
+      <div class="estoque-row-main">
+        <div class="nome">${escapeHtml(p.name)}</div>
+        <div class="sub">Referência: ${escapeHtml(p.referencia || '—')}</div>
+      </div>
+      <div class="estoque-row-actions">
+        <button type="button" class="btn-ghost" data-oficinapecaeditar="${p.id}">Editar</button>
+        <button type="button" class="btn-ghost" data-oficinapecaexcluir="${p.id}" title="Excluir peça" style="padding:7px 10px;">⋮</button>
+      </div>
+    </div>`).join('') : `<div class="painel-block-empty">${q ? 'Nenhuma peça encontrada.' : 'Nenhuma peça cadastrada.'}</div>`;
+  box.querySelectorAll('[data-oficinapecaeditar]').forEach(b => b.addEventListener('click', () => abrirPecaModal(Number(b.dataset.oficinapecaeditar))));
+  box.querySelectorAll('[data-oficinapecaexcluir]').forEach(b => b.addEventListener('click', () => {
+    const peca = oficinaPecasCatalogoStore.items.find(x => x.id === Number(b.dataset.oficinapecaexcluir)); if(!peca) return;
+    customConfirm(`Excluir esta peça?
+
+Esta ação removerá "${peca.name}" do catálogo.`, async () => {
+      const r = await excluirPeca(peca.id);
+      document.getElementById('oficinaPecasErr').textContent = r.ok ? '' : r.reason;
+      renderOficinaPecasList();
+    });
+  }));
+}
+document.getElementById('oficinaPecasSearchInput').addEventListener('input', (e) => { oficinaPecasSearch = e.target.value; renderOficinaPecasList(); });
+
+// Modal único de criar/editar peça — protegido contra duplo/triplo clique, com retry após falha
+// (mesmo padrão do modal de criar equipamento da melhoria 1).
+let oficinaPecaEditandoId = null;
+let oficinaPecaSalvarInFlight = false;
+function abrirPecaModal(id){
+  oficinaPecaEditandoId = id || null;
+  const peca = id ? oficinaPecasCatalogoStore.items.find(p => p.id === id) : null;
+  document.getElementById('oficinaPecaModalTitulo').textContent = peca ? 'Editar peça' : 'Criar peça';
+  document.getElementById('oficinaPecaNomeInput').value = peca ? peca.name : '';
+  document.getElementById('oficinaPecaReferenciaInput').value = peca ? (peca.referencia || '') : '';
+  document.getElementById('oficinaPecaModalErr').textContent = '';
+  document.getElementById('oficinaPecaModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('oficinaPecaNomeInput').focus(), 50);
+}
+function fecharPecaModal(){ document.getElementById('oficinaPecaModalOverlay').classList.remove('open'); }
+document.getElementById('oficinaPecasCriarBtn').addEventListener('click', () => abrirPecaModal(null));
+document.getElementById('oficinaPecaModalCancelBtn').addEventListener('click', fecharPecaModal);
+document.getElementById('oficinaPecaModalOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharPecaModal(); });
+document.getElementById('oficinaPecaModalSalvarBtn').addEventListener('click', async () => {
+  if(oficinaPecaSalvarInFlight) return;
+  oficinaPecaSalvarInFlight = true;
+  const btn = document.getElementById('oficinaPecaModalSalvarBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
+  const nome = document.getElementById('oficinaPecaNomeInput').value;
+  const referencia = document.getElementById('oficinaPecaReferenciaInput').value;
+  const r = oficinaPecaEditandoId ? await editarPeca(oficinaPecaEditandoId, nome, referencia) : await criarPeca(nome, referencia);
+  btn.disabled = false; btn.textContent = lbl; oficinaPecaSalvarInFlight = false;
+  if(!r.ok){ document.getElementById('oficinaPecaModalErr').textContent = r.reason; return; }
+  fecharPecaModal();
+  renderOficinaPecasList();
+});
 
 async function addOePeca(equipId, nome, quantidade, observacao){
   const eq = oficinaEquipamentos.find(x => x.id === equipId);
@@ -14042,7 +14413,7 @@ async function ensureEstoqueLoaded(){
   estoqueCategoriasStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
   estoqueAjustesStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
   estoqueRetiradasStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
-  oficinaPecasCatalogoStore.attach(() => { if(oeCurrentDetalheId !== null) popularPecasCatalogoDatalist(); });
+  oficinaPecasCatalogoStore.attach(() => { if(oeCurrentDetalheId !== null) popularPecasCatalogoDatalist(); if(currentRole === 'manager' && document.getElementById('oficinaGestorPecasPane') && document.getElementById('oficinaGestorPecasPane').style.display !== 'none') renderOficinaPecasList(); });
   perfMark('node_loaded', { node: 'estoque+históricos', approxKB: perfApproxKB(estoqueItens) + perfApproxKB(estoqueMovimentacoes) });
 }
 // Paralelização conservadora: loadExtraContacts/loadOficina/loadAdminPin não têm dependência
