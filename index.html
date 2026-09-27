@@ -356,6 +356,13 @@
      Manutenções e Clientes. Linhas discretas, número em destaque à direita. */
   .painel-stat-row{ display:flex; justify-content:space-between; align-items:baseline; padding: 10px 0; border-bottom: 1px solid var(--line); }
   .painel-stat-row:last-child{ border-bottom: none; }
+  /* Cabeçalho de categoria no Relatório de compra (melhoria 4) — mesma linguagem tipográfica já
+     usada em rótulos de seção no app (uppercase, letter-spacing, cor discreta). */
+  .estoque-relatorio-cat-header{
+    font-weight:700; text-transform:uppercase; font-size:11px; letter-spacing:.4px;
+    color:var(--text-dim); border-bottom:1px solid var(--line); padding:14px 0 6px; margin-top:2px;
+  }
+  .estoque-relatorio-cat-header:first-child{ margin-top:0; padding-top:0; }
   .painel-stat-label{ font-size: 13px; color: var(--text-dim); }
   .painel-stat-value{ font-size: 15px; font-weight:700; color: var(--ink); }
 
@@ -757,6 +764,25 @@
   .btn-ghost:hover{ border-color: var(--teal); color: var(--teal); }
   .btn-ghost.done{ border-color: var(--success-line); }
   .btn-ghost.done:hover{ border-color:var(--success-dark); color:var(--success-dark); }
+  /* Ações administrativas com mais destaque que .btn-ghost (que fica muito apagado pra ações
+     como "Gerenciar categorias"/"Relatório de compra"), mas sem competir com o preto sólido de
+     .btn-primary — mesma paleta preto/branco/cinza já usada em todo o app, nada novo. */
+  .btn-admin-action{
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 9px 16px;
+    border-radius: var(--radius-sm);
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-admin-action:hover{ background: var(--line); }
+  .btn-admin-action:active{ transform: translateY(1px); }
+  .btn-admin-action:focus-visible{ outline: 2px solid var(--ink); outline-offset: 1px; }
   .btn-text-danger{
     background:none; border:none; color: var(--text-dim); font-size:12px; cursor:pointer;
     font-family: var(--sans); padding: 4px;
@@ -1621,9 +1647,9 @@
         <select id="estoqueCategoriaFiltro"><option value="">Todas as categorias</option></select>
         <button type="button" class="btn-primary" id="estoqueNewItemBtn" style="display:none;">+ Novo material</button>
       </div>
-      <div style="padding:0 20px 10px; display:flex; gap:14px;">
-        <button type="button" class="btn-ghost" id="estoqueGerenciarCategoriasBtn" style="display:none; padding:4px 0; border:none; background:none; text-decoration:underline; color:var(--text-dim); font-size:12.5px;">Gerenciar categorias</button>
-        <button type="button" class="btn-ghost" id="estoqueVerRelatorioBtn" style="display:none; padding:4px 0; border:none; background:none; text-decoration:underline; color:var(--text-dim); font-size:12.5px;">Relatório de compra</button>
+      <div style="padding:0 20px 14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="button" class="btn-admin-action" id="estoqueGerenciarCategoriasBtn" style="display:none;">Gerenciar categorias</button>
+        <button type="button" class="btn-admin-action" id="estoqueVerRelatorioBtn" style="display:none;">Relatório de compra</button>
       </div>
       <div id="estoqueList" style="padding:0 20px 30px;"></div>
     </div>
@@ -1753,7 +1779,11 @@
       </div>
       <div style="padding:0 20px 12px;">
         <div id="estoqueRelatorioStatus" style="font-size:13px; color:var(--text-dim); margin-bottom:10px;"></div>
-        <button type="button" class="btn-primary" id="estoqueRelatorioPdfBtn">Gerar PDF do relatório</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" class="btn-primary" id="estoqueRelatorioPdfBtn">Exportar PDF</button>
+          <button type="button" class="btn-admin-action" id="estoqueRelatorioExcelBtn">Exportar Excel</button>
+        </div>
+        <div class="field-error" id="estoqueRelatorioExportErr" style="margin-top:8px;"></div>
       </div>
       <div id="estoqueRelatorioPreview" style="padding:0 20px 30px;"></div>
     </div>
@@ -1940,6 +1970,7 @@
     <button class="btn-ghost" id="importDataBtn">⤒ Importar dados</button>
     <input type="file" id="importDataInput" accept="application/json" style="display:none;">
   </div>
+  <div style="padding:0 20px 8px; font-size:12px; color:var(--text-dim);">O arquivo de backup contém dados de acesso (PINs e cadastros de usuários) — guarde-o com segurança.</div>
   <div class="search-bar">
     <div class="search-input-wrap">
       <input type="text" id="clientSearchInput" placeholder="Buscar cliente finalizado..." autocomplete="off">
@@ -2143,10 +2174,16 @@
     <div class="tecnicos-head">
       <div>
         <div class="tecnicos-title">Acessos</div>
-        <div class="tecnicos-date mono">Cadastro e PIN de login de gestores, técnicos, financeiro e oficina</div>
+        <div class="tecnicos-date mono">Um cadastro por pessoa, com os perfis que ela pode usar</div>
       </div>
     </div>
-    <div class="access-settings">
+    <div style="padding:0 20px 14px;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button></div>
+    <div id="acessosUsuariosList" style="padding:0 20px 30px;"></div>
+
+    <!-- Estruturas legadas (Etapas 1-3): funções e nós ainda existem e continuam sendo lidos/
+         gravados como antes (compatibilidade), mas a partir da Etapa 4 não fazem mais parte da
+         apresentação principal de Acessos — mantidas fora de vista só por auditoria/compatibilidade. -->
+    <div class="access-settings" style="display:none;">
       <div class="access-section">
         <div class="access-settings-title">Gestores<span class="access-count mono" id="managerCountLabel"></span></div>
         <div id="managerPinList"></div>
@@ -2181,6 +2218,31 @@
           <input type="text" id="newOficinaNameInput" placeholder="Nome da nova pessoa">
           <button class="btn-ghost" id="addOficinaBtn">+ Adicionar à Oficina</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Criar/editar usuário unificado (Etapa 4) — mesmo padrão visual dos demais modais do app. -->
+  <div class="overlay" id="acessosUsuarioModalOverlay">
+    <div class="modal">
+      <h3 id="acessosUsuarioModalTitulo">Novo usuário</h3>
+      <div class="field"><label>Nome</label><input type="text" id="acessosUsuarioNomeInput"></div>
+      <div class="field-error" id="acessosNomeAvisoAlteracao" style="color:var(--text-dim);"></div>
+      <div class="field">
+        <label>Perfis</label>
+        <label style="display:flex; align-items:center; gap:8px; margin-top:6px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosPerfilManager" style="width:auto;"> Gestor</label>
+        <label style="display:flex; align-items:center; gap:8px; margin-top:6px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosPerfilTech" style="width:auto;"> Técnico</label>
+        <label style="display:flex; align-items:center; gap:8px; margin-top:6px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosPerfilOficina" style="width:auto;"> Oficina</label>
+        <label style="display:flex; align-items:center; gap:8px; margin-top:6px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosPerfilFinanceiro" style="width:auto;"> Financeiro</label>
+      </div>
+      <div class="field">
+        <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosMasterInput" style="width:auto;" disabled> Gestor Master</label>
+      </div>
+      <div id="acessosPinsContainer"></div>
+      <div class="field-error" id="acessosUsuarioModalErr"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" id="acessosUsuarioModalCancelBtn">Cancelar</button>
+        <button type="button" class="btn-primary" id="acessosUsuarioModalSalvarBtn">Salvar</button>
       </div>
     </div>
   </div>
@@ -3427,8 +3489,9 @@ function onTechSelectChange(e){
 
 let confirmCallback = null;
 
-function customConfirm(message, onConfirm){
+function customConfirm(message, onConfirm, confirmLabel){
   document.getElementById('confirmMessage').textContent = message;
+  document.getElementById('confirmOkBtn').textContent = confirmLabel || 'Confirmar';
   confirmCallback = onConfirm;
   document.getElementById('confirmOverlay').classList.add('open');
 }
@@ -3451,13 +3514,21 @@ document.getElementById('confirmOkBtn').addEventListener('click', async () => {
 
 let duplaContext = null;
 
+// Etapa 9: lista de pessoas com perfil Técnico pra SELEÇÃO em operações atuais (atribuir serviço,
+// duplas) — fonte migrada de TECHS pra users, ordenada por nome em pt-BR (mesmo padrão já usado
+// nos dropdowns de login). Cor/telefone continuam vindo de TECHS onde são exibidos — aqui só o
+// NOME é necessário. Nome histórico gravado em services continua sendo o mesmo texto de sempre.
+function tecnicosAtuaisOrdenados(){
+  return USERS.filter(u => u.profiles && u.profiles.tech).map(u => nomeHistoricoDoUsuario(u, 'tech')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
 function populateDuplaSelects(){
-  const opts = TECHS.map(t => `<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join('');
+  const nomes = tecnicosAtuaisOrdenados();
+  const opts = nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
   document.getElementById('dupla1').innerHTML = opts;
   document.getElementById('dupla2').innerHTML = opts;
-  if(TECHS.length > 1){
-    document.getElementById('dupla1').value = TECHS[0].name;
-    document.getElementById('dupla2').value = TECHS[1].name;
+  if(nomes.length > 1){
+    document.getElementById('dupla1').value = nomes[0];
+    document.getElementById('dupla2').value = nomes[1];
   }
 }
 
@@ -3479,8 +3550,9 @@ function openDuplaEditor(anchorId){
     // Formato novo: um único registro com vários técnicos.
     duplaContext = { mode: 'edit-new', serviceId: anchor.id };
     populateDuplaSelects();
-    document.getElementById('dupla1').value = anchor.technicians[0] || TECHS[0].name;
-    document.getElementById('dupla2').value = anchor.technicians[1] || (TECHS[1] ? TECHS[1].name : TECHS[0].name);
+    const dupla1El = document.getElementById('dupla1'), dupla2El = document.getElementById('dupla2');
+    dupla1El.value = anchor.technicians[0] || (dupla1El.options[0] ? dupla1El.options[0].value : '');
+    dupla2El.value = anchor.technicians[1] || (dupla2El.options[1] ? dupla2El.options[1].value : (dupla2El.options[0] ? dupla2El.options[0].value : ''));
     document.getElementById('duplaOverlay').classList.add('open');
     return;
   }
@@ -4013,9 +4085,10 @@ function wirePairButtons(container){
 }
 
 function buildMiniCardElement(s){
+  // Etapa 9: opções de técnico pra atribuir a este serviço — fonte migrada pra users (tech).
   let techOptions = `<option value="">Selecionar técnico...</option>`;
-  TECHS.forEach(t => {
-    techOptions += `<option value="${t.name}" ${s.technician === t.name ? 'selected' : ''}>${t.name}</option>`;
+  tecnicosAtuaisOrdenados().forEach(nome => {
+    techOptions += `<option value="${nome}" ${s.technician === nome ? 'selected' : ''}>${nome}</option>`;
   });
   techOptions += `<option value="__dupla__">👥 Indicar dupla (2 técnicos)</option>`;
 
@@ -4387,9 +4460,10 @@ function renderDayPanel(){
     card.className = `service-card status-${s.status}`;
     card.dataset.id = s.id;
 
+    // Etapa 9: opções de técnico pra atribuir a este serviço — fonte migrada pra users (tech).
     let techOptions = `<option value="">Selecionar técnico...</option>`;
-    TECHS.forEach(t => {
-      techOptions += `<option value="${t.name}" ${s.technician === t.name ? 'selected' : ''}>${t.name}</option>`;
+    tecnicosAtuaisOrdenados().forEach(nome => {
+      techOptions += `<option value="${nome}" ${s.technician === nome ? 'selected' : ''}>${nome}</option>`;
     });
     techOptions += `<option value="__dupla__">👥 Indicar dupla (2 técnicos)</option>`;
 
@@ -5545,6 +5619,14 @@ let techRosterSaveInFlight = false;
 let techRosterSaveQueued = false;
 
 async function saveTechRoster(silent){
+  // Proteção de autorização (auditoria complementar de Acessos, 2ª camada): sem chamador legítimo
+  // não-Master hoje (addTechnician/removeTechnician já checam Master; ponteTecnico só é alcançada
+  // via salvarUsuarioAcessos, já Master-gated) — bloqueia uma chamada direta que manipule TECHS e
+  // chame saveTechRoster() no console, contornando os wrappers.
+  if(!isCurrentUserMaster()){
+    if(!silent) alert('Você não tem permissão para alterar o cadastro de técnicos. Só um Gestor Master pode fazer isso.');
+    return false;
+  }
   if(techRosterSaveInFlight){
     techRosterSaveQueued = true;
     return true;
@@ -5569,6 +5651,10 @@ async function saveTechRoster(silent){
 // Grava só os campos que mudaram, um caminho por técnico/campo (techRoster/<nome>/<campo>) —
 // nunca a lista inteira. Detecta remoções comparando com o snapshot confirmado.
 async function writeTechRosterDiff(attempt){
+  // Proteção de autorização (auditoria complementar): sem chamador legítimo não-Master (só é
+  // chamada de dentro de saveTechRoster(), já protegida) — fecha o caminho de chamar esta função
+  // direto no console, contornando o wrapper.
+  if(!isCurrentUserMaster()) return false;
   attempt = attempt || 1;
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
@@ -5625,6 +5711,7 @@ async function writeTechRosterDiff(attempt){
 }
 
 async function addTechnician(name){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar técnicos. Só um Gestor Master pode fazer isso.'); return false; }
   name = (name || '').trim();
   if(!name) return false;
   if(!isValidTechnicianName(name)){
@@ -5643,6 +5730,10 @@ async function addTechnician(name){
 }
 
 async function deleteTechPhoneAndPin(name, attempt){
+  // Proteção de autorização (auditoria complementar): sem chamador legítimo não-Master (só é
+  // chamada de dentro de removeTechnician(), já protegida) — fecha o caminho de chamar esta função
+  // direto no console pra apagar telefone/PIN de um técnico sem passar pelo wrapper.
+  if(!isCurrentUserMaster()) return false;
   attempt = attempt || 1;
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
@@ -5661,6 +5752,7 @@ async function deleteTechPhoneAndPin(name, attempt){
 }
 
 async function removeTechnician(name){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar técnicos. Só um Gestor Master pode fazer isso.'); return; }
   TECHS = TECHS.filter(t => t.name !== name);
   await saveTechRoster();
   await deleteTechPhoneAndPin(name);
@@ -5742,6 +5834,15 @@ function attachRealtimeTechPhonesListener(){
 }
 
 async function saveTechPhone(name, phone, attempt){
+  // Proteção de autorização: exige qualquer Gestor logado (currentRole==='manager') — nunca foi
+  // um privilégio exclusivo de Master (edição de telefone na tela Técnicos sempre foi permitida a
+  // qualquer Gestor), então esse é o nível correto, verificado de forma direta e imediata (sem
+  // contador, sem parâmetro de bypass, sem depender de nenhum estado compartilhado entre chamadas).
+  // Bloqueia Técnico/Financeiro/Oficina e qualquer chamada sem ninguém logado como Gestor.
+  if(currentRole !== 'manager'){
+    alert('Você não tem permissão para alterar o cadastro de técnicos.');
+    return false;
+  }
   attempt = attempt || 1;
   TECHS.forEach(t => { if(t.name === name) t.phone = phone; });
   try{
@@ -6997,27 +7098,49 @@ function quantidadeParaComprar(it){
   return Math.max(0, mx - q);
 }
 function relatorioCompraDisponivel(){ return estoqueMateriaisAtivos().some(it => estoqueStatusDoMaterial(it) !== 'NORMAL'); }
+// Nome de arquivo compartilhado pelas duas exportações (melhoria 5) — mesmo padrão AAAA-MM-DD já
+// usado em outras partes do app pra nomes de arquivo seguros/consistentes.
+function relatorioCompraFileNameBase(){
+  const d = new Date(); const pad = n => String(n).padStart(2, '0');
+  return `relatorio-compra-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+// Mesma fonte de dados/agrupamento já usados por renderEstoqueRelatorio()/buildRelatorioCompraHtml()
+// (estoqueMateriaisAtivos() + quantidadeParaComprar(), mesmo critério de categoria/ordenação) —
+// usada só pela exportação Excel (melhoria 5), sem duplicar a lógica de CÁLCULO em si.
+function relatorioCompraAgrupado(){
+  const cats = {};
+  estoqueMateriaisAtivos().forEach(it => { const cn = it.category || 'Sem categoria'; (cats[cn] = cats[cn] || []).push(it); });
+  return Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR')).map(cn => ({
+    categoria: cn,
+    itens: cats[cn].slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR')).map(it => ({ nome: it.name, comprar: quantidadeParaComprar(it) }))
+  }));
+}
 function buildRelatorioCompraHtml(){
   const cats = {}; estoqueMateriaisAtivos().forEach(it => { (cats[it.category || 'Sem categoria'] = cats[it.category || 'Sem categoria'] || []).push(it); });
   const catNames = Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   let total = 0; let rows = '';
+  // Melhoria 3: cada linha de material mostra somente descrição + quantidade a comprar — os
+  // agrupamentos por categoria (organização já existente) continuam, só as colunas
+  // atual/mínimo/máximo somem. Cálculo de quantidadeParaComprar() inalterado. O destaque
+  // "alerta" (item que disparou reposição) é mantido — é status visual, não um dos 3 campos
+  // numéricos que esta melhoria pede pra remover.
   catNames.forEach(cn => {
     const list = cats[cn].slice().sort((a, b) => (a.name + a.unit).localeCompare(b.name + b.unit, 'pt-BR'));
-    rows += `<tr class="cat"><td colspan="7">${escapeHtml(cn)}</td></tr>`;
+    rows += `<tr class="cat"><td colspan="2">${escapeHtml(cn)}</td></tr>`;
     list.forEach(it => {
       const st = estoqueStatusDoMaterial(it), buy = quantidadeParaComprar(it); total += buy;
-      rows += `<tr class="${st !== 'NORMAL' ? 'alerta' : ''}"><td>${escapeHtml(cn)}</td><td>${escapeHtml(it.name)}</td><td>${escapeHtml(it.unit)}</td><td class="n">${it.quantity}</td><td class="n">${it.minimumQuantity}</td><td class="n">${it.maximumQuantity}</td><td class="n"><b>${buy}</b></td></tr>`;
+      rows += `<tr class="${st !== 'NORMAL' ? 'alerta' : ''}"><td>${escapeHtml(it.name)}</td><td class="n"><b>${buy}</b></td></tr>`;
     });
   });
   const when = new Date().toLocaleString('pt-BR');
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>Relatório de Compra — Equiper</title>
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${relatorioCompraFileNameBase()}</title>
 <style>body{font-family:Inter,-apple-system,Arial,sans-serif;color:#141416;margin:24px;} h1{font-size:22px;margin:0 0 4px;} .sub{color:#666;font-size:12px;margin-bottom:16px;}
 table{width:100%;border-collapse:collapse;font-size:12px;} th,td{border-bottom:1px solid #e3e3e6;padding:6px 8px;text-align:left;} th{background:#f4f4f6;font-weight:700;}
-td.n,th.n{text-align:right;} tr.cat td{background:#141416;color:#fff;font-weight:700;letter-spacing:.3px;} tr.alerta td{background:#fdecec;} tr.alerta td:nth-child(2){color:#D91A22;font-weight:700;}
+td.n,th.n{text-align:right;} tr.cat td{background:#141416;color:#fff;font-weight:700;letter-spacing:.3px;} tr.alerta td{background:#fdecec;} tr.alerta td:first-child{color:#D91A22;font-weight:700;}
 tfoot td{font-weight:700;border-top:2px solid #141416;} .legend{font-size:11px;color:#666;margin-top:10px;} @media print{body{margin:10mm;}}</style></head><body>
-<h1>Relatório de Compra</h1><div class="sub">Equiper · gerado em ${when} · quantidade para comprar = máximo − atual (nunca negativa)</div>
-<table><thead><tr><th>Categoria</th><th>Material</th><th>Medida</th><th class="n">Atual</th><th class="n">Mínimo</th><th class="n">Máximo</th><th class="n">Comprar</th></tr></thead>
-<tbody>${rows}</tbody><tfoot><tr><td colspan="6">Total geral a comprar</td><td class="n">${total}</td></tr></tfoot></table>
+<h1>Relatório de Compra</h1><div class="sub">Equiper · gerado em ${when}</div>
+<table><thead><tr><th>Descrição do item</th><th class="n">Quantidade a comprar</th></tr></thead>
+<tbody>${rows}</tbody><tfoot><tr><td>Total geral a comprar</td><td class="n">${total}</td></tr></tfoot></table>
 <div class="legend">Linhas destacadas em vermelho: materiais no mínimo ou abaixo (dispararam reposição).</div>
 <scr'+'ipt>window.addEventListener('load', () => { setTimeout(() => window.print(), 300); });<\/scr'+'ipt></body></html>`;
 }
@@ -7727,7 +7850,18 @@ async function loadManagers(){
     const res2 = await dbGetRaw('adminPin');
     if(res2 && res2.value) MANAGERS[0].pin = res2.value;
   }catch(e){ /* usa o padrão */ }
-  await saveManagers();
+  // Grava a lista padrão direto no Firebase — SEM passar por saveManagers()/writeManagersDiff()
+  // (exclusivas de Master) nem por nenhuma outra função nomeada e chamável de fora: este trecho só
+  // roda uma vez, quando o nó "managers" nunca existiu, ANTES de qualquer login (não existe sessão
+  // pra checar Master neste momento). Por estar embutido aqui, sem nome próprio, não há como
+  // alguém invocar de novo esta semeadura a partir do console.
+  try{
+    if(rtdb){
+      const updates = {};
+      MANAGERS.forEach(m => { updates['managers/' + m.name] = { name: m.name, pin: m.pin }; });
+      await rtdb.ref().update(updates);
+    }
+  }catch(e){ /* segue com a lista padrão só em memória; uma tentativa futura de salvar tenta de novo */ }
   managersSnapshot = {};
   MANAGERS.forEach(m => { managersSnapshot[m.name] = { name: JSON.stringify(m.name), pin: JSON.stringify(m.pin) }; });
 }
@@ -7792,6 +7926,14 @@ let managersSaveInFlight = false;
 let managersSaveQueued = false;
 
 async function saveManagers(silent){
+  // Proteção de autorização — estritamente Master, sem exceção. O backup/importação NÃO passa
+  // mais por esta função pra gravar managers: usa restaurarGestoresLegadoDoBackup(), uma função
+  // própria e independente, com sua própria checagem (qualquer Gestor), sem nenhum mecanismo
+  // compartilhado de "confiança emprestada".
+  if(!isCurrentUserMaster()){
+    if(!silent) alert('Você não tem permissão para alterar o cadastro de gestores. Só um Gestor Master pode fazer isso.');
+    return false;
+  }
   if(managersSaveInFlight){
     managersSaveQueued = true;
     return true;
@@ -7816,6 +7958,9 @@ async function saveManagers(silent){
 // Grava só os campos que mudaram, um caminho por gestor/campo (managers/<nome>/<campo>) — nunca
 // a lista inteira.
 async function writeManagersDiff(attempt){
+  // Estritamente Master, sem exceção — fecha o caminho de chamar writeManagersDiff() direto no
+  // console, contornando o wrapper.
+  if(!isCurrentUserMaster()) return false;
   attempt = attempt || 1;
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
@@ -7870,6 +8015,10 @@ async function writeManagersDiff(attempt){
 }
 
 async function addManager(name){
+  // Proteção de autorização (auditoria complementar de Acessos): sem isto, addManager podia ser
+  // chamado direto (ex.: console do navegador) por qualquer perfil — a aba Acessos escondida não
+  // impede a chamada direta da função, só a navegação normal até o botão.
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar gestores. Só um Gestor Master pode fazer isso.'); return false; }
   name = (name || '').trim();
   if(!name) return false;
   if(MANAGERS.some(m => m.name.toLowerCase() === name.toLowerCase())){
@@ -7882,6 +8031,7 @@ async function addManager(name){
 }
 
 async function removeManager(name){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar gestores. Só um Gestor Master pode fazer isso.'); return; }
   if(MANAGERS.length <= 1){
     alert('Precisa deixar pelo menos um gestor cadastrado.');
     return;
@@ -7891,6 +8041,7 @@ async function removeManager(name){
 }
 
 async function saveManagerPin(name, pin){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para alterar PINs de gestores. Só um Gestor Master pode fazer isso.'); return; }
   MANAGERS.forEach(m => { if(m.name === name) m.pin = pin || '0000'; });
   await saveManagers();
 }
@@ -7937,6 +8088,7 @@ function renderTechPinList(){
   `).join('');
   pinList.querySelectorAll('[data-techpin]').forEach(inp => {
     inp.addEventListener('blur', (e) => {
+      if(!isCurrentUserMaster()){ alert('Você não tem permissão para alterar PINs de técnicos. Só um Gestor Master pode fazer isso.'); renderTechPinList(); return; }
       saveTechPin(e.target.dataset.techpin, e.target.value.trim());
     });
   });
@@ -8088,6 +8240,13 @@ let financeiroSaveInFlight = false;
 let financeiroSaveQueued = false;
 
 async function saveFinanceiro(silent){
+  // Proteção de autorização (auditoria complementar, 2ª camada): sem chamador legítimo não-Master
+  // hoje (addFinanceiro/removeFinanceiro/saveFinanceiroPin já checam Master; ponteFinanceiro só é
+  // alcançada via salvarUsuarioAcessos, já Master-gated; não faz parte do backup/importação).
+  if(!isCurrentUserMaster()){
+    if(!silent) alert('Você não tem permissão para alterar o cadastro do Financeiro. Só um Gestor Master pode fazer isso.');
+    return false;
+  }
   if(financeiroSaveInFlight){
     financeiroSaveQueued = true;
     return true;
@@ -8110,6 +8269,10 @@ async function saveFinanceiro(silent){
 }
 
 async function writeFinanceiroDiff(attempt){
+  // Proteção de autorização (auditoria complementar): sem chamador legítimo não-Master (só é
+  // chamada de dentro de saveFinanceiro(), já protegida) — fecha o caminho de chamar esta função
+  // direto no console, contornando o wrapper.
+  if(!isCurrentUserMaster()) return false;
   attempt = attempt || 1;
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
@@ -8165,6 +8328,7 @@ async function writeFinanceiroDiff(attempt){
 }
 
 async function addFinanceiro(name){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar o Financeiro. Só um Gestor Master pode fazer isso.'); return false; }
   name = (name || '').trim();
   if(!name) return false;
   if(FINANCEIRO.some(m => m.name.toLowerCase() === name.toLowerCase())){
@@ -8177,6 +8341,7 @@ async function addFinanceiro(name){
 }
 
 async function removeFinanceiro(name){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar o Financeiro. Só um Gestor Master pode fazer isso.'); return; }
   if(FINANCEIRO.length <= 1){
     alert('Precisa deixar pelo menos uma pessoa cadastrada no Financeiro.');
     return;
@@ -8186,13 +8351,17 @@ async function removeFinanceiro(name){
 }
 
 async function saveFinanceiroPin(name, pin){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para alterar PINs do Financeiro. Só um Gestor Master pode fazer isso.'); return; }
   FINANCEIRO.forEach(m => { if(m.name === name) m.pin = pin || '0000'; });
   await saveFinanceiro();
 }
 
 function populateFinanceiroLoginSelect(){
   const sel = document.getElementById('financeiroLoginSelect');
-  sel.innerHTML = FINANCEIRO.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
+  // Etapa 7: dropdown de login vem exclusivamente de users (profiles.financeiro) — financeiro/
+  // (legado) não é mais consultado aqui. Ordem determinística por nome, sem depender do array antigo.
+  const opcoes = USERS.filter(u => u.profiles && u.profiles.financeiro).map(u => nomeHistoricoDoUsuario(u, 'financeiro')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
 function renderFinanceiroPinList(){
@@ -8323,6 +8492,16 @@ let oficinaSaveInFlight = false;
 let oficinaSaveQueued = false;
 
 async function saveOficina(silent){
+  // Proteção de autorização (auditoria complementar, 2ª camada) — ATENÇÃO: esta é a função do
+  // CADASTRO DE PESSOAS/PIN da Oficina (login), sem relação com saveOficinaEquipamentos (registros
+  // de equipamentos/atividades operacionais, que continua sem nenhuma restrição de Master, de
+  // propósito). Sem chamador legítimo não-Master hoje (addOficina/removeOficina/saveOficinaPin já
+  // checam Master; ponteOficina só é alcançada via salvarUsuarioAcessos, já Master-gated; não faz
+  // parte do backup/importação).
+  if(!isCurrentUserMaster()){
+    if(!silent) alert('Você não tem permissão para alterar o cadastro de pessoas da Oficina. Só um Gestor Master pode fazer isso.');
+    return false;
+  }
   if(oficinaSaveInFlight){
     oficinaSaveQueued = true;
     return true;
@@ -8345,6 +8524,10 @@ async function saveOficina(silent){
 }
 
 async function writeOficinaDiff(attempt){
+  // Proteção de autorização (auditoria complementar) — cadastro de PESSOAS/PIN da Oficina, sem
+  // relação com equipamentos/atividades. Sem chamador legítimo não-Master (só é chamada de dentro
+  // de saveOficina(), já protegida) — fecha o caminho de chamar esta função direto no console.
+  if(!isCurrentUserMaster()) return false;
   attempt = attempt || 1;
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
@@ -9536,6 +9719,7 @@ document.getElementById('vistoriaCompleteConfirmBtn').addEventListener('click', 
 });
 
 async function addOficina(name){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar a Oficina. Só um Gestor Master pode fazer isso.'); return false; }
   name = (name || '').trim();
   if(!name) return false;
   if(OFICINA.some(m => m.name.toLowerCase() === name.toLowerCase())){
@@ -9548,6 +9732,7 @@ async function addOficina(name){
 }
 
 async function removeOficina(name){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para administrar a Oficina. Só um Gestor Master pode fazer isso.'); return; }
   if(OFICINA.length <= 1){
     alert('Precisa deixar pelo menos uma pessoa cadastrada no Oficina.');
     return;
@@ -9557,18 +9742,19 @@ async function removeOficina(name){
 }
 
 async function saveOficinaPin(name, pin){
+  if(!isCurrentUserMaster()){ alert('Você não tem permissão para alterar PINs da Oficina. Só um Gestor Master pode fazer isso.'); return; }
   OFICINA.forEach(m => { if(m.name === name) m.pin = pin || '0000'; });
   await saveOficina();
 }
 
 function populateOficinaLoginSelect(){
   const sel = document.getElementById('oficinaLoginSelect');
-  // O perfil de acesso continua "Oficina", mas quem entra é um Gestor ou Técnico já cadastrado —
-  // não existe usuário próprio da Oficina. Reaproveita MANAGERS/TECHS, sem criar nem duplicar
-  // nenhum cadastro.
-  const gestoresHtml = MANAGERS.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
-  const tecnicosHtml = TECHS.map(t => `<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join('');
-  sel.innerHTML = `<optgroup label="Gestores">${gestoresHtml}</optgroup><optgroup label="Técnicos">${tecnicosHtml}</optgroup>`;
+  // Etapa 7: login de Oficina passa a usar EXCLUSIVAMENTE users com profiles.oficina===true —
+  // não reaproveita mais Gestores/Técnicos (managers/TECHS) nem o nó legado "oficina". O genérico
+  // "Oficina" nunca teve profiles.oficina em users (Etapa 2 nunca o migrou como pessoa), então
+  // continua não aparecendo aqui, sem precisar de nenhum filtro especial.
+  const opcoes = USERS.filter(u => u.profiles && u.profiles.oficina).map(u => nomeHistoricoDoUsuario(u, 'oficina')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
 function renderOficinaPinList(){
@@ -9688,6 +9874,13 @@ function attachRealtimeTechPinsListener(){
 }
 
 async function saveTechPin(name, pin, attempt){
+  // Proteção de autorização — estritamente Master, sem exceção. PIN é credencial de acesso. O
+  // backup/importação NÃO passa mais por esta função: usa restaurarPinTecnicoDoBackup(), própria
+  // e independente, com sua checagem específica (qualquer Gestor), sem confiança compartilhada.
+  if(!isCurrentUserMaster()){
+    alert('Você não tem permissão para alterar PINs de técnicos. Só um Gestor Master pode fazer isso.');
+    return false;
+  }
   attempt = attempt || 1;
   TECHS.forEach(t => { if(t.name === name) t.pin = pin || '0000'; });
   try{
@@ -10140,7 +10333,7 @@ function renderTecnicosAmanha(){
 
   grid.querySelectorAll('.tecnico-phone-input').forEach(inp => {
     inp.addEventListener('blur', (e) => {
-      saveTechPhone(e.target.dataset.name, e.target.value.trim());
+      saveTechPhone(e.target.dataset.name, e.target.value.trim()); // edição de telefone na tela Técnicos é legítima pra qualquer Gestor (checagem própria dentro de saveTechPhone)
     });
   });
 
@@ -10288,6 +10481,9 @@ function renderOS(){
 let activeTab = 'agenda';
 
 function switchTab(tab){
+  // Etapa 4: proteção REAL de estado — Gestor comum não abre Acessos nem chamando switchTab
+  // direto (não é só esconder o botão). Se recusado, fica na tela atual, sem erro.
+  if(tab === 'acessos' && !isCurrentUserMaster()) tab = activeTab;
   activeTab = tab;
   document.getElementById('tabAgenda').style.display = tab === 'agenda' ? '' : 'none';
   document.getElementById('tabTecnicos').style.display = tab === 'tecnicos' ? '' : 'none';
@@ -10330,7 +10526,7 @@ function switchTab(tab){
   document.getElementById('bottomNavBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('bottomNavBtnEstoque').classList.toggle('active', tab === 'estoque');
   if(tab === 'clientes') renderClientes();
-  if(tab === 'acessos'){ renderManagerPinList(); renderTechPinList(); renderFinanceiroPinList(); renderOficinaPinList(); }
+  if(tab === 'acessos') renderAcessosUsuariosList();
   if(tab === 'painel') renderPainelDeControle();
   if(tab === 'oficinagestor') renderOficinaGestorTab();
   if(tab === 'estoque') openEstoqueGestorTab();
@@ -10730,12 +10926,18 @@ function preselectLastLogin(role, selectId){
 // vazia e foco na senha. Sem usuário lembrado, fica exatamente o fluxo atual (escolher perfil).
 function populateTechLoginSelect(){
   const sel = document.getElementById('techLoginSelect');
-  sel.innerHTML = TECHS.map(t => `<option value="${escapeHtml(t.name)}">${escapeHtml(t.name)}</option>`).join('');
+  // Etapa 7: login vem de users (profiles.tech) — techRoster/techPins não são mais consultados
+  // aqui. techRoster continua servindo cor, techPhones continua servindo telefone; techPins hoje
+  // só existe como alvo de escrita da ponte de compatibilidade (Etapa 5), sem leitor próprio.
+  const opcoes = USERS.filter(u => u.profiles && u.profiles.tech).map(u => nomeHistoricoDoUsuario(u, 'tech')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
 function populateManagerLoginSelect(){
   const sel = document.getElementById('managerLoginSelect');
-  sel.innerHTML = MANAGERS.map(m => `<option value="${escapeHtml(m.name)}">${escapeHtml(m.name)}</option>`).join('');
+  // Etapa 7: login vem de users (profiles.manager) — managers/ não é mais consultado aqui.
+  const opcoes = USERS.filter(u => u.profiles && u.profiles.manager).map(u => nomeHistoricoDoUsuario(u, 'manager')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
 document.getElementById('roleCardManager').addEventListener('click', () => {
@@ -10804,13 +11006,13 @@ document.getElementById('oficinaLoginBtn').addEventListener('click', () => {
   if(appInitState !== 'ready'){ alert('Aguarde o carregamento dos dados para acessar o sistema.'); return; }
   const name = document.getElementById('oficinaLoginSelect').value;
   const val = document.getElementById('oficinaPinInput').value;
-  // O usuário selecionado é um Gestor ou um Técnico (populateOficinaLoginSelect) — o PIN é
-  // validado contra o cadastro real dessa pessoa em MANAGERS/TECHS, nunca contra o antigo PIN
-  // fixo de "Oficina".
-  const person = MANAGERS.find(x => x.name === name) || TECHS.find(x => x.name === name);
-  if(person && val === (person.pin || '0000')){
-    saveLastLogin('oficina', name);
-    loadRoleDataWithTimeout('oficina', document.getElementById('oficinaLoginBtn'), 'oficinaLoginErr', () => enterOficina(name));
+  // Etapa 3: mesma união de sempre (quem pode entrar como Oficina é um Gestor, Técnico, ou —
+  // agora também — uma pessoa real com profiles.oficina em users), validado por autenticarPerfil.
+  const r = autenticarPerfil('oficina', name, val);
+  if(r.ok){
+    currentUserId = r.userId;
+    saveLastLogin('oficina', r.nome);
+    loadRoleDataWithTimeout('oficina', document.getElementById('oficinaLoginBtn'), 'oficinaLoginErr', () => enterOficina(r.nome));
   } else {
     document.getElementById('oficinaLoginErr').textContent = 'PIN incorreto.';
   }
@@ -10821,10 +11023,11 @@ document.getElementById('managerLoginBtn').addEventListener('click', () => {
   if(appInitState !== 'ready'){ alert('Aguarde o carregamento dos dados para acessar o sistema.'); return; }
   const name = document.getElementById('managerLoginSelect').value;
   const val = document.getElementById('managerPinInput').value;
-  const m = MANAGERS.find(x => x.name === name);
-  if(m && val === (m.pin || '0000')){
-    saveLastLogin('manager', name);
-    loadRoleDataWithTimeout('manager', document.getElementById('managerLoginBtn'), 'managerLoginErr', () => enterManager(name));
+  const r = autenticarPerfil('manager', name, val);
+  if(r.ok){
+    currentUserId = r.userId;
+    saveLastLogin('manager', r.nome);
+    loadRoleDataWithTimeout('manager', document.getElementById('managerLoginBtn'), 'managerLoginErr', () => enterManager(r.nome));
   } else {
     document.getElementById('managerLoginErr').textContent = 'PIN incorreto.';
   }
@@ -10833,10 +11036,11 @@ document.getElementById('financeiroLoginBtn').addEventListener('click', () => {
   if(appInitState !== 'ready'){ alert('Aguarde o carregamento dos dados para acessar o sistema.'); return; }
   const name = document.getElementById('financeiroLoginSelect').value;
   const val = document.getElementById('financeiroPinInput').value;
-  const f = FINANCEIRO.find(x => x.name === name);
-  if(f && val === (f.pin || '0000')){
-    saveLastLogin('financeiro', name);
-    loadRoleDataWithTimeout('financeiro', document.getElementById('financeiroLoginBtn'), 'financeiroLoginErr', () => enterFinanceiro(name));
+  const r = autenticarPerfil('financeiro', name, val);
+  if(r.ok){
+    currentUserId = r.userId;
+    saveLastLogin('financeiro', r.nome);
+    loadRoleDataWithTimeout('financeiro', document.getElementById('financeiroLoginBtn'), 'financeiroLoginErr', () => enterFinanceiro(r.nome));
   } else {
     document.getElementById('financeiroLoginErr').textContent = 'PIN incorreto.';
   }
@@ -10845,10 +11049,11 @@ document.getElementById('techLoginBtn').addEventListener('click', () => {
   if(appInitState !== 'ready'){ alert('Aguarde o carregamento dos dados para acessar o sistema.'); return; }
   const name = document.getElementById('techLoginSelect').value;
   const val = document.getElementById('techPinInput').value;
-  const t = TECHS.find(x => x.name === name);
-  if(t && val === (t.pin || '0000')){
-    saveLastLogin('tech', name);
-    loadRoleDataWithTimeout('tech', document.getElementById('techLoginBtn'), 'techLoginErr', () => enterTech(name));
+  const r = autenticarPerfil('tech', name, val);
+  if(r.ok){
+    currentUserId = r.userId;
+    saveLastLogin('tech', r.nome);
+    loadRoleDataWithTimeout('tech', document.getElementById('techLoginBtn'), 'techLoginErr', () => enterTech(r.nome));
   } else {
     document.getElementById('techLoginErr').textContent = 'PIN incorreto.';
   }
@@ -10870,6 +11075,7 @@ function enterManager(name){
   document.getElementById('managerView').style.display = '';
   const sidebarUser = document.getElementById('sidebarUserLabel');
   if(sidebarUser) sidebarUser.textContent = currentManagerName || 'Gestor';
+  atualizarVisibilidadeAcessos(); // Etapa 4: só Gestor Master vê o botão de Acessos
   renderAll();
 }
 
@@ -11791,6 +11997,7 @@ function logout(){
   currentManagerName = null;
   currentFinanceiroName = null;
   currentOficinaName = null;
+  currentUserId = null; // Etapa 3
   document.getElementById('managerView').style.display = 'none';
   document.getElementById('techView').style.display = 'none';
   document.getElementById('financeiroView').style.display = 'none';
@@ -11811,6 +12018,13 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
     techPhones: Object.fromEntries(TECHS.map(t => [t.name, t.phone || ''])),
     techPins: Object.fromEntries(TECHS.map(t => [t.name, t.pin || '0000'])),
     managers: MANAGERS,
+    // Etapa 11: cadastro unificado de usuários — exportado exatamente como está em memória
+    // (mesmos ids, sem reconstrução a partir das listas legadas), no mesmo formato de users/
+    // no Firebase (objeto por id, não array).
+    users: Object.fromEntries(USERS.map(u => [u.id, {
+      name: u.name, profiles: u.profiles || {}, pinByProfile: u.pinByProfile || {},
+      legacyNames: u.legacyNames || {}, isMaster: !!u.isMaster, createdAt: u.createdAt, updatedAt: u.updatedAt
+    }])),
     adminPin: adminPin
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
@@ -11819,6 +12033,296 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
   link.download = `equiper-backup-${todayStr()}.json`;
   link.click();
 });
+
+// Etapa 11: valida o bloco "users" de um backup ANTES de gravar qualquer coisa — nunca aceita
+// um backup que apague/esvazie os usuários atuais ou que deixe o sistema sem nenhum Master válido.
+// Nunca inclui valor de PIN nas mensagens de erro (só ids/nomes de campo).
+// Etapa 13: valida o backup INTEIRO (não só users) antes de qualquer gravação/alteração local.
+// Nada aqui muta services/clients/maintenanceContracts/TECHS/MANAGERS/adminPin — só lê "data" e
+// devolve um "plano" com os valores já validados/normalizados, prontos pra aplicar depois.
+function validarUsersBackup(usersRaw){
+  if(typeof usersRaw !== 'object' || usersRaw === null || Array.isArray(usersRaw)){
+    return { ok: false, reason: 'formato de "users" inválido' };
+  }
+  const ids = Object.keys(usersRaw);
+  if(ids.length === 0){
+    return { ok: false, reason: '"users" está vazio no backup' };
+  }
+  for(const id of ids){
+    const u = usersRaw[id];
+    if(!u || typeof u !== 'object' || typeof u.name !== 'string' || !u.name.trim() ||
+       typeof u.profiles !== 'object' || u.profiles === null ||
+       typeof u.pinByProfile !== 'object' || u.pinByProfile === null){
+      return { ok: false, reason: `registro de usuário inválido (id "${id}")` };
+    }
+  }
+  const temMaster = ids.some(id => usersRaw[id].isMaster === true && usersRaw[id].profiles && usersRaw[id].profiles.manager === true);
+  if(!temMaster){
+    return { ok: false, reason: 'nenhum Gestor Master válido encontrado' };
+  }
+  return { ok: true, users: usersRaw };
+}
+
+// Valida o formato de CADA estrutura do backup e a propriedade "users" (ausente vs presente-e-
+// inválida são tratadas de propósito como coisas diferentes). Não toca em nenhuma variável local —
+// só lê "data" e devolve { ok:true, plano } ou { ok:false, reason }. Chamada ANTES de qualquer
+// gravação/mutação, pra nunca rejeitar um backup depois de já ter alterado alguma coisa.
+// Validação de registros individuais (Etapa complementar — antes só validava o formato do array
+// em si, não cada item dentro dele). Fica deliberadamente permissiva em campos que sempre foram
+// opcionais na prática (description, address, observations, contactName, location, etc.) — só
+// exige o que já é comprovadamente essencial hoje pro registro funcionar no resto do app (id usado
+// como chave no Firebase, campos usados em comparação/exibição em todo lugar). Não muda formato
+// nem tipo de nenhum campo — só recusa o backup inteiro se um registro estiver claramente fora do
+// formato que o próprio app sempre gravou.
+const DATA_ISO_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+function dataValida(d){
+  // Valida o calendário de verdade — new Date() sozinho "rola" dias fora do mês (31/02 vira
+  // 03/03) em vez de rejeitar, então isNaN(...) nunca pegaria isso. Aqui: monta a data pelos
+  // componentes numéricos (ano/mês/dia locais, sem parsear string — evita ambiguidade de fuso) e
+  // confere se o que voltou é EXATAMENTE o que foi pedido; se o JS "rolou" pra outro dia/mês, os
+  // valores não batem e a data é rejeitada. Cobre também anos bissextos corretamente (o próprio
+  // motor de datas do JS já sabe quantos dias fevereiro tem em cada ano).
+  // IMPORTANTE: usa setFullYear(ano, ...), NUNCA o construtor new Date(ano, ...) — o construtor
+  // (e só ele) trata ano de 0 a 99 como um atalho pra 1900-1999, o que rejeitaria incorretamente
+  // datas ISO de 4 dígitos como "0001-01-01" ou "0099-12-31". setFullYear() grava o ano literal,
+  // sem esse comportamento especial. O app não tem nenhuma regra própria de ano mínimo — qualquer
+  // ano de 4 dígitos (0000-9999) que exista de verdade no calendário é aceito.
+  if(typeof d !== 'string' || !DATA_ISO_REGEX.test(d)) return false;
+  const [ano, mes, dia] = d.split('-').map(Number);
+  if(mes < 1 || mes > 12 || dia < 1 || dia > 31) return false;
+  const dt = new Date(0);
+  dt.setFullYear(ano, mes - 1, dia);
+  return dt.getFullYear() === ano && dt.getMonth() === mes - 1 && dt.getDate() === dia;
+}
+function registroServicoValido(s){
+  if(!s || typeof s !== 'object' || Array.isArray(s)) return false;
+  if(s.id === undefined || s.id === null || s.id === '') return false;
+  if(!dataValida(s.date)) return false;
+  if(typeof s.client !== 'string' || !s.client.trim()) return false;
+  if(typeof s.status !== 'string' || !s.status.trim()) return false;
+  if(s.technician !== null && s.technician !== undefined && typeof s.technician !== 'string') return false;
+  return true;
+}
+function registroClienteValido(c){
+  if(!c || typeof c !== 'object' || Array.isArray(c)) return false;
+  return typeof c.name === 'string' && !!c.name.trim();
+}
+function registroContratoManutencaoValido(m){
+  if(!m || typeof m !== 'object' || Array.isArray(m)) return false;
+  if(typeof m.client !== 'string' || !m.client.trim()) return false;
+  // Number.isFinite (não typeof === 'number'): typeof NaN e typeof Infinity também são 'number',
+  // então a checagem antiga deixava passar os dois. Sem restrição de mínimo/máximo — não há
+  // evidência no app de um intervalo de valores válidos além de "é um número de verdade".
+  if(m.intervalMonths !== undefined && m.intervalMonths !== null && !Number.isFinite(m.intervalMonths)) return false;
+  return true;
+}
+function registroGestorLegadoValido(g){
+  if(!g || typeof g !== 'object' || Array.isArray(g)) return false;
+  if(typeof g.name !== 'string' || !g.name.trim()) return false;
+  if(g.pin !== undefined && g.pin !== null && typeof g.pin !== 'string') return false;
+  return true;
+}
+function mapaDeStringsValido(obj){
+  // Usado pra techPhones/techPins: objeto simples nome -> valor-string. Chave vazia ou valor que
+  // não seja string (número, objeto, array) indicaria um backup malformado.
+  return Object.entries(obj).every(([k, v]) => typeof k === 'string' && !!k.trim() && (v === null || v === undefined || typeof v === 'string'));
+}
+
+function validarBackupCompleto(data){
+  if(!data || typeof data !== 'object' || Array.isArray(data)){
+    return { ok: false, reason: 'o arquivo não tem o formato esperado de um backup' };
+  }
+  if('services' in data){
+    if(!Array.isArray(data.services)) return { ok: false, reason: '"services" tem formato inválido' };
+    if(!data.services.every(registroServicoValido)) return { ok: false, reason: 'um ou mais registros de "services" têm campos inválidos (id, date, client ou status)' };
+  }
+  if('clients' in data){
+    if(!Array.isArray(data.clients)) return { ok: false, reason: '"clients" tem formato inválido' };
+    if(!data.clients.every(registroClienteValido)) return { ok: false, reason: 'um ou mais registros de "clients" têm campos inválidos (name ausente ou vazio)' };
+  }
+  if('maintenanceContracts' in data){
+    if(!Array.isArray(data.maintenanceContracts)) return { ok: false, reason: '"maintenanceContracts" tem formato inválido' };
+    if(!data.maintenanceContracts.every(registroContratoManutencaoValido)) return { ok: false, reason: 'um ou mais registros de "maintenanceContracts" têm campos inválidos (client ausente ou vazio, ou intervalMonths não numérico)' };
+  }
+  if('techPhones' in data){
+    if(typeof data.techPhones !== 'object' || data.techPhones === null || Array.isArray(data.techPhones)) return { ok: false, reason: '"techPhones" tem formato inválido' };
+    if(!mapaDeStringsValido(data.techPhones)) return { ok: false, reason: '"techPhones" tem um ou mais valores inválidos (esperado texto)' };
+  }
+  if('techPins' in data){
+    if(typeof data.techPins !== 'object' || data.techPins === null || Array.isArray(data.techPins)) return { ok: false, reason: '"techPins" tem formato inválido' };
+    if(!mapaDeStringsValido(data.techPins)) return { ok: false, reason: '"techPins" tem um ou mais valores inválidos (esperado texto)' };
+  }
+  if('managers' in data){
+    if(!Array.isArray(data.managers)) return { ok: false, reason: '"managers" tem formato inválido' };
+    if(!data.managers.every(registroGestorLegadoValido)) return { ok: false, reason: 'um ou mais registros de "managers" têm campos inválidos (name ausente ou vazio, ou pin não-texto)' };
+  }
+
+  // "users" ausente = backup antigo (preserva os atuais). "users" presente e inválido/vazio/null/
+  // sem Master = rejeita o BACKUP INTEIRO — nunca só a parte de users.
+  let usersInfo;
+  if(!('users' in data)){
+    usersInfo = { tipo: 'ausente' };
+  } else if(data.users === null){
+    return { ok: false, reason: '"users" está presente como null neste backup' };
+  } else {
+    const v = validarUsersBackup(data.users);
+    if(!v.ok) return { ok: false, reason: 'os usuários deste backup não puderam ser validados (' + v.reason + ')' };
+    usersInfo = { tipo: 'valido', users: v.users };
+  }
+
+  return { ok: true, plano: {
+    services: Array.isArray(data.services) ? data.services : undefined,
+    clients: Array.isArray(data.clients) ? data.clients.map(c => (c && c.id !== undefined && c.id !== null) ? c : Object.assign({}, c, { id: deterministicClientIdFromName(c && c.name) })) : undefined,
+    maintenanceContracts: Array.isArray(data.maintenanceContracts) ? data.maintenanceContracts : undefined,
+    techPhonesMap: (data.techPhones && typeof data.techPhones === 'object') ? data.techPhones : undefined,
+    techPinsMap: (data.techPins && typeof data.techPins === 'object') ? data.techPins : undefined,
+    managers: (Array.isArray(data.managers) && data.managers.length > 0) ? data.managers : undefined,
+    adminPin: data.adminPin ? data.adminPin : undefined,
+    usersInfo
+  } };
+}
+
+// Grava o novo conjunto de users, um caminho por usuário (nunca um set global em "users") —
+// remove só os ids que existiam antes e não estão mais no backup (mesma semântica de
+// "substituir" já usada por managers ao importar), preservando id/campos exatamente como vieram.
+async function saveUsersFromBackup(usersRaw){
+  const idsAntigos = new Set(USERS.map(u => u.id));
+  const idsNovos = new Set(Object.keys(usersRaw));
+  const updates = {};
+  Object.keys(usersRaw).forEach(id => {
+    const u = usersRaw[id];
+    updates['users/' + id] = {
+      name: u.name, profiles: u.profiles || {}, pinByProfile: u.pinByProfile || {},
+      legacyNames: u.legacyNames || {}, isMaster: !!u.isMaster,
+      createdAt: u.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString()
+    };
+  });
+  idsAntigos.forEach(id => { if(!idsNovos.has(id)) updates['users/' + id] = null; });
+  try{
+    await rtdb.ref().update(updates);
+    USERS = Object.keys(usersRaw).map(id => Object.assign({ id }, updates['users/' + id]));
+    return true;
+  }catch(e){ return false; }
+}
+
+// Etapa 13: executa a importação já validada (plano), aplicando ao estado local só agora, e
+// GRAVANDO EM SEQUÊNCIA, PARANDO NA PRIMEIRA FALHA. Contrato de cada função de gravação já
+// auditado (Etapa 12): saveServices/saveClients/saveMaintenanceContracts/saveManagers retornam
+// boolean (aceitam "silent" pra não duplicar alerta); saveTechPhone/saveTechPin retornam boolean
+// mas SEMPRE alertam sozinhas em falha final (não têm modo silencioso — não alteradas aqui);
+// dbSetRaw nunca retorna false, ela LANÇA em falha — tratada via try/catch, não por retorno.
+// saveUsersFromBackup retorna boolean. `false`/exceção = falha real; nenhuma dessas funções
+// historicamente retorna undefined pra indicar sucesso, então não há ambiguidade a resolver aqui.
+// Restauração de gestores a partir de um backup — função PRÓPRIA e independente de
+// saveManagers()/writeManagersDiff() (que continuam exclusivas de Master, sem exceção). O
+// backup/importação é legítimo pra qualquer Gestor (Etapa 11), então a checagem aqui é "está
+// logado como Gestor" — verificada direto, sem nenhum mecanismo compartilhado de "confiança
+// emprestada" que outra chamada pudesse reaproveitar. Só faz uma coisa: grava os gestores tal
+// como vieram do backup.
+// Restauração de backup — Etapa de reforço: restaurarGestoresLegadoDoBackup() e
+// restaurarPinTecnicoDoBackup() ficam DENTRO desta IIFE, e não são mais atribuídas a nenhum nome
+// global. Isso não é ofuscação nem renomear/esconder — é uma barreira real de escopo léxico do
+// JavaScript: tudo que é declarado dentro de uma função só existe no closure dela. O console do
+// navegador roda no escopo GLOBAL da página, FORA deste closure — então não existe, em lugar
+// nenhum acessível de fora, uma variável, função ou referência chamada "restaurarGestoresLegadoDoBackup"
+// nem "restaurarPinTecnicoDoBackup": tentar usá-las fora daqui é um ReferenceError, não uma
+// checagem que poderia ser satisfeita com os argumentos certos. Só o resultado final —
+// executarImportacaoBackup, que já faz tudo internamente — é exposto globalmente, sem nenhuma
+// função "genérica" que aceite um callback arbitrário e o autorize (isso é exatamente o problema
+// que a etapa anterior identificou e que este desenho evita: aqui não existe nenhuma interface
+// pública equivalente a "me dê uma função e eu rodo ela com privilégio").
+const executarImportacaoBackup = (function(){
+  async function restaurarGestoresLegadoDoBackup(managersArray){
+    if(currentRole !== 'manager') return false;
+    try{
+      if(!rtdb) throw new Error('Firebase indisponível');
+      const updates = {};
+      managersArray.forEach(m => { updates['managers/' + m.name] = { name: m.name, pin: m.pin || '0000' }; });
+      await rtdb.ref().update(updates);
+      MANAGERS = managersArray;
+      managersSnapshot = {};
+      MANAGERS.forEach(m => { managersSnapshot[m.name] = { name: JSON.stringify(m.name), pin: JSON.stringify(m.pin) }; });
+      return true;
+    }catch(e){
+      console.error('Falha ao restaurar gestores do backup:', e);
+      return false;
+    }
+  }
+
+  async function restaurarPinTecnicoDoBackup(name, pin, attempt){
+    if(currentRole !== 'manager') return false;
+    attempt = attempt || 1;
+    TECHS.forEach(t => { if(t.name === name) t.pin = pin || '0000'; });
+    try{
+      if(!rtdb) throw new Error('Firebase indisponível');
+      await rtdb.ref().update({ ['techPins/' + name]: pin || '0000' });
+      techPinsSnapshot[name] = JSON.stringify(pin || '0000');
+      return true;
+    }catch(e){
+      console.error('Falha ao restaurar PIN de técnico do backup (tentativa ' + attempt + ')', e);
+      if(attempt < 3){
+        await new Promise(r => setTimeout(r, 500 * attempt));
+        return restaurarPinTecnicoDoBackup(name, pin, attempt + 1);
+      }
+      return false;
+    }
+  }
+
+  // Única função exposta desta IIFE. Recebe os DADOS BRUTOS do backup (o JSON já parseado), não
+  // um "plano" pré-montado: a validação completa (validarBackupCompleto) roda AQUI DENTRO, na
+  // fronteira protegida, antes de qualquer alteração de estado local ou gravação — de modo que
+  // uma chamada direta com um objeto manipulado nunca consegue pular a validação. A interface
+  // ainda valida antes, só pra dar a mensagem de erro ANTES do diálogo de confirmação (UX); mas
+  // a validação que realmente decide é esta, aqui dentro. O "plano" (valores normalizados) é
+  // construído só depois de validado, e só existe dentro desta função.
+  return async function executarImportacaoBackup(data){
+    // Barreira 1: só um Gestor logado pode importar (Técnico/Financeiro/Oficina/ninguém: não).
+    if(currentRole !== 'manager'){
+      return { ok: false, rejeitadoNaValidacao: true, motivo: 'só um Gestor logado pode importar backup', concluidas: [] };
+    }
+    // Barreira 2: validação completa dos dados ANTES de tocar em qualquer coisa. Se falhar,
+    // retorna sem ter alterado nem estado local nem Firebase.
+    const validacao = validarBackupCompleto(data);
+    if(!validacao.ok){
+      return { ok: false, rejeitadoNaValidacao: true, motivo: validacao.reason, concluidas: [] };
+    }
+    const plano = validacao.plano;
+
+    if(plano.services !== undefined) services = plano.services;
+    if(plano.clients !== undefined) clients = plano.clients;
+    if(plano.maintenanceContracts !== undefined) maintenanceContracts = plano.maintenanceContracts;
+    if(plano.techPhonesMap) TECHS.forEach(t => { if(plano.techPhonesMap[t.name]) t.phone = plano.techPhonesMap[t.name]; });
+    if(plano.techPinsMap) TECHS.forEach(t => { if(plano.techPinsMap[t.name]) t.pin = plano.techPinsMap[t.name]; });
+    if(plano.managers) MANAGERS = plano.managers;
+    if(plano.adminPin !== undefined) adminPin = plano.adminPin;
+
+    const concluidas = [];
+    async function etapa(nome, fn){
+      let r;
+      try{ r = await fn(); }catch(e){ throw new Error(nome); }
+      if(r === false) throw new Error(nome);
+      concluidas.push(nome);
+    }
+
+    try{
+      if(plano.services !== undefined) await etapa('serviços', () => saveServices(true));
+      if(plano.clients !== undefined) await etapa('clientes', () => saveClients(true));
+      if(plano.maintenanceContracts !== undefined) await etapa('contratos de manutenção', () => saveMaintenanceContracts(true));
+      // Mesmo comportamento de sempre: reafirma telefone/PIN de TODOS os técnicos (não só os
+      // mencionados no backup) — cada um com seu próprio caminho, nunca o nó inteiro de uma vez.
+      for(const t of TECHS){ await etapa('telefone de ' + t.name, () => saveTechPhone(t.name, t.phone || '')); } // backup/importação é legítimo pra qualquer Gestor (checagem própria em saveTechPhone)
+      for(const t of TECHS){ await etapa('PIN de ' + t.name, () => restaurarPinTecnicoDoBackup(t.name, t.pin || '0000')); } // função privada desta IIFE — não existe fora daqui
+      if(plano.adminPin !== undefined) await etapa('PIN administrativo', () => dbSetRaw('adminPin', adminPin));
+      if(plano.managers) await etapa('gestores (cadastro legado)', () => restaurarGestoresLegadoDoBackup(plano.managers)); // função privada desta IIFE — não existe fora daqui
+      if(plano.usersInfo.tipo === 'valido') await etapa('usuários', () => saveUsersFromBackup(plano.usersInfo.users));
+      return { ok: true, usersInfo: plano.usersInfo, concluidas };
+    }catch(e){
+      // Nunca inclui PIN na mensagem/console — só o nome da etapa que falhou.
+      console.error('Importação de backup interrompida na etapa: ' + e.message);
+      return { ok: false, etapaComFalha: e.message, concluidas };
+    }
+  };
+})();
 
 document.getElementById('importDataBtn').addEventListener('click', () => {
   document.getElementById('importDataInput').click();
@@ -11837,32 +12341,33 @@ document.getElementById('importDataInput').addEventListener('change', (e) => {
       e.target.value = '';
       return;
     }
-    customConfirm('Importar esse backup vai substituir TODOS os dados atuais (clientes, atividades e contratos). Continuar?', async () => {
-      if(Array.isArray(data.services)) services = data.services;
-      if(Array.isArray(data.clients)){
-        // Backups antigos podem não ter "id" nos clientes (formato anterior a essa migração) —
-        // atribui um id estável na hora de importar, pra não cair na mesma armadilha de usar
-        // "undefined" como chave ao salvar.
-        clients = data.clients.map(c => (c && c.id !== undefined && c.id !== null) ? c : Object.assign({}, c, { id: deterministicClientIdFromName(c && c.name) }));
+    // Etapa 13: valida o backup INTEIRO agora, antes de mostrar a confirmação — se algo estiver
+    // errado (formato geral, alguma estrutura, ou "users" presente e inválido/vazio/sem Master),
+    // o usuário nem chega a ver "substituir todos os dados", e NADA é alterado.
+    const validacao = validarBackupCompleto(data);
+    if(!validacao.ok){
+      alert('Não foi possível importar este backup: ' + validacao.reason + '. Nenhum dado foi alterado.');
+      e.target.value = '';
+      return;
+    }
+    customConfirm('Importar esse backup vai substituir TODOS os dados atuais (clientes, atividades, contratos e, se presente no arquivo, os usuários cadastrados). Continuar?', async () => {
+      // Passa os dados BRUTOS: a validação que decide roda dentro de executarImportacaoBackup
+      // (não este handler), então mesmo que a validação acima fosse pulada, nada seria aplicado.
+      const resultado = await executarImportacaoBackup(data);
+      // A mensagem ao usuário vem ANTES de renderAll() de propósito: se a renderização tropeçar
+      // em algum estado inesperado, o usuário ainda assim recebe o resultado real da importação.
+      if(!resultado.ok && resultado.rejeitadoNaValidacao){
+        alert('Não foi possível importar este backup: ' + resultado.motivo + '. Nenhum dado foi alterado.');
+      } else if(!resultado.ok){
+        alert('A importação foi interrompida: falha ao gravar "' + resultado.etapaComFalha + '". ' +
+          (resultado.concluidas.length ? 'As seguintes estruturas já haviam sido gravadas antes da falha e podem não corresponder mais ao backup completo: ' + resultado.concluidas.join(', ') + '.' : 'Nenhuma estrutura chegou a ser gravada.'));
+      } else {
+        let msg = 'Backup importado com sucesso.';
+        if(resultado.usersInfo.tipo === 'ausente') msg += ' Este backup não contém os cadastros unificados de usuários — os usuários atuais foram preservados.';
+        alert(msg);
       }
-      if(Array.isArray(data.maintenanceContracts)) maintenanceContracts = data.maintenanceContracts;
-      if(data.techPhones){ TECHS.forEach(t => { if(data.techPhones[t.name]) t.phone = data.techPhones[t.name]; }); }
-      if(data.techPins){ TECHS.forEach(t => { if(data.techPins[t.name]) t.pin = data.techPins[t.name]; }); }
-      if(Array.isArray(data.managers) && data.managers.length > 0) MANAGERS = data.managers;
-      if(data.adminPin) adminPin = data.adminPin;
-
-      await saveServices();
-      await saveClients();
-      await saveMaintenanceContracts();
-      // Grava telefone/PIN por técnico, usando as mesmas funções já corrigidas (com retry e
-      // caminho próprio por técnico) — nunca mais o nó inteiro de uma vez.
-      for(const t of TECHS){ await saveTechPhone(t.name, t.phone || ''); }
-      for(const t of TECHS){ await saveTechPin(t.name, t.pin || '0000'); }
-      try{ await dbSetRaw('adminPin', adminPin); }catch(err){}
-      await saveManagers();
-
-      renderAll();
-      alert('Backup importado com sucesso.');
+      try{ renderAll(); }catch(err){ console.error('Falha ao atualizar a tela após a importação:', err.message); }
+      e.target.value = '';
     });
     e.target.value = '';
   };
@@ -13818,33 +14323,37 @@ document.getElementById('estoqueDevolucaoEnviarBtn').addEventListener('click', (
 });
 document.getElementById('estoqueDevolucaoConfirmCancelBtn').addEventListener('click', () => document.getElementById('estoqueDevolucaoConfirmOverlay').classList.remove('open'));
 
-// 2) Confirmação no modal: cada item passa pela lógica existente (applyEstoqueMovimento →
-// atomicSetEstoqueQuantity, saldo REAL da transaction). Se algum falhar, nada de sucesso falso:
-// os que deram certo são zerados, os que falharam continuam selecionados pra nova tentativa.
-document.getElementById('estoqueDevolucaoConfirmBtn').addEventListener('click', async () => {
+// 2) Confirmação final (melhoria 1 do Estoque): "Enviar devolução" dentro da conferência não
+// efetiva mais direto — abre uma segunda confirmação (customConfirm, já existente/compartilhada
+// em todo o app) e só executa o fluxo de sempre se o usuário confirmar. Nenhuma lógica nova de
+// devolução: o que está dentro do callback é exatamente o que já rodava direto no clique antes.
+document.getElementById('estoqueDevolucaoConfirmBtn').addEventListener('click', () => {
   if(estoqueDevolucaoEnvioInFlight || !canRetirarEstoque()) return;
   const errBox = document.getElementById('estoqueDevolucaoConfirmErr'); errBox.textContent = '';
   const { pedido, erros } = montarPedidoDevolucao();
   if(erros.length || !pedido.length){ errBox.textContent = erros.join(' ') || 'Nenhum item.'; return; }
-  estoqueDevolucaoEnvioInFlight = true;
-  const btn = document.getElementById('estoqueDevolucaoConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
-  const obs = document.getElementById('estoqueDevolucaoObs').value.trim();
-  const falhas = [];
-  for(const p of pedido){
-    const r = await confirmarDevolucaoEstoque(p.estoqueItemId, p.quantity, obs);
-    if(r.ok) delete estoqueDevolucaoRowState[p.estoqueItemId];
-    else falhas.push(`${p.name}${p.unit ? ' — ' + p.unit : ''}: ${r.reason === 'offline' || r.reason === 'falha de gravação' ? 'sem conexão' : r.reason}`);
-  }
-  btn.disabled = false; btn.textContent = lbl; estoqueDevolucaoEnvioInFlight = false;
-  renderEstoqueDevolucaoTab();
-  if(falhas.length){
-    const okN = pedido.length - falhas.length;
-    errBox.textContent = (okN ? `${okN} de ${pedido.length} item(ns) registrado(s). ` : '') + `Não foi possível registrar: ${falhas.join('; ')}. Esses itens continuam selecionados — verifique sua internet e tente novamente.`;
-    return;
-  }
-  document.getElementById('estoqueDevolucaoConfirmOverlay').classList.remove('open');
-  document.getElementById('estoqueDevolucaoObs').value = '';
-  alert('Devolução registrada com sucesso.');
+  customConfirm('Confirma o envio desta devolução?', async () => {
+    if(estoqueDevolucaoEnvioInFlight) return;
+    estoqueDevolucaoEnvioInFlight = true;
+    const btn = document.getElementById('estoqueDevolucaoConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
+    const obs = document.getElementById('estoqueDevolucaoObs').value.trim();
+    const falhas = [];
+    for(const p of pedido){
+      const r = await confirmarDevolucaoEstoque(p.estoqueItemId, p.quantity, obs);
+      if(r.ok) delete estoqueDevolucaoRowState[p.estoqueItemId];
+      else falhas.push(`${p.name}${p.unit ? ' — ' + p.unit : ''}: ${r.reason === 'offline' || r.reason === 'falha de gravação' ? 'sem conexão' : r.reason}`);
+    }
+    btn.disabled = false; btn.textContent = lbl; estoqueDevolucaoEnvioInFlight = false;
+    renderEstoqueDevolucaoTab();
+    if(falhas.length){
+      const okN = pedido.length - falhas.length;
+      errBox.textContent = (okN ? `${okN} de ${pedido.length} item(ns) registrado(s). ` : '') + `Não foi possível registrar: ${falhas.join('; ')}. Esses itens continuam selecionados — verifique sua internet e tente novamente.`;
+      return;
+    }
+    document.getElementById('estoqueDevolucaoConfirmOverlay').classList.remove('open');
+    document.getElementById('estoqueDevolucaoObs').value = '';
+    alert('Devolução registrada com sucesso.');
+  }, 'Confirmar devolução');
 });
 
 function popularSelectCategorias(sel, comTodas){
@@ -14151,14 +14660,77 @@ function renderEstoqueRelatorio(){
   const n = estoqueMateriaisAtivos().filter(it => estoqueStatusDoMaterial(it) !== 'NORMAL').length;
   document.getElementById('estoqueRelatorioStatus').textContent = disponivel ? `${n} material(is) no mínimo ou abaixo — relatório disponível (inclui TODOS os materiais).` : 'Nenhum material no mínimo ou abaixo — o relatório fica disponível quando houver ao menos um.';
   document.getElementById('estoqueRelatorioPdfBtn').disabled = !disponivel;
+  document.getElementById('estoqueRelatorioExcelBtn').disabled = !disponivel;
   const box = document.getElementById('estoqueRelatorioPreview');
-  const rows = estoqueMateriaisAtivos().slice().sort((a, b) => ((a.category || '') + a.name).localeCompare((b.category || '') + b.name, 'pt-BR'));
-  let total = 0;
-  box.innerHTML = rows.map(it => { const st = estoqueStatusDoMaterial(it), buy = quantidadeParaComprar(it); total += buy;
-    return `<div class="painel-stat-row" style="${st !== 'NORMAL' ? 'border-left:4px solid var(--red); padding-left:10px;' : ''}"><div class="painel-stat-label">${escapeHtml(it.category || '')} · ${escapeHtml(it.name)} — ${escapeHtml(it.unit)}</div><div class="painel-stat-value mono">atual ${it.quantity} · mín ${it.minimumQuantity} · máx ${it.maximumQuantity} · comprar <b>${buy}</b></div></div>`; }).join('')
-    + `<div class="painel-stat-row"><div class="painel-stat-label"><b>Total geral a comprar</b></div><div class="painel-stat-value mono"><b>${total}</b></div></div>`;
+  // Melhoria 4: agrupamento visual por categoria (bloco/seção) — reaproveita a MESMA categoria já
+  // cadastrada em cada material (eq.category), sem campo novo. Mesma ordenação de sempre: só
+  // "categoria depois nome" (idêntica à combinação usada antes de agrupar), agora com um
+  // cabeçalho por categoria em vez de uma lista corrida.
+  const cats = {};
+  estoqueMateriaisAtivos().forEach(it => { const cn = it.category || 'Sem categoria'; (cats[cn] = cats[cn] || []).push(it); });
+  const catNames = Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  let total = 0; let html = '';
+  // Melhoria 3: relatório de compra mostra somente descrição + quantidade a comprar (sem
+  // atual/mínimo/máximo) — o cálculo de quantidadeParaComprar() continua o mesmo de sempre.
+  // O destaque vermelho de "disparou reposição" é mantido: é um indicador visual de status, não
+  // uma das 3 informações numéricas que esta melhoria pede pra remover da apresentação.
+  catNames.forEach(cn => {
+    const list = cats[cn].slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
+    html += `<div class="estoque-relatorio-cat-header">${escapeHtml(cn)}</div>`;
+    list.forEach(it => {
+      const st = estoqueStatusDoMaterial(it), buy = quantidadeParaComprar(it); total += buy;
+      html += `<div class="painel-stat-row" style="${st !== 'NORMAL' ? 'border-left:4px solid var(--red); padding-left:10px;' : ''}"><div class="painel-stat-label">${escapeHtml(it.name)}</div><div class="painel-stat-value mono"><b>${buy}</b></div></div>`;
+    });
+  });
+  html += `<div class="painel-stat-row" style="margin-top:6px;"><div class="painel-stat-label"><b>Total geral a comprar</b></div><div class="painel-stat-value mono"><b>${total}</b></div></div>`;
+  box.innerHTML = html;
 }
 document.getElementById('estoqueRelatorioPdfBtn').addEventListener('click', () => { if(relatorioCompraDisponivel()) abrirRelatorioCompraPdf(); });
+
+// ---- Exportação Excel do Relatório de compra (melhoria 5) ----
+// Biblioteca carregada SOB DEMANDA (só no primeiro clique em "Exportar Excel"), não no bootstrap —
+// mesmo host (cdnjs.cloudflare.com) já usado pelo app pra outras libs (html2canvas, Sortable).
+let xlsxLibLoadPromise = null;
+function ensureXlsxLib(){
+  if(window.XLSX) return Promise.resolve();
+  if(xlsxLibLoadPromise) return xlsxLibLoadPromise;
+  xlsxLibLoadPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => { xlsxLibLoadPromise = null; reject(new Error('offline')); };
+    document.head.appendChild(s);
+  });
+  return xlsxLibLoadPromise;
+}
+let estoqueRelatorioExcelInFlight = false;
+async function exportarRelatorioCompraExcel(){
+  if(estoqueRelatorioExcelInFlight || !relatorioCompraDisponivel()) return;
+  estoqueRelatorioExcelInFlight = true;
+  const btn = document.getElementById('estoqueRelatorioExcelBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Gerando...';
+  const errBox = document.getElementById('estoqueRelatorioExportErr'); errBox.textContent = '';
+  try{
+    await ensureXlsxLib();
+    // Só leitura: mesma fonte de dados/cálculo já usada pelo relatório (nenhuma consulta Firebase
+    // nova, nenhuma escrita).
+    const grupos = relatorioCompraAgrupado();
+    const aoa = [['Descrição do item', 'Quantidade a comprar']];
+    grupos.forEach(g => {
+      aoa.push([g.categoria.toUpperCase()]);
+      g.itens.forEach(it => aoa.push([it.nome, it.comprar]));
+    });
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 40 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Relatório de compra');
+    XLSX.writeFile(wb, relatorioCompraFileNameBase() + '.xlsx');
+  }catch(e){
+    errBox.textContent = 'Não foi possível gerar o Excel. Verifique sua internet e tente novamente.';
+  }finally{
+    btn.disabled = !relatorioCompraDisponivel(); btn.textContent = lbl; estoqueRelatorioExcelInFlight = false;
+  }
+}
+document.getElementById('estoqueRelatorioExcelBtn').addEventListener('click', exportarRelatorioCompraExcel);
 
 // ---------- REGISTRAR RETIRADA (Técnico) ----------
 let estoqueRetiradaQtds = {}; // { itemId: quantidade digitada }
@@ -14260,27 +14832,33 @@ document.getElementById('estoqueRetiradaRevisarBtn').addEventListener('click', (
 });
 document.getElementById('estoqueRetiradaConfirmCancelBtn').addEventListener('click', () => document.getElementById('estoqueRetiradaConfirmOverlay').classList.remove('open'));
 let estoqueRetiradaConfirmInFlight = false;
-document.getElementById('estoqueRetiradaConfirmBtn').addEventListener('click', async () => {
+// Confirmação final (melhoria 1 do Estoque): mesmo padrão da devolução acima — "Enviar retirada"
+// dentro da conferência abre uma segunda confirmação (customConfirm) antes de chamar
+// executarRetirada (saga/compensação multi-item já existente, intocada).
+document.getElementById('estoqueRetiradaConfirmBtn').addEventListener('click', () => {
   if(estoqueRetiradaConfirmInFlight || !canRetirarEstoque()) return;
   const { pedido, erros } = montarPedidoRetirada();
   const errBox = document.getElementById('estoqueRetiradaConfirmErr'); errBox.textContent = '';
   if(erros.length || !pedido.length){ errBox.textContent = erros.join(' ') || 'Nenhum item.'; return; }
-  estoqueRetiradaConfirmInFlight = true;
-  const btn = document.getElementById('estoqueRetiradaConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
-  const r = await executarRetirada(estoqueRetiradaIdAtual, pedido, currentActingName(), document.getElementById('estoqueRetiradaObs').value);
-  btn.disabled = false; btn.textContent = lbl; estoqueRetiradaConfirmInFlight = false;
-  if(!r.ok){
-    let msg = r.reason;
-    if(r.naoRevertidos && r.naoRevertidos.length) msg += ` ATENÇÃO: ${r.naoRevertidos.length} item(ns) baixado(s) não puderam ser revertidos automaticamente — avise o gestor.`;
-    else if(r.compensados) msg += ' Os itens já baixados foram devolvidos ao estoque; nada foi registrado.';
-    errBox.textContent = msg;
-    renderEstoqueRetiradaList();
-    return;
-  }
-  document.getElementById('estoqueRetiradaConfirmOverlay').classList.remove('open');
-  estoqueRetiradaQtds = {}; estoqueRetiradaIdAtual = null;
-  estoqueSwitchTab('materiais');
-  alert('Retirada registrada com sucesso.');
+  customConfirm('Confirma o envio desta retirada?', async () => {
+    if(estoqueRetiradaConfirmInFlight) return;
+    estoqueRetiradaConfirmInFlight = true;
+    const btn = document.getElementById('estoqueRetiradaConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
+    const r = await executarRetirada(estoqueRetiradaIdAtual, pedido, currentActingName(), document.getElementById('estoqueRetiradaObs').value);
+    btn.disabled = false; btn.textContent = lbl; estoqueRetiradaConfirmInFlight = false;
+    if(!r.ok){
+      let msg = r.reason;
+      if(r.naoRevertidos && r.naoRevertidos.length) msg += ` ATENÇÃO: ${r.naoRevertidos.length} item(ns) baixado(s) não puderam ser revertidos automaticamente — avise o gestor.`;
+      else if(r.compensados) msg += ' Os itens já baixados foram devolvidos ao estoque; nada foi registrado.';
+      errBox.textContent = msg;
+      renderEstoqueRetiradaList();
+      return;
+    }
+    document.getElementById('estoqueRetiradaConfirmOverlay').classList.remove('open');
+    estoqueRetiradaQtds = {}; estoqueRetiradaIdAtual = null;
+    estoqueSwitchTab('materiais');
+    alert('Retirada registrada com sucesso.');
+  }, 'Confirmar retirada');
 });
 
 // Pontos de entrada
@@ -14326,12 +14904,13 @@ async function initAuthBootstrap(){
   await loadTechPins();
   await loadManagers();
   await loadFinanceiro();
+  await ensureUsersLoaded(); // Etapa 3: fonte principal de login — uma leitura só, cacheada
   attachRealtimeTechRosterListener();
   attachRealtimeTechPinsListener();
   attachRealtimeManagersListener();
   attachRealtimeFinanceiroListener();
   perfMark('auth_bootstrap_done', {
-    approxKB: perfApproxKB(TECHS) + perfApproxKB(MANAGERS) + perfApproxKB(FINANCEIRO)
+    approxKB: perfApproxKB(TECHS) + perfApproxKB(MANAGERS) + perfApproxKB(FINANCEIRO) + perfApproxKB(USERS)
   });
 }
 
@@ -14494,6 +15073,537 @@ function countAttachedRealtimeListeners(){
   ];
   return flags.filter(Boolean).length;
 }
+
+// =====================================================================================
+// ACESSOS — Etapa 2: estrutura unificada de usuários (users/), em paralelo às 4 estruturas
+// legadas (managers, techRoster+techPhones+techPins, financeiro, oficina). NENHUMA delas é
+// alterada ou removida aqui — só lidas. Não altera login (currentRole/current*Name continuam
+// exatamente como são), não altera a tela Acessos, não altera Firebase Rules, não altera nenhum
+// histórico (services.*, maintenanceContracts.contactName, oficinaEquipamentos.*By,
+// oficinaPecasCatalogo.*By, estoque*.*By/technicianName). Ferramenta de auditoria/migração
+// chamável só pelo Console — sem nenhum botão na interface, de propósito (etapa 3 decide isso).
+// =====================================================================================
+const USERS_GENERIC_OFICINA_NAME = 'Oficina'; // placeholder conhecido — nunca vira "pessoa"
+const USERS_MASTER_NAMES = ['Bernardo', 'Marcelo']; // lista explícita e isolada, fácil de revisar depois
+
+function normNomeExato(s){ return (s || '').toString().trim(); }
+// "Parecido mas não igual" é só aviso — NUNCA funde automaticamente (ex.: "Ricardo" x "ricardo").
+function nomesParecidosNaoIguais(a, b){
+  const na = normNomeExato(a), nb = normNomeExato(b);
+  if(na === nb) return false;
+  return na.toLowerCase() === nb.toLowerCase();
+}
+function ehMasterPeloNome(nomeCanon){ return USERS_MASTER_NAMES.some(m => normNomeExato(m) === nomeCanon); }
+
+// Leitura explícita e sequencial das 6 fontes atuais — NUNCA grava nada aqui, só lê.
+async function auditarFontesUsuariosUnificados(){
+  if(!rtdb) throw new Error('Firebase indisponível.');
+  const [managersSnap, techRosterSnap, techPinsSnap, techPhonesSnap, financeiroSnap, oficinaSnap] = await Promise.all([
+    rtdb.ref('managers').get(), rtdb.ref('techRoster').get(), rtdb.ref('techPins').get(),
+    rtdb.ref('techPhones').get(), rtdb.ref('financeiro').get(), rtdb.ref('oficina').get()
+  ]);
+  const managersRaw = managersSnap.exists() ? Object.values(managersSnap.val()) : [];
+  const rosterRaw = techRosterSnap.exists() ? Object.values(techRosterSnap.val()) : [];
+  const pinsRaw = techPinsSnap.exists() ? techPinsSnap.val() : {};
+  const financeiroRaw = financeiroSnap.exists() ? Object.values(financeiroSnap.val()) : [];
+  const oficinaRaw = oficinaSnap.exists() ? Object.values(oficinaSnap.val()) : [];
+  // Técnico = roster (nome) + pin, juntados pelo NOME — mesma junção que loadTechRoster/
+  // loadTechPins já fazem hoje em memória; só lida direto do Firebase aqui, sem tocar em TECHS.
+  const techs = rosterRaw.map(t => ({ name: t.name, pin: (pinsRaw && typeof pinsRaw === 'object' && pinsRaw[t.name]) || '0000' }));
+  return { managersRaw, techs, financeiroRaw, oficinaRaw };
+}
+
+// Monta o mapa de pessoas a partir das 4 fontes: chave = nome EXATO (trim). Nomes iguais entre
+// listas diferentes (ex.: "Bernardo" em managers e em financeiro) resultam numa ÚNICA pessoa com
+// os dois perfis — é a "fusão proposta" pra nomes exatamente iguais. Nomes só PARECIDOS nunca são
+// fundidos, só registrados como aviso.
+function montarMapaUsuariosUnificados(fontes){
+  const { managersRaw, techs, financeiroRaw, oficinaRaw } = fontes;
+  const porNome = {};
+  const genericosIgnorados = [];
+
+  function registrar(nomeOriginal, profile, pin){
+    const key = normNomeExato(nomeOriginal);
+    if(!key) return;
+    if(!porNome[key]) porNome[key] = { name: key, profiles: {}, pinByProfile: {}, legacyNames: {} };
+    const pessoa = porNome[key];
+    pessoa.profiles[profile] = true;
+    pessoa.pinByProfile[profile] = pin != null ? String(pin) : '0000';
+    pessoa.legacyNames[profile] = nomeOriginal; // preserva a grafia ORIGINAL daquela lista, intocada
+  }
+
+  managersRaw.forEach(m => registrar(m.name, 'manager', m.pin));
+  financeiroRaw.forEach(f => registrar(f.name, 'financeiro', f.pin));
+  techs.forEach(t => registrar(t.name, 'tech', t.pin));
+  oficinaRaw.forEach(o => {
+    if(normNomeExato(o.name) === USERS_GENERIC_OFICINA_NAME){ genericosIgnorados.push(o.name); return; }
+    registrar(o.name, 'oficina', o.pin);
+  });
+
+  const chaves = Object.keys(porNome);
+  const conflitosParecidos = [];
+  for(let i = 0; i < chaves.length; i++){
+    for(let j = i + 1; j < chaves.length; j++){
+      if(nomesParecidosNaoIguais(chaves[i], chaves[j])) conflitosParecidos.push({ a: chaves[i], b: chaves[j] });
+    }
+  }
+  return { pessoas: Object.values(porNome), conflitosParecidos, genericosIgnorados };
+}
+
+// Migração idempotente: cria cada users/<id> independente (nunca um blob único). Rerodar
+// encontra os usuários já criados pelo legacyName (nunca gera id novo, nunca sobrescreve
+// PIN/nome legado já gravado com valor diferente — só ACRESCENTA o que ainda faltar). Qualquer
+// ambiguidade real vira um item em relatorio.erros para ESSA pessoa/perfil, sem decidir sozinho.
+let usuariosUnificadosMigrationInFlight = false;
+async function migrarUsuariosUnificados(){
+  if(usuariosUnificadosMigrationInFlight) return { ok: false, reason: 'Migração já em andamento nesta sessão.' };
+  usuariosUnificadosMigrationInFlight = true;
+  try{
+    const fontes = await auditarFontesUsuariosUnificados();
+    const { pessoas, conflitosParecidos, genericosIgnorados } = montarMapaUsuariosUnificados(fontes);
+
+    const usersSnap = await rtdb.ref('users').get(); // só leitura, pra idempotência
+    const usersExistentesRaw = usersSnap.exists() ? usersSnap.val() : {};
+    const usersExistentesArr = Object.keys(usersExistentesRaw).map(id => Object.assign({ id }, usersExistentesRaw[id]));
+
+    const relatorio = { criados: [], atualizados: [], inalterados: [], conflitosParecidos, genericosIgnorados, erros: [] };
+
+    for(const pessoa of pessoas){
+      const candidatos = usersExistentesArr.filter(u =>
+        Object.keys(pessoa.legacyNames).some(profile => u.legacyNames && u.legacyNames[profile] === pessoa.legacyNames[profile])
+      );
+      const idsDistintos = new Set(candidatos.map(u => u.id));
+      if(idsDistintos.size > 1){
+        relatorio.erros.push({ nome: pessoa.name, motivo: 'Nomes legados apontam para mais de um usuário já existente — gravação interrompida para esta pessoa.', idsEncontrados: [...idsDistintos] });
+        continue;
+      }
+
+      const existente = candidatos[0] || null;
+      const isMaster = ehMasterPeloNome(pessoa.name);
+      const now = new Date().toISOString();
+
+      if(existente){
+        const updates = {}; let houveMudanca = false; let conflito = null;
+        ['manager', 'tech', 'financeiro', 'oficina'].forEach(profile => {
+          if(!pessoa.profiles[profile]) return;
+          if(!(existente.profiles && existente.profiles[profile])){
+            updates['profiles/' + profile] = true;
+            updates['pinByProfile/' + profile] = pessoa.pinByProfile[profile];
+            updates['legacyNames/' + profile] = pessoa.legacyNames[profile];
+            houveMudanca = true;
+          } else {
+            const pinAtual = existente.pinByProfile && existente.pinByProfile[profile];
+            const nomeAtual = existente.legacyNames && existente.legacyNames[profile];
+            if(pinAtual !== pessoa.pinByProfile[profile] || nomeAtual !== pessoa.legacyNames[profile]){
+              conflito = { profile, pinAtualDiferente: pinAtual !== pessoa.pinByProfile[profile], nomeAtualDiferente: nomeAtual !== pessoa.legacyNames[profile] };
+            }
+          }
+        });
+        if(isMaster && !existente.isMaster){ updates['isMaster'] = true; houveMudanca = true; } // só promove, nunca rebaixa sozinho
+        if(conflito) relatorio.erros.push({ nome: pessoa.name, idExistente: existente.id, motivo: 'Perfil já existia com PIN/nome legado diferente do encontrado agora — gravação interrompida para esse perfil.', detalhe: conflito });
+        if(houveMudanca){
+          updates['updatedAt'] = now;
+          try{
+            await rtdb.ref('users/' + existente.id).update(updates);
+            relatorio.atualizados.push({ id: existente.id, nome: pessoa.name, perfisAdicionados: Object.keys(updates).filter(k => k.startsWith('profiles/')).map(k => k.split('/')[1]) });
+          }catch(e){ relatorio.erros.push({ nome: pessoa.name, idExistente: existente.id, motivo: 'Falha ao gravar atualização.', erro: e.message }); }
+        } else if(!conflito){
+          relatorio.inalterados.push({ id: existente.id, nome: pessoa.name });
+        }
+        continue;
+      }
+
+      const novoId = 'u' + Date.now() + Math.floor(Math.random() * 1000000);
+      const registro = { name: pessoa.name, profiles: pessoa.profiles, pinByProfile: pessoa.pinByProfile, legacyNames: pessoa.legacyNames, isMaster, createdAt: now, updatedAt: now };
+      try{
+        await rtdb.ref('users/' + novoId).set(registro);
+        relatorio.criados.push({ id: novoId, nome: pessoa.name, perfis: Object.keys(pessoa.profiles) });
+        usersExistentesArr.push(Object.assign({ id: novoId }, registro)); // evita duplicar dentro da MESMA rodada
+      }catch(e){ relatorio.erros.push({ nome: pessoa.name, motivo: 'Falha ao criar usuário.', erro: e.message }); }
+    }
+    return { ok: true, relatorio };
+  } finally {
+    usuariosUnificadosMigrationInFlight = false;
+  }
+}
+
+// =====================================================================================
+// ACESSOS — Etapa 3: LOGIN passa a usar users/ como fonte principal de autenticação. As 4
+// estruturas legadas continuam carregadas e usadas normalmente pelo resto do app (Acessos —
+// administração/ponte —, cor e telefone de técnico, etc.), mas não para autenticar ninguém: a
+// Etapa 8 removeu o fallback de login que existia aqui até a Etapa 6.
+// currentRole/current*Name continuam existindo e sendo preenchidos normalmente, por
+// compatibilidade com TODO o resto do app (nenhuma dessas variáveis foi removida). Não altera
+// Acessos, não altera Rules, não migra histórico.
+// =====================================================================================
+let USERS = [];
+let currentUserId = null; // novo (Etapa 3) — usado em etapas futuras; não substitui current*Name
+let usersLoadedPromise = null;
+// Uma leitura só, cacheada em memória e reaproveitada durante toda a sessão — nenhuma leitura
+// nova a cada tentativa de login.
+function ensureUsersLoaded(){
+  if(usersLoadedPromise) return usersLoadedPromise;
+  usersLoadedPromise = (async () => {
+    try{
+      if(!rtdb) return;
+      const snap = await rtdb.ref('users').get();
+      const raw = snap.exists() ? snap.val() : {};
+      USERS = Object.keys(raw).map(id => Object.assign({ id }, raw[id]));
+    }catch(e){ console.error('Falha ao carregar users (login não funcionará sem esta leitura — Etapa 7 removeu o fallback legado):', e); USERS = []; }
+  })();
+  return usersLoadedPromise;
+}
+
+// Etapa 7: quem pode entrar por um perfil vem exclusivamente de users.profiles — sem mais unir
+// manager/tech pra "oficina" (isso agora é responsabilidade só de profiles.oficina===true).
+function usersComPerfil(perfil){
+  return USERS.filter(u => u.profiles && u.profiles[perfil]);
+}
+// PIN a validar pro perfil pedido — direto de pinByProfile[perfil], sem precedência especial.
+function pinDoUsuarioParaPerfil(user, perfil){
+  if(!user || !user.pinByProfile) return null;
+  return user.pinByProfile[perfil];
+}
+// Nome a usar no resto do app pra esse perfil — o nome LEGADO daquele perfil (histórico continua
+// batendo), nunca um nome novo/normalizado.
+function nomeHistoricoDoUsuario(user, perfil){
+  return (user.legacyNames && user.legacyNames[perfil]) || user.name;
+}
+
+// Autenticação central — Etapa 7: consulta EXCLUSIVAMENTE users. Uma pessoa que exista só numa
+// estrutura legada (managers/financeiro/techPins/oficina) e não em users não consegue mais
+// entrar — mudança intencional desta etapa (o cadastro administrativo oficial agora é users).
+// Etapa 8: o fallback legado que existia até a Etapa 6 foi removido — não
+// há mais nenhum caminho alternativo de autenticação.
+function autenticarPerfil(perfil, nome, pin){
+  const candidatos = usersComPerfil(perfil);
+  const user = candidatos.find(u => (u.legacyNames && u.legacyNames[perfil] === nome) || u.name === nome);
+  if(!user) return { ok: false, fonte: 'users' };
+  const pinEsperado = pinDoUsuarioParaPerfil(user, perfil);
+  if(pin === (pinEsperado || '0000')){
+    return { ok: true, fonte: 'users', userId: user.id, nome: nomeHistoricoDoUsuario(user, perfil) };
+  }
+  return { ok: false, fonte: 'users' };
+}
+
+// =====================================================================================
+// ACESSOS — Etapa 4: administração unificada (users/) substitui a APRESENTAÇÃO das 4 listas
+// legadas na tela Acessos. As funções antigas (renderManagerPinList, renderTechPinList,
+// renderFinanceiroPinList, renderOficinaPinList e as de salvar/remover PIN legado) continuam
+// existindo, intocadas, só não são mais chamadas por switchTab('acessos'). Nenhuma estrutura
+// legada é lida/gravada por este bloco. Nenhuma migração de histórico, nenhuma alteração em
+// services/Oficina/Estoque/Financeiro/Manutenções.
+// =====================================================================================
+
+// Proteção REAL (função/estado) — único lugar que decide "é Master", reutilizado por
+// switchTab('acessos') e pela visibilidade dos botões. currentUserId só é preenchido por um
+// login bem-sucedido via users (não existe mais nenhum caminho de login que deixe currentRole
+// setado com currentUserId null) — a checagem "!currentUserId" aqui é uma defesa extra, não algo
+// que aconteça na prática.
+function isCurrentUserMaster(){
+  if(currentRole !== 'manager' || !currentUserId) return false;
+  const u = USERS.find(x => x.id === currentUserId);
+  return !!(u && u.isMaster === true);
+}
+function acessosMastersAtivos(){ return USERS.filter(u => u.isMaster === true && u.profiles && u.profiles.manager); }
+
+// Só esconde os botões (a proteção de verdade é o switchTab); chamado uma vez por login de Gestor.
+function atualizarVisibilidadeAcessos(){
+  const master = isCurrentUserMaster();
+  ['sidebarBtnAcessos', 'tabBtnAcessos', 'bottomNavBtnAcessos'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = master ? '' : 'none';
+  });
+}
+
+const ACESSOS_PERFIL_LABEL = { manager: 'Gestor', tech: 'Técnico', oficina: 'Oficina', financeiro: 'Financeiro' };
+function renderAcessosUsuariosList(){
+  const box = document.getElementById('acessosUsuariosList'); if(!box) return;
+  const lista = USERS.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
+  box.innerHTML = lista.length ? lista.map(u => {
+    const perfisTxt = Object.keys(u.profiles || {}).filter(p => u.profiles[p]).map(p => ACESSOS_PERFIL_LABEL[p] || p).join(' · ');
+    return `<div class="tech-pin-row" data-acessosuser="${u.id}">
+      <div class="tech-pin-name">${escapeHtml(u.name)}</div>
+      <div class="sub" style="flex:1; color:var(--text-dim); font-size:12.5px;">${escapeHtml(perfisTxt)}${u.isMaster ? ' · <b>Master</b>' : ''}</div>
+      <button type="button" class="btn-ghost" data-acessoseditar="${u.id}">Editar</button>
+    </div>`;
+  }).join('') : '<div class="painel-block-empty">Nenhum usuário cadastrado ainda.</div>';
+  box.querySelectorAll('[data-acessoseditar]').forEach(btn => btn.addEventListener('click', () => abrirAcessosUsuarioModal(btn.dataset.acessoseditar)));
+}
+
+function acessosAtualizarCamposPin(){
+  const cont = document.getElementById('acessosPinsContainer');
+  const perfisSelecionados = ['manager', 'tech', 'oficina', 'financeiro'].filter(p => document.getElementById('acessosPerfil' + p[0].toUpperCase() + p.slice(1)).checked);
+  const existentes = {}; cont.querySelectorAll('[data-acessospinperfil]').forEach(inp => { existentes[inp.dataset.acessospinperfil] = inp.value; });
+  cont.innerHTML = perfisSelecionados.map(p => `<div class="field"><label>PIN do ${ACESSOS_PERFIL_LABEL[p]}</label><input type="text" maxlength="6" data-acessospinperfil="${p}" value="${escapeHtml(existentes[p] || '')}"></div>`).join('');
+  const masterInput = document.getElementById('acessosMasterInput');
+  if(!perfisSelecionados.includes('manager')){ masterInput.checked = false; masterInput.disabled = true; }
+  else { masterInput.disabled = false; }
+}
+['acessosPerfilManager', 'acessosPerfilTech', 'acessosPerfilOficina', 'acessosPerfilFinanceiro'].forEach(id => {
+  document.getElementById(id).addEventListener('change', acessosAtualizarCamposPin);
+});
+
+let acessosUsuarioEditandoId = null;
+let acessosUsuarioSalvarInFlight = false;
+function abrirAcessosUsuarioModal(userId){
+  acessosUsuarioEditandoId = userId || null;
+  const u = userId ? USERS.find(x => x.id === userId) : null;
+  document.getElementById('acessosUsuarioModalTitulo').textContent = u ? 'Editar usuário' : 'Novo usuário';
+  const nomeInput = document.getElementById('acessosUsuarioNomeInput');
+  nomeInput.value = u ? u.name : '';
+  nomeInput.dataset.nomeOriginal = u ? u.name : '';
+  document.getElementById('acessosPerfilManager').checked = !!(u && u.profiles && u.profiles.manager);
+  document.getElementById('acessosPerfilTech').checked = !!(u && u.profiles && u.profiles.tech);
+  document.getElementById('acessosPerfilOficina').checked = !!(u && u.profiles && u.profiles.oficina);
+  document.getElementById('acessosPerfilFinanceiro').checked = !!(u && u.profiles && u.profiles.financeiro);
+  document.getElementById('acessosMasterInput').checked = !!(u && u.isMaster);
+  acessosAtualizarCamposPin();
+  if(u && u.pinByProfile){
+    Object.keys(u.pinByProfile).forEach(p => {
+      const inp = document.querySelector(`#acessosPinsContainer [data-acessospinperfil="${p}"]`);
+      if(inp) inp.value = u.pinByProfile[p];
+    });
+  }
+  document.getElementById('acessosNomeAvisoAlteracao').textContent = '';
+  document.getElementById('acessosUsuarioModalErr').textContent = '';
+  document.getElementById('acessosUsuarioModalOverlay').classList.add('open');
+  setTimeout(() => nomeInput.focus(), 50);
+}
+function fecharAcessosUsuarioModal(){ document.getElementById('acessosUsuarioModalOverlay').classList.remove('open'); acessosUsuarioEditandoId = null; }
+document.getElementById('acessosNovoUsuarioBtn').addEventListener('click', () => abrirAcessosUsuarioModal(null));
+document.getElementById('acessosUsuarioModalCancelBtn').addEventListener('click', fecharAcessosUsuarioModal);
+document.getElementById('acessosUsuarioModalOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharAcessosUsuarioModal(); });
+document.getElementById('acessosUsuarioNomeInput').addEventListener('input', () => {
+  const original = document.getElementById('acessosUsuarioNomeInput').dataset.nomeOriginal;
+  const atual = document.getElementById('acessosUsuarioNomeInput').value.trim();
+  document.getElementById('acessosNomeAvisoAlteracao').textContent = (acessosUsuarioEditandoId && original && atual && atual !== original)
+    ? 'Este nome já é utilizado em registros históricos do sistema. Alterar o nome não altera registros antigos.' : '';
+});
+
+// Única função de gravação: cada usuário grava independente em users/<id> — nunca um blob global,
+// nunca sobrescreve campo que não mudou, nunca toca outro usuário.
+// =====================================================================================
+// ACESSOS — Etapa 5: ponte de compatibilidade users -> estruturas legadas. users continua sendo
+// a fonte administrativa (nunca o contrário: alterar o legado direto não sobrescreve users).
+// Cada função de ponte reaproveita a persistência JÁ EXISTENTE (saveManagers/saveFinanceiro/
+// saveOficina/saveTechRoster/saveTechPin/saveTechPhone/removeTechnician — todas diff por campo,
+// com retry, já usadas pela própria tela legada de Acessos) — nenhuma lógica de gravação nova,
+// só orquestração. Chamadas com silent=true (não mostrar alert do navegador durante o fluxo
+// novo — o erro é reportado no modal, como o resto desta etapa já faz).
+// IMPORTANTE: a chave usada no legado é sempre legacyNames[perfil] — NUNCA users.name. Renomear
+// o cadastro em Acessos nunca reescreve nenhuma chave legada (managers/<nome>, techPins/<nome>
+// etc. continuam como estavam) — é exatamente o "tratar o nome só como cadastro atual de acesso"
+// pedido nesta etapa, e também por isso nenhum histórico é tocado.
+async function ponteGestor(nomeLegado, pin){
+  if(!MANAGERS.some(m => m.name === nomeLegado)) MANAGERS.push({ name: nomeLegado, pin: pin || '0000' });
+  else MANAGERS.forEach(m => { if(m.name === nomeLegado) m.pin = pin || '0000'; });
+  return (await saveManagers(true)) ? { ok: true } : { ok: false, reason: 'Falha ao gravar no cadastro legado de Gestores (managers).' };
+}
+async function ponteRemoverGestor(nomeLegado){
+  if(!MANAGERS.some(m => m.name === nomeLegado)) return { ok: true }; // já não existe, nada a fazer
+  // Igual à trava já existente em removeManager(): nunca deixar managers vazio. Login não
+  // depende mais disso desde a Etapa 8 (autenticação é só via users); a trava é mantida porque
+  // managers ainda é lido/administrado pela tela legada de Acessos e por outras partes do app.
+  if(MANAGERS.length <= 1) return { ok: false, reason: 'Não é possível remover o último Gestor do cadastro legado (managers) — o acesso de outros perfis ainda depende dele.' };
+  MANAGERS = MANAGERS.filter(m => m.name !== nomeLegado);
+  return (await saveManagers(true)) ? { ok: true } : { ok: false, reason: 'Falha ao remover do cadastro legado de Gestores.' };
+}
+async function ponteFinanceiro(nomeLegado, pin){
+  if(!FINANCEIRO.some(f => f.name === nomeLegado)) FINANCEIRO.push({ name: nomeLegado, pin: pin || '0000' });
+  else FINANCEIRO.forEach(f => { if(f.name === nomeLegado) f.pin = pin || '0000'; });
+  return (await saveFinanceiro(true)) ? { ok: true } : { ok: false, reason: 'Falha ao gravar no cadastro legado de Financeiro.' };
+}
+async function ponteRemoverFinanceiro(nomeLegado){
+  if(!FINANCEIRO.some(f => f.name === nomeLegado)) return { ok: true };
+  if(FINANCEIRO.length <= 1) return { ok: false, reason: 'Não é possível remover a última pessoa do cadastro legado de Financeiro.' };
+  FINANCEIRO = FINANCEIRO.filter(f => f.name !== nomeLegado);
+  return (await saveFinanceiro(true)) ? { ok: true } : { ok: false, reason: 'Falha ao remover do cadastro legado de Financeiro.' };
+}
+async function ponteOficina(nomeLegado, pin){
+  // "Oficina" genérico nunca vira pessoa — nem aqui.
+  if(normNomeExato(nomeLegado) === USERS_GENERIC_OFICINA_NAME) return { ok: true };
+  if(!OFICINA.some(o => o.name === nomeLegado)) OFICINA.push({ name: nomeLegado, pin: pin || '0000' });
+  else OFICINA.forEach(o => { if(o.name === nomeLegado) o.pin = pin || '0000'; });
+  return (await saveOficina(true)) ? { ok: true } : { ok: false, reason: 'Falha ao gravar no cadastro legado de Oficina.' };
+}
+async function ponteRemoverOficina(nomeLegado){
+  if(normNomeExato(nomeLegado) === USERS_GENERIC_OFICINA_NAME) return { ok: true };
+  if(!OFICINA.some(o => o.name === nomeLegado)) return { ok: true };
+  if(OFICINA.length <= 1) return { ok: false, reason: 'Não é possível remover a última pessoa do cadastro legado de Oficina.' };
+  OFICINA = OFICINA.filter(o => o.name !== nomeLegado);
+  return (await saveOficina(true)) ? { ok: true } : { ok: false, reason: 'Falha ao remover do cadastro legado de Oficina.' };
+}
+async function ponteTecnico(nomeLegado, pin){
+  const existente = TECHS.find(t => t.name === nomeLegado);
+  if(!existente){
+    // Registro mínimo — telefone vazio (nunca inventado), mesma cor automática de sempre.
+    const novoTech = { name: nomeLegado, color: nextTechColor(), phone: '', pin: pin || '0000' };
+    TECHS.push(novoTech);
+    if(!(await saveTechRoster(true))){
+      TECHS = TECHS.filter(t => t !== novoTech); // desfaz o push local — não deixa entrada fantasma pra um retry futuro
+      return { ok: false, reason: 'Falha ao gravar no cadastro legado de Técnicos (roster).' };
+    }
+    const okPin = await saveTechPin(nomeLegado, pin || '0000');
+    const okPhone = await saveTechPhone(nomeLegado, '');
+    return (okPin && okPhone) ? { ok: true } : { ok: false, reason: 'Técnico criado no legado, mas falhou ao salvar telefone/PIN.' };
+  }
+  // Já existe: só o PIN muda — telefone (techPhones) nunca é tocado/apagado por esta etapa.
+  const okPin = await saveTechPin(nomeLegado, pin || '0000');
+  return okPin ? { ok: true } : { ok: false, reason: 'Falha ao gravar o PIN legado do técnico.' };
+}
+async function ponteRemoverTecnico(nomeLegado){
+  if(!TECHS.some(t => t.name === nomeLegado)) return { ok: true };
+  await removeTechnician(nomeLegado); // já reaproveita retry/telefone+PIN — sem lógica nova
+  return { ok: true };
+}
+const PONTE_LEGADO = {
+  manager: { criarOuAtualizar: ponteGestor, remover: ponteRemoverGestor },
+  financeiro: { criarOuAtualizar: ponteFinanceiro, remover: ponteRemoverFinanceiro },
+  oficina: { criarOuAtualizar: ponteOficina, remover: ponteRemoverOficina },
+  tech: { criarOuAtualizar: ponteTecnico, remover: ponteRemoverTecnico }
+};
+
+async function salvarUsuarioAcessos(dados){
+  // Proteção de autorização (Passo 1, pós Etapa 14): antes desta correção, esta função podia ser
+  // chamada diretamente (ex.: pelo console do navegador) por qualquer perfil, sem nenhuma checagem
+  // de quem está pedindo — a única barreira era a aba Acessos ficar escondida na interface para
+  // quem não é Master. Isso permitia escalonamento de privilégio (confirmado na Etapa 14: um
+  // Gestor comum conseguiu criar um usuário Master novo chamando esta função direto).
+  // IMPORTANTE: esta checagem roda inteiramente no JavaScript do navegador da própria pessoa —
+  // não é uma barreira contra alguém que edite ou remova este trecho de código no seu próprio
+  // navegador, nem substitui autorização real no Firebase (Rules/Auth), que ainda não existe.
+  // Ela impede o uso NORMAL da função por quem não é Master (interface e chamadas diretas comuns),
+  // mas não impede manipulação direta do JavaScript carregado localmente.
+  if(!isCurrentUserMaster()){
+    return { ok: false, reason: 'Você não tem permissão para administrar usuários. Só um Gestor Master pode fazer isso.' };
+  }
+  const nome = (dados.name || '').trim();
+  if(!nome) return { ok: false, reason: 'Informe o nome.' };
+  const perfisSelecionados = Object.keys(dados.profiles).filter(p => dados.profiles[p]);
+  if(!perfisSelecionados.length) return { ok: false, reason: 'Selecione ao menos um perfil.' };
+  if(dados.isMaster && !dados.profiles.manager) return { ok: false, reason: 'Master só é permitido com o perfil Gestor selecionado.' };
+  if(USERS.some(u => u.id !== dados.id && normNomeExato(u.name) === normNomeExato(nome))) return { ok: false, reason: 'Já existe um usuário com esse nome.' };
+
+  const now = new Date().toISOString();
+
+  if(!dados.id){
+    const novoId = 'u' + Date.now() + Math.floor(Math.random() * 1000000);
+    const profiles = {}, pinByProfile = {}, legacyNames = {};
+    perfisSelecionados.forEach(p => { profiles[p] = true; pinByProfile[p] = (dados.pinByProfile[p] || '').trim() || '0000'; legacyNames[p] = nome; });
+    const registro = { name: nome, profiles, pinByProfile, legacyNames, isMaster: !!dados.isMaster, createdAt: now, updatedAt: now };
+    try{
+      await rtdb.ref('users/' + novoId).set(registro);
+      USERS.push(Object.assign({ id: novoId }, registro));
+    }catch(e){ return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+    // users já confirmado — a ponte agora só REFLETE pro legado; falha aqui não desfaz o usuário
+    // já criado (não fingir sucesso total, mas também não apagar o que já foi salvo de verdade).
+    const falhasPonte = [];
+    for(const p of perfisSelecionados){
+      const r = await PONTE_LEGADO[p].criarOuAtualizar(legacyNames[p], pinByProfile[p]);
+      if(!r.ok) falhasPonte.push(r.reason);
+    }
+    if(falhasPonte.length) return { ok: false, id: novoId, reason: 'Usuário criado, mas houve falha ao refletir no cadastro legado: ' + falhasPonte.join(' ') + ' Tente salvar novamente para repetir só a parte que falhou.' };
+    return { ok: true, id: novoId };
+  }
+
+  const existente = USERS.find(u => u.id === dados.id);
+  if(!existente) return { ok: false, reason: 'Usuário não encontrado.' };
+  if(existente.isMaster && !dados.isMaster){
+    if(acessosMastersAtivos().filter(u => u.id !== existente.id).length === 0){
+      return { ok: false, reason: 'Não é possível remover o último Gestor Master do sistema.' };
+    }
+  }
+
+  const updates = {};
+  const acoesPonte = []; // { perfil, tipo: 'criarOuAtualizar'|'remover', nomeLegado, pin }
+  if(existente.name !== nome) updates[`users/${existente.id}/name`] = nome;
+  ['manager', 'tech', 'oficina', 'financeiro'].forEach(p => {
+    const tinha = !!(existente.profiles && existente.profiles[p]);
+    const tem = !!dados.profiles[p];
+    if(tem && !tinha){
+      const pin = (dados.pinByProfile[p] || '').trim() || '0000';
+      updates[`users/${existente.id}/profiles/${p}`] = true;
+      updates[`users/${existente.id}/pinByProfile/${p}`] = pin;
+      const nomeLegadoNovo = (existente.legacyNames && existente.legacyNames[p]) || nome;
+      if(!existente.legacyNames || !existente.legacyNames[p]) updates[`users/${existente.id}/legacyNames/${p}`] = nome;
+      acoesPonte.push({ perfil: p, tipo: 'criarOuAtualizar', nomeLegado: nomeLegadoNovo, pin });
+    } else if(!tem && tinha){
+      updates[`users/${existente.id}/profiles/${p}`] = null;
+      updates[`users/${existente.id}/pinByProfile/${p}`] = null; // legacyNames preservado de propósito (histórico)
+      acoesPonte.push({ perfil: p, tipo: 'remover', nomeLegado: existente.legacyNames && existente.legacyNames[p] });
+    } else if(tem && tinha){
+      const novoPin = (dados.pinByProfile[p] || '').trim() || '0000';
+      if(!existente.pinByProfile || existente.pinByProfile[p] !== novoPin) updates[`users/${existente.id}/pinByProfile/${p}`] = novoPin;
+      // Sempre reafirma a ponte pra esse perfil, mesmo sem mudança de PIN — auto-corrige uma
+      // reflexão legada que tenha falhado numa tentativa anterior (retry seguro e idempotente:
+      // as funções de ponte só gravam de verdade se algo realmente estiver diferente no legado).
+      acoesPonte.push({ perfil: p, tipo: 'criarOuAtualizar', nomeLegado: existente.legacyNames && existente.legacyNames[p], pin: novoPin });
+    }
+  });
+  if(!!existente.isMaster !== !!dados.isMaster) updates[`users/${existente.id}/isMaster`] = !!dados.isMaster;
+
+  if(Object.keys(updates).length > 0){
+    updates[`users/${existente.id}/updatedAt`] = now;
+    try{
+      await rtdb.ref().update(updates); // mesmo padrão já usado no app (ex.: createEstoqueStore): update na raiz com caminhos completos
+      Object.keys(updates).forEach(path => {
+        const parts = path.split('/').slice(2); // remove "users/<id>/" — o resto é o caminho dentro do registro
+        if(parts.length === 1){ existente[parts[0]] = updates[path]; }
+        else {
+          existente[parts[0]] = existente[parts[0]] || {};
+          if(updates[path] === null) delete existente[parts[0]][parts[1]];
+          else existente[parts[0]][parts[1]] = updates[path];
+        }
+      });
+    }catch(e){ return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+  }
+  // Mesmo sem nenhuma mudança em users (ex.: reafirmar o mesmo PIN), a ponte ainda roda — é assim
+  // que um retry depois de uma falha parcial anterior consegue se autocorrigir sem duplicar nada.
+
+  // users confirmado — reflete as mudanças de perfil/PIN no legado (nome NUNCA propagado: a
+  // chave legada é sempre legacyNames[perfil], intocada por rename).
+  const falhasPonte = [];
+  for(const acao of acoesPonte){
+    if(!acao.nomeLegado) continue; // nada a refletir sem uma chave legada válida
+    const r = acao.tipo === 'remover'
+      ? await PONTE_LEGADO[acao.perfil].remover(acao.nomeLegado)
+      : await PONTE_LEGADO[acao.perfil].criarOuAtualizar(acao.nomeLegado, acao.pin);
+    if(!r.ok) falhasPonte.push(r.reason);
+  }
+  if(falhasPonte.length) return { ok: false, id: existente.id, reason: 'Usuário salvo, mas houve falha ao refletir no cadastro legado: ' + falhasPonte.join(' ') + ' Tente salvar novamente para repetir só a parte que falhou.' };
+  return { ok: true, id: existente.id };
+}
+
+document.getElementById('acessosUsuarioModalSalvarBtn').addEventListener('click', async () => {
+  if(acessosUsuarioSalvarInFlight) return;
+  acessosUsuarioSalvarInFlight = true;
+  const btn = document.getElementById('acessosUsuarioModalSalvarBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
+  const dados = {
+    id: acessosUsuarioEditandoId,
+    name: document.getElementById('acessosUsuarioNomeInput').value,
+    profiles: {
+      manager: document.getElementById('acessosPerfilManager').checked,
+      tech: document.getElementById('acessosPerfilTech').checked,
+      oficina: document.getElementById('acessosPerfilOficina').checked,
+      financeiro: document.getElementById('acessosPerfilFinanceiro').checked
+    },
+    pinByProfile: {},
+    isMaster: document.getElementById('acessosMasterInput').checked
+  };
+  document.querySelectorAll('#acessosPinsContainer [data-acessospinperfil]').forEach(inp => { dados.pinByProfile[inp.dataset.acessospinperfil] = inp.value; });
+  const r = await salvarUsuarioAcessos(dados);
+  btn.disabled = false; btn.textContent = lbl; acessosUsuarioSalvarInFlight = false;
+  if(!r.ok){
+    document.getElementById('acessosUsuarioModalErr').textContent = r.reason;
+    // Se o usuário já foi criado em users (falha foi só na ponte legada), o próximo clique em
+    // "Salvar" deve EDITAR esse mesmo registro (retry idempotente), nunca tentar criar de novo.
+    if(r.id) acessosUsuarioEditandoId = r.id;
+    return;
+  }
+  fecharAcessosUsuarioModal();
+  renderAcessosUsuariosList();
+});
 
 document.getElementById('appRetryBtn').addEventListener('click', init);
 window.addEventListener('error', (e) => {
