@@ -14506,8 +14506,10 @@ async function showGaleriaClientPhotosScreen(clientName){
   document.getElementById('galeriaClientPhotosScreen').style.display = '';
   document.getElementById('galeriaClientPhotosTitle').textContent = clientName;
   renderGaleriaClientPhotos();
-  // Galeria por cliente: carrega sob demanda só a mídia externa das atividades DESTE cliente
-  await loadServiceMediaForMany(services.filter(s => s.client === clientName), 'galeria');
+  // Galeria por cliente: carrega sob demanda só a mídia externa das atividades DESTE cliente —
+  // com a mesma correspondência de nome do restante da Galeria (cobre "Preventiva – Nome"),
+  // senão as fotos dessas atividades nunca chegam a ser baixadas e a tela abre incompleta.
+  await loadServiceMediaForMany(services.filter(s => serviceMatchesClient(s.client, clientName)), 'galeria');
   if(galeriaSelectedClient === clientName) renderGaleriaClientPhotos();
 }
 document.getElementById('galeriaBackToClientsBtn').addEventListener('click', showGaleriaClientListScreen);
