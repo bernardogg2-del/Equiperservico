@@ -872,6 +872,10 @@
     /* Sem o respiro do topo a linha sob o título "Oficina" encostava no botão; desce até a mesma
        altura da linha das outras abas. */
     #tabOficinaGestor .tech-day-head{ padding-bottom: 32px; }
+    /* Galeria do gestor (dentro do layout): mesmo tratamento da Oficina/Estoque — título na linha
+       superior, sem passar por baixo do botão flutuante. */
+    #galeriaView.galeria-no-gestor .tech-day-panel{ padding-top: 0; }
+    #galeriaView.galeria-no-gestor .tech-day-head{ padding-right: 150px; padding-bottom: 32px; }
   }
 
   /* ===== Navegação inferior (mobile) — Terceira Entrega =====
@@ -1138,6 +1142,8 @@
 
   /* ===== Busca de clientes finalizados ===== */
   .backup-bar{ display:flex; justify-content:flex-end; gap:8px; margin-bottom: 14px; }
+  /* Galeria aberta pelo gestor: a barra própria (Galeria + Fechar) some — a navegação é o menu do gestor. */
+  #galeriaView.galeria-no-gestor > .header{ display:none; }
   .search-bar{ margin-bottom: 22px; position:relative; }
   .search-input-wrap{ position:relative; }
   .search-input-wrap input{
@@ -2071,9 +2077,6 @@
           <span class="day-toggle-label mono" id="tecnicosAmanhaDate"></span>
           <button type="button" class="day-toggle-arrow" id="sendAgendaNext" aria-label="Próximo dia">›</button>
         </div>
-      </div>
-      <div class="tecnicos-head-actions">
-        <button class="btn-primary" id="sendAgendaBtn">Enviar agenda (gerar imagem)</button>
       </div>
     </div>
 
@@ -10247,37 +10250,6 @@ document.getElementById('confirmAddressSend').addEventListener('click', async ()
   renderAll();
 });
 
-async function generateAgendaImage(){
-  const el = document.getElementById('tecnicosGrid');
-  const btn = document.getElementById('sendAgendaBtn');
-  const originalLabel = btn.textContent;
-  const dayWord = sendAgendaMode === 'hoje' ? 'hoje' : 'amanhã';
-  btn.disabled = true;
-  btn.textContent = 'Gerando imagem...';
-  try{
-    const canvas = await html2canvas(el, { backgroundColor: '#F4F6F8', scale: 2 });
-    canvas.toBlob(async (blob) => {
-      btn.disabled = false;
-      btn.textContent = originalLabel;
-      const file = new File([blob], `agenda-${sendAgendaMode}.png`, { type: 'image/png' });
-      if(navigator.canShare && navigator.canShare({ files: [file] })){
-        try{
-          await navigator.share({ files: [file], title: `Agenda de ${dayWord}`, text: `Agenda de ${dayWord} da equipe` });
-        }catch(e){ /* usuário cancelou o compartilhamento */ }
-      } else {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = 'agenda-amanha.png';
-        link.click();
-      }
-    }, 'image/png');
-  }catch(e){
-    btn.disabled = false;
-    btn.textContent = originalLabel;
-    alert('Não foi possível gerar a imagem. Tente novamente.');
-  }
-}
-
 function renderTecnicosAmanha(){
   const nwd = getSendAgendaDate();
   const tomorrow = nwd.date;
@@ -10523,6 +10495,7 @@ function switchTab(tab){
   if(currentRole === 'manager' && !gestorPodeAbrirAba(tab)){
     tab = gestorPodeAbrirAba(activeTab) ? activeTab : (primeiraAbaPermitida() || activeTab);
   }
+  if(galeriaNoGestor) galeriaFecharNoGestor(); // trocar de aba sai da Galeria (o menu sempre esteve visível)
   activeTab = tab;
   document.getElementById('tabAgenda').style.display = tab === 'agenda' ? '' : 'none';
   document.getElementById('tabTecnicos').style.display = tab === 'tecnicos' ? '' : 'none';
@@ -10734,7 +10707,6 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
     renderClientes();
   }
 });
-document.getElementById('sendAgendaBtn').addEventListener('click', generateAgendaImage);
 
 function renderAll(){
   renderTechList();
@@ -11114,6 +11086,7 @@ function enterManager(name){
   document.getElementById('managerView').style.display = '';
   const sidebarUser = document.getElementById('sidebarUserLabel');
   if(sidebarUser) sidebarUser.textContent = currentManagerName || 'Gestor';
+  if(galeriaNoGestor) galeriaFecharNoGestor(); // sobra de uma sessão anterior que saiu dentro da Galeria
   atualizarVisibilidadeAcessos(); // Etapa 4: só Gestor Master vê o botão de Acessos
   aplicarPermissoesDeAbas();
   if(!gestorTemAlgumaAba()){
@@ -11123,6 +11096,8 @@ function enterManager(name){
   }
   // A aba ativa sobra da sessão anterior (o logout não a reseta): se não for permitida, troca.
   if(!gestorPodeAbrirAba(activeTab)) switchTab(primeiraAbaPermitida());
+  else if(galeriaPrecisaRestaurarAba) switchTab(activeTab); // reexibe a aba (a Galeria tinha escondido todas)
+  galeriaPrecisaRestaurarAba = false;
   renderAll();
   atualizarPermissoesAbasDoServidor(); // assíncrono, não bloqueia a entrada
 }
@@ -12046,6 +12021,8 @@ function logout(){
   currentFinanceiroName = null;
   currentOficinaName = null;
   currentUserId = null; // Etapa 3
+  if(galeriaNoGestor){ galeriaFecharNoGestor(); galeriaPrecisaRestaurarAba = true; } // saiu de dentro da Galeria do gestor
+  galeriaMoverParaOrigem();
   document.getElementById('managerView').style.display = 'none';
   document.getElementById('techView').style.display = 'none';
   document.getElementById('financeiroView').style.display = 'none';
@@ -13909,6 +13886,36 @@ async function init(){
 }
 // ===== Galeria — abertura/fechamento e renderização (interface) =====
 let galeriaReturnViewId = null;
+// Galeria do GESTOR abre DENTRO do layout dele (barra lateral e navegação inferior continuam
+// visíveis): a própria #galeriaView é movida para dentro de .app-content enquanto o gestor a usa.
+// Técnico, Financeiro e Oficina continuam exatamente como eram (tela cheia, no lugar original).
+let galeriaNoGestor = false;
+let galeriaPrecisaRestaurarAba = false; // gestor saiu (logout) de dentro da Galeria: os painéis de aba ficaram escondidos
+const galeriaOrigem = { pai: null, prox: null };
+const PAINEIS_DE_ABA_GESTOR = ['tabAgenda','tabTecnicos','tabManutencoes','tabOS','tabClientes','tabAcessos','tabPainel','tabOficinaGestor','tabEstoque'];
+function galeriaMoverParaGestor(){
+  const g = document.getElementById('galeriaView');
+  if(!galeriaOrigem.pai){ galeriaOrigem.pai = g.parentNode; galeriaOrigem.prox = g.nextSibling; }
+  const caixa = document.querySelector('#managerView .app-content');
+  if(caixa && g.parentNode !== caixa) caixa.appendChild(g);
+  g.classList.add('galeria-no-gestor');
+}
+function galeriaMoverParaOrigem(){
+  const g = document.getElementById('galeriaView');
+  if(galeriaOrigem.pai && g.parentNode !== galeriaOrigem.pai) galeriaOrigem.pai.insertBefore(g, galeriaOrigem.prox);
+  g.classList.remove('galeria-no-gestor');
+}
+function galeriaMarcarMenuAtivo(ativo){
+  document.querySelectorAll('#managerView [id^="sidebarBtn"], #managerView [id^="bottomNavBtn"], #managerView [id^="tabBtn"]').forEach(el => el.classList.remove('active'));
+  if(ativo) ['sidebarBtnGaleria', 'bottomNavBtnGaleria', 'bottomNavBtnMais'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.add('active'); });
+}
+// Fecha a Galeria do gestor SEM mexer nas abas (quem chama decide o que mostrar depois).
+function galeriaFecharNoGestor(){
+  document.getElementById('galeriaView').style.display = 'none';
+  galeriaNoGestor = false;
+  galeriaReturnViewId = null;
+  ['sidebarBtnGaleria', 'bottomNavBtnGaleria'].forEach(id => { const el = document.getElementById(id); if(el) el.classList.remove('active'); });
+}
 let galeriaSelectedClient = null;
 let galeriaClientSearch = '';
 let galeriaAddPhotoInFlight = false;
@@ -13916,7 +13923,17 @@ let galeriaAddPhotoInFlight = false;
 async function openGaleria(fromViewId){
   if(currentRole === 'manager' && !gestorPodeAbrirAba('galeria')) return; // permissão de aba (Gestor comum)
   galeriaReturnViewId = fromViewId;
-  document.getElementById(fromViewId).style.display = 'none';
+  if(fromViewId === 'managerView'){
+    // Gestor: o menu NÃO some. Esconde só os painéis de aba e mostra a Galeria no lugar deles.
+    galeriaMoverParaGestor();
+    galeriaNoGestor = true;
+    PAINEIS_DE_ABA_GESTOR.forEach(id => { const el = document.getElementById(id); if(el) el.style.display = 'none'; });
+    galeriaMarcarMenuAtivo(true);
+  } else {
+    galeriaMoverParaOrigem();
+    galeriaNoGestor = false;
+    document.getElementById(fromViewId).style.display = 'none';
+  }
   document.getElementById('galeriaView').style.display = '';
   galeriaSelectedClient = null;
   galeriaClientSearch = '';
@@ -13933,6 +13950,7 @@ async function openGaleria(fromViewId){
 }
 function closeGaleria(){
   document.getElementById('galeriaView').style.display = 'none';
+  if(galeriaNoGestor){ galeriaFecharNoGestor(); switchTab(activeTab); return; } // gestor: o menu nunca saiu; volta à aba de antes
   if(galeriaReturnViewId) document.getElementById(galeriaReturnViewId).style.display = '';
   galeriaReturnViewId = null;
 }
