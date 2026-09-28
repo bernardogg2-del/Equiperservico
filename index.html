@@ -6585,7 +6585,19 @@ function galeriaVisibleClients(){
   } else if(currentRole === 'oficina'){
     oficinaEquipamentos.forEach(eq => { if(eq.client) names.add(eq.client); });
   }
-  return Array.from(names).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  return Array.from(names).filter(galeriaClientTemFotoConhecida).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+// "Tem foto" sem precisar baixar mídia: fotos adicionadas direto na Galeria já ficam totalmente
+// carregadas (galleryPhotos), atividade com modelo antigo (inline) já tem o array em memória —
+// só o modelo novo (mediaExternal) depende do sinalizador svc.hasPhotos, que só existe depois que
+// a atividade foi aberta ao menos uma vez após esta melhoria (ver loadServiceMedia).
+function galeriaClientTemFotoConhecida(clientName){
+  if(galleryPhotos.some(p => p.client === clientName)) return true;
+  return services.some(s => {
+    if(s.client !== clientName) return false;
+    if(serviceMediaModel(s) === 'inline') return Array.isArray(s.photos) && s.photos.length > 0;
+    return s.hasPhotos === true;
+  });
 }
 
 // Fotos das atividades (services[].photos) do cliente — dupla nova (technicians[]) já é um único
@@ -10515,12 +10527,37 @@ function osAtualizarOpcoesTecnico(pending){
   sel.value = atual;
 }
 
+// Remove uma atividade da fila de "Cadastros e OS" sem apagar seu histórico — mesmo espírito do
+// "Cadastro/OS realizado" (svc.pairId cobre a dupla no formato antigo junto). Rollback local se a
+// gravação falhar, mesmo padrão já usado em todo o app.
+async function excluirDaListaOS(id){
+  const svc = services.find(x => x.id === id);
+  if(!svc) return;
+  const targets = svc.pairId ? services.filter(x => x.pairId === svc.pairId) : [svc];
+  const prev = targets.map(t => t.osExcluido);
+  targets.forEach(t => {
+    t.osExcluido = true;
+    t.osExcluidoBy = currentManagerName || null;
+    t.osExcluidoAt = new Date().toISOString();
+  });
+  const ok = await saveServices();
+  if(!ok){
+    targets.forEach((t, i) => {
+      if(prev[i] === undefined){ delete t.osExcluido; delete t.osExcluidoBy; delete t.osExcluidoAt; }
+      else t.osExcluido = prev[i];
+    });
+    alert('⚠️ Não foi possível excluir. Verifique sua internet e tente novamente.');
+    return;
+  }
+  renderOS();
+}
+
 function renderOS(){
   const box = document.getElementById('osList');
   const badge = document.getElementById('osBadge');
   if(!box) return;
 
-  const pending = groupPaired(services.filter(s => s.status === 'concluido' && !s.processedForOS))
+  const pending = groupPaired(services.filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido))
     .sort((a,b) => {
       const ak = (a.checkOut ? a.date + ' ' + a.checkOut : a.date);
       const bk = (b.checkOut ? b.date + ' ' + b.checkOut : b.date);
@@ -10618,7 +10655,8 @@ function renderOS(){
             <label>Número de OS</label>
             <input type="text" data-osnumero="${s.id}" value="${escapeHtml(osNumeroRascunho[s.id] !== undefined ? osNumeroRascunho[s.id] : (s.numeroOS || ''))}" placeholder="Digite o número da ordem de serviço">
           </div>
-          <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;">
+          <div class="modal-actions" style="justify-content:space-between; margin-top:12px;">
+            <button type="button" class="btn-ghost" data-osexcluir="${s.id}" style="color:var(--red);">Excluir</button>
             <button type="button" class="btn-primary" data-osdone="${s.id}">Cadastro/OS realizado</button>
           </div>
         </div>
@@ -10640,6 +10678,18 @@ function renderOS(){
       renderOS();
     }));
 
+    box.querySelectorAll('[data-osexcluir]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = Number(e.target.dataset.osexcluir);
+        // Confirmação dupla: dois diálogos em sequência — o segundo só aparece se o primeiro for
+        // confirmado. Reaproveita o mesmo customConfirm já usado em todo o app.
+        customConfirm('Excluir esta atividade da lista de Cadastros e OS? O histórico da atividade é mantido — ela só deixa de aparecer nesta fila.', () => {
+          customConfirm('Tem certeza? Esta ação não pode ser desfeita.', async () => {
+            await excluirDaListaOS(id);
+          }, 'Sim, excluir definitivamente');
+        }, 'Excluir');
+      });
+    });
     box.querySelectorAll('[data-osdone]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const id = Number(e.target.dataset.osdone);
@@ -13264,6 +13314,11 @@ async function loadServiceMedia(id, motivo){
       SERVICE_MEDIA_FIELDS.forEach(f => { c[f] = Array.isArray(raw[f]) ? raw[f].slice() : (raw[f] && typeof raw[f] === 'object' ? Object.values(raw[f]) : []); });
       serviceMediaSnapshot[k] = {}; SERVICE_MEDIA_FIELDS.forEach(f => { serviceMediaSnapshot[k][f] = c[f].length ? JSON.stringify(c[f]) : undefined; });
       c.loaded = true;
+      // Backfill pontual do sinalizador da Galeria: só na primeira vez que esta atividade é
+      // aberta depois desta melhoria (registro antigo pode nunca ter sido marcado). Gravação
+      // silenciosa e sem bloquear a tela — se falhar, tenta de novo na próxima abertura.
+      const temFotoAgora = c.photos.length > 0;
+      if(svc.hasPhotos !== temFotoAgora){ svc.hasPhotos = temFotoAgora; saveServices(true); }
       perfMediaEvent({ serviceId: id, campo: motivo || '*', cache: 'miss', ms: performance.now() - t0, kb: perfApproxKB(raw) });
     }catch(e){
       console.error('Falha ao carregar mídia da atividade ' + k + ':', e);
@@ -13740,6 +13795,10 @@ async function loadServiceMediaForMany(list, motivo){
 // servicesMedia/<id>/<campo> (saveServiceMediaDiff) e marca svc.mediaExternal no mesmo update().
 async function setServiceMedia(svc, field, arr){
   arr = Array.isArray(arr) ? arr.slice() : [];
+  // Sinalizador leve pra Galeria (só filtro "tem foto salva", sem contagem): atualizado aqui,
+  // no único funil de escrita das fotos do técnico, nos dois modelos — nunca precisa baixar a
+  // mídia de volta só pra saber se um cliente tem foto.
+  if(field === 'photos') svc.hasPhotos = arr.length > 0;
   if(serviceMediaModel(svc) === 'inline'){ svc[field] = arr; return { ok: true, model: 'inline' }; }
   SERVICE_MEDIA_FIELDS.forEach(f => { if(Array.isArray(svc[f]) && svc[f].length === 0) delete svc[f]; }); // sem array vazio inline "fantasma"
   if(svc.mediaExternal) await loadServiceMedia(svc.id, field); // nunca sobrescreve o que ainda não foi lido
