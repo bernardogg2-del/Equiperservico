@@ -1077,8 +1077,23 @@
   .estoque-row-qtd div{ text-align:center; min-width:44px; }
   .estoque-row-qtd .lbl{ font-size:10.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
   .estoque-row-qtd .val{ font-size:14px; font-weight:700; font-family:var(--mono); }
-  .estoque-row-actions{ display:flex; gap:6px; align-items:center; flex:0 0 auto; margin-left:auto; }
-  @media (max-width:640px){ .estoque-row-qtd{ order:3; width:100%; justify-content:flex-start; gap:20px; margin-top:6px; } .estoque-row-actions{ order:4; width:100%; margin-left:0; margin-top:6px; } }
+  /* Selo de status + ações agrupados num único bloco (melhoria: padronizar em 1 linha) — assim os
+     dois nunca se separam: ou cabem juntos ao lado dos números, ou os dois quebram juntos pra
+     linha de baixo, do mesmo jeito pra "Reposição necessária" e pra "Estoque normal". */
+  .estoque-row-status{ display:flex; align-items:center; gap:10px; flex:0 0 auto; margin-left:auto; }
+  .estoque-row-actions{ display:flex; gap:6px; align-items:center; flex:0 0 auto; }
+  @media (max-width:640px){
+    .estoque-row-qtd{ order:3; width:100%; justify-content:flex-start; gap:20px; margin-top:6px; }
+    .estoque-row-status{ order:4; width:100%; margin-left:0; margin-top:6px; justify-content:space-between; }
+  }
+  /* Aviso de estoque baixo no topo da lista de Materiais — chamativo (vermelho sólido), some
+     sozinho quando não há mais nenhum item em Reposição/Atenção. */
+  .estoque-alerta-baixo{
+    margin: 0 20px 16px; padding: 14px 16px; border-radius: var(--radius-lg, var(--radius));
+    background: var(--red); color: #fff; display:flex; align-items:center; gap:10px;
+    font-weight:700; font-size:13.5px; box-shadow: var(--shadow-sm);
+  }
+  .estoque-alerta-baixo::before{ content:'⚠'; font-size:16px; line-height:1; flex:none; }
   /* Controle [ − ][ input ][ + ] — padrão único das 3 telas de operação de quantidade
      (Ajuste/Retirada/Devolução). Puramente visual/UI; nenhuma regra de estoque aqui. */
   .estoque-qty-stepper{ display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:var(--radius-sm); overflow:hidden; flex:none; }
@@ -1686,6 +1701,7 @@
 
     <!-- ===== MATERIAIS ===== -->
     <div id="estoqueTabMateriais">
+      <div id="estoqueAlertaBaixo" class="estoque-alerta-baixo" style="display:none;"></div>
       <div class="tech-day-head"><div class="tech-day-title">Materiais<span class="access-count mono" id="estoqueItemCount"></span></div></div>
       <div style="padding:0 20px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <div class="search-input-wrap" style="flex:1; min-width:200px;"><input type="text" id="estoqueSearchInput" placeholder="Buscar por material ou código/SKU"></div>
@@ -1760,6 +1776,11 @@
     <div id="estoqueTabAjuste" style="display:none;">
       <div class="tech-day-head"><div class="tech-day-title">Ajuste de estoque</div></div>
       <div style="padding:0 20px 16px; color:var(--text-dim); font-size:12.5px;">Corrija o saldo físico de um material e registre o motivo do ajuste.</div>
+
+      <div style="padding:0 20px 16px;">
+        <button type="button" class="btn-admin-action" id="estoqueUltimaCompraBtn" style="display:none;">Adicionar última compra ao estoque</button>
+        <div class="sub" id="estoqueUltimaCompraInfo" style="color:var(--text-dim); font-size:12px; margin-top:6px;"></div>
+      </div>
 
       <div style="padding:0 20px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
         <div class="search-input-wrap" style="flex:1; min-width:200px;"><input type="text" id="estoqueAjusteSearch" placeholder="Buscar material ou código..."></div>
@@ -1868,6 +1889,37 @@
     <div class="modal-actions estoque-confirm-actions">
       <button type="button" class="btn-ghost" id="estoqueRetiradaConfirmCancelBtn">Cancelar</button>
       <button type="button" class="btn-primary" id="estoqueRetiradaConfirmBtn">Enviar retirada</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Adicionar última compra ao estoque (Ajuste de estoque): conferência/edição pontual dos itens
+     do último relatório de compra gerado, antes de dar entrada. Mesmo padrão de dois passos já
+     usado em "Registrar devolução" — conferência aqui, confirmação dupla no modal seguinte. -->
+<div class="overlay" id="estoqueUltimaCompraOverlay">
+  <div class="modal" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+    <h3>Adicionar última compra ao estoque</h3>
+    <p class="modal-sub" id="estoqueUltimaCompraSub"></p>
+    <div id="estoqueUltimaCompraLista"></div>
+    <div class="field-error" id="estoqueUltimaCompraErr"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="estoqueUltimaCompraCancelBtn">Cancelar</button>
+      <button type="button" class="btn-primary" id="estoqueUltimaCompraEnviarBtn">Dar entrada no estoque</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmação da entrada (envio único + confirmação dupla via customConfirm) -->
+<div class="overlay" id="estoqueUltimaCompraConfirmOverlay">
+  <div class="modal estoque-confirm-modal">
+    <h3>Confirmar entrada no estoque</h3>
+    <p class="modal-sub" id="estoqueUltimaCompraConfirmQuem"></p>
+    <div id="estoqueUltimaCompraConfirmResumo" class="estoque-confirm-lista"></div>
+    <div class="field-error" id="estoqueUltimaCompraConfirmErr"></div>
+    <div class="modal-actions estoque-confirm-actions">
+      <button type="button" class="btn-ghost" id="estoqueUltimaCompraConfirmCancelBtn">Cancelar</button>
+      <button type="button" class="btn-primary" id="estoqueUltimaCompraConfirmBtn">Confirmar entrada</button>
     </div>
   </div>
 </div>
@@ -7194,6 +7246,26 @@ function quantidadeParaComprar(it){
   return Math.max(0, mx - q);
 }
 function relatorioCompraDisponivel(){ return estoqueMateriaisAtivos().some(it => estoqueStatusDoMaterial(it) !== 'NORMAL'); }
+// Itens do relatório com sugestão de compra > 0 — é isso que "Adicionar última compra ao estoque"
+// (em Ajuste de estoque) usa como ponto de partida. Guarda o id do material pra dar entrada
+// depois, mesmo que o nome/categoria mude entretanto.
+function relatorioCompraItensParaEntrada(){
+  return estoqueMateriaisAtivos().map(it => ({
+    estoqueItemId: it.id, name: it.name, unit: it.unit || '', category: it.category || '', comprar: quantidadeParaComprar(it)
+  })).filter(x => x.comprar > 0);
+}
+// Salva um retrato do relatório recém-gerado no Firebase (nó único, sobrescrito a cada geração) —
+// pra poder ser aberto depois em outro aparelho/sessão pelo botão "Adicionar última compra ao
+// estoque". Nunca bloqueia nem atrapalha a geração do PDF/Excel em si (falha é só logada).
+async function salvarUltimoRelatorioCompra(){
+  try{
+    const itens = relatorioCompraItensParaEntrada();
+    if(!itens.length) return;
+    await dbSetRaw('estoqueUltimoRelatorioCompra', { itens, generatedAt: new Date().toISOString(), generatedBy: currentActingName() });
+    ultimoRelatorioCompraCache = { itens, generatedAt: new Date().toISOString(), generatedBy: currentActingName() };
+    if(typeof atualizarBotaoUltimaCompra === 'function') atualizarBotaoUltimaCompra();
+  }catch(e){ console.error('Falha ao salvar o retrato do último relatório de compra', e); }
+}
 // Nome de arquivo compartilhado pelas duas exportações (melhoria 5) — mesmo padrão AAAA-MM-DD já
 // usado em outras partes do app pra nomes de arquivo seguros/consistentes.
 function relatorioCompraFileNameBase(){
@@ -7208,7 +7280,7 @@ function relatorioCompraAgrupado(){
   estoqueMateriaisAtivos().forEach(it => { const cn = it.category || 'Sem categoria'; (cats[cn] = cats[cn] || []).push(it); });
   return Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR')).map(cn => ({
     categoria: cn,
-    itens: cats[cn].slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR')).map(it => ({ nome: it.name, comprar: quantidadeParaComprar(it) }))
+    itens: cats[cn].slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR')).map(it => ({ nome: it.name, medida: it.unit || '', comprar: quantidadeParaComprar(it) }))
   }));
 }
 function buildRelatorioCompraHtml(){
@@ -7222,10 +7294,10 @@ function buildRelatorioCompraHtml(){
   // numéricos que esta melhoria pede pra remover.
   catNames.forEach(cn => {
     const list = cats[cn].slice().sort((a, b) => (a.name + a.unit).localeCompare(b.name + b.unit, 'pt-BR'));
-    rows += `<tr class="cat"><td colspan="2">${escapeHtml(cn)}</td></tr>`;
+    rows += `<tr class="cat"><td colspan="3">${escapeHtml(cn)}</td></tr>`;
     list.forEach(it => {
       const st = estoqueStatusDoMaterial(it), buy = quantidadeParaComprar(it); total += buy;
-      rows += `<tr class="${st !== 'NORMAL' ? 'alerta' : ''}"><td>${escapeHtml(it.name)}</td><td class="n"><b>${buy}</b></td></tr>`;
+      rows += `<tr class="${st !== 'NORMAL' ? 'alerta' : ''}"><td>${escapeHtml(it.name)}</td><td>${escapeHtml(it.unit || '—')}</td><td class="n"><b>${buy}</b></td></tr>`;
     });
   });
   const when = new Date().toLocaleString('pt-BR');
@@ -7235,8 +7307,8 @@ table{width:100%;border-collapse:collapse;font-size:12px;} th,td{border-bottom:1
 td.n,th.n{text-align:right;} tr.cat td{background:#141416;color:#fff;font-weight:700;letter-spacing:.3px;} tr.alerta td{background:#fdecec;} tr.alerta td:first-child{color:#D91A22;font-weight:700;}
 tfoot td{font-weight:700;border-top:2px solid #141416;} .legend{font-size:11px;color:#666;margin-top:10px;} @media print{body{margin:10mm;}}</style></head><body>
 <h1>Relatório de Compra</h1><div class="sub">Equiper · gerado em ${when}</div>
-<table><thead><tr><th>Descrição do item</th><th class="n">Quantidade a comprar</th></tr></thead>
-<tbody>${rows}</tbody><tfoot><tr><td>Total geral a comprar</td><td class="n">${total}</td></tr></tfoot></table>
+<table><thead><tr><th>Descrição do item</th><th>Medida</th><th class="n">Quantidade a comprar</th></tr></thead>
+<tbody>${rows}</tbody><tfoot><tr><td colspan="2">Total geral a comprar</td><td class="n">${total}</td></tr></tfoot></table>
 <div class="legend">Linhas destacadas em vermelho: materiais no mínimo ou abaixo (dispararam reposição).</div>
 <scr'+'ipt>window.addEventListener('load', () => { setTimeout(() => window.print(), 300); });<\/scr'+'ipt></body></html>`;
 }
@@ -7245,6 +7317,7 @@ function abrirRelatorioCompraPdf(){
   const w = window.open('', '_blank');
   if(!w){ alert('O navegador bloqueou a abertura do relatório. Permita pop-ups para este site e tente de novo.'); return null; }
   w.document.open(); w.document.write(html); w.document.close();
+  salvarUltimoRelatorioCompra();
   return w;
 }
 
@@ -14484,6 +14557,7 @@ function wireEstoqueQtyStepper(container, onChange){
 function renderEstoqueAjuste(){
   const box = document.getElementById('estoqueAjusteList');
   if(!box) return;
+  atualizarBotaoUltimaCompra();
   const itens = estoqueAjustesStore.items.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   document.getElementById('estoqueAjusteCount').textContent = `(${itens.length})`;
   const fmt = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
@@ -14623,6 +14697,142 @@ async function confirmarAjusteLinha(id){
   delete estoqueAjusteRowState[id];
   renderEstoqueAjuste();
 }
+
+
+// ===== Adicionar última compra ao estoque (Ajuste de estoque) =====
+// Reaproveita applyEstoqueMovimento (type: 'entrada') e o mesmo padrão de dois passos já usado em
+// "Registrar devolução": conferência local → resumo → customConfirm (confirmação dupla) → grava.
+let ultimoRelatorioCompraCache = null; // { itens:[{estoqueItemId,name,unit,category,comprar}], generatedAt, generatedBy }
+async function carregarUltimoRelatorioCompra(){
+  try{ const r = await dbGetRaw('estoqueUltimoRelatorioCompra'); ultimoRelatorioCompraCache = r.value || null; }
+  catch(e){ ultimoRelatorioCompraCache = null; }
+  atualizarBotaoUltimaCompra();
+}
+function atualizarBotaoUltimaCompra(){
+  const btn = document.getElementById('estoqueUltimaCompraBtn');
+  const info = document.getElementById('estoqueUltimaCompraInfo');
+  if(!btn || !info) return;
+  const temItens = !!(ultimoRelatorioCompraCache && Array.isArray(ultimoRelatorioCompraCache.itens) && ultimoRelatorioCompraCache.itens.length);
+  btn.style.display = (canEditEstoque() && temItens) ? '' : 'none';
+  if(temItens){
+    const d = ultimoRelatorioCompraCache.generatedAt ? new Date(ultimoRelatorioCompraCache.generatedAt).toLocaleString('pt-BR') : '—';
+    info.textContent = `Último relatório de compra: ${d}${ultimoRelatorioCompraCache.generatedBy ? ' · ' + ultimoRelatorioCompraCache.generatedBy : ''}.`;
+  } else info.textContent = '';
+}
+
+let estoqueUltimaCompraRowState = {}; // estoqueItemId -> string digitada (quantidade a dar entrada)
+function abrirUltimaCompraModal(){
+  if(!ultimoRelatorioCompraCache || !Array.isArray(ultimoRelatorioCompraCache.itens) || !ultimoRelatorioCompraCache.itens.length) return;
+  estoqueUltimaCompraRowState = {};
+  ultimoRelatorioCompraCache.itens.forEach(it => { estoqueUltimaCompraRowState[it.estoqueItemId] = String(it.comprar); });
+  document.getElementById('estoqueUltimaCompraSub').textContent = ultimoRelatorioCompraCache.generatedAt
+    ? `Relatório gerado em ${new Date(ultimoRelatorioCompraCache.generatedAt).toLocaleString('pt-BR')}${ultimoRelatorioCompraCache.generatedBy ? ' por ' + ultimoRelatorioCompraCache.generatedBy : ''}. Ajuste as quantidades se precisar antes de dar entrada.`
+    : 'Ajuste as quantidades se precisar antes de dar entrada.';
+  document.getElementById('estoqueUltimaCompraErr').textContent = '';
+  renderUltimaCompraLista();
+  document.getElementById('estoqueUltimaCompraOverlay').classList.add('open');
+}
+function renderUltimaCompraLista(){
+  const box = document.getElementById('estoqueUltimaCompraLista'); if(!box) return;
+  const itens = (ultimoRelatorioCompraCache && ultimoRelatorioCompraCache.itens) || [];
+  box.innerHTML = itens.map(it => {
+    const atual = estoqueItens.find(x => x.id === it.estoqueItemId);
+    const ainda = !!atual;
+    const val = estoqueUltimaCompraRowState[it.estoqueItemId] != null ? estoqueUltimaCompraRowState[it.estoqueItemId] : String(it.comprar);
+    return `<div class="estoque-op-row compacta" data-ultimacompra="${it.estoqueItemId}">
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>${ainda ? 'Atual: ' + atual.quantity : 'Material não encontrado (pode ter sido excluído)'}</span></div>
+      ${ainda ? `<div class="linha2">
+        <div class="estoque-qty-stepper">
+          <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
+          <input type="number" class="estoque-qty-input" min="0" step="any" data-ultimacompraqtd="${it.estoqueItemId}" data-qtybase="0" value="${escapeHtml(val)}">
+          <button type="button" class="estoque-qty-btn" data-qtystep="1">+</button>
+        </div>
+        <span class="apos" data-ultimacompranovolabel="${it.estoqueItemId}"></span>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-ultimacompra]').forEach(row => {
+    const id = row.dataset.ultimacompra;
+    if(!row.querySelector('[data-ultimacompraqtd]')) return; // material não encontrado — sem stepper
+    wireEstoqueQtyStepper(row, () => estoqueUltimaCompraAtualizarLinha(id));
+    estoqueUltimaCompraAtualizarLinha(id);
+  });
+}
+function estoqueUltimaCompraAtualizarLinha(idStr){
+  const it = estoqueItens.find(x => String(x.id) === String(idStr));
+  const inp = document.querySelector(`[data-ultimacompraqtd="${idStr}"]`);
+  if(!it || !inp) return;
+  const v = inp.value.trim();
+  if(v === '') delete estoqueUltimaCompraRowState[idStr]; else estoqueUltimaCompraRowState[idStr] = v;
+  const qtd = Number(v);
+  const atual = Number(it.quantity) || 0;
+  const novoLabel = document.querySelector(`[data-ultimacompranovolabel="${idStr}"]`);
+  if(novoLabel) novoLabel.innerHTML = `Novo saldo: <b>${(!Number.isFinite(qtd) || qtd <= 0) ? atual : atual + qtd}</b>`;
+}
+document.getElementById('estoqueUltimaCompraBtn').addEventListener('click', abrirUltimaCompraModal);
+document.getElementById('estoqueUltimaCompraCancelBtn').addEventListener('click', () => document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open'));
+document.getElementById('estoqueUltimaCompraOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open'); });
+
+// Coleta só os itens com quantidade > 0 e que ainda existem no cadastro (mesmo espírito de
+// montarPedidoDevolucao/montarPedidoRetirada).
+function montarPedidoUltimaCompra(){
+  const pedido = [], erros = [];
+  Object.keys(estoqueUltimaCompraRowState).forEach(idStr => {
+    const it = estoqueItens.find(x => String(x.id) === String(idStr)); if(!it) return; // já sinalizado na lista, não bloqueia o restante
+    const n = Number(estoqueUltimaCompraRowState[idStr]);
+    if(n <= 0 || !Number.isFinite(n)) return; // zero/negativo = item deixado de fora, não é erro
+    pedido.push({ estoqueItemId: it.id, name: it.name, unit: it.unit, quantity: n, atual: Number(it.quantity) || 0 });
+  });
+  return { pedido, erros };
+}
+document.getElementById('estoqueUltimaCompraEnviarBtn').addEventListener('click', () => {
+  const errBox = document.getElementById('estoqueUltimaCompraErr'); errBox.textContent = '';
+  const { pedido } = montarPedidoUltimaCompra();
+  if(!pedido.length){ errBox.textContent = 'Nenhum item com quantidade maior que zero para dar entrada.'; return; }
+  document.getElementById('estoqueUltimaCompraConfirmQuem').textContent = 'Responsável: ' + (currentActingName() || '—');
+  document.getElementById('estoqueUltimaCompraConfirmResumo').innerHTML = pedido.map(p =>
+    `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${p.quantity} un.</div><div class="apos">Novo saldo: ${p.atual + p.quantity}</div></div>`
+  ).join('');
+  document.getElementById('estoqueUltimaCompraConfirmErr').textContent = '';
+  document.getElementById('estoqueUltimaCompraConfirmOverlay').classList.add('open');
+});
+document.getElementById('estoqueUltimaCompraConfirmCancelBtn').addEventListener('click', () => document.getElementById('estoqueUltimaCompraConfirmOverlay').classList.remove('open'));
+
+let estoqueUltimaCompraEnvioInFlight = false;
+document.getElementById('estoqueUltimaCompraConfirmBtn').addEventListener('click', () => {
+  if(estoqueUltimaCompraEnvioInFlight || !canEditEstoque()) return;
+  const errBox = document.getElementById('estoqueUltimaCompraConfirmErr'); errBox.textContent = '';
+  const { pedido } = montarPedidoUltimaCompra();
+  if(!pedido.length){ errBox.textContent = 'Nenhum item.'; return; }
+  // Confirmação dupla: este clique só monta o resumo; a gravação em si só roda se a pessoa
+  // confirmar de novo no diálogo nativo do app (customConfirm, já usado em todo o Estoque).
+  customConfirm('Confirma a entrada destes itens no estoque? Esta ação não pode ser desfeita.', async () => {
+    if(estoqueUltimaCompraEnvioInFlight) return;
+    estoqueUltimaCompraEnvioInFlight = true;
+    const btn = document.getElementById('estoqueUltimaCompraConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
+    const obs = ultimoRelatorioCompraCache && ultimoRelatorioCompraCache.generatedAt
+      ? `Entrada da compra do relatório de ${new Date(ultimoRelatorioCompraCache.generatedAt).toLocaleDateString('pt-BR')}`
+      : 'Entrada da última compra';
+    const falhas = [];
+    for(const p of pedido){
+      const r = await applyEstoqueMovimento(p.estoqueItemId, 'entrada', p.quantity, obs);
+      if(r.ok) delete estoqueUltimaCompraRowState[p.estoqueItemId];
+      else falhas.push(`${p.name}${p.unit ? ' — ' + p.unit : ''}: ${r.reason === 'offline' || r.reason === 'falha de gravação' ? 'sem conexão' : r.reason}`);
+    }
+    btn.disabled = false; btn.textContent = lbl; estoqueUltimaCompraEnvioInFlight = false;
+    if(falhas.length){
+      const okN = pedido.length - falhas.length;
+      errBox.textContent = (okN ? `${okN} de ${pedido.length} item(ns) registrado(s). ` : '') + `Não foi possível registrar: ${falhas.join('; ')}. Esses itens continuam na lista — verifique sua internet e tente novamente.`;
+      renderUltimaCompraLista();
+      return;
+    }
+    document.getElementById('estoqueUltimaCompraConfirmOverlay').classList.remove('open');
+    document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open');
+    renderEstoqueAjusteMateriais();
+    renderEstoqueList();
+    alert('Entrada registrada com sucesso.');
+  }, 'Confirmar entrada');
+});
 
 // ===== Registrar devolução — Gestor/Técnico/Oficina (etapa: devolução funcional) =====
 // Reaproveita applyEstoqueMovimento (que já usa atomicSetEstoqueQuantity) com type: 'devolucao',
@@ -14779,6 +14989,18 @@ function renderEstoqueList(){
   if(q) items = items.filter(it => (it.name || '').toLowerCase().includes(q) || (it.sku || '').toLowerCase().includes(q) || (it.unit || '').toLowerCase().includes(q));
   items = items.slice().sort((a, b) => ((a.category || '') + a.name + a.unit).localeCompare((b.category || '') + b.name + b.unit, 'pt-BR'));
   document.getElementById('estoqueItemCount').textContent = `(${estoqueMateriaisAtivos().length})`;
+  const alertaBox = document.getElementById('estoqueAlertaBaixo');
+  if(alertaBox){
+    const baixos = estoqueMateriaisAtivos().filter(it => estoqueStatusDoMaterial(it) !== 'NORMAL').length;
+    if(baixos > 0){
+      alertaBox.style.display = '';
+      alertaBox.textContent = baixos === 1
+        ? '1 item com estoque baixo — reposição necessária.'
+        : `${baixos} itens com estoque baixo — reposição necessária.`;
+    } else {
+      alertaBox.style.display = 'none';
+    }
+  }
   box.innerHTML = items.length ? items.map(it => {
     const st = estoqueStatusDoMaterial(it);
     const tag = st === 'REPOSIÇÃO' ? '<span class="oe-badge oe-red">Reposição necessária</span>' : st === 'ATENÇÃO' ? '<span class="oe-badge oe-yellow">Atenção</span>' : '<span class="oe-badge oe-green">Estoque normal</span>';
@@ -14792,10 +15014,12 @@ function renderEstoqueList(){
         <div><div class="lbl">Mín</div><div class="val">${it.minimumQuantity}</div></div>
         <div><div class="lbl">Máx</div><div class="val">${it.maximumQuantity != null ? it.maximumQuantity : '—'}</div></div>
       </div>
-      ${tag}
-      <div class="estoque-row-actions">
-        ${canEdit ? `<button type="button" class="btn-ghost" data-estoqueeditar="${it.id}">Editar</button>` : ''}
-        ${canEdit ? `<button type="button" class="btn-ghost" data-estoqueexcluir="${it.id}" title="Excluir material" style="padding:7px 10px;">⋮</button>` : ''}
+      <div class="estoque-row-status">
+        ${tag}
+        <div class="estoque-row-actions">
+          ${canEdit ? `<button type="button" class="btn-ghost" data-estoqueeditar="${it.id}">Editar</button>` : ''}
+          ${canEdit ? `<button type="button" class="btn-ghost" data-estoqueexcluir="${it.id}" title="Excluir material" style="padding:7px 10px;">⋮</button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('') : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
@@ -15108,16 +15332,17 @@ async function exportarRelatorioCompraExcel(){
     // Só leitura: mesma fonte de dados/cálculo já usada pelo relatório (nenhuma consulta Firebase
     // nova, nenhuma escrita).
     const grupos = relatorioCompraAgrupado();
-    const aoa = [['Descrição do item', 'Quantidade a comprar']];
+    const aoa = [['Descrição do item', 'Medida', 'Quantidade a comprar']];
     grupos.forEach(g => {
       aoa.push([g.categoria.toUpperCase()]);
-      g.itens.forEach(it => aoa.push([it.nome, it.comprar]));
+      g.itens.forEach(it => aoa.push([it.nome, it.medida || '—', it.comprar]));
     });
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{ wch: 40 }, { wch: 20 }];
+    ws['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Relatório de compra');
     XLSX.writeFile(wb, relatorioCompraFileNameBase() + '.xlsx');
+    salvarUltimoRelatorioCompra();
   }catch(e){
     errBox.textContent = 'Não foi possível gerar o Excel. Verifique sua internet e tente novamente.';
   }finally{
@@ -15379,7 +15604,8 @@ async function ensureEstoqueLoaded(){
     estoqueAjustesStore.load(),
     estoqueRetiradasStore.load(),
     oficinaPecasCatalogoStore.load(),
-    oficinaEquipCatalogoStore.load()
+    oficinaEquipCatalogoStore.load(),
+    carregarUltimoRelatorioCompra()
   ]);
   popularEquipNomesDatalist();
   await seedEstoqueInicial(); // só agora — depende de estoqueItens e estoqueCategoriasStore, já prontos acima
