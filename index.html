@@ -850,6 +850,28 @@
     .header{ justify-content:flex-end; }
     .header .brand{ display:none; }
     #managerLogoutBtn{ display:none; }
+    /* Título da aba na linha superior: a barra do topo (só o botão "+ Agendar serviço" neste
+       layout) deixa de ocupar uma linha própria e passa a flutuar no canto direito, e o título de
+       cada aba (que já é o primeiro bloco do conteúdo) sobe para a mesma linha. Só o gestor usa
+       .app-content; técnico/oficina/financeiro têm outro cabeçalho e não mudam. No celular
+       (< 760px) nada disto vale: o topo continua com logo + botões e o título logo abaixo. */
+    .app-content{ position: relative; }
+    .app-content > .header{
+      position: absolute; top: 0; right: 0; z-index: 6;
+      margin: 0; padding: 0; border-bottom: 0;
+    }
+    /* Reserva o espaço do botão flutuante para o texto do título nunca ficar por baixo dele. */
+    .app-content .tecnicos-head,
+    #tabOficinaGestor .tech-day-head,
+    #tabEstoque .tech-day-head{ padding-right: 150px; }
+    /* Oficina e Estoque usam um painel centralizado de 720px com 26px de respiro no topo: só tira
+       esse respiro, para o título subir para a linha superior. A coluna continua centralizada,
+       exatamente como era (o recuo horizontal dessas duas abas já existia e não foi mexido). */
+    #tabOficinaGestor .tech-day-panel,
+    #tabEstoque .tech-day-panel{ padding-top: 0; }
+    /* Sem o respiro do topo a linha sob o título "Oficina" encostava no botão; desce até a mesma
+       altura da linha das outras abas. */
+    #tabOficinaGestor .tech-day-head{ padding-bottom: 32px; }
   }
 
   /* ===== Navegação inferior (mobile) — Terceira Entrega =====
@@ -1969,12 +1991,6 @@
       <div class="tecnicos-date mono" id="agendaContextLabel"></div>
     </div>
   </div>
-  <div class="backup-bar">
-    <button class="btn-ghost" id="exportDataBtn">⤓ Exportar dados</button>
-    <button class="btn-ghost" id="importDataBtn">⤒ Importar dados</button>
-    <input type="file" id="importDataInput" accept="application/json" style="display:none;">
-  </div>
-  <div style="padding:0 20px 8px; font-size:12px; color:var(--text-dim);">O arquivo de backup contém dados de acesso (PINs e cadastros de usuários) — guarde-o com segurança.</div>
   <div class="search-bar">
     <div class="search-input-wrap">
       <input type="text" id="clientSearchInput" placeholder="Buscar cliente finalizado..." autocomplete="off">
@@ -2380,6 +2396,11 @@
         <div class="tecnicos-title">Painel de Controle</div>
         <div class="tecnicos-date mono" id="painelRangeLabel"></div>
       </div>
+    </div>
+    <div class="backup-bar">
+      <button class="btn-ghost" id="exportDataBtn">⤓ Exportar dados</button>
+      <button class="btn-ghost" id="importDataBtn">⤒ Importar dados</button>
+      <input type="file" id="importDataInput" accept="application/json" style="display:none;">
     </div>
 
     <div class="painel-period-row">
