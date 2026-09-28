@@ -6628,7 +6628,7 @@ function galeriaVisibleClients(){
   } else if(currentRole === 'oficina'){
     oficinaEquipamentos.forEach(eq => { if(eq.client) names.add(eq.client); });
   }
-  return Array.from(names).filter(galeriaClientTemFotoConhecida).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  return Array.from(names).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 }
 // "Tem foto" sem precisar baixar mídia: fotos adicionadas direto na Galeria já ficam totalmente
 // carregadas (galleryPhotos), atividade com modelo antigo (inline) já tem o array em memória —
@@ -14479,10 +14479,8 @@ async function openGaleria(fromViewId){
   // nas aberturas seguintes ensureGalleryPhotosLoaded() retorna na hora (já carregado + listener
   // realtime já anexado, mantendo a sincronização como sempre).
   const box = document.getElementById('galeriaClientList');
-  const temPendenteDeBackfill = !hasPhotosBackfillChecked && services.some(s => s.mediaExternal === true && s.hasPhotos === undefined);
-  if((!nodeLoaded.galleryPhotos || temPendenteDeBackfill) && box) box.innerHTML = '<div class="empty-state">Carregando fotos da galeria...</div>';
+  if(!nodeLoaded.galleryPhotos && box) box.innerHTML = '<div class="empty-state">Carregando fotos da galeria...</div>';
   try{ await ensureGalleryPhotosLoaded(); }catch(e){ console.error('Falha ao carregar galleryPhotos:', e); }
-  try{ await garantirBackfillHasPhotos(); }catch(e){ console.error('Falha no backfill de fotos da Galeria:', e); }
   if(document.getElementById('galeriaView').style.display === 'none') return; // usuário já fechou
   showGaleriaClientListScreen();
 }
