@@ -714,15 +714,28 @@
   .instr-view .field{ margin-bottom:8px; }
   .instr-view .field label{ color: var(--accent); font-weight:600; }
   .rec-timer{ font-family:'IBM Plex Mono', monospace; font-size:12px; }
-  .return-section{
-    margin-top: 20px; padding: 14px 16px; border: 1px solid var(--warning-line);
-    background: rgba(135,92,31,0.08); border-radius: var(--radius);
+  /* Padronização das ações da atividade (Técnico): iniciar/concluir, retirar equipamento e
+     "precisa retornar" passam a compartilhar a mesma família visual — mesma altura, cantos e peso
+     de fonte — em vez de três linguagens diferentes (botão cheio, botão apagado, cartão grande). */
+  .service-startfinish-row{ display:flex; gap:8px; margin-top: 14px; }
+  .service-startfinish-row .btn-primary, .service-startfinish-row .btn-ghost{
+    flex:1; padding: 10px 8px; font-size: 13.5px; text-align:center; justify-content:center;
   }
+  .service-startfinish-row .btn-ghost:disabled{ opacity:0.6; cursor:default; }
+  .service-startfinish-row .btn-ghost:disabled:hover{ border-color: var(--line); color: var(--text-dim); }
+  .equip-withdraw-btn{
+    width:100%; padding: 10px 8px; font-size: 13.5px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .return-section{ margin-top: 8px; }
   .return-checkbox-label{
-    display:flex; align-items:center; gap:10px; cursor:pointer;
-    font-size:15px; font-weight:700; color: var(--amber); text-transform:none;
+    display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    font-size: 13.5px; font-weight:600; color: var(--amber); text-transform:none;
+    border: 1px solid var(--warning-line); border-radius: var(--radius-sm); padding: 10px 8px;
+    transition: background 0.15s;
   }
-  .return-checkbox-label input[type="checkbox"]{ width:22px; height:22px; accent-color: var(--amber); cursor:pointer; }
+  .return-checkbox-label:has(input:checked){ background: var(--warning-soft); }
+  .return-checkbox-label input[type="checkbox"]{ width:16px; height:16px; accent-color: var(--amber); cursor:pointer; }
   .return-reason-field{ margin-top:12px; }
   .return-reason-field label{ display:block; font-size:11.5px; color: var(--text-dim); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.03em; }
   .return-reason-field input{ width:100%; }
@@ -12910,7 +12923,7 @@ function renderTechView(){
     const photosHtml = techPhotos.map((p, idx) =>
       `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"><button class="photo-rm" data-rmphoto="${s.id}" data-idx="${idx}">✕</button></div>`
     ).join('');
-    const photoAdd = techPhotos.length < 4
+    const photoAdd = techPhotos.length < 6
       ? `<label class="photo-add">+<input type="file" accept="image/*" multiple style="display:none;" data-addphoto="${s.id}"></label>`
       : '';
     const techAudios = getServiceMedia(s, 'audios');
@@ -12918,21 +12931,32 @@ function renderTechView(){
       `<div class="audio-item"><audio controls src="${a}"></audio><button class="photo-rm" data-rmaudio="${s.id}" data-idx="${idx}">✕ remover</button></div>`
     ).join('');
 
-    let actionHtml = '';
+    // Par Iniciar/Concluir sempre visível (um dos dois apagado, conforme a etapa) — mesmo padrão
+    // já usado nas etapas da Oficina (▶ iniciar / ✓ concluir lado a lado).
+    let actionHtml;
     if(!s.checkIn){
-      actionHtml = `<button class="btn-primary" data-start="${s.id}">Iniciar serviço</button>`;
+      actionHtml = `<div class="service-startfinish-row">
+        <button class="btn-primary" data-start="${s.id}">▶ Iniciar serviço</button>
+        <button class="btn-ghost" disabled>✓ Concluir serviço</button>
+      </div>`;
     } else if(!s.checkOut){
-      actionHtml = `<button class="btn-ghost done" data-finish="${s.id}">Concluir serviço</button>`;
+      actionHtml = `<div class="service-startfinish-row">
+        <button class="btn-ghost" disabled>✓ Serviço iniciado</button>
+        <button class="btn-primary" data-finish="${s.id}">✓ Concluir serviço</button>
+      </div>`;
+    } else {
+      actionHtml = `<div class="service-startfinish-row">
+        <button class="btn-ghost" disabled>✓ Serviço iniciado</button>
+        <button class="btn-ghost" disabled>✓ Serviço concluído</button>
+      </div>`;
     }
 
-    // "Retirar equipamento" só faz sentido numa atividade ativa (não concluída) e uma única vez
-    // por atividade — inclusive para os dois membros de uma dupla antiga (mesmo pairId).
-    let equipActionHtml = '';
-    if(s.status !== 'concluido'){
-      equipActionHtml = hasEquipmentWithdrawal(s)
-        ? `<div class="equip-tag">🔧 Equipamento retirado para manutenção</div>`
-        : `<button type="button" class="btn-ghost" data-withdrawequip="${s.id}">🔧 Retirar equipamento para manutenção</button>`;
-    }
+    // "Retirar equipamento" liberado mesmo com a atividade já concluída (ex.: técnico esqueceu
+    // de registrar antes de finalizar) — uma única vez por atividade, inclusive para os dois
+    // membros de uma dupla antiga (mesmo pairId).
+    const equipActionHtml = hasEquipmentWithdrawal(s)
+      ? `<div class="equip-tag">🔧 Equipamento retirado para manutenção</div>`
+      : `<button type="button" class="btn-ghost equip-withdraw-btn" data-withdrawequip="${s.id}">🔧 Retirar equipamento para manutenção</button>`;
 
     const duplaPartners = getDuplaPartnerNames(s, currentTechName);
     const duplaLabelHtml = duplaPartners.length > 0
@@ -12956,9 +12980,8 @@ function renderTechView(){
         ${s.checkIn ? `<span>início <b>${s.checkIn}</b></span>` : ''}
         ${s.checkOut ? `<span>fim <b>${s.checkOut}</b></span>` : ''}
       </div>
-      ${actionHtml ? `<div class="service-controls">${actionHtml}</div>` : ''}
+      ${actionHtml}
       ${equipActionHtml ? `<div class="service-controls">${equipActionHtml}</div>` : ''}
-      ${!s.checkOut ? `
       <div class="return-section">
         <label class="return-checkbox-label">
           <input type="checkbox" data-needsreturn="${s.id}" ${s.needsReturn ? 'checked' : ''}>
@@ -12968,7 +12991,7 @@ function renderTechView(){
           <label>Motivo do retorno</label>
           <input type="text" data-returnreason="${s.id}" value="${escapeHtml(s.returnReason || '')}" placeholder="Ex: falta peça, cliente pediu outro dia... (se deixar em branco, usa a observação)">
         </div>
-      </div>` : ''}
+      </div>
       <div class="field">
         <label>Observação</label>
         <textarea data-obs="${s.id}" placeholder="Descreva o que foi feito, peças usadas, pendências...">${escapeHtml(s.observations || '')}</textarea>
@@ -13066,17 +13089,23 @@ function renderTechView(){
   });
   const finishingInFlight = {};
   list.querySelectorAll('[data-finish]').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', (e) => {
       const id = Number(e.target.dataset.finish);
       if(finishingInFlight[id]) return; // já está processando esse clique, ignora repetição
       const svc = services.find(x => x.id === id);
       if(!svc) return;
       if(svc.status === 'concluido') return; // idempotente: já foi concluída, não repete nada
-
+      customConfirm('Finalizar esta atividade? O horário de conclusão será registrado.', () => executarConclusaoAtividade(id), 'Concluir atividade');
+    });
+  });
+  async function executarConclusaoAtividade(id){
+    { // mantém o mesmo corpo de sempre, só chamado depois da confirmação
+      const svc = services.find(x => x.id === id);
+      if(!svc || svc.status === 'concluido') return;
       finishingInFlight[id] = true;
-      const originalLabel = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = 'Salvando...';
+      const btn = document.querySelector(`[data-finish="${id}"]`);
+      const originalLabel = btn ? btn.textContent : '';
+      if(btn){ btn.disabled = true; btn.textContent = 'Salvando...'; }
 
       const prevCheckOut = svc.checkOut;
       const prevStatus = svc.status;
@@ -13125,8 +13154,8 @@ function renderTechView(){
         delete finishingInFlight[id];
         renderTechView();
       }
-    });
-  });
+    }
+  }
   list.querySelectorAll('textarea[data-obs]').forEach(ta => {
     ta.addEventListener('blur', async (e) => {
       const id = Number(e.target.dataset.obs);
@@ -13144,7 +13173,7 @@ function renderTechView(){
       if(!svc) return;
       await loadServiceMedia(svc.id, 'photos');
       const atuais = getServiceMedia(svc, 'photos').slice();
-      const room = 4 - atuais.length;
+      const room = 6 - atuais.length;
       if(room <= 0) return;
       const files = Array.from(e.target.files).slice(0, room);
       for(const f of files){
@@ -14335,6 +14364,31 @@ async function init(){
     // a uma tela incompleta/vazia (ex: agenda parecendo vazia sem realmente estar).
   }
 }
+
+// ----- Backfill (uma vez só, pra sempre) do sinalizador hasPhotos usado pelo filtro da Galeria -----
+// Sem isso, um cliente cuja atividade nunca foi aberta fica preso: não aparece na lista (porque
+// "não tem foto conhecida"), e não dá pra abrir a atividade dele pra descobrir (porque ele nem
+// aparece). Este backfill roda a fundo na primeira vez que QUALQUER pessoa abre a Galeria depois
+// desta melhoria — carrega as atividades ainda sem hasPhotos, marca o sinalizador e salva. Depois
+// disso o marcador fica registrado no Firebase (nunca mais roda de novo, em nenhum aparelho).
+let hasPhotosBackfillChecked = false;
+async function garantirBackfillHasPhotos(){
+  if(hasPhotosBackfillChecked) return;
+  let jaFeito = false;
+  try{ const r = await dbGetRaw('galeriaHasPhotosBackfillDone'); jaFeito = r.value === true; }
+  catch(e){ jaFeito = false; } // nó ainda não existe: nunca rodou, segue pro backfill
+  if(jaFeito){ hasPhotosBackfillChecked = true; return; }
+  const pendentes = services.filter(s => s.mediaExternal === true && s.hasPhotos === undefined);
+  if(pendentes.length){
+    await Promise.all(pendentes.map(s => loadServiceMedia(s.id, 'galeria-backfill'))); // já seta s.hasPhotos (ver loadServiceMedia)
+    await saveServices(true);
+  }
+  const falhouAlguma = pendentes.some(s => !serviceMediaCacheEntry(s.id).loaded);
+  if(falhouAlguma) return; // sem internet num item, por ex.: tenta de novo na próxima abertura
+  hasPhotosBackfillChecked = true;
+  try{ await dbSetRaw('galeriaHasPhotosBackfillDone', true); }catch(e){ console.error('Falha ao marcar o backfill da Galeria como concluído:', e); }
+}
+
 // ===== Galeria — abertura/fechamento e renderização (interface) =====
 let galeriaReturnViewId = null;
 // Galeria do GESTOR abre DENTRO do layout dele (barra lateral e navegação inferior continuam
@@ -14394,8 +14448,10 @@ async function openGaleria(fromViewId){
   // nas aberturas seguintes ensureGalleryPhotosLoaded() retorna na hora (já carregado + listener
   // realtime já anexado, mantendo a sincronização como sempre).
   const box = document.getElementById('galeriaClientList');
-  if(!nodeLoaded.galleryPhotos && box) box.innerHTML = '<div class="empty-state">Carregando fotos da galeria...</div>';
+  const temPendenteDeBackfill = !hasPhotosBackfillChecked && services.some(s => s.mediaExternal === true && s.hasPhotos === undefined);
+  if((!nodeLoaded.galleryPhotos || temPendenteDeBackfill) && box) box.innerHTML = '<div class="empty-state">Carregando fotos da galeria...</div>';
   try{ await ensureGalleryPhotosLoaded(); }catch(e){ console.error('Falha ao carregar galleryPhotos:', e); }
+  try{ await garantirBackfillHasPhotos(); }catch(e){ console.error('Falha no backfill de fotos da Galeria:', e); }
   if(document.getElementById('galeriaView').style.display === 'none') return; // usuário já fechou
   showGaleriaClientListScreen();
 }
