@@ -718,11 +718,17 @@
      "precisa retornar" passam a compartilhar a mesma família visual — mesma altura, cantos e peso
      de fonte — em vez de três linguagens diferentes (botão cheio, botão apagado, cartão grande). */
   .service-startfinish-row{ display:flex; gap:8px; margin-top: 14px; }
+  .service-startfinish-row .sf-col{ display:flex; flex-direction:column; gap:6px; flex:1; }
   .service-startfinish-row .btn-primary, .service-startfinish-row .btn-ghost{
-    flex:1; padding: 10px 8px; font-size: 13.5px; text-align:center; justify-content:center;
+    width:100%; padding: 10px 8px; font-size: 13.5px; text-align:center; justify-content:center;
   }
   .service-startfinish-row .btn-ghost:disabled{ opacity:0.6; cursor:default; }
   .service-startfinish-row .btn-ghost:disabled:hover{ border-color: var(--line); color: var(--text-dim); }
+  .sf-time{
+    text-align:center; font-family: var(--mono); font-size: 17px; font-weight:700;
+    color: var(--text); letter-spacing:0.02em;
+  }
+  .sf-time .lbl{ display:block; font-family: var(--sans); font-size:10.5px; font-weight:600; color: var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:1px; }
   .equip-withdraw-btn{
     width:100%; padding: 10px 8px; font-size: 13.5px; font-weight:600;
     display:flex; align-items:center; justify-content:center; gap:6px;
@@ -12933,21 +12939,23 @@ function renderTechView(){
 
     // Par Iniciar/Concluir sempre visível (um dos dois apagado, conforme a etapa) — mesmo padrão
     // já usado nas etapas da Oficina (▶ iniciar / ✓ concluir lado a lado).
+    const inicioHtml = s.checkIn ? `<div class="sf-time"><span class="lbl">Início</span>${s.checkIn}</div>` : '';
+    const fimHtml = s.checkOut ? `<div class="sf-time"><span class="lbl">Fim</span>${s.checkOut}</div>` : '';
     let actionHtml;
     if(!s.checkIn){
       actionHtml = `<div class="service-startfinish-row">
-        <button class="btn-primary" data-start="${s.id}">▶ Iniciar serviço</button>
-        <button class="btn-ghost" disabled>✓ Concluir serviço</button>
+        <div class="sf-col"><button class="btn-primary" data-start="${s.id}">▶ Iniciar serviço</button></div>
+        <div class="sf-col"><button class="btn-ghost" disabled>✓ Concluir serviço</button></div>
       </div>`;
     } else if(!s.checkOut){
       actionHtml = `<div class="service-startfinish-row">
-        <button class="btn-ghost" disabled>✓ Serviço iniciado</button>
-        <button class="btn-primary" data-finish="${s.id}">✓ Concluir serviço</button>
+        <div class="sf-col"><button class="btn-ghost" disabled>✓ Serviço iniciado</button>${inicioHtml}</div>
+        <div class="sf-col"><button class="btn-primary" data-finish="${s.id}">✓ Concluir serviço</button></div>
       </div>`;
     } else {
       actionHtml = `<div class="service-startfinish-row">
-        <button class="btn-ghost" disabled>✓ Serviço iniciado</button>
-        <button class="btn-ghost" disabled>✓ Serviço concluído</button>
+        <div class="sf-col"><button class="btn-ghost" disabled>✓ Serviço iniciado</button>${inicioHtml}</div>
+        <div class="sf-col"><button class="btn-ghost" disabled>✓ Serviço concluído</button>${fimHtml}</div>
       </div>`;
     }
 
@@ -12976,10 +12984,6 @@ function renderTechView(){
         <div class="status-tag ${s.status}">${statusLabelOf(s.status)}</div>
       </div>
       ${renderInstructionViewHtml(s)}
-      <div class="service-times mono">
-        ${s.checkIn ? `<span>início <b>${s.checkIn}</b></span>` : ''}
-        ${s.checkOut ? `<span>fim <b>${s.checkOut}</b></span>` : ''}
-      </div>
       ${actionHtml}
       ${equipActionHtml ? `<div class="service-controls">${equipActionHtml}</div>` : ''}
       <div class="return-section">
