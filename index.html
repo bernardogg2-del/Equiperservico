@@ -2317,6 +2317,7 @@
       <div id="oficinaGestorSubnav" class="portal-tabs estoque-subnav-v2">
         <button type="button" class="portal-tab" data-oficinagestortab="equipamentos">Equipamentos</button>
         <button type="button" class="portal-tab" data-oficinagestortab="pecas">Peças</button>
+        <button type="button" class="portal-tab" data-oficinagestortab="listaequip">Lista equipamentos</button>
       </div>
 
       <div id="oficinaGestorEquipamentosPane">
@@ -2372,8 +2373,39 @@
         <div class="field-error" id="oficinaPecasErr" style="padding:0 20px;"></div>
         <div id="oficinaPecasList" style="padding:0 20px 30px;"></div>
       </div>
+
+      <!-- Lista de nomes de equipamentos: cada equipamento cadastrado na Oficina (ou retirado numa
+           atividade) tem o nome guardado aqui; nos campos "Equipamento" o nome vira sugestão. -->
+      <div id="oficinaGestorListaEquipPane" style="display:none;">
+        <div class="tech-day-head">
+          <div class="tech-day-title">Lista equipamentos</div>
+        </div>
+        <div style="padding:0 20px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+          <div class="search-input-wrap" style="flex:1; min-width:220px;"><input type="text" id="oficinaEquipListaSearchInput" placeholder="Buscar equipamento na lista..."></div>
+          <button type="button" class="btn-primary" id="oficinaEquipListaCriarBtn">+ Adicionar nome</button>
+        </div>
+        <div style="padding:0 20px 12px; display:none;" id="oficinaEquipListaImportRow">
+          <button type="button" class="btn-ghost" id="oficinaEquipListaImportBtn"></button>
+        </div>
+        <div class="field-error" id="oficinaEquipListaErr" style="padding:0 20px;"></div>
+        <div id="oficinaEquipListaList" style="padding:0 20px 30px;"></div>
+      </div>
     </div>
   </div>
+
+<!-- Adicionar/editar nome na Lista equipamentos — mesmo padrão do modal de peça. -->
+<div class="overlay" id="oficinaEquipListaModalOverlay">
+  <div class="modal">
+    <h3 id="oficinaEquipListaModalTitulo">Adicionar nome</h3>
+    <div class="field"><label>Nome do equipamento</label><input type="text" id="oficinaEquipListaNomeInput" placeholder="Ex.: Bomba d'água 1/2 CV" autocomplete="off"></div>
+    <div class="field-error" id="oficinaEquipListaModalErr"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn-ghost" id="oficinaEquipListaModalCancelBtn">Cancelar</button>
+      <button type="button" class="btn-primary" id="oficinaEquipListaModalSalvarBtn">Salvar</button>
+    </div>
+  </div>
+</div>
+<datalist id="oficinaEquipNomesList"></datalist>
 
 <!-- Criar/editar peça (Oficina → Peças, melhoria 3) — mesmo padrão visual do modal de criar
      equipamento (melhoria 1): overlay/modal/field/modal-actions, sem estilo novo. -->
@@ -2642,7 +2674,7 @@
 
     <div id="oeDetalheEditForm" style="display:none; margin-bottom:14px; padding:12px; border:1px solid var(--line); border-radius:var(--radius);">
       <div class="field"><label>Cliente *</label><input type="text" id="oeEditCliente" list="oficinaCriarEquipClientes"></div>
-      <div class="field"><label>Equipamento *</label><input type="text" id="oeEditEquipamento"></div>
+      <div class="field"><label>Equipamento *</label><input type="text" id="oeEditEquipamento" list="oficinaEquipNomesList" autocomplete="off"></div>
       <div class="field"><label>Problema informado / Observação</label><textarea id="oeEditObservacao"></textarea></div>
       <div class="field-error" id="oeEditErr"></div>
       <div class="modal-actions" style="justify-content:flex-end;">
@@ -2692,7 +2724,7 @@
       <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:6px;">Cliente não encontrado? Informe o nome do cliente aqui (será salvo junto ao equipamento).</div>
       <input type="text" id="oficinaCriarEquipClienteManual" placeholder="Nome do cliente">
     </div>
-    <div class="field"><label>Equipamento</label><input type="text" id="oficinaCriarEquipNome" placeholder="Ex.: Bomba d'água 1/2 CV, Pressurizador, Inversor, etc."></div>
+    <div class="field"><label>Equipamento</label><input type="text" id="oficinaCriarEquipNome" list="oficinaEquipNomesList" autocomplete="off" placeholder="Ex.: Bomba d'água 1/2 CV, Pressurizador, Inversor, etc."></div>
     <div class="field">
       <label>Observação</label>
       <textarea id="oficinaCriarEquipObs" maxlength="500" placeholder="Observações sobre o equipamento..."></textarea>
@@ -2736,7 +2768,7 @@
     <p class="modal-sub" id="equipWithdrawClientLabel"></p>
     <div class="field">
       <label>Equipamento</label>
-      <input type="text" id="equipWithdrawEquipment" placeholder="Ex: bomba de piscina, filtro, motor...">
+      <input type="text" id="equipWithdrawEquipment" list="oficinaEquipNomesList" autocomplete="off" placeholder="Ex: bomba de piscina, filtro, motor...">
     </div>
     <div class="field">
       <label>Observação (opcional)</label>
@@ -9405,7 +9437,9 @@ document.querySelectorAll('[data-oehistfiltro]').forEach(btn => {
 function oficinaGestorSwitchSubTab(tab){
   document.getElementById('oficinaGestorEquipamentosPane').style.display = (tab === 'equipamentos') ? '' : 'none';
   document.getElementById('oficinaGestorPecasPane').style.display = (tab === 'pecas') ? '' : 'none';
+  document.getElementById('oficinaGestorListaEquipPane').style.display = (tab === 'listaequip') ? '' : 'none';
   document.querySelectorAll('#oficinaGestorSubnav [data-oficinagestortab]').forEach(b => b.classList.toggle('active', b.dataset.oficinagestortab === tab));
+  if(tab === 'listaequip') renderOficinaEquipListaList();
   if(tab === 'pecas') renderOficinaPecasList(); // catálogo já carregado (mesmo listener de sempre); sem leitura nova
 }
 document.querySelectorAll('#oficinaGestorSubnav [data-oficinagestortab]').forEach(b => b.addEventListener('click', () => oficinaGestorSwitchSubTab(b.dataset.oficinagestortab)));
@@ -9679,6 +9713,7 @@ function abrirCriarEquipamentoOficina(){
   document.getElementById('oficinaCriarEquipObsCount').textContent = '0/500';
   document.getElementById('oficinaCriarEquipErr').textContent = '';
   document.getElementById('oficinaCriarEquipClientes').innerHTML = clients.map(cl => `<option value="${escapeHtml(cl.name)}"></option>`).join('');
+  popularEquipNomesDatalist();
   document.getElementById('oficinaCriarEquipOverlay').classList.add('open');
   setTimeout(() => document.getElementById('oficinaCriarEquipCliente').focus(), 50);
 }
@@ -9715,6 +9750,7 @@ document.getElementById('oficinaCriarEquipConfirmBtn').addEventListener('click',
   btn.disabled = false; btn.textContent = lbl; oficinaCriarEquipInFlight = false;
   if(!r.ok){ document.getElementById('oficinaCriarEquipErr').textContent = r.reason; return; }
   fecharCriarEquipamentoOficina();
+  registrarEquipNaLista(r.record.equipment); // guarda o nome na Lista equipamentos (sem bloquear o cadastro)
   if(currentRole === 'oficina') renderOficinaView();
   if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab();
   // Técnico não tem lista de equipamentos na própria tela pra servir de confirmação visual —
@@ -11621,6 +11657,179 @@ document.getElementById('oficinaPecaModalSalvarBtn').addEventListener('click', a
   renderOficinaPecasList();
 });
 
+// ===== Lista equipamentos (Oficina → Lista equipamentos) =====
+// Guarda só o NOME de cada equipamento já cadastrado, para sugerir nos campos "Equipamento" (mesmo
+// jeito da sugestão de clientes: <datalist>). Mesma fábrica de store do catálogo de peças (diff por
+// campo, retry, sincronização em tempo real) — nó novo 'oficinaEquipCatalogo'. Editar/excluir um
+// nome aqui NÃO altera equipamentos já registrados na oficina (o registro guarda o próprio nome).
+const oficinaEquipCatalogoStore = createEstoqueStore('oficinaEquipCatalogo', '⚠️ Não foi possível salvar o nome do equipamento na lista. Verifique sua internet.');
+function equipKey(s){ return pecaFold(normPecaKey(s)); } // ignora maiúsculas, acentos e espaços repetidos
+function equipNomesAtivos(){
+  return oficinaEquipCatalogoStore.items.filter(e => e.active !== false).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
+}
+function popularEquipNomesDatalist(){
+  const dl = document.getElementById('oficinaEquipNomesList');
+  if(!dl) return;
+  dl.innerHTML = equipNomesAtivos().map(e => `<option value="${escapeHtml(e.name)}"></option>`).join('');
+}
+// Chamada depois que um equipamento é cadastrado/renomeado. Nunca bloqueia nem atrapalha o cadastro:
+// se falhar, o equipamento já está salvo e o nome pode ser adicionado depois na Lista.
+async function registrarEquipNaLista(nome){
+  try{
+    nome = (nome || '').trim().replace(/\s+/g, ' ');
+    if(!nome) return;
+    const key = equipKey(nome);
+    const existente = oficinaEquipCatalogoStore.items.find(e => equipKey(e.name) === key);
+    const now = new Date().toISOString(), who = currentActingName();
+    if(existente){
+      if(existente.active !== false) return; // já está na lista — mantém o nome como está
+      existente.active = true; existente.updatedAt = now; existente.updatedBy = who; // volta um nome que tinha sido excluído
+      delete existente.deletedAt; delete existente.deletedBy;
+    } else {
+      oficinaEquipCatalogoStore.items.push({ id: Date.now() + Math.floor(Math.random() * 1000000), name: nome, active: true, createdAt: now, createdBy: who, updatedAt: now, updatedBy: who });
+    }
+    popularEquipNomesDatalist();
+    await oficinaEquipCatalogoStore.save(true);
+    renderOficinaEquipListaSeVisivel();
+  }catch(e){ console.error('Falha ao registrar equipamento na lista', e); }
+}
+async function criarNomeEquip(nome){
+  nome = (nome || '').trim().replace(/\s+/g, ' ');
+  if(!nome) return { ok: false, reason: 'Informe o nome do equipamento.' };
+  if(equipNomesAtivos().some(e => equipKey(e.name) === equipKey(nome))) return { ok: false, reason: 'Esse nome já está na lista.' };
+  const now = new Date().toISOString(), who = currentActingName();
+  const inativo = oficinaEquipCatalogoStore.items.find(e => e.active === false && equipKey(e.name) === equipKey(nome));
+  let novo = null, prev = null;
+  if(inativo){ prev = Object.assign({}, inativo); Object.assign(inativo, { name: nome, active: true, updatedAt: now, updatedBy: who }); delete inativo.deletedAt; delete inativo.deletedBy; }
+  else { novo = { id: Date.now() + Math.floor(Math.random() * 1000000), name: nome, active: true, createdAt: now, createdBy: who, updatedAt: now, updatedBy: who }; oficinaEquipCatalogoStore.items.push(novo); }
+  const ok = await oficinaEquipCatalogoStore.save();
+  if(!ok){
+    if(novo) oficinaEquipCatalogoStore.items = oficinaEquipCatalogoStore.items.filter(e => e !== novo);
+    else { Object.keys(inativo).forEach(k => delete inativo[k]); Object.assign(inativo, prev); }
+    return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' };
+  }
+  popularEquipNomesDatalist();
+  return { ok: true };
+}
+async function editarNomeEquip(id, nome){
+  nome = (nome || '').trim().replace(/\s+/g, ' ');
+  const item = oficinaEquipCatalogoStore.items.find(e => e.id === id);
+  if(!item) return { ok: false, reason: 'Nome não encontrado.' };
+  if(!nome) return { ok: false, reason: 'Informe o nome do equipamento.' };
+  if(equipNomesAtivos().some(e => e.id !== id && equipKey(e.name) === equipKey(nome))) return { ok: false, reason: 'Esse nome já está na lista.' };
+  const prev = Object.assign({}, item);
+  item.name = nome; item.updatedAt = new Date().toISOString(); item.updatedBy = currentActingName();
+  const ok = await oficinaEquipCatalogoStore.save();
+  if(!ok){ Object.assign(item, prev); return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+  popularEquipNomesDatalist();
+  return { ok: true };
+}
+async function excluirNomeEquip(id){
+  const item = oficinaEquipCatalogoStore.items.find(e => e.id === id);
+  if(!item) return { ok: false, reason: 'Nome não encontrado.' };
+  const prev = Object.assign({}, item);
+  item.active = false; item.deletedAt = new Date().toISOString(); item.deletedBy = currentActingName();
+  const ok = await oficinaEquipCatalogoStore.save();
+  if(!ok){ Object.keys(item).forEach(k => delete item[k]); Object.assign(item, prev); return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
+  popularEquipNomesDatalist();
+  return { ok: true };
+}
+// Nomes que já existem em equipamentos cadastrados na oficina mas ainda não estão na Lista.
+function equipNomesParaImportar(){
+  const naLista = new Set(oficinaEquipCatalogoStore.items.filter(e => e.active !== false).map(e => equipKey(e.name)));
+  const visto = new Set(), out = [];
+  oficinaEquipamentos.forEach(eq => {
+    const nome = (eq.equipment || '').trim().replace(/\s+/g, ' ');
+    const k = equipKey(nome);
+    if(!nome || naLista.has(k) || visto.has(k)) return;
+    visto.add(k); out.push(nome);
+  });
+  return out;
+}
+let oficinaEquipListaSearch = '';
+function renderOficinaEquipListaSeVisivel(){
+  const pane = document.getElementById('oficinaGestorListaEquipPane');
+  if(pane && pane.style.display !== 'none') renderOficinaEquipListaList();
+}
+function renderOficinaEquipListaList(){
+  const box = document.getElementById('oficinaEquipListaList'); if(!box) return;
+  const q = pecaFold(oficinaEquipListaSearch.trim());
+  let itens = equipNomesAtivos();
+  if(q) itens = itens.filter(e => pecaFold(e.name).includes(q));
+  box.innerHTML = itens.length ? itens.map(e => `<div class="estoque-row-v2" data-oficinaequiplista="${e.id}">
+      <div class="estoque-row-main">
+        <div class="nome">${escapeHtml(e.name)}</div>
+      </div>
+      <div class="estoque-row-actions">
+        <button type="button" class="btn-ghost" data-oficinaequiplistaeditar="${e.id}">Editar</button>
+        <button type="button" class="btn-ghost" data-oficinaequiplistaexcluir="${e.id}" title="Excluir da lista" style="padding:7px 10px;">⋮</button>
+      </div>
+    </div>`).join('') : `<div class="painel-block-empty">${q ? 'Nenhum equipamento encontrado.' : 'Nenhum nome na lista ainda. Ele é adicionado sozinho quando você cadastra um equipamento.'}</div>`;
+  box.querySelectorAll('[data-oficinaequiplistaeditar]').forEach(b => b.addEventListener('click', () => abrirEquipListaModal(Number(b.dataset.oficinaequiplistaeditar))));
+  box.querySelectorAll('[data-oficinaequiplistaexcluir]').forEach(b => b.addEventListener('click', () => {
+    const item = oficinaEquipCatalogoStore.items.find(x => x.id === Number(b.dataset.oficinaequiplistaexcluir)); if(!item) return;
+    customConfirm(`Excluir da lista?\n\n"${item.name}" deixa de ser sugerido. Equipamentos já cadastrados na oficina não são alterados.`, async () => {
+      const r = await excluirNomeEquip(item.id);
+      document.getElementById('oficinaEquipListaErr').textContent = r.ok ? '' : r.reason;
+      renderOficinaEquipListaList();
+    });
+  }));
+  // Botão de importar: só aparece quando há nomes de equipamentos já cadastrados que ainda não estão na lista.
+  const faltam = equipNomesParaImportar();
+  const row = document.getElementById('oficinaEquipListaImportRow'), btn = document.getElementById('oficinaEquipListaImportBtn');
+  if(row && btn){
+    row.style.display = faltam.length ? '' : 'none';
+    btn.textContent = `Importar ${faltam.length} nome${faltam.length === 1 ? '' : 's'} de equipamentos já cadastrados`;
+  }
+}
+document.getElementById('oficinaEquipListaSearchInput').addEventListener('input', (e) => { oficinaEquipListaSearch = e.target.value; renderOficinaEquipListaList(); });
+document.getElementById('oficinaEquipListaImportBtn').addEventListener('click', async (e) => {
+  const btn = e.currentTarget; const faltam = equipNomesParaImportar(); if(!faltam.length) return;
+  const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Importando...';
+  const now = new Date().toISOString(), who = currentActingName();
+  const criados = faltam.map((nome, i) => {
+    const inativo = oficinaEquipCatalogoStore.items.find(x => x.active === false && equipKey(x.name) === equipKey(nome));
+    if(inativo){ inativo.active = true; inativo.updatedAt = now; inativo.updatedBy = who; delete inativo.deletedAt; delete inativo.deletedBy; return null; }
+    const novo = { id: Date.now() + i * 1000 + Math.floor(Math.random() * 1000), name: nome, active: true, createdAt: now, createdBy: who, updatedAt: now, updatedBy: who };
+    oficinaEquipCatalogoStore.items.push(novo); return novo;
+  }).filter(Boolean);
+  const ok = await oficinaEquipCatalogoStore.save();
+  btn.disabled = false; btn.textContent = lbl;
+  if(!ok){ oficinaEquipCatalogoStore.items = oficinaEquipCatalogoStore.items.filter(x => !criados.includes(x)); document.getElementById('oficinaEquipListaErr').textContent = 'Não foi possível salvar. Verifique sua internet e tente novamente.'; }
+  else document.getElementById('oficinaEquipListaErr').textContent = '';
+  popularEquipNomesDatalist();
+  renderOficinaEquipListaList();
+});
+
+// Modal único de adicionar/editar nome — protegido contra duplo clique, com retry após falha.
+let oficinaEquipListaEditandoId = null;
+let oficinaEquipListaSalvarInFlight = false;
+function abrirEquipListaModal(id){
+  oficinaEquipListaEditandoId = id || null;
+  const item = id ? oficinaEquipCatalogoStore.items.find(e => e.id === id) : null;
+  document.getElementById('oficinaEquipListaModalTitulo').textContent = item ? 'Editar nome' : 'Adicionar nome';
+  document.getElementById('oficinaEquipListaNomeInput').value = item ? item.name : '';
+  document.getElementById('oficinaEquipListaModalErr').textContent = '';
+  document.getElementById('oficinaEquipListaModalOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('oficinaEquipListaNomeInput').focus(), 50);
+}
+function fecharEquipListaModal(){ document.getElementById('oficinaEquipListaModalOverlay').classList.remove('open'); }
+document.getElementById('oficinaEquipListaCriarBtn').addEventListener('click', () => abrirEquipListaModal(null));
+document.getElementById('oficinaEquipListaModalCancelBtn').addEventListener('click', fecharEquipListaModal);
+document.getElementById('oficinaEquipListaModalOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharEquipListaModal(); });
+document.getElementById('oficinaEquipListaNomeInput').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('oficinaEquipListaModalSalvarBtn').click(); } });
+document.getElementById('oficinaEquipListaModalSalvarBtn').addEventListener('click', async () => {
+  if(oficinaEquipListaSalvarInFlight) return;
+  oficinaEquipListaSalvarInFlight = true;
+  const btn = document.getElementById('oficinaEquipListaModalSalvarBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
+  const nome = document.getElementById('oficinaEquipListaNomeInput').value;
+  const r = oficinaEquipListaEditandoId ? await editarNomeEquip(oficinaEquipListaEditandoId, nome) : await criarNomeEquip(nome);
+  btn.disabled = false; btn.textContent = lbl; oficinaEquipListaSalvarInFlight = false;
+  if(!r.ok){ document.getElementById('oficinaEquipListaModalErr').textContent = r.reason; return; }
+  fecharEquipListaModal();
+  renderOficinaEquipListaList();
+});
+
 async function addOePeca(equipId, nome, quantidade, observacao){
   const eq = oficinaEquipamentos.find(x => x.id === equipId);
   if(!eq) return { ok: false, reason: 'Equipamento não encontrado.' };
@@ -11914,6 +12123,7 @@ function openOeEditForm(equipId){
   document.getElementById('oeEditErr').textContent = '';
   const dl = document.getElementById('oficinaCriarEquipClientes');
   if(dl) dl.innerHTML = clients.map(cl => `<option value="${escapeHtml(cl.name)}"></option>`).join('');
+  popularEquipNomesDatalist();
   document.getElementById('oeDetalheEditForm').style.display = '';
 }
 document.getElementById('oeEditCancelBtn').addEventListener('click', () => { document.getElementById('oeDetalheEditForm').style.display = 'none'; });
@@ -11934,6 +12144,7 @@ document.getElementById('oeEditSaveBtn').addEventListener('click', async () => {
   btn.disabled = false; btn.textContent = lbl;
   if(!ok){ Object.assign(eq, prev); errBox.textContent = 'Não foi possível salvar. Verifique sua internet e tente novamente.'; return; }
   document.getElementById('oeDetalheEditForm').style.display = 'none';
+  if(equipment !== prev.equipment) registrarEquipNaLista(equipment);
   oeAfterMutation(equipId);
 });
 
@@ -13887,6 +14098,7 @@ function openEquipWithdrawModal(svcId){
   document.getElementById('equipWithdrawEquipment').value = '';
   document.getElementById('equipWithdrawObs').value = '';
   document.getElementById('equipWithdrawErr').textContent = '';
+  popularEquipNomesDatalist();
   document.getElementById('equipWithdrawOverlay').classList.add('open');
 }
 function closeEquipWithdrawModal(){
@@ -13937,6 +14149,7 @@ document.getElementById('equipWithdrawConfirmBtn').addEventListener('click', asy
     return;
   }
   closeEquipWithdrawModal();
+  registrarEquipNaLista(record.equipment);
   renderTechView();
 });
 
@@ -15165,8 +15378,10 @@ async function ensureEstoqueLoaded(){
     estoqueCategoriasStore.load(),
     estoqueAjustesStore.load(),
     estoqueRetiradasStore.load(),
-    oficinaPecasCatalogoStore.load()
+    oficinaPecasCatalogoStore.load(),
+    oficinaEquipCatalogoStore.load()
   ]);
+  popularEquipNomesDatalist();
   await seedEstoqueInicial(); // só agora — depende de estoqueItens e estoqueCategoriasStore, já prontos acima
   attachRealtimeEstoqueListener();
   attachRealtimeEstoqueMovimentacoesListener();
@@ -15174,6 +15389,7 @@ async function ensureEstoqueLoaded(){
   estoqueAjustesStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
   estoqueRetiradasStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
   oficinaPecasCatalogoStore.attach(() => { if(oeCurrentDetalheId !== null) popularPecasCatalogoDatalist(); if(currentRole === 'manager' && document.getElementById('oficinaGestorPecasPane') && document.getElementById('oficinaGestorPecasPane').style.display !== 'none') renderOficinaPecasList(); });
+  oficinaEquipCatalogoStore.attach(() => { popularEquipNomesDatalist(); renderOficinaEquipListaSeVisivel(); });
   perfMark('node_loaded', { node: 'estoque+históricos', approxKB: perfApproxKB(estoqueItens) + perfApproxKB(estoqueMovimentacoes) });
 }
 // Paralelização conservadora: loadExtraContacts/loadOficina/loadAdminPin não têm dependência
@@ -15250,7 +15466,7 @@ function countAttachedRealtimeListeners(){
     realtimeOficinaEquipamentosAttached, realtimeOficinaStaleThresholdAttached,
     realtimeGalleryPhotosAttached, realtimeEstoqueAttached, realtimeEstoqueMovimentacoesAttached,
     realtimeExtraContactsAttached, estoqueCategoriasStore.attached, estoqueAjustesStore.attached,
-    estoqueRetiradasStore.attached, oficinaPecasCatalogoStore.attached
+    estoqueRetiradasStore.attached, oficinaPecasCatalogoStore.attached, oficinaEquipCatalogoStore.attached
   ];
   return flags.filter(Boolean).length;
 }
