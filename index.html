@@ -1247,6 +1247,19 @@
     padding: 4px 16px; box-shadow: var(--shadow-sm);
   }
   #osProcessedList .os-processed-row:last-child{ border-bottom:none; }
+  /* Cadastros e OS — barra de busca + filtro por técnico (escopado a #tabOS). */
+  .os-filtros{ display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom: 16px; }
+  .os-filtros .field{ margin-bottom:0; }
+  .os-filtros .os-filtro-busca{ flex: 1 1 280px; min-width: 200px; }
+  .os-filtros .os-filtro-tecnico{ flex: 0 1 230px; min-width: 170px; }
+  .os-filtros .os-filtro-tecnico select{ width:100%; }
+  .os-filtros .field label{ font-weight:600; color: var(--text-dim); text-transform:uppercase; font-size:10.5px; letter-spacing:.3px; }
+  #tabOS .search-clear-wrap input{
+    padding-left: 36px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23979aa0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 11px center; background-size: 14px 14px;
+  }
+  .os-filtros .os-filtro-limpar{ white-space:nowrap; }
   .cliente-row{
     background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm);
     padding: 16px 18px; margin-bottom: 12px; display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap;
@@ -1410,7 +1423,7 @@
   @media (max-width: 700px){
     input, select, textarea,
     .mini-tech-select, .tecnico-phone-input, .search-input-wrap input,
-    #tabClientes .search-clear-wrap input, .tech-pin-row input, #osList .field > input,
+    #tabClientes .search-clear-wrap input, #tabOS .search-clear-wrap input, .tech-pin-row input, #osList .field > input,
     .maint-alert-actions input[type="date"], .pending-reschedule input[type="date"]{ font-size: 16px; }
   }
 </style>
@@ -2157,6 +2170,20 @@
         <div class="tecnicos-title">Cadastros e OS</div>
         <div class="tecnicos-date mono" id="osContextLabel"></div>
       </div>
+    </div>
+    <div class="os-filtros" id="osFiltros" style="display:none;">
+      <div class="field os-filtro-busca">
+        <label for="osSearchInput">Buscar</label>
+        <div class="search-clear-wrap">
+          <input type="text" id="osSearchInput" placeholder="Cliente, endereço, pedido ou observação..." autocomplete="off">
+          <button type="button" class="search-clear-btn" data-clearsearch="osSearchInput">✕</button>
+        </div>
+      </div>
+      <div class="field os-filtro-tecnico">
+        <label for="osTecnicoFilter">Técnico</label>
+        <select id="osTecnicoFilter"><option value="">Todos os técnicos</option></select>
+      </div>
+      <button type="button" class="btn-ghost os-filtro-limpar" id="osFiltrosLimpar" style="display:none;">Limpar filtros</button>
     </div>
     <div id="osList"></div>
     <div class="maint-section-title" style="margin-top:26px;">Processados recentemente</div>
@@ -10348,6 +10375,37 @@ function renderTecnicosAmanha(){
   });
 }
 
+// Cadastros e OS — busca + filtro por técnico.
+// Rascunhos do campo "Número de OS": o que foi digitado e ainda não salvo sobrevive a qualquer
+// re-renderização (trocar filtro, digitar na busca ou atualização vinda do Firebase).
+const osNumeroRascunho = {};
+function osNormalizarTexto(t){
+  return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+// Todos os técnicos de um item da fila (inclui os dois de uma dupla, formato novo ou antigo).
+function osTecnicosDoItem(s){
+  if(s.isLegacyPair && Array.isArray(s.pairMembers)){
+    return s.pairMembers.flatMap(m => getServiceTechnicians(m)).filter(Boolean);
+  }
+  return getServiceTechnicians(s).filter(Boolean);
+}
+function osAtualizarOpcoesTecnico(pending){
+  const sel = document.getElementById('osTecnicoFilter');
+  if(!sel) return;
+  const atual = sel.value;
+  const contagem = {};
+  pending.forEach(s => {
+    new Set(osTecnicosDoItem(s)).forEach(n => { contagem[n] = (contagem[n] || 0) + 1; });
+  });
+  const nomes = Object.keys(contagem).sort((a,b) => a.localeCompare(b, 'pt-BR'));
+  // Se o técnico selecionado não tem mais pendências, ele continua na lista (com 0) — assim o
+  // filtro não "pula" sozinho para Todos no meio do uso.
+  if(atual && !contagem[atual]){ nomes.push(atual); contagem[atual] = 0; }
+  sel.innerHTML = `<option value="">Todos os técnicos</option>` +
+    nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)} (${contagem[n]})</option>`).join('');
+  sel.value = atual;
+}
+
 function renderOS(){
   const box = document.getElementById('osList');
   const badge = document.getElementById('osBadge');
@@ -10360,11 +10418,32 @@ function renderOS(){
       return ak < bk ? -1 : ak > bk ? 1 : 0;
     });
 
+  // Filtros (busca + técnico). O badge do menu continua mostrando o total, sem filtro.
+  const filtrosBox = document.getElementById('osFiltros');
+  if(filtrosBox) filtrosBox.style.display = pending.length === 0 ? 'none' : '';
+  osAtualizarOpcoesTecnico(pending);
+  const termo = osNormalizarTexto((document.getElementById('osSearchInput') || {}).value);
+  const tecnicoSel = (document.getElementById('osTecnicoFilter') || {}).value || '';
+  const filtroAtivo = !!(termo || tecnicoSel);
+  const limparBtn = document.getElementById('osFiltrosLimpar');
+  if(limparBtn) limparBtn.style.display = filtroAtivo ? '' : 'none';
+  const visiveis = pending.filter(s => {
+    const tecnicos = osTecnicosDoItem(s);
+    if(tecnicoSel && !tecnicos.includes(tecnicoSel)) return false;
+    if(termo){
+      const alvo = osNormalizarTexto([s.client, s.address, s.description, s.observations, tecnicos.join(' ')].join(' '));
+      if(!alvo.includes(termo)) return false;
+    }
+    return true;
+  });
+
   const contextLabel = document.getElementById('osContextLabel');
   if(contextLabel){
     contextLabel.textContent = pending.length === 0
       ? 'Nenhuma atividade aguardando cadastro'
-      : `${pending.length} atividade${pending.length === 1 ? '' : 's'} aguardando cadastro de OS`;
+      : filtroAtivo
+        ? `${visiveis.length} de ${pending.length} atividade${pending.length === 1 ? '' : 's'} aguardando cadastro de OS`
+        : `${pending.length} atividade${pending.length === 1 ? '' : 's'} aguardando cadastro de OS`;
   }
 
   if(badge){
@@ -10389,10 +10468,17 @@ function renderOS(){
     else { maisIndicator.style.display = 'none'; }
   }
 
+  // Se o cursor estava num campo "Número de OS", devolve o foco a ele depois de redesenhar.
+  const focoAtivo = document.activeElement;
+  const focoOsId = (focoAtivo && box.contains(focoAtivo) && focoAtivo.dataset) ? focoAtivo.dataset.osnumero : null;
+  const focoCaret = focoOsId ? focoAtivo.selectionStart : null;
+
   if(pending.length === 0){
     box.innerHTML = `<p class="os-empty">Nenhuma atividade aguardando cadastro/OS no momento.</p>`;
+  } else if(visiveis.length === 0){
+    box.innerHTML = `<p class="os-empty">Nenhuma atividade encontrada com esses filtros.</p>`;
   } else {
-    box.innerHTML = pending.map(s => {
+    box.innerHTML = visiveis.map(s => {
       const midiaPendente = s.mediaExternal && !serviceMediaIsLoaded(s);
       const photosHtml = midiaPendente ? '' : getServiceMedia(s, 'photos').map(p => `<div class="photo-thumb"><img src="${p}" onclick="openPhotoLightbox(this.src)"></div>`).join('');
       const audiosHtml = midiaPendente ? '' : getServiceMedia(s, 'audios').map(a => `<div class="audio-item"><audio controls src="${a}"></audio></div>`).join('');
@@ -10421,7 +10507,7 @@ function renderOS(){
           ${audiosHtml ? `<div class="field"><label>Áudios do técnico</label><div class="audio-row">${audiosHtml}</div></div>` : ''}
           <div class="field">
             <label>Número de OS</label>
-            <input type="text" data-osnumero="${s.id}" value="${escapeHtml(s.numeroOS || '')}" placeholder="Digite o número da ordem de serviço">
+            <input type="text" data-osnumero="${s.id}" value="${escapeHtml(osNumeroRascunho[s.id] !== undefined ? osNumeroRascunho[s.id] : (s.numeroOS || ''))}" placeholder="Digite o número da ordem de serviço">
           </div>
           <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;">
             <button type="button" class="btn-primary" data-osdone="${s.id}">Cadastro/OS realizado</button>
@@ -10429,6 +10515,16 @@ function renderOS(){
         </div>
       `;
     }).join('');
+    box.querySelectorAll('[data-osnumero]').forEach(inp => {
+      inp.addEventListener('input', () => { osNumeroRascunho[inp.dataset.osnumero] = inp.value; });
+    });
+    if(focoOsId){
+      const alvoFoco = box.querySelector(`[data-osnumero="${focoOsId}"]`);
+      if(alvoFoco){
+        alvoFoco.focus();
+        try{ if(focoCaret !== null) alvoFoco.setSelectionRange(focoCaret, focoCaret); }catch(e){}
+      }
+    }
     box.querySelectorAll('[data-loadmedia]').forEach(btn => btn.addEventListener('click', async () => {
       btn.disabled = true; btn.textContent = 'Carregando...';
       await loadServiceMedia(Number(btn.dataset.loadmedia), 'os');
@@ -10452,7 +10548,9 @@ function renderOS(){
           const targets = svc.pairId
             ? services.filter(x => x.pairId === svc.pairId)
             : [svc];
+          delete osNumeroRascunho[id];
           targets.forEach(t => {
+            delete osNumeroRascunho[t.id];
             t.numeroOS = numero;
             t.processedForOS = true;
             t.processedForOSBy = currentManagerName || null;
@@ -13856,7 +13954,15 @@ function setupClearableSearch(inputId){
     input.focus();
   });
 }
-['clientSearchInput', 'maintContractSearchInput', 'clienteSearchInput'].forEach(setupClearableSearch);
+document.getElementById('osSearchInput').addEventListener('input', renderOS);
+document.getElementById('osTecnicoFilter').addEventListener('change', renderOS);
+document.getElementById('osFiltrosLimpar').addEventListener('click', () => {
+  const busca = document.getElementById('osSearchInput');
+  busca.value = '';
+  document.getElementById('osTecnicoFilter').value = '';
+  busca.dispatchEvent(new Event('input', { bubbles: true })); // atualiza o ✕ e redesenha
+});
+['clientSearchInput', 'maintContractSearchInput', 'clienteSearchInput', 'osSearchInput'].forEach(setupClearableSearch);
 
 async function init(){
   document.getElementById('roleGrid').classList.add('disabled');
