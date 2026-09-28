@@ -15762,6 +15762,38 @@ async function ensureExtraContactsEtcLoaded(){
 // usa Agenda/OS (dados já dentro de services) + Galeria, nunca Estoque/Oficina/Clientes
 // (canViewEstoque() já exclui financeiro; galeriaVisibleClients pra financeiro deriva de
 // services, não de clients); Oficina (perfil) usa equipamentos + Estoque + Galeria.
+
+// Importação automática (uma vez só, pra sempre) do catálogo de nomes de equipamentos a partir do
+// que já existe em oficinaEquipamentos — sem isso, a Lista equipamentos começa vazia e ninguém vê
+// sugestão nenhuma em "Equipamento" até algum Gestor lembrar de clicar em "Importar" manualmente.
+// Mesmo padrão do backfill de fotos da Galeria: roda a fundo na primeira vez que qualquer pessoa
+// carrega o Estoque/Oficina depois desta melhoria, marca concluído no Firebase e nunca mais roda.
+let equipCatalogoImportChecked = false;
+async function garantirImportarEquipNomesExistentes(){
+  if(equipCatalogoImportChecked) return;
+  let jaFeito = false;
+  try{ const r = await dbGetRaw('equipCatalogoImportDone'); jaFeito = r.value === true; }
+  catch(e){ jaFeito = false; } // nó ainda não existe: nunca rodou, segue pra importação
+  if(jaFeito){ equipCatalogoImportChecked = true; popularEquipNomesDatalist(); return; }
+  const faltam = equipNomesParaImportar();
+  if(faltam.length){
+    const now = new Date().toISOString(), who = currentActingName();
+    const criados = faltam.map((nome, i) => {
+      const nomeObj = { id: Date.now() + i + Math.floor(Math.random() * 1000000), name: nome, active: true, createdAt: now, createdBy: who, updatedAt: now, updatedBy: who };
+      oficinaEquipCatalogoStore.items.push(nomeObj);
+      return nomeObj;
+    });
+    const ok = await oficinaEquipCatalogoStore.save();
+    if(!ok){
+      oficinaEquipCatalogoStore.items = oficinaEquipCatalogoStore.items.filter(x => !criados.includes(x));
+      return; // tenta de novo na próxima vez que alguém carregar o Estoque/Oficina
+    }
+  }
+  equipCatalogoImportChecked = true;
+  popularEquipNomesDatalist();
+  try{ await dbSetRaw('equipCatalogoImportDone', true); }catch(e){ console.error('Falha ao marcar a importação do catálogo de equipamentos como concluída:', e); }
+}
+
 async function ensureRoleDataLoaded(role){
   perfMark('role_data_start', { role });
   if(role === 'manager'){
@@ -15780,6 +15812,7 @@ async function ensureRoleDataLoaded(role){
       ensureEstoqueLoaded(),
       ensureExtraContactsEtcLoaded()
     ]);
+    await garantirImportarEquipNomesExistentes(); // só depois do Promise.all: precisa de oficinaEquipamentos E do catálogo já carregados
   } else if(role === 'tech'){
     await ensureServicesLoaded();
     // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
@@ -15790,12 +15823,14 @@ async function ensureRoleDataLoaded(role){
     await ensureMaintenanceContractsLoaded();
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
+    await garantirImportarEquipNomesExistentes();
   } else if(role === 'financeiro'){
     await ensureServicesLoaded();
   } else if(role === 'oficina'){
     await ensureServicesLoaded();
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
+    await garantirImportarEquipNomesExistentes();
   }
   // galleryPhotos: nenhum perfil carrega no login — só quando a Galeria é aberta (openGaleria).
   perfMark('role_data_done', { role, listenersOnAfter: countAttachedRealtimeListeners() });
