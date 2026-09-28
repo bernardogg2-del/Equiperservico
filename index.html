@@ -1371,6 +1371,10 @@
   .tech-pin-row .tech-pin-name{ flex:1; font-size: 13.5px; font-weight:600; color: var(--text); }
   .tech-pin-row input{ width: 90px; text-align:center; background: var(--panel); }
   .tech-pin-row .btn-text-danger{ font-size:11.5px; white-space:nowrap; }
+  .tech-pin-row[data-acessosuser]{ flex-wrap: wrap; row-gap: 8px; }
+  .acessos-acoes{ display:flex; gap:8px; margin-left:auto; }
+  .acessos-acoes .btn-excluir{ color: var(--danger); border-color: var(--danger); }
+  .acessos-acoes .btn-excluir[disabled]{ opacity:.45; cursor:not-allowed; }
   /* iOS/Safari amplia a página ao focar um campo com fonte menor que 16px e NÃO volta sozinho
      (a tela fica "ampliada" até o usuário pinçar). Só no celular, os campos ficam com 16px —
      é a correção da causa; nada de zoom/transform/overflow/meta. Listados também os campos com
@@ -15325,10 +15329,16 @@ function renderAcessosUsuariosList(){
     return `<div class="tech-pin-row" data-acessosuser="${u.id}">
       <div class="tech-pin-name">${escapeHtml(u.name)}</div>
       <div class="sub" style="flex:1; color:var(--text-dim); font-size:12.5px;">${escapeHtml(perfisTxt)}${u.isMaster ? ' · <b>Master</b>' : ''}</div>
-      <button type="button" class="btn-ghost" data-acessoseditar="${u.id}">Editar</button>
+      <div class="acessos-acoes">
+        <button type="button" class="btn-ghost" data-acessoseditar="${u.id}">Editar</button>
+        ${u.id === currentUserId
+          ? `<button type="button" class="btn-ghost btn-excluir" disabled title="Você não pode excluir a própria conta">Excluir</button>`
+          : `<button type="button" class="btn-ghost btn-excluir" data-acessosexcluir="${u.id}">Excluir</button>`}
+      </div>
     </div>`;
   }).join('') : '<div class="painel-block-empty">Nenhum usuário cadastrado ainda.</div>';
   box.querySelectorAll('[data-acessoseditar]').forEach(btn => btn.addEventListener('click', () => abrirAcessosUsuarioModal(btn.dataset.acessoseditar)));
+  box.querySelectorAll('[data-acessosexcluir]').forEach(btn => btn.addEventListener('click', () => confirmarExclusaoUsuarioAcessos(btn.dataset.acessosexcluir)));
 }
 
 function acessosAtualizarCamposPin(){
@@ -15671,6 +15681,150 @@ async function salvarUsuarioAcessos(dados){
   }
   if(falhasPonte.length) return { ok: false, id: existente.id, nos, reason: mensagemFalhaParcial('salvo', nos, falhasPonte) };
   return { ok: true, id: existente.id, nos };
+}
+
+// =====================================================================================
+// ACESSOS — exclusão de usuário. Remove o ACESSO (users/<id> e os registros legados vinculados a
+// ele), nunca o histórico: services, maintenanceContracts, oficinaEquipamentos, estoque, mídia etc.
+// guardam o nome só como texto e não são tocados. A identificação é sempre o id real do cadastro
+// (users/<id>) e, nos nós legados, a chave legacyNames[perfil] EXATA (nunca prefixo/parte do nome:
+// "Adão" e "Adão Jr" são chaves diferentes). Tudo sai em UMA escrita multi-caminho (atômica no
+// Firebase: ou remove tudo, ou nada) — não existe estado "meio excluído" no servidor.
+// =====================================================================================
+const EXCLUSAO_TIMEOUT_MS = 20000;
+let acessosExcluirEmAndamento = false;
+
+function atividadesDoTecnico(chaveTech){
+  if(!chaveTech || !Array.isArray(services)) return [];
+  return services.filter(s => s && (s.technician === chaveTech || (Array.isArray(s.technicians) && s.technicians.includes(chaveTech))));
+}
+function mensagemConfirmacaoExclusao(u){
+  const perfis = Object.keys(u.profiles || {}).filter(p => u.profiles[p]).map(p => ACESSOS_PERFIL_LABEL[p] || p).join(', ');
+  let msg = 'Deseja realmente excluir o usuário ' + u.name + '? Essa ação removerá seus acessos ao sistema' + (perfis ? ' (' + perfis + ')' : '') + ' e não poderá ser desfeita automaticamente.';
+  const ativ = atividadesDoTecnico(u.profiles && u.profiles.tech ? (u.legacyNames && u.legacyNames.tech) : null);
+  if(ativ.length){
+    const abertas = ativ.filter(s => s.status !== 'concluido').length;
+    msg += ' O histórico é preservado: ' + ativ.length + ' atividade(s) com este técnico continuam salvas' + (abertas ? ' (' + abertas + ' ainda em aberto, que ficarão atribuídas a um técnico que deixa de existir na equipe)' : '') + '.';
+  } else {
+    msg += ' O histórico de atividades é preservado.';
+  }
+  return msg;
+}
+
+// Remove do estado local (listas em memória + snapshots de diff) exatamente o que saiu do servidor.
+// Sem isso, o próximo salvamento por diff "ressuscitaria" a entrada apagada.
+function limparAcessoLegadoLocal(perfil, chave){
+  if(perfil === 'manager'){ MANAGERS = MANAGERS.filter(m => m.name !== chave); delete managersSnapshot[chave]; }
+  else if(perfil === 'financeiro'){ FINANCEIRO = FINANCEIRO.filter(f => f.name !== chave); delete financeiroSnapshot[chave]; }
+  else if(perfil === 'oficina'){ OFICINA = OFICINA.filter(o => o.name !== chave); delete oficinaSnapshot[chave]; }
+  else if(perfil === 'tech'){
+    TECHS = TECHS.filter(t => t.name !== chave);
+    delete techRosterSnapshot[chave]; delete techPinsSnapshot[chave]; delete techPhonesSnapshot[chave];
+  }
+}
+
+async function excluirUsuarioAcessos(id){
+  // Autorização dentro da função (não só na interface) — e reconfirmada contra o servidor abaixo.
+  if(!isCurrentUserMaster()){
+    return { ok: false, reason: 'Você não tem permissão para excluir usuários. Só um Gestor Master pode fazer isso.' };
+  }
+  if(typeof id !== 'string' || !chaveLegadaValida(id)) return { ok: false, reason: 'Identificação de usuário inválida. Nada foi excluído.' };
+  if(id === currentUserId) return { ok: false, reason: 'Você não pode excluir a própria conta enquanto está logado com ela.' };
+
+  // users não tem listener em tempo real: o que decide é o servidor, não a lista em memória.
+  let servidor;
+  try{
+    const snap = await rtdb.ref('users').get();
+    const v = snap.exists() ? snap.val() : null;
+    servidor = (v && typeof v === 'object') ? v : {};
+  }catch(e){
+    console.error('Exclusão de usuário: falha ao ler users no servidor', e);
+    return { ok: false, reason: 'Não foi possível confirmar os cadastros no servidor. Verifique sua internet e tente novamente. Nada foi excluído.' };
+  }
+  const euServidor = servidor[currentUserId];
+  if(!euServidor || euServidor.isMaster !== true || !(euServidor.profiles && euServidor.profiles.manager)){
+    return { ok: false, reason: 'O servidor não confirma que a sua conta é Gestor Master. Nada foi excluído.' };
+  }
+  const alvo = servidor[id];
+  if(!alvo){
+    if(!USERS.some(u => u.id === id)) return { ok: false, reason: 'Usuário não encontrado.' };
+    USERS = USERS.filter(u => u.id !== id); // já tinha sido excluído em outro aparelho
+    return { ok: true, id, jaRemovido: true, removidos: [], preservados: [] };
+  }
+  const mastersRestantes = Object.keys(servidor).filter(k => k !== id && servidor[k] && servidor[k].isMaster === true && servidor[k].profiles && servidor[k].profiles.manager);
+  if(alvo.isMaster === true && mastersRestantes.length === 0){
+    return { ok: false, reason: 'Não é possível excluir o último Gestor Master do sistema.' };
+  }
+
+  // Planejamento (nada é gravado até aqui): só os perfis ATIVOS do usuário, só a chave legada dele.
+  const caminhos = {};
+  const removidos = ['users'];
+  const preservados = [];
+  const aplicarLocal = []; // { perfil, chave }
+  const NOS_POR_PERFIL = {
+    manager: ['managers'], financeiro: ['financeiro'], oficina: ['oficina'], tech: ['techRoster', 'techPins', 'techPhones']
+  };
+  for(const p of ['manager', 'tech', 'oficina', 'financeiro']){
+    if(!(alvo.profiles && alvo.profiles[p] === true)) continue;
+    const rotulo = ACESSOS_PERFIL_LABEL[p] || p;
+    const chave = alvo.legacyNames && alvo.legacyNames[p];
+    if(!chave){ preservados.push(rotulo + ': sem chave legada registrada — nada a remover no cadastro legado'); continue; }
+    if(!chaveLegadaValida(chave)){ preservados.push(rotulo + ': a chave legada "' + chave + '" nunca pôde ser gravada no Firebase — não há registro legado a remover'); continue; }
+    if(p === 'oficina' && normNomeExato(chave) === USERS_GENERIC_OFICINA_NAME){ preservados.push(rotulo + ': "Oficina" genérico nunca é removido'); continue; }
+    const compartilhada = Object.keys(servidor).find(k => k !== id && servidor[k] && servidor[k].legacyNames && servidor[k].legacyNames[p] === chave);
+    if(compartilhada){
+      preservados.push(rotulo + ': o registro legado "' + chave + '" também é referenciado por "' + servidor[compartilhada].name + '" — preservado');
+      continue;
+    }
+    // Mesmas travas de "última pessoa" já usadas ao remover um perfil (evita recriar a lista padrão).
+    if(p === 'manager' && MANAGERS.some(m => m.name === chave) && MANAGERS.length <= 1) return { ok: false, reason: 'Este é o último registro do cadastro legado de Gestores; a exclusão foi bloqueada para não recriar a lista padrão. Nada foi excluído.' };
+    if(p === 'financeiro' && FINANCEIRO.some(f => f.name === chave) && FINANCEIRO.length <= 1) return { ok: false, reason: 'Esta é a última pessoa do cadastro legado de Financeiro; a exclusão foi bloqueada. Nada foi excluído.' };
+    if(p === 'oficina' && OFICINA.some(o => o.name === chave) && OFICINA.length <= 1) return { ok: false, reason: 'Esta é a última pessoa do cadastro legado de Oficina; a exclusão foi bloqueada. Nada foi excluído.' };
+    NOS_POR_PERFIL[p].forEach(no => { caminhos[no + '/' + chave] = null; if(!removidos.includes(no)) removidos.push(no); });
+    aplicarLocal.push({ perfil: p, chave });
+  }
+  caminhos['users/' + id] = null;
+
+  // UMA escrita multi-caminho: atômica no Firebase. Falhou = nada mudou no servidor.
+  let timer;
+  try{
+    await Promise.race([
+      rtdb.ref().update(caminhos),
+      new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('__timeout__')), EXCLUSAO_TIMEOUT_MS); })
+    ]);
+  }catch(e){
+    clearTimeout(timer);
+    console.error('Exclusão de usuário: falha na gravação', e);
+    if(e && e.message === '__timeout__'){
+      return { ok: false, semConfirmacao: true, reason: 'O servidor não confirmou a exclusão a tempo (possível falta de conexão). Esta tela não foi alterada e o usuário continua listado, mas a exclusão pode ser concluída sozinha quando a conexão voltar — confira a lista de Acessos antes de tentar de novo.' };
+    }
+    return { ok: false, reason: 'Não foi possível excluir o usuário. A exclusão é gravada em uma única operação: nada foi removido no servidor e o usuário continua com acesso. Verifique sua internet e tente novamente.' };
+  }
+  clearTimeout(timer);
+
+  // Servidor confirmou — agora (e só agora) o estado local acompanha.
+  USERS = USERS.filter(u => u.id !== id);
+  aplicarLocal.forEach(a => limparAcessoLegadoLocal(a.perfil, a.chave));
+  try{ renderManagerPinList(); renderTechPinList(); renderFinanceiroPinList(); renderOficinaPinList(); }catch(e){ /* painéis legados ocultos — só higiene visual */ }
+  try{ if(aplicarLocal.some(a => a.perfil === 'tech')) renderAll(); }catch(e){ console.error('Falha ao atualizar telas após a exclusão:', e); }
+  return { ok: true, id, removidos, preservados };
+}
+
+function confirmarExclusaoUsuarioAcessos(id){
+  const u = USERS.find(x => x.id === id);
+  if(!u || id === currentUserId) return;
+  customConfirm(mensagemConfirmacaoExclusao(u), async () => {
+    if(acessosExcluirEmAndamento) return;
+    acessosExcluirEmAndamento = true;
+    try{
+      const r = await excluirUsuarioAcessos(id);
+      if(!r.ok) alert(r.reason);
+      else if(r.preservados && r.preservados.length) alert('Usuário excluído. Itens preservados no cadastro legado:\n• ' + r.preservados.join('\n• '));
+    } finally {
+      acessosExcluirEmAndamento = false;
+      renderAcessosUsuariosList();
+    }
+  }, 'Excluir');
 }
 
 document.getElementById('acessosUsuarioModalSalvarBtn').addEventListener('click', async () => {
