@@ -1595,6 +1595,12 @@
   .prv-addbox{ background:var(--panel-2); border:1px dashed var(--line); border-radius:var(--radius); padding:14px 16px; margin-top:14px; }
   .prv-addrow{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
   .prv-addrow .field{ margin-bottom:0; flex:1; min-width:170px; }
+
+  .prv-tri{ display:flex; gap:8px; }
+  .prv-tri-c{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:700; color:var(--text-dim); }
+  .prv-tri-c .prv-num{ padding:10px 6px; }
+  .prv-txt{ width:100%; padding:9px 11px; border:1.5px solid var(--line); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; line-height:1.4; resize:vertical; background:var(--panel); }
+  .prv-txt:disabled{ opacity:.6; }
 </style>
 </head>
 <body>
@@ -17488,6 +17494,17 @@ const BOM_DEFEITO_TROCAR = [
 function campoCategoria(id, label, opcoes, status){ return {id, label, tipo:'categoria', opcoes, status: status||'ok'}; }
 function campoFaixa(id, label, status){ return {id, label, tipo:'faixa', opcoes:FAIXA_ISOLAMENTO, status: status||'ok'}; }
 function campoNumerico(id, label, unidade, status){ return {id, label, tipo:'numerico', unidade, status: status||'ok'}; }
+// Campo de texto livre e OPCIONAL (as linhas "obs" da tabela do Sítio Santo Antônio).
+function campoTexto(id, label){ return {id, label, tipo:'texto', opcional:true, status:'ok'}; }
+// Medição trifásica: três valores (RS, ST, RT) do mesmo parâmetro, mostrados juntos na tela do técnico e
+// numa linha só no relatório. Cada fase é um campo numérico próprio (chave própria), só o desenho agrupa.
+function camposTri(idBase, rotulo, unidade){
+  return ['RS','ST','RT'].map((f, i) => ({ id: idBase + f, label: rotulo + ' — ' + f, tipo:'numerico', unidade, status:'ok', tri:{ grupo: rotulo, fase: f, pos: i } }));
+}
+// Bomba/poço do Sítio Santo Antônio: isolamento + resistência + corrente, nas três fases.
+// Na tabela original a resistência aparece como "(W)" — é a resistência do enrolamento, em ohms (Ω).
+function camposBombaTrifasica(){ return [ campoFaixa('isolamento', 'Isolamento'), ...camposTri('res', 'Resistência (Ω)', 'Ω'), ...camposTri('cor', 'Corrente (A)', 'A') ]; }
+function camposQuadroComando(){ return [ campoCategoria('componentes', 'Componentes', BOM_DEFEITO_TROCAR), campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU), ...camposTri('ten', 'Tensão (V)', 'V'), campoTexto('obs', 'Obs') ]; }
 function campoPendente(id, label, nota){ return {id, label, tipo:'pendente', status:'pendente', nota}; }
 
 function itensPiscinaSpa(){
@@ -17535,6 +17552,19 @@ function itensPiscinaSpa(){
         campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
         campoFaixa('isolamento', 'Isolamento'),
         campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+    // Bomba que faz a água circular pelo aquecimento da piscina (revisão do usuário, 30/09).
+    { nome:'Bomba de recirculação do aquecimento', campos:[
+        campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+        campoFaixa('isolamento', 'Isolamento'),
+        campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+    // Coletor solar de piscina (30/09): existe em clientes com aquecimento solar da piscina, sem boiler
+    // (ex.: 21 coletores). Campos reaproveitados do catálogo: condição + vazamento.
+    { nome:'Coletor solar', campos:[
+        campoCategoria('condicao', 'Condição', BOM_DEFEITO),
         campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
     ]},
   ];
@@ -17602,7 +17632,21 @@ const CATALOGO = [
           campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
           campoCategoria('sensores', 'Sensores', BOM_DEFEITO),
       ]},
-      { nome:'Conforto/recirculação (bomba)', campos:[
+      // Bombas do sistema de aquecimento separadas por função (revisão do usuário, 30/09): apoio a gás,
+      // conforto e apoio solar — mesmos campos de bomba (corrente, isolamento, ruído, vazamento).
+      { nome:'Bomba de apoio a gás', campos:[
+          campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+          campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+      ]},
+      { nome:'Bomba de conforto', campos:[
+          campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+          campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+      ]},
+      { nome:'Bomba de apoio solar', campos:[
           campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
           campoFaixa('isolamento', 'Isolamento'),
           campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
@@ -17662,14 +17706,53 @@ const CATALOGO = [
   // cada chamada — os dois tipos abaixo NÃO compartilham o mesmo array de itens.
   { tipo:'piscina', nome:'Piscina', itens: itensPiscinaSpa() },
   { tipo:'spa', nome:'SPA', itens: itensPiscinaSpa() },
+  // Sauna: "Resistências" e "Sauna" viraram UM item só (30/09) — as resistências fazem parte do mesmo gerador
+  // de vapor, então 2 saunas = 2 conjuntos completos (isolamento das resistências + acionamento + correntes).
   { tipo:'sauna', nome:'Sauna (gerador de vapor)', itens:[
-      { nome:'Resistências', campos:[ campoFaixa('isolamento', 'Isolamento') ]},
       { nome:'Sauna', campos:[
+          campoFaixa('isolamento', 'Isolamento das resistências'),
           campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU),
           campoNumerico('correnteR', 'Corrente — fase R', 'A'),
           campoNumerico('correnteS', 'Corrente — fase S', 'A'),
           campoNumerico('correnteT', 'Corrente — fase T', 'A'),
       ]},
+  ]},
+  // ====== Exclusivos do Sítio Santo Antônio (tabela de medições do cliente, 30/09) ======
+  // Esse cliente mede coisas que o catálogo padrão descarta de propósito (resistência de enrolamento,
+  // tensão do quadro de comando, RPM...). Por isso ficam em tipos PRÓPRIOS, só oferecidos a ele
+  // (exclusivoDe) — o catálogo dos demais clientes não muda.
+  { tipo:'sitio_pocos', nome:'Poços (Sítio Santo Antônio)', exclusivoDe:['Santo Antonio'], itens:[
+      { nome:'Poço', campos: camposBombaTrifasica() },
+      { nome:'Poço novo', campos: camposBombaTrifasica() },
+      { nome:'Acionamento dos poços', campos:[ campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU), campoTexto('obs', 'Obs') ] },
+  ]},
+  { tipo:'sitio_recalque', nome:'Recalque com quadro de comando (Sítio Santo Antônio)', exclusivoDe:['Santo Antonio'], itens:[
+      { nome:'BBA Recalque', campos: camposBombaTrifasica() },
+      { nome:'Quadro de comando', campos: camposQuadroComando() },
+  ]},
+  { tipo:'sitio_caixa', nome:'Caixa superior — pressão (Sítio Santo Antônio)', exclusivoDe:['Santo Antonio'], itens:[
+      { nome:'Quadro de comando', campos: camposQuadroComando() },
+      { nome:'BBA Press', campos: camposBombaTrifasica() },
+  ]},
+  { tipo:'sitio_bombas', nome:'Bombas de recalque — rampa (Sítio Santo Antônio)', exclusivoDe:['Santo Antonio'], itens:[
+      { nome:'Bomba', campos: camposBombaTrifasica() },
+  ]},
+  { tipo:'sitio_piscina', nome:'Piscina (Sítio Santo Antônio)', exclusivoDe:['Santo Antonio'], itens:[
+      { nome:'BBA1 Intelliflo', campos:[ campoFaixa('isolamento', 'Isolamento'), campoNumerico('corrente', 'Corrente (A)', 'A'), campoNumerico('rpm', 'RPM (programado 2000)', 'RPM') ]},
+      { nome:'BBA2 Intelliflo', campos:[ campoFaixa('isolamento', 'Isolamento'), campoNumerico('corrente', 'Corrente (A)', 'A'), campoNumerico('rpm', 'RPM (programado 2350)', 'RPM') ]},
+      { nome:'BBA Hidro', campos: camposBombaTrifasica() },
+      { nome:'Filtro UV', campos:[ campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('lampada', 'Lâmpada', [ {v:'func', label:'Funcionando', cor:'green'}, {v:'queimada', label:'Queimada', cor:'red'} ]),
+          campoNumerico('corrente', 'Corrente (A)', 'A') ]},
+      { nome:'Filtro Piscina', campos:[
+          campoCategoria('retrolavagem', 'Retrolavagem', [ {v:'feita', label:'Retrolavado', cor:'green'}, {v:'nexec', label:'Não executado', cor:'amber'} ]),
+          campoCategoria('pressao', 'Pressão', [ {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ]),
+          campoCategoria('vazamento', 'Vazando', VAZAMENTO) ]},
+      { nome:'BBA de Calor', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU), campoNumerico('corrente', 'Corrente (A)', 'A') ]},
+      { nome:'Mastertemp', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU), campoCategoria('vazamento', 'Vazando', VAZAMENTO) ]},
+  ]},
+  { tipo:'sitio_sauna', nome:'Sauna Vapor (Sítio Santo Antônio)', exclusivoDe:['Santo Antonio'], itens:[
+      { nome:'Sauna Vapor', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('vazamento', 'Vazando', VAZAMENTO), ...camposTri('cor', 'Corrente (A)', 'A') ]},
   ]},
 ];
 function tipoPorId(id){ return CATALOGO.find(t=>t.tipo===id); }
@@ -17692,12 +17775,33 @@ const REGRAS_COMPONENTES = {
   pressurizacao:      { inicio: 1, minimo: { 'Tanque de expansão': 1 } },
   drenagem:           { inicio: 1, minimo: {} },
   bomba_reuso:        { inicio: 1, minimo: {} },
+  // Aquecimento direto (pedido em 30/09): a quantidade de aquecedores de uma unidade é configurável
+  // ("Aquecedores — Social: 2"). Sempre há pelo menos 1 aquecedor. Repetir o tipo em locais diferentes
+  // continua valendo (uma unidade por local); a quantidade serve para o caso de vários no mesmo local.
+  aquecimento_direto: { inicio: 1, minimo: { 'Aquecedor': 1 } },
+  // Pedido em 30/09: TODOS os sistemas têm quantidade. Nos de um item só, a quantidade é o número de
+  // equipamentos daquele local (mínimo 1; 3 bombas = "Bomba 1, 2 e 3"). Os tipos de vários itens já tinham.
+  conforto:             { inicio: 1, minimo: { 'Bomba': 1 } },
+  recalque_residencial: { inicio: 1, minimo: { 'Bomba': 1 } },
+  recalque_industrial:  { inicio: 1, minimo: { 'Bomba/poço': 1 } },
+  filtro_agua:          { inicio: 1, minimo: { 'Filtro': 1 } },
+  sauna:                { inicio: 1, minimo: { 'Sauna': 1 } },
+  // Sítio Santo Antônio (30/09). inicioPorItem: quantidade inicial própria de um subitem (sobrepõe "inicio").
+  sitio_pocos:          { inicio: 1, inicioPorItem: { 'Poço novo': 0 }, minimo: { 'Poço': 1, 'Acionamento dos poços': 1 } },
+  sitio_recalque:       { inicio: 1, minimo: { 'BBA Recalque': 1, 'Quadro de comando': 1 } },
+  sitio_caixa:          { inicio: 1, minimo: { 'Quadro de comando': 1, 'BBA Press': 1 } },
+  sitio_bombas:         { inicio: 1, minimo: { 'Bomba': 1 } },
+  sitio_piscina:        { inicio: 1, minimo: {} },
+  sitio_sauna:          { inicio: 1, minimo: { 'Sauna Vapor': 1 } },
 };
 function tipoTemComponentesConfiguraveis(tipoId){ return Object.prototype.hasOwnProperty.call(REGRAS_COMPONENTES, tipoId); }
 function minimosDoTipo(tipoId){ return (REGRAS_COMPONENTES[tipoId] && REGRAS_COMPONENTES[tipoId].minimo) || {}; }
 function estadoInicialDoTipo(tipoId){
   const regra = REGRAS_COMPONENTES[tipoId]; const est = {};
-  tipoPorId(tipoId).itens.forEach(it => { est[it.nome] = Math.max(regra.inicio, (regra.minimo||{})[it.nome] || 0); });
+  tipoPorId(tipoId).itens.forEach(it => {
+    const ini = (regra.inicioPorItem && regra.inicioPorItem[it.nome] !== undefined) ? regra.inicioPorItem[it.nome] : regra.inicio;
+    est[it.nome] = Math.max(ini, (regra.minimo||{})[it.nome] || 0);
+  });
   return est;
 }
 function componentesDoEstado(estado){ return Object.entries(estado).filter(([,q])=>q>0).map(([itemNome,quantidade])=>({itemNome, quantidade})); }
@@ -17750,11 +17854,15 @@ function montarSnapshotUnidade(unit, respostas){
     titulo: g.itemLabel,
     linhas: g.campos.map(({key, campo}) => {
       const v = respostas[key];
-      if(v === undefined || v === '') return { campo: campo.label, texto: null, cor: null };
-      if(campo.tipo === 'numerico') return { campo: campo.label, texto: v + ' ' + campo.unidade, cor: null };
+      const vazio = (v === undefined || v === '');
+      if(campo.opcional && vazio) return null;                       // observação opcional em branco: nem entra no relatório
+      const tri = campo.tri ? { tri: { g: campo.tri.grupo, f: campo.tri.fase } } : {};   // RS/ST/RT saem juntos numa linha só
+      if(vazio) return Object.assign({ campo: campo.label, texto: null, cor: null }, tri);
+      if(campo.tipo === 'texto') return { campo: campo.label, texto: String(v), cor: null, longo: true };
+      if(campo.tipo === 'numerico') return Object.assign({ campo: campo.label, texto: v + ' ' + campo.unidade, cor: null }, tri);
       const o = campo.opcoes.find(o => o.v === v);
       return { campo: campo.label, texto: o ? o.label : String(v), cor: o ? o.cor : null };
-    }),
+    }).filter(Boolean),
   }));
   return { unitId: unit.id, local: unit.local, tipoNome: tipo.nome, grupos };
 }
@@ -17804,6 +17912,8 @@ const CSS_RELATORIO = `
 .rp-tab{width:100%;border-collapse:collapse;margin-top:4px;}
 .rp-tab td{padding:5px 0;border-bottom:1px dashed #E3E4E6;vertical-align:top;} .rp-tab tr:last-child td{border-bottom:none;}
 .rp-tab td.v{text-align:right;font-weight:700;white-space:nowrap;}
+.rp-fase{white-space:nowrap;font-weight:600;} .rp-fase b{font-weight:800;}
+.rp-texto{white-space:pre-wrap;font-weight:400;margin-top:2px;}
 .rp-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;}
 .rp-pill.green{background:rgba(46,125,79,.12);color:#1F5A38;} .rp-pill.amber{background:rgba(135,92,31,.14);color:#875C1F;} .rp-pill.red{background:rgba(192,57,43,.12);color:#C0392B;} .rp-pill.none{color:#6B7076;background:#F0F1F2;font-weight:600;}
 .rp-obs{margin-top:16px;border:1px solid #E3E4E6;border-radius:12px;padding:12px 14px;break-inside:avoid;}
@@ -17951,10 +18061,12 @@ function aplicarPendentes(raiz, prefixo){
 
 // ---------------- Unidades configuradas ----------------
 function normalizarUnidade(u){
-  return {
-    id: u.id, cliente: u.cliente || '', tipo: u.tipo, local: u.local || '',
-    componentes: paraLista(u.componentes).map(c => ({ itemNome: c.itemNome, quantidade: Number(c.quantidade) || 0 })).filter(c => c.quantidade > 0),
-  };
+  let comps = paraLista(u.componentes).map(c => ({ itemNome: c.itemNome, quantidade: Number(c.quantidade) || 0 })).filter(c => c.quantidade > 0);
+  // Unidade cadastrada antes de o tipo ter subitens configuráveis (ex.: Aquecimento direto) não traz "componentes"
+  // no banco (o Firebase também descarta listas vazias). Nos tipos que começam com 1 de cada, isso vale como o
+  // padrão (1 de cada) — e não como "nenhum subitem", que esconderia o equipamento do técnico.
+  if(!comps.length && tipoTemComponentesConfiguraveis(u.tipo) && REGRAS_COMPONENTES[u.tipo].inicio >= 1) comps = componentesDoEstado(estadoInicialDoTipo(u.tipo));
+  return { id: u.id, cliente: u.cliente || '', tipo: u.tipo, local: u.local || '', componentes: comps };
 }
 function aplicarUnidadesBrutas(raw){
   const lista = Object.keys(raw || {}).map(k => raw[k]).filter(u => u && u.id != null && tipoPorId(u.tipo)).map(normalizarUnidade);
@@ -18080,12 +18192,34 @@ async function fotosDoRelatorio(rel){
 function unidadeCompleta(u, r){
   const est = estruturaDaUnidade(u);
   const resp = (r && r.respostas && r.respostas[u.id]) || {};
-  return est.length > 0 && est.every(({ key }) => resp[key] !== undefined && resp[key] !== '');
+  const obrig = est.filter(e => !e.campo.opcional);          // observação opcional não trava o "preenchida"
+  return obrig.length > 0 && obrig.every(({ key }) => resp[key] !== undefined && resp[key] !== '');
+}
+function htmlTri(unitId, es, resp, travado){
+  const t0 = es[0].campo;
+  return `<div class="prv-field"><div class="prv-flabel">${esc(t0.tri.grupo)}</div><div class="prv-tri">${es.map(({ key, campo }) =>
+    `<label class="prv-tri-c"><span>${esc(campo.tri.fase)}</span><input type="number" inputmode="decimal" step="any" class="prv-num" data-prv-u="${esc(unitId)}" data-prv-k="${esc(key)}" value="${esc(resp[key] != null ? resp[key] : '')}" placeholder="0" ${travado ? 'disabled' : ''}></label>`).join('')}</div></div>`;
+}
+// Percorre os campos de um grupo: três campos seguidos da mesma medição trifásica viram uma linha com RS/ST/RT.
+function htmlCamposDoGrupo(unitId, entries, resp, travado){
+  let html = '';
+  for(let i = 0; i < entries.length; i++){
+    const e = entries[i];
+    if(e.campo.tri && e.campo.tri.pos === 0 && entries[i + 1] && entries[i + 1].campo.tri && entries[i + 2] && entries[i + 2].campo.tri){
+      html += htmlTri(unitId, [e, entries[i + 1], entries[i + 2]], resp, travado); i += 2; continue;
+    }
+    html += htmlCampo(unitId, e.key, e.campo, resp[e.key], travado);
+  }
+  return html;
 }
 function htmlCampo(unitId, key, campo, valor, travado){
+  if(campo.tipo === 'texto'){
+    return `<div class="prv-field"><div class="prv-flabel">${esc(campo.label)} <small style="text-transform:none;font-weight:500;">(opcional)</small></div>
+      <textarea class="prv-txt" rows="2" data-prv-u="${esc(unitId)}" data-prv-k="${esc(key)}" ${travado ? 'disabled' : ''}>${esc(valor != null ? valor : '')}</textarea></div>`;
+  }
   if(campo.tipo === 'numerico'){
     return `<div class="prv-field"><div class="prv-flabel">${esc(campo.label)}</div>
-      <input type="number" inputmode="decimal" step="0.1" class="prv-num" data-prv-u="${esc(unitId)}" data-prv-k="${esc(key)}" value="${esc(valor != null ? valor : '')}" placeholder="0.0" ${travado ? 'disabled' : ''}>
+      <input type="number" inputmode="decimal" step="any" class="prv-num" data-prv-u="${esc(unitId)}" data-prv-k="${esc(key)}" value="${esc(valor != null ? valor : '')}" placeholder="0.0" ${travado ? 'disabled' : ''}>
       <div class="prv-num-un">${esc(campo.unidade)}</div></div>`;
   }
   return `<div class="prv-field"><div class="prv-flabel">${esc(campo.label)}</div><div class="prv-opts">${campo.opcoes.map(o =>
@@ -18102,7 +18236,7 @@ function htmlUnidade(sid, u, r, travado){
     if(tipoTemComponentesConfiguraveis(u.tipo) && !est.length){
       corpo = `<div class="prv-aviso">⚠ Nenhum subitem configurado para esta unidade. O Gestor configura em Manutenções → Configuração por cliente.</div>`;
     } else {
-      corpo = agruparPorItem(est).map(g => `<div class="prv-grupo"><div class="prv-grupo-t">${esc(g.itemLabel)}</div>${g.campos.map(({ key, campo }) => htmlCampo(u.id, key, campo, resp[key], travado)).join('')}</div>`).join('');
+      corpo = agruparPorItem(est).map(g => `<div class="prv-grupo"><div class="prv-grupo-t">${esc(g.itemLabel)}</div>${htmlCamposDoGrupo(u.id, g.campos, resp, travado)}</div>`).join('');
     }
     corpo = `<div class="prv-unit-corpo">${corpo}<div class="prv-local">📍 ${esc(u.local)} — identificação da unidade, só para localizar o equipamento.</div></div>`;
   }
@@ -18242,6 +18376,14 @@ function ligarSlot(slot){
   slot.addEventListener('input', (e) => {
     const svc = svcDe(); if(!svc || svc.status === 'concluido') return;
     const sid = svc.id; const t = e.target;
+    if(t.classList.contains('prv-txt')){
+      const u = t.dataset.prvU, k = t.dataset.prvK, v = t.value;
+      const r = estado.rascunhos[sid]; if(!r) return;
+      r.respostas[u] = r.respostas[u] || {};
+      if(v === '') delete r.respostas[u][k]; else r.respostas[u][k] = v;
+      agendar('t:' + sid + ':' + u + ':' + k, () => gravarResposta(sid, u, k, v), 600);
+      return;
+    }
     if(t.classList.contains('prv-num')){
       const u = t.dataset.prvU, k = t.dataset.prvK, v = t.value;
       const r = estado.rascunhos[sid]; if(!r) return;
@@ -18319,6 +18461,7 @@ async function gerarRelatorioAoConcluir(svc){
   }catch(e){ console.error('prev: falha ao gerar o relatório ao concluir (a conclusão da atividade não foi afetada)', e); }
 }
 
+const PREV_IMPORT_PLANILHAS = [{"cliente":"Bruno Pandolfi","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]}]},{"cliente":"Bulus","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"conforto","local":"SmartStart","componentes":[{"itemNome":"Bomba","quantidade":1}]},{"tipo":"piscina","local":"Piscina e SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]},{"tipo":"drenagem","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]}]},{"cliente":"Castro Neves","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"aquecimento_direto","local":"Anexo","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"conforto","local":"Conforto","componentes":[{"itemNome":"Bomba","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"pressurizacao","local":"Anexo","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"drenagem","local":"Esgoto","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Casa principal","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]},{"tipo":"piscina","local":"Anexo","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]}]},{"cliente":"Catarina Façanha","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"drenagem","local":"Águas pluviais 1","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais 2","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais 3","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Esgoto 1","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"recalque_industrial","local":"Poço","componentes":[{"itemNome":"Bomba/poço","quantidade":1}]},{"tipo":"recalque_residencial","local":"Irrigação","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":1}]}]},{"cliente":"Claudio Moniz","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]}]},{"cliente":"CNS - José Mauro","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":1}]}]},{"cliente":"Eric Hime","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":1},{"itemNome":"Bomba de conforto","quantidade":1},{"itemNome":"Bomba de apoio solar","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":1}]}]},{"cliente":"Fernando Pires","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":3},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Fran Marinho","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":1},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]}]},{"cliente":"Brandão - Búzios","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Casa","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"aquecimento_direto","local":"Caseiro","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":6},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Gustavo Miguez","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]}]},{"cliente":"João Basílio","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Esgoto","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]}]},{"cliente":"José Evandro Lopez","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":3}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":2}]}]},{"cliente":"José Mario Osório","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]}]},{"cliente":"José Paulo Amaral","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2}]}]},{"cliente":"José Ribamar Sabóia","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":10},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"piscina","local":"Filtração (Jacuzzi)","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Lucyna - Petrópolis","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":3}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Hóspedes (Harman 2437)","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Hóspedes (Rinnai E21)","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Charles","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Serviço / casa de máquinas da piscina","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":2},{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1}]}]},{"cliente":"Lucyna - Rio","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Área de serviço","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":3}]}]},{"cliente":"Maria Beltrão","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":4},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"piscina","local":"Espelho d'água","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Maria Salim","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"drenagem","local":"Esgoto","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de recirculação do aquecimento","quantidade":1}]}]},{"cliente":"Carlos Montenegro","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":4}]},{"tipo":"aquecimento_boiler","local":"Lado social","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Lado anexo","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":6},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":2}]}]},{"cliente":"Patrice de Camaret","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Box banheiro","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"conforto","local":"SmartStart","componentes":[{"itemNome":"Bomba","quantidade":1}]}]},{"cliente":"Paulo Fernando - Areal","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Social","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"aquecimento_direto","local":"Hóspedes","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":4}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1}]},{"tipo":"spa","local":"SPA","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]}]},{"cliente":"Paulo Fernando - Rio","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Apoio solar (coletor)","quantidade":6},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Paulo Marinho","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Anexo","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"conforto","local":"Anexo","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"pressurizacao","local":"Anexo","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"drenagem","local":"Esgoto casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":4},{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Bomba de recirculação do aquecimento","quantidade":2},{"itemNome":"Aquecedor a gás","quantidade":2}]},{"tipo":"piscina","local":"Lago","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":1}]},{"tipo":"drenagem","local":"Gerador","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Espelho d'água","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Adega","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Depósito","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Lateral academia","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]}]},{"cliente":"Raimundo Oliveira","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]}]},{"cliente":"Renata Moll","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Serviço","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Bomba de hidromassagem","quantidade":2}]}]},{"cliente":"Renato Pimentel","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de hidromassagem","quantidade":1}]},{"tipo":"piscina","local":"Espelho d'água","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Ricardo Botelho","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":4}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":4},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":2}]}]},{"cliente":"Roberto Carneiro","unidades":[{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]},{"tipo":"piscina","local":"Espelho d'água","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Apoio solar (coletor)","quantidade":5},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]}]},{"cliente":"Roberto Thompson","unidades":[{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":3},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Coletor solar","quantidade":21}]},{"tipo":"spa","local":"SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":3},{"itemNome":"Bomba de hidromassagem","quantidade":2},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Roni Argalji","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":4}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina e SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":2},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Sacra Familia","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":3},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":4}]}]},{"cliente":"Santo Antonio","unidades":[{"tipo":"sitio_pocos","local":"Cachoeirinha — Poços","componentes":[{"itemNome":"Poço","quantidade":7},{"itemNome":"Poço novo","quantidade":2},{"itemNome":"Acionamento dos poços","quantidade":1}]},{"tipo":"sitio_recalque","local":"Cachoeirinha — Recalque inferior","componentes":[{"itemNome":"BBA Recalque","quantidade":2},{"itemNome":"Quadro de comando","quantidade":1}]},{"tipo":"sitio_recalque","local":"Cachoeirinha — Recalque superior (Heliporto)","componentes":[{"itemNome":"BBA Recalque","quantidade":2},{"itemNome":"Quadro de comando","quantidade":1}]},{"tipo":"sitio_pocos","local":"Lago Pedro Carvalho — Poços","componentes":[{"itemNome":"Poço","quantidade":7},{"itemNome":"Acionamento dos poços","quantidade":1}]},{"tipo":"sitio_recalque","local":"Lago Pedro Carvalho — Recalque (para 16 caixas)","componentes":[{"itemNome":"BBA Recalque","quantidade":2},{"itemNome":"Quadro de comando","quantidade":1}]},{"tipo":"sitio_caixa","local":"Lago Pedro Carvalho — Caixa superior 16 caixas","componentes":[{"itemNome":"Quadro de comando","quantidade":1},{"itemNome":"BBA Press","quantidade":2}]},{"tipo":"sitio_bombas","local":"Lago Pedro Carvalho — Bombas de recalque (rampa entre a sede e as 16 caixas)","componentes":[{"itemNome":"Bomba","quantidade":6}]},{"tipo":"sitio_piscina","local":"Piscina","componentes":[{"itemNome":"BBA1 Intelliflo","quantidade":1},{"itemNome":"BBA2 Intelliflo","quantidade":1},{"itemNome":"BBA Hidro","quantidade":2},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro Piscina","quantidade":1},{"itemNome":"BBA de Calor","quantidade":2},{"itemNome":"Mastertemp","quantidade":1}]},{"tipo":"sitio_sauna","local":"Sauna Vapor","componentes":[{"itemNome":"Sauna Vapor","quantidade":1}]}]},{"cliente":"Wildson Nunes","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":4},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"pressurizacao","local":"Irrigação","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":1}]}]},{"cliente":"José Ziltemann","unidades":[{"tipo":"recalque_residencial","local":"Recalque morro","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque casa","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Caseiro","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Hóspedes","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina e SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":4}]}]}];
 
 // ====================================================================================
 // GESTOR — Manutenções (Configuração, Catálogo, Histórico) e Cadastros e OS (Relatórios)
@@ -18327,6 +18470,23 @@ function normalizarRelatorio(rel){
   return Object.assign({}, rel, {
     unidades: paraLista(rel.unidades).map(u => Object.assign({}, u, { grupos: paraLista(u.grupos).map(g => Object.assign({}, g, { linhas: paraLista(g.linhas) })) })),
   });
+}
+// Linhas de um grupo: medições trifásicas (RS/ST/RT) saem numa linha só; textos livres saem em bloco.
+function linhasDaTabela(linhas, pill){
+  let html = '';
+  for(let i = 0; i < linhas.length; i++){
+    const l = linhas[i];
+    if(l.tri && l.tri.g){
+      const trio = [l]; let j = i + 1;
+      while(j < linhas.length && trio.length < 3 && linhas[j].tri && linhas[j].tri.g === l.tri.g){ trio.push(linhas[j]); j++; }
+      const algum = trio.some(x => x.texto != null);
+      html += `<tr><td>${esc(l.tri.g)}</td><td class="v">${algum ? trio.map(x => `<span class="rp-fase">${esc(x.tri.f)} <b>${x.texto == null ? '—' : esc(x.texto)}</b></span>`).join(' · ') : '<span class="rp-pill none">não preenchido</span>'}</td></tr>`;
+      i = j - 1; continue;
+    }
+    if(l.longo && l.texto != null){ html += `<tr><td colspan="2">${esc(l.campo)}<div class="rp-texto">${esc(l.texto)}</div></td></tr>`; continue; }
+    html += `<tr><td>${esc(l.campo)}</td><td class="v">${pill(l)}</td></tr>`;
+  }
+  return html;
 }
 function htmlRelatorio(rel, fotos){
   const r = normalizarRelatorio(rel);
@@ -18357,13 +18517,13 @@ function htmlRelatorio(rel, fotos){
     </div>
     ${res.vazios ? `<div class="rp-nota">${res.vazios} campo(s) não preenchido(s) na visita.</div>` : '<div class="rp-nota"></div>'}
     ${res.atencao.length ? `<div class="rp-atencao"><h4>Pontos que precisam de atenção</h4><ul>${res.atencao.map(a =>
-        `<li><b>${esc(a.unidade)}</b> · ${a.grupo && a.grupo !== a.unidadeTipo ? esc(a.grupo) + ' · ' : ''}${esc(a.campo)}: <span class="rp-pill ${corSegura(a.cor)}">${esc(a.texto)}</span></li>`).join('')}</ul></div>`
+        `<li><b>${a.grupo ? esc(a.grupo) + ' — ' : ''}${esc(a.unidade)}</b> · ${esc(a.campo)}: <span class="rp-pill ${corSegura(a.cor)}">${esc(a.texto)}</span></li>`).join('')}</ul></div>`
       : (avaliados ? '<div class="rp-ok">✓ Nenhum ponto de atenção nesta visita.</div>' : '')}
     ${r.unidades.map(u => `<div class="rp-unit">
       <h3>${esc(u.local)}<small>${esc(u.tipoNome)}</small></h3>
       ${u.grupos.length ? u.grupos.map(g => `
         ${u.grupos.length > 1 ? `<div class="rp-grupo">${esc(g.titulo)}</div>` : ''}
-        <table class="rp-tab">${g.linhas.map(l => `<tr><td>${esc(l.campo)}</td><td class="v">${pill(l)}</td></tr>`).join('')}</table>`).join('')
+        <table class="rp-tab">${linhasDaTabela(g.linhas, pill)}</table>`).join('')
         : '<div class="rp-nota" style="margin:0;">Nenhum subitem estava configurado para esta unidade na data da visita.</div>'}
     </div>`).join('')}
     ${r.observacoes ? `<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto">${esc(r.observacoes)}</div></div>` : ''}
@@ -18455,9 +18615,10 @@ function garantirModal(){
   document.body.appendChild(d);
   d.addEventListener('click', (e) => {
     if(e.target === d){ fecharRelatorio(); return; }
-    const b = e.target.closest('[data-prv-m]'); if(!b || !relAbertoId) return;
+    const b = e.target.closest('[data-prv-m]'); if(!b) return;
     const a = b.dataset.prvM;
     if(a === 'fechar') return fecharRelatorio();
+    if(!relAbertoId) return;
     if(textoNaoSalvo() && a !== 'fechar'){ aviso('Você alterou o texto e ainda não salvou. Clique em "Salvar texto" antes de continuar.', 6000); return; }
     if(a === 'baixar') baixarPdf(relAbertoId);
     else if(a === 'whats') enviarWhatsapp(relAbertoId);
@@ -18599,11 +18760,12 @@ function corNome(c){ return c === 'green' ? 'verde' : c === 'amber' ? 'amarelo' 
 function renderCatalogo(){
   const box = document.getElementById('prvManutCatalogo'); if(!box || box.style.display === 'none') return;
   box.innerHTML = `<p class="prv-hint">Tipos de equipamento, campos e validações do relatório preventivo, como fechados na especificação. Somente leitura: alterar o catálogo exige uma nova versão do app.</p>` +
-    CATALOGO.map(t => `<div class="prv-cat-tipo"><div class="prv-cat-head"><b>${esc(t.nome)}</b><span class="prv-chip gray">${t.itens.length} item(ns)</span></div>
+    CATALOGO.map(t => `<div class="prv-cat-tipo"><div class="prv-cat-head"><b>${esc(t.nome)}</b><span class="prv-chip ${t.exclusivoDe ? 'amber' : 'gray'}">${t.exclusivoDe ? 'Exclusivo: ' + esc(t.exclusivoDe.join(', ')) + ' · ' : ''}${t.itens.length} item(ns)</span></div>
       ${t.itens.map(it => `<div class="prv-cat-item"><div class="prv-cat-item-n">${esc(it.nome)}</div>
         ${it.campos.filter(c => c.status !== 'pendente').map(c => `<div class="prv-cat-campo"><span>${esc(c.label)}</span><span class="prv-cat-op">${
           c.tipo === 'faixa' ? c.opcoes.map(o => esc(o.label)).join(', ')
           : c.tipo === 'numerico' ? 'numérico (' + esc(c.unidade) + ')'
+          : c.tipo === 'texto' ? 'texto livre (opcional)'
           : c.opcoes.map(o => esc(o.label) + ' (' + corNome(o.cor) + ')').join(', ')}</span></div>`).join('')}</div>`).join('')}</div>`).join('');
 }
 
@@ -18625,6 +18787,11 @@ function htmlSteppers(tipoId, qtd, escopo){
     return `<div class="prv-step-row"><span>${esc(it.nome)}${m > 0 ? ` <small>(mínimo ${m})</small>` : ''}</span>
       <div class="prv-stepper"><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="-1" ${q <= m ? 'disabled' : ''}>−</button><span>${q}</span><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="1">+</button></div></div>`; }).join('');
 }
+function tipoVisivelParaCliente(t, cliente){
+  if(!t.exclusivoDe) return true;
+  const k = normalizedClientKey(cliente || '');
+  return t.exclusivoDe.some(n => normalizedClientKey(n) === k);
+}
 function renderConfig(){
   const box = document.getElementById('prvManutConfig'); if(!box || box.style.display === 'none') return;
   const foco = document.activeElement; if(foco && box.contains(foco) && foco.id === 'prvCfgLocal') estado.cfgForm.local = foco.value;
@@ -18632,8 +18799,10 @@ function renderConfig(){
   if(!clientes.includes(estado.cfgCliente)) estado.cfgCliente = clientes[0] || '';
   const k = normalizedClientKey(estado.cfgCliente);
   const units = estado.unidades.filter(u => normalizedClientKey(u.cliente) === k).sort((a, b) => String(a.id).localeCompare(String(b.id)));
-  const f = estado.cfgForm; if(!f.tipo || !tipoPorId(f.tipo)) { f.tipo = CATALOGO[0].tipo; f.comp = estadoInicialDoTipo(f.tipo); }
+  const f = estado.cfgForm;
+  if(!f.tipo || !tipoPorId(f.tipo) || !tipoVisivelParaCliente(tipoPorId(f.tipo), estado.cfgCliente)){ f.tipo = CATALOGO.filter(t => tipoVisivelParaCliente(t, estado.cfgCliente))[0].tipo; f.comp = estadoInicialDoTipo(f.tipo); }
   box.innerHTML = `<p class="prv-hint">Escolha o cliente e cadastre os equipamentos que ele realmente tem. Só o que estiver aqui aparece no relatório do técnico. Os clientes vêm dos contratos de manutenção.</p>
+    <div class="prv-linha" style="margin:0 0 14px;"><button type="button" class="btn-ghost" data-prv-g="importar">⇪ Importar equipamentos das planilhas</button><span class="prv-hint" style="margin:0;">Prévia antes de gravar; não altera clientes já configurados.</span></div>
     <div class="field" style="max-width:360px;"><label for="prvCfgCliente">Cliente</label>
       <select id="prvCfgCliente">${clientes.map(c => `<option value="${esc(c)}" ${c === estado.cfgCliente ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
     ${!clientes.length ? '<div class="empty-state">Nenhum contrato de manutenção cadastrado ainda.</div>' : ''}
@@ -18646,7 +18815,7 @@ function renderConfig(){
           <div class="prv-linha" style="justify-content:flex-end;"><button type="button" class="btn-ghost" data-prv-g="cancelar-edit">Cancelar</button><button type="button" class="btn-primary" data-prv-g="salvar-edit">Salvar subitens</button></div></div>` : ''}</div>`; }).join('')
       : (clientes.length ? '<div class="empty-state">Nenhuma unidade configurada para este cliente — a seção de relatório não aparece nas atividades dele.</div>' : '')}</div>
     ${clientes.length ? `<div class="prv-addbox"><div class="prv-addrow">
-      <div class="field"><label for="prvCfgTipo">Tipo de equipamento</label><select id="prvCfgTipo">${CATALOGO.map(t => `<option value="${esc(t.tipo)}" ${t.tipo === f.tipo ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="prvCfgTipo">Tipo de equipamento</label><select id="prvCfgTipo">${CATALOGO.filter(t => tipoVisivelParaCliente(t, estado.cfgCliente)).map(t => `<option value="${esc(t.tipo)}" ${t.tipo === f.tipo ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select></div>
       <div class="field"><label for="prvCfgLocal">Identificação / local</label><input type="text" id="prvCfgLocal" value="${esc(f.local)}" placeholder='Ex.: "Social", "Hóspedes", "Casa de máquinas"' autocomplete="off"></div>
       <button type="button" class="btn-primary" data-prv-g="adicionar">+ Adicionar unidade</button></div>
       ${tipoTemComponentesConfiguraveis(f.tipo) ? `<div class="prv-painel"><div class="prv-painel-t">Quais subitens esta unidade tem, e quantos de cada</div>${htmlSteppers(f.tipo, f.comp, 'add')}</div>` : ''}</div>` : ''}`;
@@ -18668,6 +18837,7 @@ function ligarConfig(){
       alvo.comp[b.dataset.comp] = Math.max(min, (alvo.comp[b.dataset.comp] || 0) + Number(b.dataset.d));
       renderConfig(); return;
     }
+    if(a === 'importar'){ abrirImportacao(); return; }
     if(a === 'adicionar'){
       const local = estado.cfgForm.local.trim();
       if(!estado.cfgCliente){ aviso('Escolha o cliente'); return; }
@@ -18738,6 +18908,68 @@ async function iniciarGestor(){
   try{ await carregarUnidades(); }catch(e){ console.error('prev: unidades', e); }
   try{ await garantirRelatorios(); }catch(e){ console.error('prev: relatórios', e); }
   renderOsRelatorios();
+}
+
+// ====================================================================================
+// IMPORTAÇÃO DAS PLANILHAS (30/09) — uma vez, pelo Gestor, com prévia e confirmação.
+// A lista PREV_IMPORT_PLANILHAS foi montada a partir das 61 planilhas de manutenção preventiva
+// (última aba de cada cliente) e revisada à mão. Regras: só grava para clientes que EXISTEM em
+// maintenanceContracts neste momento (o cruzamento é feito aqui, com o banco real), nunca sobrescreve
+// cliente que já tem unidades configuradas, e nada é gravado antes do Gestor confirmar a prévia.
+// ====================================================================================
+function planoImportacao(){
+  const contratos = (maintenanceContracts || []).map(c => stripPreventivaPrefix(c.client || '')).filter(Boolean);
+  const chaves = new Map(); contratos.forEach(n => chaves.set(normalizedClientKey(n), n));
+  const jaTem = new Set(estado.unidades.map(u => normalizedClientKey(u.cliente)));
+  const plano = { importar: [], jaConfigurados: [], semContrato: [], semPlanilha: [] };
+  const vistos = new Set();
+  PREV_IMPORT_PLANILHAS.forEach(p => {
+    const k = normalizedClientKey(p.cliente); vistos.add(k);
+    const nomeContrato = chaves.get(k);
+    if(!nomeContrato){ plano.semContrato.push(p.cliente); return; }
+    if(!p.unidades.length) return;                         // cliente deixado em branco de propósito
+    if(jaTem.has(k)){ plano.jaConfigurados.push(nomeContrato); return; }
+    plano.importar.push({ cliente: nomeContrato, unidades: p.unidades });
+  });
+  chaves.forEach((nome, k) => { if(!vistos.has(k)) plano.semPlanilha.push(nome); });
+  return plano;
+}
+function resumoUnidadeImport(u){
+  const t = tipoPorId(u.tipo); const comps = (u.componentes || []).filter(c => c.quantidade > 0);
+  return `${t ? t.nome : u.tipo} — ${u.local}` + (comps.length ? ` (${comps.map(c => c.quantidade + '× ' + c.itemNome).join(', ')})` : '');
+}
+function abrirImportacao(){
+  garantirModal();
+  const plano = planoImportacao();
+  relAbertoId = null;
+  document.getElementById('prvModalChips').innerHTML = '<b>Importar equipamentos das planilhas</b>';
+  document.getElementById('prvRevisao').innerHTML = '';
+  const corpo = document.getElementById('prvModalCorpo');
+  const nUnid = plano.importar.reduce((n, p) => n + p.unidades.length, 0);
+  corpo.innerHTML = `
+    <p class="prv-hint">Prévia feita agora contra os contratos de manutenção do banco. Nada é gravado até você confirmar. Clientes que já têm unidades configuradas não são alterados.</p>
+    <h3 style="margin:14px 0 6px;">Vão ser importados: ${plano.importar.length} cliente(s), ${nUnid} unidade(s)</h3>
+    ${plano.importar.length ? plano.importar.map(p => `<div class="prv-card"><div class="prv-nome">${esc(p.cliente)}</div><ul style="margin:6px 0 0 18px; padding:0; font-size:13px;">${p.unidades.map(u => `<li>${esc(resumoUnidadeImport(u))}</li>`).join('')}</ul></div>`).join('') : '<div class="empty-state">Nenhum cliente para importar.</div>'}
+    ${plano.jaConfigurados.length ? `<h3 style="margin:14px 0 6px;">Já configurados (não serão alterados): ${plano.jaConfigurados.length}</h3><p class="prv-hint">${plano.jaConfigurados.map(esc).join(' · ')}</p>` : ''}
+    ${plano.semContrato.length ? `<h3 style="margin:14px 0 6px;">Na planilha, mas sem contrato no banco: ${plano.semContrato.length}</h3><p class="prv-hint">${plano.semContrato.map(esc).join(' · ')} — cadastre o contrato em Controle de visitas e importe de novo, ou configure à mão.</p>` : ''}
+    ${plano.semPlanilha.length ? `<h3 style="margin:14px 0 6px;">Com contrato, mas sem planilha: ${plano.semPlanilha.length}</h3><p class="prv-hint">${plano.semPlanilha.map(esc).join(' · ')} — configure à mão.</p>` : ''}
+    <div class="prv-linha" style="justify-content:flex-end; margin-top:16px;">
+      <button type="button" class="btn-ghost" data-prv-m="fechar">Cancelar</button>
+      <button type="button" class="btn-primary" id="prvImportarConfirmar" ${plano.importar.length ? '' : 'disabled'}>Importar ${nUnid} unidade(s)</button>
+    </div>`;
+  document.getElementById('prvModal').classList.add('open');
+  document.getElementById('prvImportarConfirmar').onclick = () => {
+    const plano2 = planoImportacao();   // recalcula na hora do clique (o banco pode ter mudado)
+    let n = 0;
+    plano2.importar.forEach(p => p.unidades.forEach(un => {
+      const u = { id: novoId('u'), cliente: p.cliente, tipo: un.tipo, local: un.local, componentes: (un.componentes || []).filter(c => c.quantidade > 0) };
+      estado.unidades.push(u); n++;
+      escrever(NOS.unidades + '/' + u.id, { id: u.id, cliente: u.cliente, tipo: u.tipo, local: u.local, componentes: u.componentes.length ? u.componentes : null, importadoDe: 'planilhas-2026-09-30' });
+    }));
+    estado.unidadesJSON = JSON.stringify(estado.unidades);
+    fecharRelatorio(); renderConfig();
+    aviso(n ? n + ' unidade(s) importada(s) para ' + plano2.importar.length + ' cliente(s). Confira cada cliente na lista.' : 'Nada para importar.', 7000);
+  };
 }
 
 
