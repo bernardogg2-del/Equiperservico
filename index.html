@@ -1136,6 +1136,26 @@
     font-weight:700; font-size:13.5px; box-shadow: var(--shadow-sm);
   }
   .estoque-alerta-baixo::before{ content:'⚠'; font-size:16px; line-height:1; flex:none; }
+  /* Outbox offline (30/09): faixa fixa enquanto houver alteração ainda não confirmada pelo servidor,
+     e aviso não bloqueante (substitui o alert() nos casos em que a alteração ficou guardada). */
+  #outboxBanner{
+    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom, 0px));
+    z-index:9998; max-width:min(560px, calc(100vw - 24px)); background:var(--warning); color:#fff;
+    border-radius:999px; padding:10px 18px; font-size:13px; font-weight:700; box-shadow:var(--shadow-md);
+    display:none; align-items:center; gap:10px; text-align:center;
+  }
+  #outboxBanner.show{ display:flex; }
+  #outboxBanner.ok{ background:var(--success); }
+  #outboxBanner .spin{ display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.45); border-top-color:#fff; border-radius:50%; animation:outboxspin 0.9s linear infinite; flex:none; }
+  @keyframes outboxspin{ to{ transform:rotate(360deg); } }
+  #avisoNaoBloqueante{
+    position:fixed; left:50%; transform:translateX(-50%); top:calc(14px + env(safe-area-inset-top, 0px));
+    z-index:9999; max-width:min(560px, calc(100vw - 24px)); background:var(--ink); color:#fff;
+    border-radius:var(--radius-sm); padding:12px 16px; font-size:13px; font-weight:600; box-shadow:var(--shadow-md);
+    opacity:0; pointer-events:none; transition:opacity .2s;
+  }
+  #avisoNaoBloqueante.show{ opacity:1; pointer-events:auto; }
+  .sync-pendente-chip{ display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--warning-soft); color:var(--warning); border:1px solid var(--warning-line); margin-left:6px; vertical-align:middle; }
   /* Detalhamento por categoria dentro do alerta — cada chip filtra a lista pela categoria. */
   .estoque-alerta-baixo .alerta-cats{ display:flex; gap:6px; flex-wrap:wrap; }
   .estoque-alerta-baixo .alerta-cat-chip{
@@ -1491,6 +1511,90 @@
     #tabClientes .search-clear-wrap input, #tabOS .search-clear-wrap input, .tech-pin-row input, #osList .field > input,
     .maint-alert-actions input[type="date"], .pending-reschedule input[type="date"]{ font-size: 16px; }
   }
+  /* ===== Relatório de manutenção preventiva (classes prv-*; nada aqui redefine estilo existente) ===== */
+  .prv-slot{ margin-top:14px; }
+  .prv-sec{ border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); overflow:hidden; }
+  .prv-head{ width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; background:var(--panel-2); border:none; font-family:inherit; font-size:13.5px; font-weight:700; color:var(--text); text-align:left; cursor:pointer; }
+  .prv-chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap; flex:none; }
+  .prv-chip.green{ background:var(--success-soft); color:var(--success-dark); border:1px solid var(--success-line); }
+  .prv-chip.amber{ background:var(--warning-soft); color:var(--warning); border:1px solid var(--warning-line); }
+  .prv-chip.red{ background:var(--danger-soft); color:var(--danger); border:1px solid var(--danger-line); }
+  .prv-chip.gray{ background:var(--panel-2); color:var(--text-dim); border:1px solid var(--line); }
+  .prv-sec > .prv-prog, .prv-sec > .prv-aviso, .prv-sec > .prv-unit, .prv-sec > .prv-field{ margin-left:14px; margin-right:14px; }
+  .prv-prog{ height:8px; background:var(--panel-2); border-radius:999px; overflow:hidden; margin-top:12px; margin-bottom:12px; }
+  .prv-prog-bar{ height:100%; background:var(--success); border-radius:999px; transition:width .25s; }
+  .prv-aviso{ background:var(--warning-soft); border:1px solid var(--warning-line); color:var(--warning); border-radius:var(--radius-sm); padding:9px 11px; font-size:12px; margin-bottom:10px; }
+  .prv-unit{ border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:8px; overflow:hidden; background:var(--panel); }
+  .prv-unit.done .prv-unit-head{ background:var(--success-soft); }
+  .prv-unit-head{ width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:11px 12px; background:transparent; border:none; font-family:inherit; font-size:13.5px; color:var(--text); text-align:left; cursor:pointer; }
+  .prv-unit-head small{ display:block; font-size:11px; color:var(--text-dim); font-weight:500; }
+  .prv-unit-corpo{ padding:0 12px 12px; border-top:1px solid var(--line); }
+  .prv-grupo{ margin-top:12px; }
+  .prv-grupo-t{ font-size:11.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; }
+  .prv-field{ margin-top:10px; }
+  .prv-flabel{ font-size:12px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; }
+  .prv-opts{ display:flex; gap:8px; flex-wrap:wrap; }
+  .prv-opt{ flex:1 1 auto; min-width:84px; border:1.5px solid var(--line); background:var(--panel); border-radius:var(--radius-sm); padding:11px 8px; font-weight:700; font-size:12.5px; font-family:inherit; cursor:pointer; text-align:center; color:var(--text); }
+  .prv-opt.sel-green{ border-color:var(--success); background:var(--success-soft); color:var(--success-dark); }
+  .prv-opt.sel-amber{ border-color:var(--warning); background:var(--warning-soft); color:var(--warning); }
+  .prv-opt.sel-red{ border-color:var(--danger); background:var(--danger-soft); color:var(--danger); }
+  .prv-opt:disabled, .prv-num:disabled, .prv-obs:disabled{ opacity:.6; cursor:default; }
+  .prv-num{ width:100%; padding:11px 12px; border:1.5px solid var(--line); border-radius:var(--radius-sm); font-family:inherit; font-size:15px; font-weight:700; text-align:center; background:var(--panel); }
+  .prv-num-un{ text-align:center; font-size:11px; color:var(--text-dim); margin-top:3px; }
+  .prv-local{ font-size:12px; color:var(--text-dim); background:var(--panel-2); border-radius:var(--radius-sm); padding:8px 10px; margin-top:12px; }
+  .prv-obs{ width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; line-height:1.4; resize:vertical; background:var(--panel); }
+  .prv-fotos{ display:flex; gap:8px; flex-wrap:wrap; }
+  .prv-foto{ position:relative; width:72px; height:72px; border-radius:10px; overflow:hidden; border:1px solid var(--line); background:var(--panel-2); }
+  .prv-foto img{ width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in; }
+  .prv-foto button{ position:absolute; top:3px; right:3px; width:22px; height:22px; border-radius:50%; border:none; background:rgba(23,24,26,0.75); color:#fff; font-size:12px; line-height:1; cursor:pointer; padding:0; }
+  .prv-foto-add{ width:72px; height:72px; border:1.5px dashed var(--line); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--text-dim); cursor:pointer; background:var(--panel); }
+  .prv-fotos-n{ font-size:11.5px; color:var(--text-dim); margin-top:6px; padding-bottom:12px; }
+  /* Gestor */
+  .prv-hint{ color:var(--text-dim); font-size:13px; margin:0 0 14px; }
+  .prv-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
+  .prv-card-top{ display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start; }
+  .prv-nome{ font-weight:800; font-size:15px; }
+  .prv-meta{ font-size:12px; color:var(--text-dim); margin-top:2px; }
+  .prv-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .prv-linha{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .btn-ghost:disabled{ opacity:.45; cursor:default; }
+  .prv-overlay{ position:fixed; inset:0; background:rgba(20,20,22,0.45); z-index:9000; display:none; align-items:flex-start; justify-content:center; padding:24px 14px; overflow:auto; }
+  .prv-overlay.open{ display:flex; }
+  .prv-modal{ background:#fff; border-radius:var(--radius-lg); max-width:880px; width:100%; box-shadow:var(--shadow-md); }
+  .prv-modal-bar{ position:sticky; top:0; background:#fff; border-bottom:1px solid var(--line); border-radius:var(--radius-lg) var(--radius-lg) 0 0; padding:12px 18px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:center; z-index:2; }
+  .prv-acoes{ display:flex; gap:8px; flex-wrap:wrap; }
+  .prv-modal-corpo{ padding:20px 22px 26px; }
+  .prv-revisao{ margin:0 22px 22px; border:1px dashed var(--line); border-radius:var(--radius); padding:14px 16px; background:var(--panel-2); }
+  .prv-revisao h4{ margin:0 0 4px; font-size:13.5px; }
+  .prv-sub{ font-size:12px; color:var(--text-dim); margin-bottom:10px; }
+  .prv-sugestao{ background:#fff; border:1px solid var(--warning-line); border-radius:var(--radius-sm); padding:10px 12px; margin-top:10px; }
+  .prv-sug-t{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--warning); margin-bottom:6px; }
+  .prv-sugestao pre{ white-space:pre-wrap; font-family:inherit; font-size:13.5px; margin:0 0 10px; }
+  .prv-cat-tipo{ border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; margin-bottom:10px; background:var(--panel); }
+  .prv-cat-head{ display:flex; justify-content:space-between; align-items:center; }
+  .prv-cat-item{ margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+  .prv-cat-item-n{ font-size:11.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:4px; }
+  .prv-cat-campo{ display:flex; justify-content:space-between; gap:10px; padding:5px 0; font-size:13px; border-bottom:1px dashed var(--line); }
+  .prv-cat-campo:last-child{ border-bottom:none; }
+  .prv-cat-op{ color:var(--text-dim); text-align:right; }
+  .prv-unit-row{ border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 16px; margin-bottom:8px; background:var(--panel); }
+  .prv-unit-row-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .prv-unit-tipo{ font-size:11.5px; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:.03em; }
+  .prv-unit-local{ font-weight:700; font-size:14px; margin-top:2px; }
+  .prv-comp-res{ font-size:12px; color:var(--text-dim); margin-top:4px; }
+  .prv-comp-res.vazio{ color:var(--warning); font-weight:600; }
+  .prv-painel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-sm); padding:12px 14px; margin-top:10px; }
+  .prv-painel-t{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--text-dim); margin-bottom:8px; }
+  .prv-step-row{ display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px dashed var(--line); font-size:13px; font-weight:600; }
+  .prv-step-row:last-child{ border-bottom:none; }
+  .prv-step-row small{ font-weight:500; color:var(--text-dim); font-size:11px; }
+  .prv-stepper{ display:flex; align-items:center; gap:10px; }
+  .prv-stepper button{ width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:var(--panel); font-weight:800; font-size:15px; cursor:pointer; font-family:inherit; line-height:1; }
+  .prv-stepper button:disabled{ opacity:.35; cursor:default; }
+  .prv-stepper span{ min-width:18px; text-align:center; font-weight:800; font-size:14px; }
+  .prv-addbox{ background:var(--panel-2); border:1px dashed var(--line); border-radius:var(--radius); padding:14px 16px; margin-top:14px; }
+  .prv-addrow{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+  .prv-addrow .field{ margin-bottom:0; flex:1; min-width:170px; }
 </style>
 </head>
 <body>
@@ -2215,6 +2319,13 @@
   </div>
 
   <div id="tabManutencoes" style="display:none;">
+    <div class="portal-tabs estoque-subnav-v2" id="prvManutTabs" style="padding:0 0 14px;">
+      <button type="button" class="portal-tab active" data-prvmanut="visitas">Controle de visitas</button>
+      <button type="button" class="portal-tab" data-prvmanut="config">Configuração por cliente</button>
+      <button type="button" class="portal-tab" data-prvmanut="catalogo">Catálogo de equipamentos</button>
+      <button type="button" class="portal-tab" data-prvmanut="historico">Histórico de relatórios</button>
+    </div>
+    <div id="prvManutVisitas">
     <div class="tecnicos-head">
       <div>
         <div class="tecnicos-title">Manutenções preventivas trimestrais</div>
@@ -2268,9 +2379,18 @@
       </div>
     </div>
     <div id="maintenanceList"></div>
+    </div><!-- /prvManutVisitas -->
+    <div id="prvManutConfig" style="display:none;"></div>
+    <div id="prvManutCatalogo" style="display:none;"></div>
+    <div id="prvManutHistorico" style="display:none;"></div>
   </div>
 
   <div id="tabOS" style="display:none;">
+    <div class="portal-tabs estoque-subnav-v2" id="prvOsTabs" style="padding:0 0 14px;">
+      <button type="button" class="portal-tab active" data-prvos="aguardando">Aguardando cadastro de OS</button>
+      <button type="button" class="portal-tab" data-prvos="relatorios" id="prvOsTabRel">Relatórios de manutenção</button>
+    </div>
+    <div id="prvOsAguardando">
     <div class="tecnicos-head">
       <div>
         <div class="tecnicos-title">Cadastros e OS</div>
@@ -2294,6 +2414,8 @@
     <div id="osList"></div>
     <div class="maint-section-title" style="margin-top:26px;">Processados recentemente</div>
     <div id="osProcessedList"></div>
+    </div><!-- /prvOsAguardando -->
+    <div id="prvOsRelatorios" style="display:none;"></div>
   </div>
 
   <div id="tabClientes" style="display:none;">
@@ -3274,6 +3396,13 @@ async function loadServices(){
   }catch(e){
     console.error('Falha ao carregar atividades:', e);
     services = [];
+    // Sem rede: parte do último estado CONFIRMADO guardado no aparelho (cache), pra o técnico
+    // ainda ver as atividades e poder trabalhar. Sem cache também → fica vazio como antes.
+    const cache = cacheLer('services');
+    if(cache && Array.isArray(cache.registros) && cache.registros.length){
+      services = cache.registros;
+      console.warn('Atividades carregadas do cache local (offline), gravado em ' + cache.gravadoEm);
+    }
   }
   // Snapshot por CAMPO (não mais o registro inteiro) — mesmo formato usado por
   // writeServicesDiff/mergeRemoteServices, pra proteção de edição pendente funcionar por campo.
@@ -3283,6 +3412,13 @@ async function loadServices(){
     Object.keys(s).forEach(field => { if(s[field] !== undefined) fields[field] = JSON.stringify(s[field]); });
     servicesSnapshot[s.id] = fields;
   });
+  cacheGravarSnapshot('services', servicesSnapshot); // estado confirmado (sem pendências) — pro próximo boot offline
+  // Reaplica o que ainda não foi confirmado (outbox) por cima — sem tocar no snapshot, então
+  // continua "pendente" e o próximo save reenvia. Pode inclusive recriar um registro que foi
+  // criado offline (ex.: um retorno gerado ao concluir sem sinal).
+  const reaplicadas = outboxAplicarNaLista('services', services);
+  if(reaplicadas) console.log('Outbox: ' + reaplicadas + ' alteração(ões) de atividade reaplicada(s) do aparelho, aguardando envio.');
+  if(typeof restaurarMidiaPendente === 'function') restaurarMidiaPendente();
 }
 
 // Detecta se a pessoa está digitando/gravando agora, pra não interromper o que ela
@@ -3379,6 +3515,7 @@ function attachRealtimeServicesListener(){
     const raw = snap.exists() ? snap.val() : {};
     if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
     services = mergeRemoteServices(raw || {});
+    cacheGravarSnapshot('services', servicesSnapshot); // mergeRemoteServices já atualizou o snapshot com o confirmado
 
     if(isUserBusyTyping()) return; // evita apagar o que a pessoa está digitando/gravando
 
@@ -3396,6 +3533,192 @@ function attachRealtimeServicesListener(){
     console.error('Falha na sincronização em tempo real das atividades:', err);
   });
 }
+
+
+// =====================================================================================
+// OUTBOX OFFLINE (30/09) — nenhuma alteração do técnico se perde por queda de conexão.
+//
+// Problema que isso resolve: até aqui, toda alteração (iniciar/concluir atividade, observação,
+// retirar equipamento, "precisa retornar", fotos/áudios...) existia SÓ na memória do navegador
+// enquanto o Firebase não confirmava. Se as 3 tentativas rápidas falhassem e a pessoa saísse da
+// tela ou o app fosse fechado, a alteração sumia — a tela já mostrava "concluído", mas o servidor
+// nunca recebeu. Foi exatamente o que aconteceu nos testes de campo.
+//
+// Como funciona agora, em três camadas:
+//  1. OUTBOX durável: antes de qualquer tentativa de rede, o conjunto de alterações pendentes
+//     (o mesmo "updates" que iria pro Firebase) é gravado no localStorage do aparelho. Só sai de
+//     lá quando o servidor confirmar. Fechar o app, perder sinal, reiniciar — o dado continua.
+//  2. CACHE de leitura: o último estado CONFIRMADO pelo servidor (services, equipamentos da
+//     Oficina, contratos) também fica no aparelho, sem as mídias pesadas. Assim, abrindo o app
+//     sem sinal nenhum, o técnico ainda vê as atividades do dia e pode trabalhar; o que ele
+//     fizer entra no outbox e sobe quando a internet voltar.
+//  3. REENVIO automático + indicador: enquanto houver pendência, uma faixa fixa avisa quantas
+//     alterações aguardam conexão; o app tenta reenviar sozinho a cada 20 s, ao detectar que a
+//     conexão voltou e ao voltar pro primeiro plano. Ninguém precisa "tentar de novo" manualmente.
+//
+// Regras de segurança:
+//  - O cache guarda o estado confirmado (reconstruído do snapshot), NUNCA o estado com pendências
+//    locais — senão, num próximo boot offline, a pendência viraria "confirmada" e não seria reenviada.
+//  - Mídias: se a foto/áudio foi adicionada sem conseguir ler o que já havia no servidor, guarda
+//    só o ACRÉSCIMO (modo append) e, ao sincronizar, lê o servidor primeiro e junta — nunca
+//    sobrescreve fotos antigas com uma lista parcial.
+//  - Quando o outbox é gravado com sucesso, saveX() devolve true (a alteração está segura), pra
+//    nenhum fluxo fazer rollback de algo que só está esperando conexão. Só devolve false se nem
+//    o localStorage aceitar (aí o alert antigo continua valendo).
+// =====================================================================================
+const OUTBOX_PREFIX = 'equiper_outbox_';
+const CACHE_PREFIX  = 'equiper_cache_';
+const OUTBOX_LOJAS  = ['services', 'oficinaEquipamentos', 'maintenanceContracts'];
+let outboxIndicadorOkTimer = null;
+
+function outboxLocalStorageOk(){ try{ localStorage.setItem('__equiper_probe', '1'); localStorage.removeItem('__equiper_probe'); return true; }catch(e){ return false; } }
+function outboxLer(nome){
+  try{ const b = localStorage.getItem(OUTBOX_PREFIX + nome); return b ? (JSON.parse(b) || {}) : {}; }
+  catch(e){ console.error('outbox: falha ao ler', nome, e); return {}; }
+}
+// Grava (ou limpa, se vazio) o conjunto de caminhos pendentes de uma loja. Retorna true se o
+// dado ficou durável no aparelho.
+function outboxGravar(nome, updates){
+  try{
+    const keys = Object.keys(updates || {});
+    if(!keys.length) localStorage.removeItem(OUTBOX_PREFIX + nome);
+    else localStorage.setItem(OUTBOX_PREFIX + nome, JSON.stringify(updates));
+    outboxAtualizarIndicador();
+    return true;
+  }catch(e){
+    console.error('outbox: falha ao gravar localmente (' + nome + ') — quota ou storage indisponível:', e);
+    outboxAtualizarIndicador();
+    return false;
+  }
+}
+function outboxTem(nome){ return Object.keys(outboxLer(nome)).length > 0; }
+// Ids de registros com alguma alteração ainda não confirmada (pra marcar os cards na tela).
+function outboxIdsPendentes(nome){
+  const ids = new Set();
+  Object.keys(outboxLer(nome)).forEach(path => { const parts = path.split('/'); if(parts.length >= 2) ids.add(parts[1]); });
+  return ids;
+}
+function outboxTotalPendencias(){
+  let total = 0;
+  OUTBOX_LOJAS.forEach(n => { total += outboxIdsPendentes(n).size; });
+  // mídia: uma chave por atividade
+  try{
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && (k.startsWith(OUTBOX_PREFIX + 'servicesMedia/') || k.startsWith(OUTBOX_PREFIX + 'servicesMediaAppend/'))) total++;
+    }
+  }catch(e){}
+  return total;
+}
+
+// Envio real: grava o outbox ANTES da rede; limpa DEPOIS da confirmação. Erros sobem pro
+// chamador (que mantém o retry curto de sempre) — mas o dado já está seguro no aparelho.
+async function outboxEnviar(nome, updates){
+  outboxGravar(nome, updates);
+  if(!rtdb) throw new Error('Firebase indisponível');
+  await rtdb.ref().update(updates);
+  outboxGravar(nome, {});
+}
+
+// ----- Cache de leitura (estado confirmado, sem mídias inline pesadas) -----
+const CAMPOS_MIDIA_INLINE = ['photos', 'audios', 'technicianInstructionPhotos', 'technicianInstructionAudios'];
+function cacheGravarSnapshot(nome, snapshotMap){
+  try{
+    const registros = [];
+    Object.keys(snapshotMap || {}).forEach(id => {
+      const campos = snapshotMap[id] || {}; const obj = {};
+      Object.keys(campos).forEach(f => {
+        if(nome === 'services' && CAMPOS_MIDIA_INLINE.includes(f)) return; // pesado e desnecessário offline
+        if(campos[f] === undefined) return;
+        try{ obj[f] = JSON.parse(campos[f]); }catch(e){}
+      });
+      if(Object.keys(obj).length) registros.push(obj);
+    });
+    localStorage.setItem(CACHE_PREFIX + nome, JSON.stringify({ gravadoEm: new Date().toISOString(), registros }));
+  }catch(e){ console.error('cache: falha ao gravar', nome, e); }
+}
+function cacheLer(nome){
+  try{ const b = localStorage.getItem(CACHE_PREFIX + nome); return b ? (JSON.parse(b) || null) : null; }
+  catch(e){ return null; }
+}
+// Reaplica os caminhos pendentes do outbox sobre uma lista de registros em memória (sem tocar
+// no snapshot — é exatamente isso que mantém a alteração "pendente" e faz o próximo save reenviar).
+function outboxAplicarNaLista(nome, lista){
+  const updates = outboxLer(nome);
+  const porId = {}; lista.forEach(r => { porId[String(r.id)] = r; });
+  let aplicou = 0;
+  Object.keys(updates).forEach(path => {
+    const parts = path.split('/'); if(parts[0] !== nome) return;
+    const id = parts[1], campo = parts[2];
+    if(campo === undefined){
+      if(updates[path] === null){ const i = lista.findIndex(r => String(r.id) === id); if(i >= 0) lista.splice(i, 1); aplicou++; }
+      return;
+    }
+    let r = porId[id];
+    if(!r){ r = { id: isNaN(Number(id)) ? id : Number(id) }; porId[id] = r; lista.push(r); }
+    if(updates[path] === null) delete r[campo]; else r[campo] = updates[path];
+    aplicou++;
+  });
+  return aplicou;
+}
+
+// ----- Indicador fixo + aviso não bloqueante -----
+function outboxGarantirElementos(){
+  if(!document.body) return;
+  if(!document.getElementById('outboxBanner')){
+    const b = document.createElement('div'); b.id = 'outboxBanner'; document.body.appendChild(b);
+  }
+  if(!document.getElementById('avisoNaoBloqueante')){
+    const a = document.createElement('div'); a.id = 'avisoNaoBloqueante'; document.body.appendChild(a);
+  }
+}
+function outboxAtualizarIndicador(){
+  outboxGarantirElementos();
+  const b = document.getElementById('outboxBanner'); if(!b) return;
+  const n = outboxTotalPendencias();
+  if(n > 0){
+    clearTimeout(outboxIndicadorOkTimer);
+    b.classList.remove('ok');
+    b.innerHTML = '<span class="spin"></span><span>' + n + (n === 1 ? ' alteração aguardando conexão' : ' alterações aguardando conexão') + ' — será enviada sozinha quando a internet voltar</span>';
+    b.classList.add('show');
+  } else if(b.classList.contains('show') && !b.classList.contains('ok')){
+    // acabou de zerar: mostra "tudo sincronizado" por alguns segundos e some
+    b.classList.add('ok'); b.innerHTML = '<span>✓ Tudo sincronizado com o servidor</span>';
+    clearTimeout(outboxIndicadorOkTimer);
+    outboxIndicadorOkTimer = setTimeout(() => { b.classList.remove('show', 'ok'); }, 3500);
+  }
+}
+let avisoTimer = null;
+function avisoNaoBloqueante(msg, ms){
+  outboxGarantirElementos();
+  const a = document.getElementById('avisoNaoBloqueante'); if(!a){ alert(msg); return; }
+  a.textContent = msg; a.classList.add('show');
+  clearTimeout(avisoTimer); avisoTimer = setTimeout(() => a.classList.remove('show'), ms || 5000);
+}
+const MSG_OFFLINE_GUARDADO = 'Sem conexão agora — sua alteração ficou guardada neste aparelho e será enviada sozinha quando a internet voltar.';
+
+// ----- Motor de reenvio -----
+let outboxSincronizando = false;
+async function outboxTentarSincronizar(motivo){
+  if(outboxSincronizando) return;
+  if(typeof navigator !== 'undefined' && navigator.onLine === false) return; // sem rede, nem tenta
+  outboxSincronizando = true;
+  try{
+    if(outboxTem('services') && typeof saveServices === 'function') await saveServices(true);
+    if(outboxTem('oficinaEquipamentos') && typeof saveOficinaEquipamentos === 'function') await saveOficinaEquipamentos(true);
+    if(outboxTem('maintenanceContracts') && typeof saveMaintenanceContracts === 'function') await saveMaintenanceContracts(true);
+    if(outboxTem('preventivo') && window.PREV_API) await PREV_API.flush();
+    if(typeof sincronizarMidiaPendente === 'function') await sincronizarMidiaPendente();
+  }catch(e){ console.error('outbox: falha na sincronização (' + (motivo || 'periódica') + ')', e); }
+  finally{ outboxSincronizando = false; outboxAtualizarIndicador(); }
+}
+function outboxIniciarMotor(){
+  setInterval(() => outboxTentarSincronizar('periódica'), 20000);
+  window.addEventListener('online', () => outboxTentarSincronizar('conexão voltou'));
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') outboxTentarSincronizar('voltou ao primeiro plano'); });
+  outboxAtualizarIndicador();
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', outboxIniciarMotor); else outboxIniciarMotor();
 
 let servicesSaveInFlight = false;
 let servicesSaveQueued = false;
@@ -3418,8 +3741,15 @@ async function saveServices(silent){
     servicesSaveQueued = false;
     await saveServices(silent);
   }
-  if(!ok && !silent){
-    alert('⚠️ Não foi possível salvar essa atividade. Verifique sua internet e tente novamente — a alteração pode não ter sido registrada para os outros usuários.');
+  if(!ok){
+    // A rede falhou nas tentativas rápidas. Se a alteração ficou guardada no aparelho (outbox),
+    // ela NÃO está perdida: o motor de reenvio manda depois. Devolve true pra nenhum fluxo fazer
+    // rollback do que só está aguardando conexão. Só cai no alert antigo se nem o aparelho guardou.
+    if(outboxTem('services')){
+      if(!silent) avisoNaoBloqueante(MSG_OFFLINE_GUARDADO);
+      return true;
+    }
+    if(!silent) alert('⚠️ Não foi possível salvar essa atividade nem guardá-la neste aparelho. Verifique sua internet e tente novamente — a alteração pode não ter sido registrada.');
   }
   return ok;
 }
@@ -3470,7 +3800,7 @@ async function writeServicesDiff(attempt){
       }
     });
     if(hasChanges){
-      await rtdb.ref().update(updates);
+      await outboxEnviar('services', updates); // outbox durável antes da rede; limpa após confirmar
       // Confirma somente os campos que realmente foram enviados nesta chamada. Se algum campo
       // mudou de novo durante o await, essa mudança não está em sentFieldSnapshots e portanto
       // continua "pendente" — a próxima chamada da fila (saveServices) recalcula o diff a partir
@@ -7563,9 +7893,13 @@ async function loadMaintenanceContracts(){
   }catch(e){
     console.error('Falha ao carregar contratos de manutenção:', e);
     maintenanceContracts = [];
+    const cache = cacheLer('maintenanceContracts');
+    if(cache && Array.isArray(cache.registros) && cache.registros.length){ maintenanceContracts = cache.registros; console.warn('Contratos carregados do cache local (offline).'); }
   }
   maintenanceContractsSnapshot = {};
   maintenanceContracts.forEach(c => { maintenanceContractsSnapshot[c.id] = snapshotContractFields(c); });
+  cacheGravarSnapshot('maintenanceContracts', maintenanceContractsSnapshot);
+  outboxAplicarNaLista('maintenanceContracts', maintenanceContracts);
 }
 
 // Mescla os dados que chegam do servidor com o que existe localmente, campo a campo — mesmo
@@ -7630,6 +7964,7 @@ function attachRealtimeMaintenanceContractsListener(){
     const raw = snap.exists() ? snap.val() : {};
     if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
     maintenanceContracts = mergeRemoteMaintenanceContracts(raw || {});
+    cacheGravarSnapshot('maintenanceContracts', maintenanceContractsSnapshot);
     if(isUserBusyTyping()) return;
     if(currentRole === 'manager'){
       renderManutencoes();
@@ -7658,8 +7993,12 @@ async function saveMaintenanceContracts(silent){
     maintenanceContractsSaveQueued = false;
     await saveMaintenanceContracts(silent);
   }
+  if(!ok && outboxTem('maintenanceContracts')){
+    if(!silent) avisoNaoBloqueante(MSG_OFFLINE_GUARDADO);
+    return true; // guardado no aparelho — será reenviado sozinho
+  }
   if(!ok && !silent){
-    alert('⚠️ Não foi possível salvar as alterações do contrato de manutenção. Verifique sua internet e tente novamente.');
+    alert('⚠️ Não foi possível salvar as alterações do contrato de manutenção nem guardá-las neste aparelho. Verifique sua internet e tente novamente.');
   }
   return ok;
 }
@@ -7708,7 +8047,7 @@ async function writeMaintenanceContractsDiff(attempt){
     });
 
     if(hasChanges){
-      await rtdb.ref().update(updates);
+      await outboxEnviar('maintenanceContracts', updates);
       // Confirma só os campos/ids que foram efetivamente enviados nesta chamada — se algum campo
       // mudou de novo durante o envio, ele continua "pendente" e a próxima chamada da fila pega.
       Object.keys(sentFieldSnapshots).forEach(id => {
@@ -8876,9 +9215,13 @@ async function loadOficinaEquipamentos(){
   }catch(e){
     console.error('Falha ao carregar equipamentos da Oficina:', e);
     oficinaEquipamentos = [];
+    const cache = cacheLer('oficinaEquipamentos');
+    if(cache && Array.isArray(cache.registros) && cache.registros.length){ oficinaEquipamentos = cache.registros; console.warn('Equipamentos da Oficina carregados do cache local (offline).'); }
   }
   oficinaEquipamentosSnapshot = {};
   oficinaEquipamentos.forEach(eq => { oficinaEquipamentosSnapshot[eq.id] = snapshotContractFields(eq); });
+  cacheGravarSnapshot('oficinaEquipamentos', oficinaEquipamentosSnapshot);
+  outboxAplicarNaLista('oficinaEquipamentos', oficinaEquipamentos);
 }
 
 function mergeRemoteOficinaEquipamentos(remoteMap){
@@ -8932,6 +9275,7 @@ function attachRealtimeOficinaEquipamentosListener(){
   rtdb.ref('oficinaEquipamentos').on('value', (snap) => {
     const raw = snap.exists() ? snap.val() : {};
     oficinaEquipamentos = mergeRemoteOficinaEquipamentos(raw || {});
+    cacheGravarSnapshot('oficinaEquipamentos', oficinaEquipamentosSnapshot);
     if(isUserBusyTyping()) return;
     if(currentRole === 'oficina') renderOficinaView();
     if(currentRole === 'oficina' && oeCurrentDetalheId !== null) renderOficinaEquipDetalhe(oeCurrentDetalheId);
@@ -8965,8 +9309,11 @@ async function saveOficinaEquipamentos(silent){
   } finally {
     oficinaEquipamentosSaveInFlight = false;
   }
-  if(!ok && !silent){
-    alert('⚠️ Não foi possível salvar as alterações do equipamento. Verifique sua internet e tente novamente.');
+  if(!ok && outboxTem('oficinaEquipamentos')){
+    if(!silent) avisoNaoBloqueante(MSG_OFFLINE_GUARDADO);
+    ok = true; // guardado no aparelho — será reenviado sozinho
+  } else if(!ok && !silent){
+    alert('⚠️ Não foi possível salvar as alterações do equipamento nem guardá-las neste aparelho. Verifique sua internet e tente novamente.');
   }
   const waiters = oficinaEquipamentosQueuedWaiters;
   oficinaEquipamentosQueuedWaiters = [];
@@ -9008,7 +9355,7 @@ async function writeOficinaEquipamentosDiff(attempt){
     });
 
     if(hasChanges){
-      await rtdb.ref().update(updates);
+      await outboxEnviar('oficinaEquipamentos', updates);
       Object.keys(sentFieldSnapshots).forEach(id => {
         oficinaEquipamentosSnapshot[id] = Object.assign({}, oficinaEquipamentosSnapshot[id], sentFieldSnapshots[id]);
       });
@@ -12973,6 +13320,7 @@ function compressImageFile(file){
 
 const techMediaTentada = new Set();
 function renderTechView(){
+  const idsPendentesOutbox = outboxIdsPendentes('services');
   const t = todayStr();
   const [y,m,d] = t.split('-').map(Number);
   const dowIdx = new Date(y, m-1, d).getDay();
@@ -13060,6 +13408,7 @@ function renderTechView(){
         </div>
         <div class="status-tag ${s.status}">${statusLabelOf(s.status)}</div>
       </div>
+      ${(idsPendentesOutbox.has(String(s.id)) || serviceMediaPending.has(s.id)) ? `<div class="sync-pendente-chip" style="margin:0 0 10px;">⏳ Aguardando envio — guardado neste aparelho</div>` : ''}
       ${renderInstructionViewHtml(s)}
       ${actionHtml}
       ${equipActionHtml ? `<div class="service-controls">${equipActionHtml}</div>` : ''}
@@ -13092,6 +13441,7 @@ function renderTechView(){
       </div>
     `;
     list.appendChild(card);
+    if(window.PREV_API) PREV_API.montarSlot(card, s); // relatório preventivo (só em atividade preventiva com unidades configuradas)
   });
 
   list.querySelectorAll('[data-withdrawequip]').forEach(btn => {
@@ -13231,6 +13581,7 @@ function renderTechView(){
         }
         await completeMaintenanceIfLinked(svc);
         await completeOficinaReinstallationIfLinked(svc);
+        if(window.PREV_API) await PREV_API.gerarRelatorioAoConcluir(svc); // relatório preventivo: nunca lança erro nem desfaz a conclusão
       } finally {
         delete finishingInFlight[id];
         renderTechView();
@@ -13402,7 +13753,12 @@ function getServiceMedia(svc, field){
   if(!svc) return [];
   if(serviceHasInlineMedia(svc, field)) return svc[field];
   if(serviceMediaModel(svc) === 'inline') return []; // registro antigo: campo simplesmente não existe
-  if(svc.mediaExternal){ const c = serviceMediaCacheEntry(svc.id); if(Array.isArray(c[field])) return c[field]; }
+  if(svc.mediaExternal){
+    const c = serviceMediaCacheEntry(svc.id);
+    const base = Array.isArray(c[field]) ? c[field] : [];
+    const app = c.pendingAppend && Array.isArray(c.pendingAppend[field]) ? c.pendingAppend[field] : [];
+    return app.length ? base.concat(app) : base;
+  }
   return [];
 }
 // Carrega servicesMedia/<id> uma vez por sessão (só se o registro é external e marcado). Nunca quebra
@@ -13913,6 +14269,23 @@ async function setServiceMedia(svc, field, arr){
   SERVICE_MEDIA_FIELDS.forEach(f => { if(Array.isArray(svc[f]) && svc[f].length === 0) delete svc[f]; }); // sem array vazio inline "fantasma"
   if(svc.mediaExternal) await loadServiceMedia(svc.id, field); // nunca sobrescreve o que ainda não foi lido
   const c = serviceMediaCacheEntry(svc.id);
+  if(svc.mediaExternal && !c.loaded){
+    // OFFLINE sem ter lido o servidor: o que a pessoa vê (e "arr") são só os acréscimos locais —
+    // NÃO pode virar a lista completa, senão ao sincronizar apagaria as fotos antigas do servidor.
+    // Guarda como ACRÉSCIMO pendente; sincronizarMidiaPendente() lê o servidor primeiro e junta.
+    c.pendingAppend = c.pendingAppend || {};
+    c.pendingAppend[field] = arr;
+    serviceMediaPending.add(svc.id);
+    outboxGravar('servicesMediaAppend/' + svc.id, c.pendingAppend);
+    avisoNaoBloqueante(MSG_OFFLINE_GUARDADO);
+    return { ok: true, model: 'external', queued: true };
+  }
+  if(c.pendingAppend && c.pendingAppend[field]){
+    // já estava online com lista completa: os acréscimos pendentes desse campo agora fazem parte de "arr"
+    delete c.pendingAppend[field];
+    if(!Object.keys(c.pendingAppend).length){ delete c.pendingAppend; outboxGravar('servicesMediaAppend/' + svc.id, {}); }
+    else outboxGravar('servicesMediaAppend/' + svc.id, c.pendingAppend);
+  }
   c[field] = arr; c.loaded = true;
   const ok = await saveServiceMediaDiff(svc.id);
   return { ok, model: 'external' };
@@ -13932,17 +14305,23 @@ async function saveServiceMediaDiff(id, attempt){
   });
   const marcar = svc && !svc.mediaExternal;
   if(marcar) updates['services/' + k + '/mediaExternal'] = true;
-  if(!Object.keys(updates).length) return true;
+  if(!Object.keys(updates).length){ outboxGravar('servicesMedia/' + k, {}); return true; }
+  // Durável antes da rede: fotos/áudios comprimidos (~40-80 KB cada) cabem no localStorage; se a
+  // quota estourar, outboxGravar avisa no console e a mídia segue só em memória (como era antes).
+  const mediaOutbox = {}; SERVICE_MEDIA_FIELDS.forEach(f => { if(('servicesMedia/' + k + '/' + f) in updates) mediaOutbox[f] = updates['servicesMedia/' + k + '/' + f]; });
+  outboxGravar('servicesMedia/' + k, mediaOutbox);
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
     await rtdb.ref().update(updates);
     serviceMediaSnapshot[k] = Object.assign({}, confirmed, sent);
     if(marcar){ svc.mediaExternal = true; servicesSnapshot[k] = Object.assign({}, servicesSnapshot[k] || {}, { mediaExternal: JSON.stringify(true) }); }
     serviceMediaPending.delete(id);
+    outboxGravar('servicesMedia/' + k, {});
     return true;
   }catch(e){
     console.error('Falha ao gravar mídia da atividade ' + k + ' (tentativa ' + attempt + '):', e);
     if(attempt < 3){ await new Promise(r => setTimeout(r, 500 * attempt)); return saveServiceMediaDiff(id, attempt + 1); }
+    serviceMediaPending.add(id); // fica na fila: o motor de reenvio tenta de novo quando a rede voltar
     return false;
   }
 }
@@ -13950,6 +14329,42 @@ async function flushServiceMediaPending(){
   let ok = true;
   for(const id of Array.from(serviceMediaPending)){ if(!(await saveServiceMediaDiff(id))) ok = false; }
   return ok;
+}
+// Motor de reenvio (mídia): primeiro resolve os ACRÉSCIMOS feitos offline (lê o servidor, junta,
+// grava), depois reenvia as listas completas pendentes.
+async function sincronizarMidiaPendente(){
+  for(const id of Array.from(serviceMediaPending)){
+    const c = serviceMediaCacheEntry(id);
+    if(!c.pendingAppend) continue;
+    const svc = services.find(x => x.id === id); if(!svc) continue;
+    if(!c.loaded) await loadServiceMedia(id, 'sync'); // agora com rede, deve conseguir ler
+    if(!c.loaded) continue; // ainda sem rede: mantém o acréscimo guardado, tenta na próxima
+    const app = c.pendingAppend; delete c.pendingAppend;
+    SERVICE_MEDIA_FIELDS.forEach(f => { if(Array.isArray(app[f]) && app[f].length){ c[f] = (Array.isArray(c[f]) ? c[f] : []).concat(app[f]); if(f === 'photos') svc.hasPhotos = c[f].length > 0; } });
+    outboxGravar('servicesMediaAppend/' + id, {});
+  }
+  return flushServiceMediaPending();
+}
+// No boot: recoloca em memória as mídias que ficaram pendentes no aparelho (listas completas e
+// acréscimos), pra tela mostrar e o motor reenviar. Chamado no fim de loadServices().
+function restaurarMidiaPendente(){
+  try{
+    for(let i = 0; i < localStorage.length; i++){
+      const key = localStorage.key(i); if(!key) continue;
+      let m;
+      if((m = key.match(/^equiper_outbox_servicesMedia\/(.+)$/))){
+        const id = isNaN(Number(m[1])) ? m[1] : Number(m[1]);
+        const dado = JSON.parse(localStorage.getItem(key) || '{}');
+        const c = serviceMediaCacheEntry(id);
+        Object.keys(dado).forEach(f => { c[f] = Array.isArray(dado[f]) ? dado[f] : []; });
+        c.loaded = true; serviceMediaPending.add(id);
+      } else if((m = key.match(/^equiper_outbox_servicesMediaAppend\/(.+)$/))){
+        const id = isNaN(Number(m[1])) ? m[1] : Number(m[1]);
+        const dado = JSON.parse(localStorage.getItem(key) || '{}');
+        if(Object.keys(dado).length){ const c = serviceMediaCacheEntry(id); c.pendingAppend = dado; serviceMediaPending.add(id); }
+      }
+    }
+  }catch(e){ console.error('Falha ao restaurar mídia pendente do aparelho:', e); }
 }
 // Diagnóstico (PERF_DIAG): só números — serviceId, campo, hit/miss, ms, KB. Nunca conteúdo.
 function perfMediaEvent(e){
@@ -16014,6 +16429,7 @@ async function ensureRoleDataLoaded(role){
       ensureExtraContactsEtcLoaded()
     ]);
     await garantirImportarEquipNomesExistentes(); // só depois do Promise.all: precisa de oficinaEquipamentos E do catálogo já carregados
+    if(window.PREV_API) PREV_API.iniciarGestor(); // relatório preventivo: em segundo plano, não atrasa o login
   } else if(role === 'tech'){
     await ensureServicesLoaded();
     // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
@@ -16025,6 +16441,7 @@ async function ensureRoleDataLoaded(role){
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
     await garantirImportarEquipNomesExistentes();
+    if(window.PREV_API) { try{ await PREV_API.carregarUnidades(); }catch(e){ console.error('prev: unidades', e); } } // relatório preventivo (usa cache se estiver sem sinal)
   } else if(role === 'financeiro'){
     await ensureServicesLoaded();
   } else if(role === 'oficina'){
@@ -16987,6 +17404,1355 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
   console.error('Promessa rejeitada sem tratamento:', e.reason);
 });
+
+// =====================================================================================
+// RELATÓRIO DE MANUTENÇÃO PREVENTIVA (30/09) — módulo isolado
+//
+// Tudo que é novo mora aqui dentro (IIFE): nenhuma função ou variável nova vira global, exceto
+// window.PREV_API, que o restante do app chama em 4 pontos (card do técnico, conclusão da atividade,
+// carregamento por perfil e motor de reenvio offline). Nada do que já existia foi reescrito.
+//
+// Nós NOVOS no Firebase Realtime Database (nenhum nó existente é lido em escrita nem alterado):
+//   preventivoUnidades/<id>            unidade instalada de um cliente (tipo + local + subitens/quantidades)
+//   preventivoRascunhos/<atividade>    respostas e observações do técnico durante a visita
+//   preventivoFotos/<atividade>/<id>   fotos da visita (até 10), comprimidas como as demais fotos do app
+//   preventivoRelatorios/<rel_ATIV>    relatório concluído = registro fixo (não muda se a configuração mudar)
+//
+// Toda gravação passa pelo outbox offline (localStorage → Firebase): se a conexão cair, nada se perde e
+// o reenvio é automático. Se o Firebase recusar por regras (permission_denied), os dados ficam no
+// aparelho e aparece um aviso claro, em vez de parecer "falta de internet".
+// =====================================================================================
+(function(){
+'use strict';
+
+const NOS = { unidades:'preventivoUnidades', rascunhos:'preventivoRascunhos', fotos:'preventivoFotos', relatorios:'preventivoRelatorios' };
+const OUTBOX_NOME = 'preventivo';
+if(OUTBOX_LOJAS.indexOf(OUTBOX_NOME) < 0) OUTBOX_LOJAS.push(OUTBOX_NOME); // entra na contagem da faixa "aguardando conexão"
+const MAX_FOTOS = 10;
+
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function slug(t){ return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+function fmtDataHora(iso){ try{ const dt = new Date(iso); return isNaN(dt) ? '' : dt.toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }); }catch(e){ return ''; } }   // nunca devolve o texto cru
+function fmtData(ymd){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(ymd||'')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; }   // só dígitos; nunca devolve o texto cru
+// Tudo que vem do Firebase é não confiável (as regras são abertas): cores só aceitam a lista fixa, números são coagidos.
+function corSegura(c){ return (c === 'green' || c === 'amber' || c === 'red') ? c : 'none'; }
+function num(v){ const n = Number(v); return isFinite(n) ? n : 0; }
+function aviso(msg, ms){ try{ avisoNaoBloqueante(msg, ms); }catch(e){ console.warn(msg); } }
+function novoId(prefixo){ return prefixo + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function comTimeout(p, ms){ return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]); }
+function paraLista(v){
+  if(Array.isArray(v)) return v.filter(x => x != null);
+  if(v && typeof v === 'object') return Object.keys(v).sort((a, b) => Number(a) - Number(b)).map(k => v[k]).filter(x => x != null);
+  return [];
+}
+
+// ---------------- Catálogo de equipamentos (fechado na especificação aprovada) ----------------
+
+const FAIXA_ISOLAMENTO = [
+  {v:'0-1',  label:'0 a <1 MΩ',     cor:'red'},
+  {v:'1-10', label:'1 a <10 MΩ',    cor:'amber'},
+  {v:'10-100', label:'10 a <100 MΩ', cor:'green'},
+  {v:'100-500', label:'100 a 500 MΩ', cor:'green'},
+  {v:'>500', label:'>500 MΩ',       cor:'green'},
+];
+const CORRENTE_GERAL = [
+  {v:'zerada_baixa', label:'Zerada/baixa', cor:'red'},
+  {v:'normal', label:'Normal', cor:'green'},
+  {v:'alta', label:'Alta', cor:'red'},
+];
+const RUIDO_GERAL = [
+  {v:'normal', label:'Normal', cor:'green'},
+  {v:'medio', label:'Médio', cor:'amber'},
+  {v:'alto', label:'Alto/ruim', cor:'red'},
+];
+const VAZAMENTO = [
+  {v:'sem', label:'Sem vazamento', cor:'green'},
+  {v:'com', label:'Com vazamento', cor:'red'},
+];
+const BOM_DEFEITO = [
+  {v:'boas', label:'Em boas condições', cor:'green'},
+  {v:'defeito', label:'Com defeito', cor:'red'},
+];
+const FUNC_FALHOU = [
+  {v:'func', label:'Funcionando', cor:'green'},
+  {v:'falhou', label:'Falhou', cor:'red'},
+];
+// Só para Rabichos e Exaustão (Aquecimento direto) — pedido em 30/09: trocar o rótulo "Com defeito"
+// por "Precisa ser trocado". Os demais campos que usam BOM_DEFEITO (boias/eletrodos, coletores
+// solares) não foram mencionados e continuam com "Com defeito".
+const BOM_DEFEITO_TROCAR = [
+  {v:'boas', label:'Em boas condições', cor:'green'},
+  {v:'trocar', label:'Precisa ser trocado', cor:'red'},
+];
+
+function campoCategoria(id, label, opcoes, status){ return {id, label, tipo:'categoria', opcoes, status: status||'ok'}; }
+function campoFaixa(id, label, status){ return {id, label, tipo:'faixa', opcoes:FAIXA_ISOLAMENTO, status: status||'ok'}; }
+function campoNumerico(id, label, unidade, status){ return {id, label, tipo:'numerico', unidade, status: status||'ok'}; }
+function campoPendente(id, label, nota){ return {id, label, tipo:'pendente', status:'pendente', nota}; }
+
+function itensPiscinaSpa(){
+  return [
+    { nome:'Bomba de recirculação', campos:[
+        campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+        campoFaixa('isolamento', 'Isolamento'),
+        campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+    { nome:'Filtro', campos:[
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+        campoCategoria('pressao', 'Pressão', [
+          {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ]),
+        campoCategoria('retrolavagem', 'Retrolavagem', [
+          {v:'feita', label:'Retrolavado', cor:'green'}, {v:'nexec', label:'Não executado', cor:'amber'} ]),
+    ]},
+    { nome:'Filtro UV', campos:[
+        campoCategoria('lampada', 'Lâmpada', [
+          {v:'func', label:'Funcionando', cor:'green'}, {v:'queimada', label:'Queimada', cor:'red'} ]),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+    { nome:'Gerador de cloro', campos:[
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+        campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU),
+        campoCategoria('sal', 'Nível de sal', [
+          {v:'baixo', label:'Baixo', cor:'amber'}, {v:'ideal', label:'Ideal', cor:'green'}, {v:'alto', label:'Alto', cor:'red'} ]),
+    ]},
+    { nome:'Trocador de calor', campos:[
+        campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU),
+        campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+    { nome:'Aquecedor a gás', campos:[
+        campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+    { nome:'Bomba de cascata', campos:[
+        campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+        campoFaixa('isolamento', 'Isolamento'),
+        campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+    { nome:'Bomba de hidromassagem', campos:[
+        campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+        campoFaixa('isolamento', 'Isolamento'),
+        campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+        campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+    ]},
+  ];
+}
+const CATALOGO = [
+  { tipo:'pressurizacao', nome:'Pressurização', itens:[
+      { nome:'Bomba', campos:[
+          campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+          campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+          campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+      ]},
+      { nome:'Tanque de expansão', campos:[
+          campoCategoria('tanque', 'Condição', [
+            {v:'calibrado', label:'Calibrado', cor:'green'},
+            {v:'furado', label:'Furado', cor:'red'},
+            {v:'nverif', label:'Não verificado', cor:'amber'},
+          ]),
+      ]},
+  ]},
+  // Aquecimento direto: ajustado para bater com o protótipo de validações (Teste validações) —
+  // Resistência/Vazamento/Termostato NÃO pertencem ao aquecedor direto, e sim ao Boiler (correção
+  // pedida em 30/09: "misturou medições de boiler com aquecedor"). Limpeza do filtro e Acionamento
+  // saem de pendente e entram como campos decididos, com as opções do próprio protótipo.
+  { tipo:'aquecimento_direto', nome:'Aquecimento direto', itens:[
+      { nome:'Aquecedor', campos:[
+          campoCategoria('limpezafiltro', 'Limpeza do filtro', [
+            {v:'limpo', label:'Limpo', cor:'green'}, {v:'trocar', label:'Precisa trocar', cor:'red'}, {v:'nverif', label:'Não verificado', cor:'amber'},
+          ]),
+          campoCategoria('acionamento', 'Acionamento', [
+            {v:'func', label:'Funcionando', cor:'green'}, {v:'falhou', label:'Falhou', cor:'red'}, {v:'ntestado', label:'Não testado', cor:'amber'},
+          ]),
+          campoCategoria('rabichos', 'Rabichos', BOM_DEFEITO_TROCAR),
+          campoCategoria('exaustao', 'Exaustão', BOM_DEFEITO_TROCAR),
+      ]},
+  ]},
+  // Aquecimento boiler: pedido em 30/09 pra virar bem completo e configurável — igual à Piscina/SPA,
+  // mas aqui os 4 "subitens" possíveis são combinações reais do boiler: o boiler elétrico em si
+  // (pode ter mais de um), apoio de aquecedor a gás (reusa os campos do Aquecimento direto), apoio
+  // solar (reusa os campos de Coletores solares — "quantas placas" = quantidade deste subitem) e
+  // conforto/recirculação (reusa os campos de Conforto/recirculação). Isso implementa de vez a
+  // "combinações configuráveis por cliente" que já estava prevista desde o início (só elétrico;
+  // elétrico + apoio a gás; elétrico + apoio a gás + recirculação; elétrico + apoio solar +
+  // recirculação; e qualquer outra combinação, já que agora cada subitem tem sua própria contagem).
+  { tipo:'aquecimento_boiler', nome:'Aquecimento boiler', itens:[
+      { nome:'Boiler', campos:[
+          campoCategoria('resistencia', 'Resistência', [
+            {v:'func', label:'Funcionando', cor:'green'}, {v:'queimada', label:'Queimada', cor:'red'} ]),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+          campoCategoria('termostato', 'Termostato', [
+            {v:'bom', label:'Bom', cor:'green'}, {v:'ruim', label:'Ruim', cor:'red'} ]),
+          campoCategoria('tanque', 'Tanque de expansão', [
+            {v:'calibrado', label:'Calibrado', cor:'green'}, {v:'furado', label:'Furado', cor:'red'}, {v:'nverif', label:'Não verificado', cor:'amber'} ]),
+      ]},
+      { nome:'Apoio de aquecedor a gás', campos:[
+          campoCategoria('limpezafiltro', 'Limpeza do filtro', [
+            {v:'limpo', label:'Limpo', cor:'green'}, {v:'trocar', label:'Precisa trocar', cor:'red'}, {v:'nverif', label:'Não verificado', cor:'amber'} ]),
+          campoCategoria('acionamento', 'Acionamento', [
+            {v:'func', label:'Funcionando', cor:'green'}, {v:'falhou', label:'Falhou', cor:'red'}, {v:'ntestado', label:'Não testado', cor:'amber'} ]),
+          campoCategoria('rabichos', 'Rabichos', BOM_DEFEITO_TROCAR),
+          campoCategoria('exaustao', 'Exaustão', BOM_DEFEITO_TROCAR),
+      ]},
+      { nome:'Apoio solar (coletor)', campos:[
+          campoCategoria('vidros', 'Vidros', BOM_DEFEITO),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+          campoCategoria('sensores', 'Sensores', BOM_DEFEITO),
+      ]},
+      { nome:'Conforto/recirculação (bomba)', campos:[
+          campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+          campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+      ]},
+  ]},
+  { tipo:'conforto', nome:'Conforto/recirculação', itens:[
+      { nome:'Bomba', campos:[
+          campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+          campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+      ]},
+  ]},
+  { tipo:'recalque_residencial', nome:'Recalque residencial', itens:[
+      { nome:'Bomba', campos:[
+          campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+          campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+          campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+      ]},
+  ]},
+  // Bomba de reuso: Filtro e Refil viraram UM item só (30/09) — cada filtro tem o seu refil, então a
+  // quantidade configurável ("2 filtros") multiplica os dois campos juntos.
+  { tipo:'bomba_reuso', nome:'Bomba de reuso', itens:[
+      { nome:'Filtro', campos:[
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+          campoCategoria('refil', 'Condição do refil', [
+            {v:'limpo', label:'Limpo', cor:'green'}, {v:'trocar', label:'Precisa trocar', cor:'red'}, {v:'nverif', label:'Não verificado', cor:'amber'} ]),
+      ]},
+  ]},
+  { tipo:'recalque_industrial', nome:'Recalque industrial', itens:[
+      { nome:'Bomba/poço', campos:[
+          campoNumerico('correnteR', 'Corrente — fase R', 'A'),
+          campoNumerico('correnteS', 'Corrente — fase S', 'A'),
+          campoNumerico('correnteT', 'Corrente — fase T', 'A'),
+          campoFaixa('isolamento', 'Isolamento'),
+          // Hidrômetro/horímetro: descartado por ora (decisão de 30/09) — não é campo, nem pendente.
+      ]},
+  ]},
+  { tipo:'drenagem', nome:'Drenagem', itens:[
+      { nome:'Bomba', campos:[
+          campoCategoria('corrente', 'Corrente', CORRENTE_GERAL),
+          campoFaixa('isolamento', 'Isolamento'),
+          campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
+          campoCategoria('ruido', 'Ruído', RUIDO_GERAL),
+          campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU),
+      ]},
+      { nome:'Boias/eletrodos', campos:[ campoCategoria('boias', 'Condição', BOM_DEFEITO) ]},
+  ]},
+  { tipo:'filtro_agua', nome:'Filtro de água', itens:[
+      { nome:'Filtro', campos:[ campoCategoria('pressao', 'Pressão', [
+            {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ]) ]},
+  ]},
+  // Piscina e SPA separados (pedido em 30/09) — mesmos subitens/campos dos dois lados, cada um com
+  // sua própria cópia (editar um não afeta o outro). itensPiscinaSpa() devolve uma cópia nova a
+  // cada chamada — os dois tipos abaixo NÃO compartilham o mesmo array de itens.
+  { tipo:'piscina', nome:'Piscina', itens: itensPiscinaSpa() },
+  { tipo:'spa', nome:'SPA', itens: itensPiscinaSpa() },
+  { tipo:'sauna', nome:'Sauna (gerador de vapor)', itens:[
+      { nome:'Resistências', campos:[ campoFaixa('isolamento', 'Isolamento') ]},
+      { nome:'Sauna', campos:[
+          campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU),
+          campoNumerico('correnteR', 'Corrente — fase R', 'A'),
+          campoNumerico('correnteS', 'Corrente — fase S', 'A'),
+          campoNumerico('correnteT', 'Corrente — fase T', 'A'),
+      ]},
+  ]},
+];
+function tipoPorId(id){ return CATALOGO.find(t=>t.tipo===id); }
+
+
+// Tipos em que os SUBITENS são configuráveis por unidade (quais existem + quantos de cada).
+// Escopo pedido em 30/09: só Piscina e SPA por enquanto — os demais tipos continuam trazendo
+// todos os itens do catálogo automaticamente, como já era.
+// Ampliado em 30/09 para Pressurização, Drenagem e Bomba de reuso (planilhas reais mostram vários
+// equipamentos por sistema nesses tipos). Sauna ficou de fora de propósito: repetição de sauna já é
+// resolvida por unidades separadas ("Sauna 1", "Sauna 2").
+//  - inicio: quantidade inicial de cada subitem ao criar a unidade (0 = o Gestor escolhe do zero;
+//    1 = já começa com um de cada, como era antes desta configuração existir).
+//  - minimo: quantidade mínima por subitem (Pressurização: o tanque de expansão nunca fica em zero —
+//    decisão original de que toda pressurização tem tanque).
+const REGRAS_COMPONENTES = {
+  piscina:            { inicio: 0, minimo: {} },
+  spa:                { inicio: 0, minimo: {} },
+  aquecimento_boiler: { inicio: 0, minimo: {} },
+  pressurizacao:      { inicio: 1, minimo: { 'Tanque de expansão': 1 } },
+  drenagem:           { inicio: 1, minimo: {} },
+  bomba_reuso:        { inicio: 1, minimo: {} },
+};
+function tipoTemComponentesConfiguraveis(tipoId){ return Object.prototype.hasOwnProperty.call(REGRAS_COMPONENTES, tipoId); }
+function minimosDoTipo(tipoId){ return (REGRAS_COMPONENTES[tipoId] && REGRAS_COMPONENTES[tipoId].minimo) || {}; }
+function estadoInicialDoTipo(tipoId){
+  const regra = REGRAS_COMPONENTES[tipoId]; const est = {};
+  tipoPorId(tipoId).itens.forEach(it => { est[it.nome] = Math.max(regra.inicio, (regra.minimo||{})[it.nome] || 0); });
+  return est;
+}
+function componentesDoEstado(estado){ return Object.entries(estado).filter(([,q])=>q>0).map(([itemNome,quantidade])=>({itemNome, quantidade})); }
+
+
+// Monta a lista achatada de campos que o técnico precisa preencher nesta unidade, cada um com uma
+// chave única (pra não colidir quando o mesmo nome de campo aparece em vários itens — ex.:
+// "Vazamento" em Bomba, Filtro, Filtro UV...) e o rótulo do item/instância a que pertence.
+//
+// Dois modos:
+// - Tipos com subitens configuráveis (Piscina, SPA — tipoTemComponentesConfiguraveis): usa
+//   unit.componentes (o que o Gestor escolheu: quais subitens e quantos de cada). Uma unidade
+//   dessas SEM componentes configurados devolve lista vazia de propósito — não cai de volta pra
+//   "mostrar tudo", porque mostrar tudo era exatamente o problema que gerou este pedido.
+// - Demais tipos: comportamento de sempre, um de cada item do catálogo.
+function estruturaDaUnidade(unit){
+  const tipo = tipoPorId(unit.tipo);
+  if(tipoTemComponentesConfiguraveis(unit.tipo)){
+    const out = [];
+    (unit.componentes || []).forEach((comp, compIdx) => {
+      const itemTpl = tipo.itens.find(it => it.nome === comp.itemNome);
+      if(!itemTpl) return; // subitem removido do catálogo depois de configurado — ignora, não quebra
+      for(let inst = 0; inst < comp.quantidade; inst++){
+        const itemLabel = comp.quantidade > 1 ? `${itemTpl.nome} ${inst+1}` : itemTpl.nome;
+        itemTpl.campos.filter(c=>c.status!=='pendente').forEach(c => {
+          out.push({ key: `${compIdx}:${inst}:${c.id}`, campo:c, itemLabel });
+        });
+      }
+    });
+    return out;
+  }
+  return tipo.itens.flatMap((it, itemIdx) => it.campos.filter(c=>c.status!=='pendente').map(c => ({ key: itemIdx+':'+c.id, campo:c, itemLabel: it.nome })));
+}
+// Agrupa a lista achatada em blocos por itemLabel, na ordem em que aparecem (pra renderizar um
+// cabeçalho por instância — "Filtro 1", "Filtro 2" — em vez de uma lista solta de campos).
+function agruparPorItem(estrutura){
+  const grupos = [];
+  estrutura.forEach(entry => {
+    let g = grupos[grupos.length-1];
+    if(!g || g.itemLabel !== entry.itemLabel) { g = { itemLabel: entry.itemLabel, campos: [] }; grupos.push(g); }
+    g.campos.push(entry);
+  });
+  return grupos;
+}
+
+// Congela uma unidade como estava na visita: nomes, valores e cores já resolvidos.
+function montarSnapshotUnidade(unit, respostas){
+  const tipo = tipoPorId(unit.tipo);
+  const grupos = agruparPorItem(estruturaDaUnidade(unit)).map(g => ({
+    titulo: g.itemLabel,
+    linhas: g.campos.map(({key, campo}) => {
+      const v = respostas[key];
+      if(v === undefined || v === '') return { campo: campo.label, texto: null, cor: null };
+      if(campo.tipo === 'numerico') return { campo: campo.label, texto: v + ' ' + campo.unidade, cor: null };
+      const o = campo.opcoes.find(o => o.v === v);
+      return { campo: campo.label, texto: o ? o.label : String(v), cor: o ? o.cor : null };
+    }),
+  }));
+  return { unitId: unit.id, local: unit.local, tipoNome: tipo.nome, grupos };
+}
+
+function resumoRelatorio(r){
+  const res = { verdes:0, amarelos:0, vermelhos:0, vazios:0, atencao:[] };
+  (r.unidades || []).forEach(u => (u.grupos || []).forEach(g => (g.linhas || []).forEach(l => {
+    if(l.texto == null){ res.vazios++; return; }
+    if(l.cor === 'green') res.verdes++;
+    else if(l.cor === 'amber' || l.cor === 'red'){
+      if(l.cor === 'amber') res.amarelos++; else res.vermelhos++;
+      res.atencao.push({ unidade:u.local, grupo:g.titulo, campo:l.campo, texto:l.texto, cor:l.cor, unidadeTipo:u.tipoNome });
+    }
+  })));
+  res.atencao.sort((a,b) => (a.cor === b.cor ? 0 : a.cor === 'red' ? -1 : 1));
+  return res;
+}
+
+
+const CSS_RELATORIO = `
+.rp{font-family:'Inter',-apple-system,Arial,sans-serif;color:#1B1C1F;font-size:13px;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.rp *{box-sizing:border-box;}
+.rp-head{display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:3px solid #D91A22;padding-bottom:14px;margin-bottom:16px;flex-wrap:wrap;}
+.rp-brand{display:flex;align-items:center;gap:10px;}
+.rp-logo{width:36px;height:36px;border-radius:50%;background:#17181A;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:800;font-size:20px;}
+.rp-brand b{font-family:Georgia,'Roboto Slab',serif;font-size:18px;display:block;line-height:1.1;}
+.rp-brand .sub{font-size:11px;color:#6B7076;}
+.rp-title{font-family:Georgia,'Roboto Slab',serif;font-size:19px;font-weight:700;text-align:right;}
+.rp-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 20px;margin-bottom:16px;}
+.rp-meta span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#6B7076;font-weight:700;}
+.rp-meta b{font-size:13.5px;}
+.rp-resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
+.rp-stat{border:1px solid #E3E4E6;border-radius:10px;padding:10px 12px;}
+.rp-stat b{display:block;font-size:22px;line-height:1.1;}
+.rp-stat span{font-size:11px;color:#6B7076;}
+.rp-stat.green{background:rgba(46,125,79,.10);border-color:rgba(46,125,79,.35);} .rp-stat.green b{color:#1F5A38;}
+.rp-stat.amber{background:rgba(135,92,31,.10);border-color:rgba(135,92,31,.35);} .rp-stat.amber b{color:#875C1F;}
+.rp-stat.red{background:rgba(192,57,43,.10);border-color:rgba(192,57,43,.35);} .rp-stat.red b{color:#C0392B;}
+.rp-nota{font-size:11.5px;color:#6B7076;margin:0 0 14px;}
+.rp-atencao{border:1px solid rgba(192,57,43,.35);background:rgba(192,57,43,.05);border-radius:10px;padding:12px 14px;margin-bottom:18px;}
+.rp-atencao h4{margin:0 0 8px;font-size:13px;}
+.rp-atencao ul{margin:0;padding-left:18px;} .rp-atencao li{margin:3px 0;}
+.rp-ok{border:1px solid rgba(46,125,79,.35);background:rgba(46,125,79,.06);border-radius:10px;padding:10px 14px;margin-bottom:18px;color:#1F5A38;font-weight:600;}
+.rp-unit{border:1px solid #E3E4E6;border-radius:12px;padding:12px 14px;margin-bottom:12px;break-inside:avoid;}
+.rp-unit h3{margin:0 0 8px;font-size:14.5px;} .rp-unit h3 small{font-weight:500;color:#6B7076;font-size:12px;margin-left:6px;}
+.rp-grupo{margin-top:10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6B7076;font-weight:700;}
+.rp-tab{width:100%;border-collapse:collapse;margin-top:4px;}
+.rp-tab td{padding:5px 0;border-bottom:1px dashed #E3E4E6;vertical-align:top;} .rp-tab tr:last-child td{border-bottom:none;}
+.rp-tab td.v{text-align:right;font-weight:700;white-space:nowrap;}
+.rp-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;}
+.rp-pill.green{background:rgba(46,125,79,.12);color:#1F5A38;} .rp-pill.amber{background:rgba(135,92,31,.14);color:#875C1F;} .rp-pill.red{background:rgba(192,57,43,.12);color:#C0392B;} .rp-pill.none{color:#6B7076;background:#F0F1F2;font-weight:600;}
+.rp-obs{margin-top:16px;border:1px solid #E3E4E6;border-radius:12px;padding:12px 14px;break-inside:avoid;}
+.rp-obs h3{margin:0 0 8px;font-size:14.5px;}
+.rp-obs-texto{white-space:pre-wrap;font-size:13.5px;line-height:1.5;}
+.rp-fotos{margin-top:16px;}
+.rp-fotos h3{margin:0 0 8px;font-size:14.5px;}
+.rp-fotos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rp-fotos-grid figure{margin:0;break-inside:avoid;}
+.rp-fotos-grid img{width:100%;height:auto;display:block;border-radius:8px;border:1px solid #E3E4E6;}
+.rp-fotos-grid figcaption{font-size:10.5px;color:#6B7076;margin-top:2px;}
+.rp-foot{margin-top:16px;padding-top:10px;border-top:1px solid #E3E4E6;font-size:11px;color:#6B7076;}
+@media (max-width:560px){ .rp-resumo{grid-template-columns:repeat(2,1fr);} .rp-meta{grid-template-columns:1fr;} .rp-title{text-align:left;} .rp-fotos-grid{grid-template-columns:repeat(2,1fr);} }
+`;
+
+const SUBSTITUICOES = {
+  pq:'porque', tb:'também', tbm:'também', vc:'você', vcs:'vocês', q:'que', hj:'hoje', mto:'muito', mt:'muito', msm:'mesmo',
+  pra:'para', ta:'está', tá:'está', nao:'não', ja:'já', tambem:'também', voce:'você', amanha:'amanhã',
+  poco:'poço', pressao:'pressão', agua:'água', valvula:'válvula', hidrometro:'hidrômetro', manutencao:'manutenção',
+  instalacao:'instalação', reposicao:'reposição', peca:'peça', possivel:'possível', eletrica:'elétrica', eletrico:'elétrico',
+  pressurizacao:'pressurização', drenagem:'drenagem', ruido:'ruído', isolamento:'isolamento', proxima:'próxima', visita:'visita',
+};
+function sugerirRedacao(texto){
+  let t = String(texto || '').replace(/\r\n?/g, '\n');
+  // 1) palavras: troca abreviações e acentos conhecidos (só a palavra inteira; mantém a maiúscula inicial)
+  t = t.replace(/[A-Za-zÀ-ÖØ-öø-ÿ]+/g, (w, pos, todo) => {
+    const novo = SUBSTITUICOES[w.toLowerCase()];
+    if(!novo || novo === w.toLowerCase()) return w;
+    if(/\d/.test(todo[pos - 1] || '') || /\d/.test(todo[pos + w.length] || '')) return w; // "Q1", "2a" etc. não são abreviações
+    return w[0] === w[0].toUpperCase() && w[0] !== w[0].toLowerCase() ? novo[0].toUpperCase() + novo.slice(1) : novo;
+  });
+  // 2) espaços e pontuação
+  t = t.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n');
+  t = t.replace(/\s+([,.;:!?])/g, '$1');
+  t = t.replace(/([,;:])(?=[^\s\d])/g, '$1 ');
+  t = t.replace(/([a-zà-ÿ])\.(?=[A-ZÀ-Ý])/g, '$1. ');
+  // 3) cada linha: sem espaço nas pontas, primeira letra maiúscula e ponto final
+  t = t.split('\n').map(linha => {
+    linha = linha.trim(); if(!linha) return linha;
+    linha = linha.replace(/^([-•*]\s*)?([a-zà-ÿ])/, (m, marca, letra) => (marca || '') + letra.toUpperCase());
+    if(/[A-Za-zÀ-ÿ0-9)]$/.test(linha)) linha += '.';
+    return linha;
+  }).join('\n');
+  // 4) maiúscula depois de ponto final dentro da mesma linha
+  t = t.replace(/([.!?]\s+)([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase());
+  return t.trim();
+}
+
+
+
+// ---------------- Estado em memória ----------------
+const estado = {
+  unidades: [], unidadesOk: false, unidadesJSON: '',
+  relatorios: {}, relatoriosOk: false,
+  rascunhos: {},            // { atividadeId: { respostas, obs, fotos:{id:dataURL}, carregado } }
+  fotosRel: {},             // { atividadeId: [dataURL...] } fotos de relatórios já abertos
+  abertoSec: new Set(), abertoUnid: new Set(),
+  cfgCliente: '', cfgEditando: null, histFiltro: '',
+  cfgForm: { tipo: '', local: '', comp: {} },
+};
+
+// ---------------- Cache de leitura (estado CONFIRMADO pelo servidor; nunca com pendências) ----------------
+function cacheSet(nome, dados){ try{ localStorage.setItem(CACHE_PREFIX + nome, JSON.stringify({ gravadoEm: new Date().toISOString(), dados })); }catch(e){ console.warn('prev: cache cheio/indisponível', nome); } }
+function cacheGet(nome){ try{ const b = localStorage.getItem(CACHE_PREFIX + nome); const o = b ? JSON.parse(b) : null; return o && o.dados !== undefined ? o.dados : null; }catch(e){ return null; } }
+
+// ---------------- Gravação: sempre pelo outbox (durável) e depois Firebase ----------------
+function pend(){ return outboxLer(OUTBOX_NOME); }
+function setPend(m){ return outboxGravar(OUTBOX_NOME, m); }
+function nestedSet(obj, parts, value){
+  let cur = obj;
+  for(let i = 0; i < parts.length - 1; i++){
+    if(cur[parts[i]] === null || typeof cur[parts[i]] !== 'object') cur[parts[i]] = {};
+    cur = cur[parts[i]];
+  }
+  const last = parts[parts.length - 1];
+  if(value === null) delete cur[last]; else cur[last] = value;
+}
+// Guarda "caminho → valor" no outbox. Firebase não aceita dois caminhos onde um é ancestral do outro no
+// mesmo update(); por isso um caminho novo substitui seus descendentes pendentes, e um descendente de um
+// ancestral pendente é mesclado dentro dele.
+function escrever(path, valor){
+  const m = pend();
+  Object.keys(m).forEach(k => { if(k.indexOf(path + '/') === 0) delete m[k]; });
+  let mesclado = false;
+  Object.keys(m).forEach(k => {
+    if(mesclado || path.indexOf(k + '/') !== 0) return;
+    const resto = path.slice(k.length + 1).split('/');
+    if(m[k] === null || typeof m[k] !== 'object') m[k] = {};
+    nestedSet(m[k], resto, valor);
+    mesclado = true;
+  });
+  if(!mesclado) m[path] = valor;
+  const guardou = setPend(m);
+  if(!guardou) aviso('Sem espaço para guardar esta alteração neste aparelho — confira a internet antes de sair da tela.', 7000);
+  flush();
+  return guardou;
+}
+let flushando = false, avisoRegrasEm = 0;
+async function enviarComRetry(p){
+  for(let t = 1; t <= 3; t++){
+    try{ await rtdb.ref().update(p); return; }
+    catch(e){
+      if(/permission[_ ]?denied/i.test(String((e && (e.code || e.message)) || ''))){ e.permissaoNegada = true; throw e; }
+      if(t === 3) throw e;
+      await new Promise(r => setTimeout(r, 500 * t));
+    }
+  }
+}
+async function flush(){
+  if(flushando) return;
+  flushando = true;
+  try{
+    if(typeof navigator !== 'undefined' && navigator.onLine === false) return;
+    while(Object.keys(pend()).length){
+      if(!rtdb) throw new Error('Firebase indisponível');
+      const p = pend(); const chaves = Object.keys(p);
+      await enviarComRetry(p);
+      const atual = pend();
+      // só remove o que foi enviado E não mudou durante o envio (o resto segue pendente e sai na próxima volta)
+      chaves.forEach(k => { if(k in atual && JSON.stringify(atual[k]) === JSON.stringify(p[k])) delete atual[k]; });
+      setPend(atual);
+    }
+  }catch(e){
+    if(e && e.permissaoNegada && Date.now() - avisoRegrasEm > 60000){
+      avisoRegrasEm = Date.now();
+      aviso('O servidor recusou gravar o relatório preventivo (regras do Firebase). Seus dados estão guardados neste aparelho — avise quem administra o Firebase.', 10000);
+    }
+    console.error('prev: falha ao enviar (segue guardado no aparelho)', e);
+  }finally{
+    flushando = false;
+    outboxAtualizarIndicador();
+  }
+}
+
+// Reaplica o que ainda não foi confirmado (outbox) por cima de um objeto lido do servidor/cache.
+function aplicarPendentes(raiz, prefixo){
+  const m = pend();
+  Object.keys(m).forEach(path => {
+    if(path.indexOf(prefixo + '/') !== 0) return;
+    const resto = path.slice(prefixo.length + 1).split('/').filter(Boolean);
+    if(resto.length) nestedSet(raiz, resto, m[path]);
+  });
+  return raiz;
+}
+
+// ---------------- Unidades configuradas ----------------
+function normalizarUnidade(u){
+  return {
+    id: u.id, cliente: u.cliente || '', tipo: u.tipo, local: u.local || '',
+    componentes: paraLista(u.componentes).map(c => ({ itemNome: c.itemNome, quantidade: Number(c.quantidade) || 0 })).filter(c => c.quantidade > 0),
+  };
+}
+function aplicarUnidadesBrutas(raw){
+  const lista = Object.keys(raw || {}).map(k => raw[k]).filter(u => u && u.id != null && tipoPorId(u.tipo)).map(normalizarUnidade);
+  const json = JSON.stringify(lista);
+  const mudou = json !== estado.unidadesJSON;
+  estado.unidades = lista; estado.unidadesJSON = json; estado.unidadesOk = true;
+  return mudou;
+}
+let unidadesListenerLigado = false;
+async function carregarUnidades(){
+  let raw = null;
+  try{
+    const snap = await comTimeout(rtdb.ref(NOS.unidades).get(), 8000);
+    raw = snap.exists() ? snap.val() : {};
+    cacheSet('preventivoUnidades', raw);
+  }catch(e){
+    raw = cacheGet('preventivoUnidades') || {};   // sem rede: última configuração confirmada neste aparelho
+    console.warn('prev: unidades lidas do cache local (offline)');
+  }
+  aplicarPendentes(raw, NOS.unidades);
+  aplicarUnidadesBrutas(raw);
+  if(!unidadesListenerLigado && rtdb){
+    unidadesListenerLigado = true;
+    try{
+      rtdb.ref(NOS.unidades).on('value', snap => {
+        const r2 = snap.exists() ? snap.val() : {};
+        cacheSet('preventivoUnidades', r2);
+        aplicarPendentes(r2, NOS.unidades);
+        if(aplicarUnidadesBrutas(r2)) aoMudarUnidades();
+      });
+    }catch(e){ console.warn('prev: listener de unidades indisponível', e); }
+  }
+}
+function aoMudarUnidades(){
+  try{
+    if(currentRole === 'tech' && !isUserBusyTyping() && typeof renderTechView === 'function') renderTechView();
+    if(currentRole === 'manager') renderConfig();
+  }catch(e){ console.error(e); }
+}
+function ehPreventiva(svc){ return !!(svc && (svc.maintenanceContractId || /^\s*preventiva\s*[–-]/i.test(svc.client || ''))); }
+function unidadesDoCliente(nome){
+  const k = normalizedClientKey(nome || '');
+  return estado.unidades.filter(u => normalizedClientKey(u.cliente) === k).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+}
+
+// ---------------- Rascunho da visita (técnico) ----------------
+async function garantirRascunho(sid, opt){
+  let r = estado.rascunhos[sid];
+  if(r && r.carregado) return r;
+  r = estado.rascunhos[sid] = r || { respostas: {}, obs: '', fotos: {}, carregado: false };
+  const ms = (opt && opt.timeoutMs) || 7000;
+  let raw = null, fotos = null;
+  try{
+    const s1 = await comTimeout(rtdb.ref(NOS.rascunhos + '/' + sid).get(), ms);
+    raw = s1.exists() ? s1.val() : {};
+    const s2 = await comTimeout(rtdb.ref(NOS.fotos + '/' + sid).get(), ms);
+    fotos = s2.exists() ? s2.val() : {};
+    cacheSet('prevdraft_' + sid, raw);
+  }catch(e){
+    raw = cacheGet('prevdraft_' + sid) || {}; fotos = {};   // offline: texto/respostas do cache; fotos já enviadas só aparecem online
+    r.offline = true;
+  }
+  aplicarPendentes(raw, NOS.rascunhos + '/' + sid);
+  aplicarPendentes(fotos, NOS.fotos + '/' + sid);
+  r.respostas = raw.respostas || {}; r.obs = typeof raw.obs === 'string' ? raw.obs : ''; r.fotos = fotos || {};
+  r.carregado = true;
+  return r;
+}
+function cacheRascunho(sid){ const r = estado.rascunhos[sid]; if(r) cacheSet('prevdraft_' + sid, { respostas: r.respostas, obs: r.obs }); }
+function rascunhoTemConteudo(r){
+  if(!r) return false;
+  const temResp = Object.keys(r.respostas || {}).some(u => Object.keys(r.respostas[u] || {}).length);
+  return temResp || !!String(r.obs || '').trim() || Object.keys(r.fotos || {}).length > 0;
+}
+
+// ---------------- Relatórios concluídos (Gestor) ----------------
+let relatoriosListenerLigado = false;
+function aplicarRelatoriosBrutos(raw){
+  aplicarPendentes(raw, NOS.relatorios);
+  estado.relatorios = raw || {}; estado.relatoriosOk = true;
+}
+async function garantirRelatorios(){
+  if(estado.relatoriosOk) return;
+  let raw = {};
+  try{ const snap = await comTimeout(rtdb.ref(NOS.relatorios).get(), 10000); raw = snap.exists() ? snap.val() : {}; }
+  catch(e){ console.warn('prev: não foi possível ler os relatórios agora', e); return; }
+  aplicarRelatoriosBrutos(raw);
+  if(!relatoriosListenerLigado && rtdb){
+    relatoriosListenerLigado = true;
+    try{ rtdb.ref(NOS.relatorios).on('value', snap => { aplicarRelatoriosBrutos(snap.exists() ? snap.val() : {}); atualizarTelasRelatorios(); }); }
+    catch(e){ console.warn('prev: listener de relatórios indisponível', e); }
+  }
+  atualizarTelasRelatorios();
+}
+function listaRelatorios(){
+  return Object.keys(estado.relatorios).map(k => Object.assign({ id: k }, estado.relatorios[k])).filter(r => r && r.cliente)
+    .sort((a, b) => String(b.criadoEm || '').localeCompare(String(a.criadoEm || '')));
+}
+function achaRel(id){ return estado.relatorios[id] ? Object.assign({ id }, estado.relatorios[id]) : null; }
+function setRelCampo(id, campo, valor){
+  if(!estado.relatorios[id]) estado.relatorios[id] = {};
+  if(valor === null) delete estado.relatorios[id][campo]; else estado.relatorios[id][campo] = valor;
+  escrever(NOS.relatorios + '/' + id + '/' + campo, valor);
+}
+async function fotosDoRelatorio(rel){
+  const sid = rel.fotosDe;
+  if(sid == null) return [];
+  if(estado.fotosRel[sid]) return estado.fotosRel[sid];
+  const snap = await comTimeout(rtdb.ref(NOS.fotos + '/' + sid).get(), 15000);
+  const obj = snap.exists() ? snap.val() : {};
+  const lista = Object.keys(obj).sort().map(k => obj[k]).filter(Boolean);
+  estado.fotosRel[sid] = lista;
+  return lista;
+}
+
+
+// ====================================================================================
+// TÉCNICO — seção "Relatório preventivo" dentro do card da atividade
+// Só aparece em atividade preventiva cujo cliente tem unidades configuradas. Interage sem chamar
+// renderTechView (redesenha só a própria seção), grava cada resposta na hora (outbox) e funciona
+// sem internet.
+// ====================================================================================
+function unidadeCompleta(u, r){
+  const est = estruturaDaUnidade(u);
+  const resp = (r && r.respostas && r.respostas[u.id]) || {};
+  return est.length > 0 && est.every(({ key }) => resp[key] !== undefined && resp[key] !== '');
+}
+function htmlCampo(unitId, key, campo, valor, travado){
+  if(campo.tipo === 'numerico'){
+    return `<div class="prv-field"><div class="prv-flabel">${esc(campo.label)}</div>
+      <input type="number" inputmode="decimal" step="0.1" class="prv-num" data-prv-u="${esc(unitId)}" data-prv-k="${esc(key)}" value="${esc(valor != null ? valor : '')}" placeholder="0.0" ${travado ? 'disabled' : ''}>
+      <div class="prv-num-un">${esc(campo.unidade)}</div></div>`;
+  }
+  return `<div class="prv-field"><div class="prv-flabel">${esc(campo.label)}</div><div class="prv-opts">${campo.opcoes.map(o =>
+    `<button type="button" class="prv-opt ${valor === o.v ? 'sel-' + o.cor : ''}" data-prv-u="${esc(unitId)}" data-prv-k="${esc(key)}" data-prv-v="${esc(o.v)}" ${travado ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}</div></div>`;
+}
+function htmlUnidade(sid, u, r, travado){
+  const tipo = tipoPorId(u.tipo);
+  const done = unidadeCompleta(u, r);
+  const aberta = estado.abertoUnid.has(sid + ':' + u.id);
+  let corpo = '';
+  if(aberta){
+    const est = estruturaDaUnidade(u);
+    const resp = (r.respostas && r.respostas[u.id]) || {};
+    if(tipoTemComponentesConfiguraveis(u.tipo) && !est.length){
+      corpo = `<div class="prv-aviso">⚠ Nenhum subitem configurado para esta unidade. O Gestor configura em Manutenções → Configuração por cliente.</div>`;
+    } else {
+      corpo = agruparPorItem(est).map(g => `<div class="prv-grupo"><div class="prv-grupo-t">${esc(g.itemLabel)}</div>${g.campos.map(({ key, campo }) => htmlCampo(u.id, key, campo, resp[key], travado)).join('')}</div>`).join('');
+    }
+    corpo = `<div class="prv-unit-corpo">${corpo}<div class="prv-local">📍 ${esc(u.local)} — identificação da unidade, só para localizar o equipamento.</div></div>`;
+  }
+  return `<div class="prv-unit ${done ? 'done' : ''}">
+    <button type="button" class="prv-unit-head" data-prv-act="toggle-unit" data-prv-u="${esc(u.id)}">
+      <span><b>${esc(u.local)}</b><small>${esc(tipo.nome)}</small></span>
+      <span class="prv-chip ${done ? 'green' : 'gray'}" data-prv-chipu="${esc(u.id)}">${done ? '✓ preenchida' : 'pendente'}</span>
+    </button>${corpo}</div>`;
+}
+function htmlSlot(svc, units, r){
+  const sid = svc.id;
+  const travado = svc.status === 'concluido';
+  const feitas = units.filter(u => unidadeCompleta(u, r)).length;
+  const aberto = estado.abertoSec.has(sid);
+  const fotoIds = Object.keys(r.fotos || {}).sort();
+  let corpo = '';
+  if(aberto){
+    corpo = `
+      <div class="prv-prog"><div class="prv-prog-bar" data-prv-bar style="width:${units.length ? Math.round(feitas / units.length * 100) : 0}%"></div></div>
+      ${r.offline ? '<div class="prv-aviso">Sem conexão ao abrir: o que você preencher fica guardado neste aparelho e sobe sozinho quando a internet voltar.</div>' : ''}
+      ${travado ? '<div class="prv-aviso" style="background:var(--panel-2);color:var(--text-dim);border-color:var(--line);">Atividade concluída — o relatório foi registrado e não pode mais ser alterado por aqui.</div>' : ''}
+      ${units.map(u => htmlUnidade(sid, u, r, travado)).join('')}
+      <div class="prv-field" style="margin-top:14px;">
+        <div class="prv-flabel">Observações e recomendações</div>
+        <textarea class="prv-obs" rows="4" placeholder="O que foi feito, problemas encontrados e recomendações para o cliente..." ${travado ? 'disabled' : ''}>${esc(r.obs || '')}</textarea>
+      </div>
+      <div class="prv-field">
+        <div class="prv-flabel">Fotos (até ${MAX_FOTOS})</div>
+        <div class="prv-fotos">${fotoIds.map(id => `<div class="prv-foto"><img src="${esc(r.fotos[id])}" alt="Foto" data-prv-foto>${travado ? '' : `<button type="button" data-prv-rmfoto="${esc(id)}" aria-label="Remover foto">✕</button>`}</div>`).join('')}
+          ${(!travado && fotoIds.length < MAX_FOTOS) ? `<label class="prv-foto-add">+<input type="file" accept="image/*" multiple style="display:none;" data-prv-addfoto></label>` : ''}</div>
+        <div class="prv-fotos-n">${fotoIds.length} de ${MAX_FOTOS} fotos</div>
+      </div>`;
+  }
+  return `<div class="prv-sec">
+    <button type="button" class="prv-head" data-prv-act="toggle-sec">
+      <span>📋 Relatório preventivo — ${esc(stripPreventivaPrefix(svc.client))}</span>
+      <span class="prv-chip ${feitas === units.length ? 'green' : 'gray'}" data-prv-chips>${feitas} de ${units.length} unidades ${aberto ? '▾' : '▸'}</span>
+    </button>${corpo}</div>`;
+}
+function renderSlot(slot, svc){
+  const units = unidadesDoCliente(svc.client);
+  if(!units.length){ slot.remove(); return; }
+  const r = estado.rascunhos[svc.id];
+  if(!r || !r.carregado){
+    slot.innerHTML = `<div class="prv-sec"><div class="prv-head" style="cursor:default;"><span>📋 Relatório preventivo — ${esc(stripPreventivaPrefix(svc.client))}</span><span class="prv-chip gray">carregando…</span></div></div>`;
+    garantirRascunho(svc.id).then(() => remontarSlots(svc.id)).catch(() => {});
+    return;
+  }
+  if(svc.status === 'concluido' && !rascunhoTemConteudo(r)){ slot.remove(); return; }
+  slot.innerHTML = htmlSlot(svc, units, r);
+}
+function remontarSlots(sid){
+  document.querySelectorAll('[data-prvslot="' + sid + '"]').forEach(slot => {
+    const svc = services.find(s => String(s.id) === String(sid));
+    if(svc) renderSlot(slot, svc);
+  });
+}
+function atualizarChips(slot, svc){
+  const units = unidadesDoCliente(svc.client); const r = estado.rascunhos[svc.id]; if(!r) return;
+  const feitas = units.filter(u => unidadeCompleta(u, r)).length;
+  const cs = slot.querySelector('[data-prv-chips]');
+  if(cs){ cs.textContent = feitas + ' de ' + units.length + ' unidades ' + (estado.abertoSec.has(svc.id) ? '▾' : '▸'); cs.className = 'prv-chip ' + (feitas === units.length ? 'green' : 'gray'); }
+  const bar = slot.querySelector('[data-prv-bar]'); if(bar) bar.style.width = (units.length ? Math.round(feitas / units.length * 100) : 0) + '%';
+  units.forEach(u => {
+    const c = slot.querySelector('[data-prv-chipu="' + String(u.id).replace(/"/g, '') + '"]'); if(!c) return;
+    const done = unidadeCompleta(u, r);
+    c.textContent = done ? '✓ preenchida' : 'pendente'; c.className = 'prv-chip ' + (done ? 'green' : 'gray');
+    if(c.closest('.prv-unit')) c.closest('.prv-unit').classList.toggle('done', done);
+  });
+}
+
+// ---- gravação das respostas (cada alteração vai direto ao outbox) ----
+const timers = {};
+function agendar(chave, fn, ms){ clearTimeout(timers[chave] && timers[chave].t); timers[chave] = { fn, t: setTimeout(() => { delete timers[chave]; fn(); }, ms) }; }
+function descarregarTimers(){ Object.keys(timers).forEach(k => { const x = timers[k]; clearTimeout(x.t); delete timers[k]; try{ x.fn(); }catch(e){ console.error(e); } }); }
+window.addEventListener('pagehide', descarregarTimers);
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'hidden') descarregarTimers(); });
+
+function gravarResposta(sid, unitId, key, valor){
+  const r = estado.rascunhos[sid]; if(!r) return;
+  r.respostas[unitId] = r.respostas[unitId] || {};
+  const path = NOS.rascunhos + '/' + sid + '/respostas/' + unitId + '/' + key;
+  if(valor === '' || valor == null){ delete r.respostas[unitId][key]; escrever(path, null); }
+  else { r.respostas[unitId][key] = valor; escrever(path, valor); }
+  cacheRascunho(sid);
+}
+function gravarObs(sid, texto){
+  const r = estado.rascunhos[sid]; if(!r) return;
+  r.obs = texto;
+  escrever(NOS.rascunhos + '/' + sid + '/obs', texto === '' ? null : texto);
+  cacheRascunho(sid);
+}
+function gravarFoto(sid, dataUrl){
+  const r = estado.rascunhos[sid]; if(!r) return false;
+  if(Object.keys(r.fotos).length >= MAX_FOTOS) return false;
+  const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  r.fotos[id] = dataUrl;
+  escrever(NOS.fotos + '/' + sid + '/' + id, dataUrl);
+  return true;
+}
+
+function ligarSlot(slot){
+  if(slot._prvLigado) return; slot._prvLigado = true;
+  const svcDe = () => services.find(s => String(s.id) === String(slot.dataset.prvslot));
+  slot.addEventListener('click', (e) => {
+    const svc = svcDe(); if(!svc) return;
+    const sid = svc.id;
+    const img = e.target.closest('[data-prv-foto]');
+    if(img){ if(typeof openPhotoLightbox === 'function') openPhotoLightbox(img.src); return; }
+    const rm = e.target.closest('[data-prv-rmfoto]');
+    if(rm){
+      const fid = rm.dataset.prvRmfoto;
+      customConfirm('Excluir esta foto? Essa ação não pode ser desfeita.', () => {
+        const r = estado.rascunhos[sid]; if(!r) return;
+        delete r.fotos[fid]; escrever(NOS.fotos + '/' + sid + '/' + fid, null); remontarSlots(sid);
+      });
+      return;
+    }
+    const b = e.target.closest('[data-prv-act],[data-prv-v]');
+    if(!b) return;
+    if(b.dataset.prvAct === 'toggle-sec'){
+      if(estado.abertoSec.has(sid)) estado.abertoSec.delete(sid); else estado.abertoSec.add(sid);
+      remontarSlots(sid); return;
+    }
+    if(b.dataset.prvAct === 'toggle-unit'){
+      const k = sid + ':' + b.dataset.prvU;
+      if(estado.abertoUnid.has(k)) estado.abertoUnid.delete(k); else estado.abertoUnid.add(k);
+      remontarSlots(sid); return;
+    }
+    if(b.dataset.prvV !== undefined){
+      if(svc.status === 'concluido') return;
+      descarregarTimers();   // garante que texto/números digitados antes já foram gravados
+      gravarResposta(sid, b.dataset.prvU, b.dataset.prvK, b.dataset.prvV);
+      remontarSlots(sid);
+    }
+  });
+  slot.addEventListener('input', (e) => {
+    const svc = svcDe(); if(!svc || svc.status === 'concluido') return;
+    const sid = svc.id; const t = e.target;
+    if(t.classList.contains('prv-num')){
+      const u = t.dataset.prvU, k = t.dataset.prvK, v = t.value;
+      const r = estado.rascunhos[sid]; if(!r) return;
+      r.respostas[u] = r.respostas[u] || {};
+      if(v === '') delete r.respostas[u][k]; else r.respostas[u][k] = v;
+      atualizarChips(slot, svc);
+      agendar('n:' + sid + ':' + u + ':' + k, () => gravarResposta(sid, u, k, v), 500);
+    } else if(t.classList.contains('prv-obs')){
+      const r = estado.rascunhos[sid]; if(!r) return;
+      r.obs = t.value;
+      agendar('o:' + sid, () => gravarObs(sid, t.value), 600);
+    }
+  });
+  slot.addEventListener('focusout', () => descarregarTimers());
+  slot.addEventListener('change', async (e) => {
+    const inp = e.target.closest('[data-prv-addfoto]'); if(!inp) return;
+    const svc = svcDe(); if(!svc || svc.status === 'concluido') return;
+    const sid = svc.id; const r = estado.rascunhos[sid]; if(!r) return;
+    const room = MAX_FOTOS - Object.keys(r.fotos).length;
+    const arquivos = Array.from(inp.files || []);
+    if(arquivos.length > room) aviso('Limite de ' + MAX_FOTOS + ' fotos — as que passaram do limite foram ignoradas');
+    for(const f of arquivos.slice(0, Math.max(0, room))){
+      try{ const url = await compressImageFile(f); gravarFoto(sid, url); remontarSlots(sid); }catch(err){ /* ignora arquivo que falhar, como nas outras fotos do app */ }
+    }
+  });
+}
+function montarSlot(card, svc){
+  try{
+    if(!ehPreventiva(svc) || !estado.unidadesOk) return;
+    if(!unidadesDoCliente(svc.client).length) return;     // cliente sem unidades configuradas: a seção não aparece
+    const slot = document.createElement('div');
+    slot.className = 'prv-slot'; slot.dataset.prvslot = svc.id;
+    card.appendChild(slot);
+    ligarSlot(slot);
+    renderSlot(slot, svc);
+  }catch(e){ console.error('prev: falha ao montar a seção no card (o card segue normal)', e); }
+}
+
+// ====================================================================================
+// CONCLUSÃO — chamada no fim da conclusão da atividade, depois de todo o fluxo existente.
+// Nunca bloqueia nem desfaz a conclusão: qualquer falha aqui só vai para o console.
+// Idempotente: o id do relatório é derivado da atividade (rel_<id>), então repetir não duplica e
+// não apaga os controles de baixado/enviado/removido (cada campo é gravado em caminho próprio).
+// ====================================================================================
+function construirRelatorio(svc, units, r){
+  return {
+    servicoId: svc.id,
+    contratoId: svc.maintenanceContractId != null ? svc.maintenanceContractId : null,
+    cliente: stripPreventivaPrefix(svc.client || ''),
+    endereco: svc.address || '',
+    dataVisita: svc.date || '',
+    inicio: svc.checkIn || null, fim: svc.checkOut || null,
+    criadoEm: svc.completedAt || new Date().toISOString(),
+    tecnico: getServiceTechnicians(svc).join(' e '),
+    unidades: units.map(u => montarSnapshotUnidade(u, (r.respostas && r.respostas[u.id]) || {})),
+    observacoes: String(r.obs || '').trim(),
+    fotosDe: svc.id, nFotos: Object.keys(r.fotos || {}).length,
+  };
+}
+async function gerarRelatorioAoConcluir(svc){
+  try{
+    if(!ehPreventiva(svc)) return;
+    const units = unidadesDoCliente(svc.client); if(!units.length) return;
+    descarregarTimers();
+    const r = await garantirRascunho(svc.id, { timeoutMs: 2500 });
+    if(!rascunhoTemConteudo(r)) return;          // nada foi preenchido: não gera relatório vazio
+    const id = 'rel_' + svc.id;
+    const rel = construirRelatorio(svc, units, r);
+    Object.keys(rel).forEach(campo => {
+      const v = rel[campo];
+      escrever(NOS.relatorios + '/' + id + '/' + campo, v === undefined || v === '' ? null : v);
+    });
+    estado.relatorios[id] = Object.assign({}, estado.relatorios[id] || {}, JSON.parse(JSON.stringify(rel)));
+    atualizarTelasRelatorios();
+  }catch(e){ console.error('prev: falha ao gerar o relatório ao concluir (a conclusão da atividade não foi afetada)', e); }
+}
+
+
+// ====================================================================================
+// GESTOR — Manutenções (Configuração, Catálogo, Histórico) e Cadastros e OS (Relatórios)
+// ====================================================================================
+function normalizarRelatorio(rel){
+  return Object.assign({}, rel, {
+    unidades: paraLista(rel.unidades).map(u => Object.assign({}, u, { grupos: paraLista(u.grupos).map(g => Object.assign({}, g, { linhas: paraLista(g.linhas) })) })),
+  });
+}
+function htmlRelatorio(rel, fotos){
+  const r = normalizarRelatorio(rel);
+  const res = resumoRelatorio(r);
+  const avaliados = res.verdes + res.amarelos + res.vermelhos;
+  const pill = l => `<span class="rp-pill ${l.texto == null ? 'none' : corSegura(l.cor)}">${l.texto == null ? 'não preenchido' : esc(l.texto)}</span>`;
+  const quando = esc(fmtData(r.dataVisita) || fmtDataHora(r.criadoEm)) + (fmtData(r.dataVisita) && r.inicio ? ' · ' + esc(r.inicio) + (r.fim ? ' às ' + esc(r.fim) : '') : '');
+  const fotosHtml = (num(r.nFotos) > 0 || (fotos && fotos.length))
+    ? (fotos ? `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-fotos-grid">${fotos.map((src, i) => `<figure><img src="${esc(src)}" alt="Foto ${i + 1}"><figcaption>Foto ${i + 1}</figcaption></figure>`).join('')}</div></div>`
+               : `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">Carregando fotos…</div></div>`)
+    : '';
+  return `<div class="rp">
+    <div class="rp-head">
+      <div class="rp-brand"><div class="rp-logo">e</div><div><b>Equiper</b><span class="sub">Serviços</span></div></div>
+      <div class="rp-title">Relatório de manutenção preventiva</div>
+    </div>
+    <div class="rp-meta">
+      <div><span>Cliente</span><b>${esc(r.cliente)}</b></div>
+      <div><span>Data da visita</span><b>${quando}</b></div>
+      <div><span>Endereço</span><b>${esc(r.endereco || '—')}</b></div>
+      <div><span>Técnico</span><b>${esc(r.tecnico || '—')}</b></div>
+    </div>
+    <div class="rp-resumo">
+      <div class="rp-stat"><b>${avaliados}</b><span>pontos avaliados</span></div>
+      <div class="rp-stat green"><b>${res.verdes}</b><span>em ordem</span></div>
+      <div class="rp-stat amber"><b>${res.amarelos}</b><span>atenção</span></div>
+      <div class="rp-stat red"><b>${res.vermelhos}</b><span>precisam de ação</span></div>
+    </div>
+    ${res.vazios ? `<div class="rp-nota">${res.vazios} campo(s) não preenchido(s) na visita.</div>` : '<div class="rp-nota"></div>'}
+    ${res.atencao.length ? `<div class="rp-atencao"><h4>Pontos que precisam de atenção</h4><ul>${res.atencao.map(a =>
+        `<li><b>${esc(a.unidade)}</b> · ${a.grupo && a.grupo !== a.unidadeTipo ? esc(a.grupo) + ' · ' : ''}${esc(a.campo)}: <span class="rp-pill ${corSegura(a.cor)}">${esc(a.texto)}</span></li>`).join('')}</ul></div>`
+      : (avaliados ? '<div class="rp-ok">✓ Nenhum ponto de atenção nesta visita.</div>' : '')}
+    ${r.unidades.map(u => `<div class="rp-unit">
+      <h3>${esc(u.local)}<small>${esc(u.tipoNome)}</small></h3>
+      ${u.grupos.length ? u.grupos.map(g => `
+        ${u.grupos.length > 1 ? `<div class="rp-grupo">${esc(g.titulo)}</div>` : ''}
+        <table class="rp-tab">${g.linhas.map(l => `<tr><td>${esc(l.campo)}</td><td class="v">${pill(l)}</td></tr>`).join('')}</table>`).join('')
+        : '<div class="rp-nota" style="margin:0;">Nenhum subitem estava configurado para esta unidade na data da visita.</div>'}
+    </div>`).join('')}
+    ${r.observacoes ? `<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto">${esc(r.observacoes)}</div></div>` : ''}
+    ${fotosHtml}
+    <div class="rp-foot">Relatório gerado pelo Equiper Serviços</div>
+  </div>`;
+}
+// "Baixar em PDF": abre o documento numa janela e chama a impressão (o usuário escolhe "Salvar como PDF") —
+// o mesmo mecanismo que o relatório de compra do Estoque já usa.
+function documentoImpressao(rel, fotos){
+  const titulo = 'relatorio-preventiva-' + slug(rel.cliente) + '-' + String(rel.dataVisita || rel.criadoEm || '').slice(0, 10);
+  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>' + esc(titulo) + '</title><style>body{margin:0;padding:24px;background:#fff;}' + CSS_RELATORIO + '@media print{body{padding:0;}}</style></head><body>' + htmlRelatorio(rel, fotos || []) + '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400);});<\/script></body></html>';
+}
+
+// ---------- ações sobre um relatório ----------
+async function baixarPdf(id){
+  const rel = achaRel(id); if(!rel) return;
+  const w = window.open('', '_blank');          // abre já, dentro do clique (senão o navegador bloqueia)
+  if(!w){ aviso('O navegador bloqueou a abertura do PDF. Permita pop-ups para este site e tente de novo.', 6000); return; }
+  try{ w.document.open(); w.document.write('<p style="font-family:sans-serif;padding:24px;">Preparando o relatório…</p>'); w.document.close(); }catch(e){}
+  let fotos = [];
+  if(num(rel.nFotos) > 0){
+    try{ fotos = await fotosDoRelatorio(rel); }
+    catch(e){ try{ w.close(); }catch(_){} aviso('Não foi possível carregar as fotos agora (sem conexão?). Tente de novo em instantes.', 7000); return; }
+  }
+  w.document.open(); w.document.write(documentoImpressao(rel, fotos)); w.document.close();
+  setRelCampo(id, 'baixadoEm', new Date().toISOString());
+  atualizarTelasRelatorios();
+  aviso('PDF aberto para impressão — escolha "Salvar como PDF". Marcado como baixado.', 6000);
+}
+function contratoDoCliente(nome){ const k = normalizedClientKey(nome || ''); return (maintenanceContracts || []).find(c => normalizedClientKey(c.client || '') === k); }
+function enviarWhatsapp(id){
+  const rel = achaRel(id); if(!rel) return;
+  const c = contratoDoCliente(rel.cliente);
+  const fone = c ? phoneDigits(c.contact) : '';
+  if(!c || fone.length < 10){
+    alert('Esse cliente não tem um número de WhatsApp válido cadastrado em Manutenções (pode ser um e-mail). Envie por outro canal e depois use "Marcar como enviado".');
+    return;
+  }
+  const primeiro = String(c.contactName || '').split('(')[0].trim().split(/\s+/)[0];
+  const msg = `Olá${primeiro ? ', ' + primeiro : ''}! Segue o relatório da manutenção preventiva realizada em ${fmtData(rel.dataVisita) || 'data recente'} — ${rel.cliente}. Qualquer dúvida, é só falar. Equiper`;
+  aviso('O WhatsApp abre com a mensagem pronta. Anexe o PDF (baixe antes) e envie; depois volte e use "Marcar como enviado".', 8000);
+  openWhatsapp(fone, msg);
+}
+function marcarEnviado(id){
+  const atual = achaRel(id); if(atual && atual.enviadoEm){ aviso('Já está marcado como enviado.'); return; }
+  customConfirm('Confirma que o relatório já foi enviado ao responsável do cliente? Isso apenas registra no sistema — o envio em si é feito por você (WhatsApp, e-mail...).', () => {
+    setRelCampo(id, 'enviadoEm', new Date().toISOString());
+    atualizarTelasRelatorios();
+    if(relAbertoId === id){ const ag = achaRel(id); if(ag) renderRevisao(ag); }   // depois de enviado, o texto não pode mais mudar
+    aviso('Marcado como enviado.');
+  }, 'Marcar como enviado');
+}
+function removerDaOS(id){
+  const rel = achaRel(id); if(!rel) return;
+  if(!(rel.baixadoEm && rel.enviadoEm)){ aviso('Baixe e envie o relatório antes de remover da lista.'); return; }
+  customConfirm('Remover da lista de Cadastros e OS? O relatório continua salvo em Manutenções → Histórico de relatórios.', () => {
+    setRelCampo(id, 'removidoDeOSEm', new Date().toISOString());
+    atualizarTelasRelatorios();
+    aviso('Removido de Cadastros e OS — continua no Histórico de Manutenções.');
+  }, 'Remover da lista');
+}
+
+// ---------- modal de visualização + revisão do texto ----------
+let relAbertoId = null;
+function chipsStatus(r){
+  return `<span class="prv-chip ${r.baixadoEm ? 'green' : 'gray'}">${r.baixadoEm ? '⬇ Baixado ' + esc(fmtDataHora(r.baixadoEm)) : 'Não baixado'}</span>
+    <span class="prv-chip ${r.enviadoEm ? 'green' : 'gray'}">${r.enviadoEm ? '✉ Enviado ' + esc(fmtDataHora(r.enviadoEm)) : 'Não enviado'}</span>
+    ${r.removidoDeOSEm ? '<span class="prv-chip amber">Fora de Cadastros e OS · guardado em Manutenções</span>' : '<span class="prv-chip gray">Na lista de Cadastros e OS</span>'}
+    ${r.observacoesOriginal != null ? '<span class="prv-chip gray">Texto revisado pelo Gestor</span>' : ''}`;
+}
+function garantirModal(){
+  if(document.getElementById('prvModal')) return;
+  const d = document.createElement('div');
+  d.id = 'prvModal'; d.className = 'prv-overlay';
+  d.innerHTML = `<div class="prv-modal">
+    <div class="prv-modal-bar">
+      <div class="prv-chips" id="prvModalChips"></div>
+      <div class="prv-acoes">
+        <button type="button" class="btn-ghost" data-prv-m="baixar">⬇ Baixar em PDF</button>
+        <button type="button" class="btn-ghost" data-prv-m="whats">Enviar pelo WhatsApp</button>
+        <button type="button" class="btn-ghost" data-prv-m="enviado">Marcar como enviado</button>
+        <button type="button" class="btn-ghost" data-prv-m="fechar">Fechar</button>
+      </div>
+    </div>
+    <div class="prv-modal-corpo" id="prvModalCorpo"></div>
+    <div class="prv-revisao" id="prvRevisao"></div>
+  </div>`;
+  document.body.appendChild(d);
+  d.addEventListener('click', (e) => {
+    if(e.target === d){ fecharRelatorio(); return; }
+    const b = e.target.closest('[data-prv-m]'); if(!b || !relAbertoId) return;
+    const a = b.dataset.prvM;
+    if(a === 'fechar') return fecharRelatorio();
+    if(textoNaoSalvo() && a !== 'fechar'){ aviso('Você alterou o texto e ainda não salvou. Clique em "Salvar texto" antes de continuar.', 6000); return; }
+    if(a === 'baixar') baixarPdf(relAbertoId);
+    else if(a === 'whats') enviarWhatsapp(relAbertoId);
+    else if(a === 'enviado') marcarEnviado(relAbertoId);
+  });
+}
+function textoNaoSalvo(){
+  const ed = document.getElementById('prvObsEdit'); const r = relAbertoId && achaRel(relAbertoId);
+  return !!(ed && r && ed.value.trim() !== String(r.observacoes || ''));
+}
+async function abrirRelatorio(id){
+  const r = achaRel(id); if(!r) return;
+  garantirModal();
+  relAbertoId = id;
+  document.getElementById('prvModalChips').innerHTML = chipsStatus(r);
+  document.getElementById('prvModalCorpo').innerHTML = htmlRelatorio(r, null);
+  renderRevisao(r);
+  document.getElementById('prvModal').classList.add('open');
+  if(num(r.nFotos) > 0){
+    try{
+      const fotos = await fotosDoRelatorio(r);
+      if(relAbertoId === id){ const ag = achaRel(id); if(ag) document.getElementById('prvModalCorpo').innerHTML = htmlRelatorio(ag, fotos); }
+    }catch(e){
+      const c = document.getElementById('prvModalCorpo'); if(c && relAbertoId === id) c.innerHTML = c.innerHTML.replace('Carregando fotos…', 'Não foi possível carregar as fotos agora (sem conexão?).');
+    }
+  }
+}
+function fecharRelatorio(){ relAbertoId = null; const m = document.getElementById('prvModal'); if(m) m.classList.remove('open'); }
+function renderRevisao(r){
+  const box = document.getElementById('prvRevisao'); if(!box) return;
+  if(r.enviadoEm){ box.innerHTML = `<h4>Texto das observações</h4><div class="prv-sub">Este relatório já foi enviado, então o texto não pode mais ser alterado.</div>`; return; }
+  box.innerHTML = `
+    <h4>Revisar observações antes de enviar</h4>
+    <div class="prv-sub">Só o Gestor vê este painel — ele não aparece no PDF. Nada é trocado sozinho: você vê a sugestão e decide.</div>
+    <textarea class="prv-obs" id="prvObsEdit" rows="5" placeholder="Sem observações. Você pode escrever aqui antes de enviar.">${esc(r.observacoes || '')}</textarea>
+    <div class="prv-linha">
+      <button type="button" class="btn-ghost" data-prv-r="sugerir">Sugerir correção automática</button>
+      <button type="button" class="btn-primary" data-prv-r="salvar">Salvar texto</button>
+      ${r.observacoesOriginal != null ? '<button type="button" class="btn-ghost" data-prv-r="voltar">Voltar ao texto original do técnico</button>' : ''}
+    </div>
+    <div id="prvSugestao"></div>`;
+  box.onclick = (e) => {
+    const b = e.target.closest('[data-prv-r]'); if(!b) return;
+    const ag = achaRel(relAbertoId); if(!ag) return;
+    const ta = document.getElementById('prvObsEdit'); const sb = document.getElementById('prvSugestao');
+    const a = b.dataset.prvR;
+    if(a === 'sugerir'){
+      const atual = ta.value;
+      if(!atual.trim()){ sb.innerHTML = '<div class="prv-hint">Não há texto para revisar.</div>'; return; }
+      const sug = sugerirRedacao(atual);
+      if(sug === atual.trim() || sug === atual){ sb.innerHTML = '<div class="prv-hint">Nenhuma correção sugerida — o texto já está bem.</div>'; return; }
+      sb.innerHTML = `<div class="prv-sugestao"><div class="prv-sug-t">Sugestão (correção automática simples)</div><pre>${esc(sug)}</pre>
+        <div class="prv-linha"><button type="button" class="btn-primary" data-prv-r="usar">Usar sugestão</button><button type="button" class="btn-ghost" data-prv-r="manter">Manter o meu</button></div></div>`;
+      sb.dataset.sug = sug;
+    } else if(a === 'usar'){ ta.value = sb.dataset.sug || ta.value; sb.innerHTML = '<div class="prv-hint">Sugestão aplicada no campo. Clique em "Salvar texto" para gravar.</div>'; }
+    else if(a === 'manter'){ sb.innerHTML = ''; }
+    else if(a === 'salvar'){
+      const novo = ta.value.trim();
+      if(novo === String(ag.observacoes || '')){ aviso('Nenhuma alteração no texto'); return; }
+      if(ag.observacoesOriginal == null) setRelCampo(ag.id, 'observacoesOriginal', String(ag.observacoes || ''));   // guarda o que o técnico escreveu (uma vez só)
+      setRelCampo(ag.id, 'observacoes', novo === '' ? null : novo);
+      abrirRelatorio(ag.id); atualizarTelasRelatorios(); aviso('Texto salvo — o relatório já mostra a nova redação');
+    } else if(a === 'voltar'){
+      setRelCampo(ag.id, 'observacoes', String(ag.observacoesOriginal) === '' ? null : String(ag.observacoesOriginal));
+      setRelCampo(ag.id, 'observacoesOriginal', null);
+      abrirRelatorio(ag.id); atualizarTelasRelatorios(); aviso('Texto original do técnico restaurado');
+    }
+  };
+}
+
+// ---------- listas de relatórios (Cadastros e OS e Histórico) ----------
+function cartaoRelatorio(rel, modo){
+  const r = normalizarRelatorio(rel); const res = resumoRelatorio(r); const n = r.unidades.length;
+  const podeRemover = !!(r.baixadoEm && r.enviadoEm);
+  return `<div class="prv-card" data-prv-card="${esc(r.id)}">
+    <div class="prv-card-top">
+      <div><div class="prv-nome">${esc(r.cliente)}</div>
+        <div class="prv-meta">${esc(fmtData(r.dataVisita) || fmtDataHora(r.criadoEm))} · Técnico: ${esc(r.tecnico || '—')} · ${n} ${n === 1 ? 'unidade' : 'unidades'}${num(r.nFotos) > 0 ? ' · ' + num(r.nFotos) + ' foto(s)' : ''}</div></div>
+      <div class="prv-chips">
+        ${res.vermelhos ? `<span class="prv-chip red">${res.vermelhos} precisa(m) de ação</span>` : ''}
+        ${res.amarelos ? `<span class="prv-chip amber">${res.amarelos} atenção</span>` : ''}
+        ${!res.vermelhos && !res.amarelos ? '<span class="prv-chip green">Tudo em ordem</span>' : ''}
+      </div>
+    </div>
+    <div class="prv-chips" style="margin-top:8px;">${chipsStatus(r)}</div>
+    <div class="prv-linha" style="margin-top:12px;">
+      <button type="button" class="btn-ghost" data-prv-c="ver" data-id="${esc(r.id)}">Ver relatório</button>
+      ${modo === 'os' ? `
+        <button type="button" class="btn-ghost" data-prv-c="baixar" data-id="${esc(r.id)}">⬇ Baixar em PDF</button>
+        <button type="button" class="btn-ghost" data-prv-c="whats" data-id="${esc(r.id)}">Enviar pelo WhatsApp</button>
+        <button type="button" class="btn-ghost" data-prv-c="enviado" data-id="${esc(r.id)}" ${r.enviadoEm ? 'disabled' : ''}>Marcar como enviado</button>
+        <button type="button" class="btn-ghost" data-prv-c="remover" data-id="${esc(r.id)}" style="color:var(--red);" ${podeRemover ? '' : 'disabled'}>Remover da lista</button>
+        ${podeRemover ? '' : '<span class="prv-hint" style="margin:0;">Baixe e marque como enviado para poder remover</span>'}` : ''}
+    </div>
+  </div>`;
+}
+function ligarCartoes(box){
+  if(box._prvLigado) return; box._prvLigado = true;
+  box.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-prv-c]'); if(!b || b.disabled) return;
+    const id = b.dataset.id; const a = b.dataset.prvC;
+    if(a === 'ver') abrirRelatorio(id); else if(a === 'baixar') baixarPdf(id); else if(a === 'whats') enviarWhatsapp(id);
+    else if(a === 'enviado') marcarEnviado(id); else if(a === 'remover') removerDaOS(id);
+  });
+}
+function renderOsRelatorios(){
+  const box = document.getElementById('prvOsRelatorios'); if(!box) return;
+  const fila = listaRelatorios().filter(r => !r.removidoDeOSEm);
+  const tab = document.getElementById('prvOsTabRel'); if(tab) tab.textContent = 'Relatórios de manutenção' + (fila.length ? ' (' + fila.length + ')' : '');
+  if(box.style.display === 'none') return;
+  box.innerHTML = `<p class="prv-hint">Relatórios de manutenção preventiva concluídos pelos técnicos. Baixe o PDF, envie ao responsável e marque como enviado; depois disso dá para remover da lista — o relatório continua guardado em Manutenções → Histórico de relatórios.</p>` +
+    (!estado.relatoriosOk ? '<div class="empty-state">Carregando relatórios…</div>'
+      : fila.length ? fila.map(r => cartaoRelatorio(r, 'os')).join('') : '<div class="empty-state">Nenhum relatório aguardando nesta lista.<br>Os removidos daqui continuam em Manutenções → Histórico de relatórios.</div>');
+  ligarCartoes(box);
+}
+function renderHistorico(){
+  const box = document.getElementById('prvManutHistorico'); if(!box || box.style.display === 'none') return;
+  const todos = listaRelatorios();
+  const clientes = Array.from(new Set(todos.map(r => r.cliente))).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  if(estado.histFiltro && !clientes.includes(estado.histFiltro)) estado.histFiltro = '';
+  const lista = todos.filter(r => !estado.histFiltro || r.cliente === estado.histFiltro);
+  box.innerHTML = `<div class="field" style="max-width:320px;"><label for="prvHistCliente">Cliente</label>
+      <select id="prvHistCliente"><option value="">Todos os clientes</option>${clientes.map(c => `<option value="${esc(c)}" ${c === estado.histFiltro ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+    <p class="prv-hint">Todos os relatórios de manutenção preventiva já concluídos, do mais recente ao mais antigo — inclusive os que já saíram de Cadastros e OS.</p>` +
+    (!estado.relatoriosOk ? '<div class="empty-state">Carregando relatórios…</div>'
+      : lista.length ? lista.map(r => cartaoRelatorio(r, 'hist')).join('') : '<div class="empty-state">Nenhum relatório para este cliente ainda.</div>');
+  document.getElementById('prvHistCliente').onchange = (e) => { estado.histFiltro = e.target.value; renderHistorico(); };
+  ligarCartoes(box);
+}
+function atualizarTelasRelatorios(){
+  try{
+    renderOsRelatorios(); renderHistorico();
+    if(relAbertoId){ const r = achaRel(relAbertoId); const c = document.getElementById('prvModalChips'); if(r && c) c.innerHTML = chipsStatus(r); }
+  }catch(e){ console.error(e); }
+}
+
+// ---------- catálogo (somente leitura) ----------
+function corNome(c){ return c === 'green' ? 'verde' : c === 'amber' ? 'amarelo' : 'vermelho'; }
+function renderCatalogo(){
+  const box = document.getElementById('prvManutCatalogo'); if(!box || box.style.display === 'none') return;
+  box.innerHTML = `<p class="prv-hint">Tipos de equipamento, campos e validações do relatório preventivo, como fechados na especificação. Somente leitura: alterar o catálogo exige uma nova versão do app.</p>` +
+    CATALOGO.map(t => `<div class="prv-cat-tipo"><div class="prv-cat-head"><b>${esc(t.nome)}</b><span class="prv-chip gray">${t.itens.length} item(ns)</span></div>
+      ${t.itens.map(it => `<div class="prv-cat-item"><div class="prv-cat-item-n">${esc(it.nome)}</div>
+        ${it.campos.filter(c => c.status !== 'pendente').map(c => `<div class="prv-cat-campo"><span>${esc(c.label)}</span><span class="prv-cat-op">${
+          c.tipo === 'faixa' ? c.opcoes.map(o => esc(o.label)).join(', ')
+          : c.tipo === 'numerico' ? 'numérico (' + esc(c.unidade) + ')'
+          : c.opcoes.map(o => esc(o.label) + ' (' + corNome(o.cor) + ')').join(', ')}</span></div>`).join('')}</div>`).join('')}</div>`).join('');
+}
+
+// ---------- configuração por cliente ----------
+function nomesDeClientes(){
+  const nomes = new Set();
+  (maintenanceContracts || []).forEach(c => { if(c.client) nomes.add(stripPreventivaPrefix(c.client)); });
+  estado.unidades.forEach(u => { if(u.cliente) nomes.add(u.cliente); });
+  return Array.from(nomes).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+function resumoComp(u){
+  if(!tipoTemComponentesConfiguraveis(u.tipo)) return null;
+  const cs = u.componentes.filter(c => c.quantidade > 0);
+  return cs.length ? { texto: cs.map(c => c.quantidade + '× ' + c.itemNome).join(', '), vazio: false } : { texto: 'Nenhum subitem configurado ainda', vazio: true };
+}
+function htmlSteppers(tipoId, qtd, escopo){
+  const min = minimosDoTipo(tipoId);
+  return tipoPorId(tipoId).itens.map(it => { const q = qtd[it.nome] || 0; const m = min[it.nome] || 0;
+    return `<div class="prv-step-row"><span>${esc(it.nome)}${m > 0 ? ` <small>(mínimo ${m})</small>` : ''}</span>
+      <div class="prv-stepper"><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="-1" ${q <= m ? 'disabled' : ''}>−</button><span>${q}</span><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="1">+</button></div></div>`; }).join('');
+}
+function renderConfig(){
+  const box = document.getElementById('prvManutConfig'); if(!box || box.style.display === 'none') return;
+  const foco = document.activeElement; if(foco && box.contains(foco) && foco.id === 'prvCfgLocal') estado.cfgForm.local = foco.value;
+  const clientes = nomesDeClientes();
+  if(!clientes.includes(estado.cfgCliente)) estado.cfgCliente = clientes[0] || '';
+  const k = normalizedClientKey(estado.cfgCliente);
+  const units = estado.unidades.filter(u => normalizedClientKey(u.cliente) === k).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const f = estado.cfgForm; if(!f.tipo || !tipoPorId(f.tipo)) { f.tipo = CATALOGO[0].tipo; f.comp = estadoInicialDoTipo(f.tipo); }
+  box.innerHTML = `<p class="prv-hint">Escolha o cliente e cadastre os equipamentos que ele realmente tem. Só o que estiver aqui aparece no relatório do técnico. Os clientes vêm dos contratos de manutenção.</p>
+    <div class="field" style="max-width:360px;"><label for="prvCfgCliente">Cliente</label>
+      <select id="prvCfgCliente">${clientes.map(c => `<option value="${esc(c)}" ${c === estado.cfgCliente ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
+    ${!clientes.length ? '<div class="empty-state">Nenhum contrato de manutenção cadastrado ainda.</div>' : ''}
+    <div id="prvCfgLista">${units.length ? units.map(u => { const rs = resumoComp(u); const edit = estado.cfgEditando && estado.cfgEditando.id === u.id;
+      return `<div class="prv-unit-row"><div class="prv-unit-row-top"><div><div class="prv-unit-tipo">${esc(tipoPorId(u.tipo).nome)}</div><div class="prv-unit-local">${esc(u.local)}</div>
+        ${rs ? `<div class="prv-comp-res ${rs.vazio ? 'vazio' : ''}">${rs.vazio ? '⚠ ' : ''}${esc(rs.texto)}</div>` : ''}</div>
+        <div class="prv-linha" style="margin:0;">${tipoTemComponentesConfiguraveis(u.tipo) ? `<button type="button" class="btn-ghost" data-prv-g="editar" data-id="${esc(u.id)}">Editar subitens</button>` : ''}
+        <button type="button" class="btn-ghost" style="color:var(--red);" data-prv-g="remover" data-id="${esc(u.id)}">Remover</button></div></div>
+        ${edit ? `<div class="prv-painel"><div class="prv-painel-t">Subitens de "${esc(u.local)}"</div>${htmlSteppers(u.tipo, estado.cfgEditando.comp, 'edit')}
+          <div class="prv-linha" style="justify-content:flex-end;"><button type="button" class="btn-ghost" data-prv-g="cancelar-edit">Cancelar</button><button type="button" class="btn-primary" data-prv-g="salvar-edit">Salvar subitens</button></div></div>` : ''}</div>`; }).join('')
+      : (clientes.length ? '<div class="empty-state">Nenhuma unidade configurada para este cliente — a seção de relatório não aparece nas atividades dele.</div>' : '')}</div>
+    ${clientes.length ? `<div class="prv-addbox"><div class="prv-addrow">
+      <div class="field"><label for="prvCfgTipo">Tipo de equipamento</label><select id="prvCfgTipo">${CATALOGO.map(t => `<option value="${esc(t.tipo)}" ${t.tipo === f.tipo ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select></div>
+      <div class="field"><label for="prvCfgLocal">Identificação / local</label><input type="text" id="prvCfgLocal" value="${esc(f.local)}" placeholder='Ex.: "Social", "Hóspedes", "Casa de máquinas"' autocomplete="off"></div>
+      <button type="button" class="btn-primary" data-prv-g="adicionar">+ Adicionar unidade</button></div>
+      ${tipoTemComponentesConfiguraveis(f.tipo) ? `<div class="prv-painel"><div class="prv-painel-t">Quais subitens esta unidade tem, e quantos de cada</div>${htmlSteppers(f.tipo, f.comp, 'add')}</div>` : ''}</div>` : ''}`;
+}
+function ligarConfig(){
+  const box = document.getElementById('prvManutConfig'); if(!box || box._prvLigado) return; box._prvLigado = true;
+  box.addEventListener('change', (e) => {
+    if(e.target.id === 'prvCfgCliente'){ estado.cfgCliente = e.target.value; estado.cfgEditando = null; renderConfig(); }
+    else if(e.target.id === 'prvCfgTipo'){ estado.cfgForm.tipo = e.target.value; estado.cfgForm.comp = tipoTemComponentesConfiguraveis(e.target.value) ? estadoInicialDoTipo(e.target.value) : {}; renderConfig(); }
+  });
+  box.addEventListener('input', (e) => { if(e.target.id === 'prvCfgLocal') estado.cfgForm.local = e.target.value; });
+  box.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-prv-g]'); if(!b || b.disabled) return;
+    const a = b.dataset.prvG;
+    if(a === 'step'){
+      const alvo = b.dataset.esc === 'edit' ? estado.cfgEditando : estado.cfgForm; if(!alvo) return;
+      const tipoId = b.dataset.esc === 'edit' ? (estado.unidades.find(u => u.id === estado.cfgEditando.id) || {}).tipo : estado.cfgForm.tipo;
+      const min = (minimosDoTipo(tipoId) || {})[b.dataset.comp] || 0;
+      alvo.comp[b.dataset.comp] = Math.max(min, (alvo.comp[b.dataset.comp] || 0) + Number(b.dataset.d));
+      renderConfig(); return;
+    }
+    if(a === 'adicionar'){
+      const local = estado.cfgForm.local.trim();
+      if(!estado.cfgCliente){ aviso('Escolha o cliente'); return; }
+      if(!local){ aviso('Informe a identificação/local da unidade'); return; }
+      const u = { id: novoId('u'), cliente: estado.cfgCliente, tipo: estado.cfgForm.tipo, local, componentes: tipoTemComponentesConfiguraveis(estado.cfgForm.tipo) ? componentesDoEstado(estado.cfgForm.comp) : [] };
+      estado.unidades.push(u); estado.unidadesJSON = JSON.stringify(estado.unidades);
+      escrever(NOS.unidades + '/' + u.id, { id: u.id, cliente: u.cliente, tipo: u.tipo, local: u.local, componentes: u.componentes.length ? u.componentes : null });
+      estado.cfgForm.local = ''; estado.cfgForm.comp = tipoTemComponentesConfiguraveis(u.tipo) ? estadoInicialDoTipo(u.tipo) : {};
+      renderConfig();
+      aviso(tipoTemComponentesConfiguraveis(u.tipo) && !u.componentes.length ? 'Unidade adicionada, mas sem nenhum subitem escolhido — edite os subitens antes de usar' : 'Unidade adicionada — já aparece para o técnico neste cliente');
+    } else if(a === 'remover'){
+      const u = estado.unidades.find(x => String(x.id) === b.dataset.id); if(!u) return;
+      customConfirm('Remover "' + u.local + '" da configuração deste cliente? Relatórios já gerados não mudam.', () => {
+        estado.unidades = estado.unidades.filter(x => x.id !== u.id); estado.unidadesJSON = JSON.stringify(estado.unidades);
+        escrever(NOS.unidades + '/' + u.id, null); if(estado.cfgEditando && estado.cfgEditando.id === u.id) estado.cfgEditando = null;
+        renderConfig();
+      }, 'Remover');
+    } else if(a === 'editar'){
+      const u = estado.unidades.find(x => String(x.id) === b.dataset.id); if(!u) return;
+      if(estado.cfgEditando && estado.cfgEditando.id === u.id){ estado.cfgEditando = null; renderConfig(); return; }
+      const comp = {}; u.componentes.forEach(c => { comp[c.itemNome] = c.quantidade; });
+      const min = minimosDoTipo(u.tipo); tipoPorId(u.tipo).itens.forEach(it => { if((min[it.nome] || 0) > (comp[it.nome] || 0)) comp[it.nome] = min[it.nome]; });
+      estado.cfgEditando = { id: u.id, comp }; renderConfig();
+    } else if(a === 'cancelar-edit'){ estado.cfgEditando = null; renderConfig(); }
+    else if(a === 'salvar-edit'){
+      const u = estado.unidades.find(x => x.id === (estado.cfgEditando || {}).id); if(!u) return;
+      u.componentes = componentesDoEstado(estado.cfgEditando.comp); estado.unidadesJSON = JSON.stringify(estado.unidades);
+      escrever(NOS.unidades + '/' + u.id + '/componentes', u.componentes.length ? u.componentes : null);
+      estado.cfgEditando = null; renderConfig(); aviso('Subitens salvos — o técnico já vê a mudança');
+    }
+  });
+}
+
+// ---------- abas de Manutenções e de Cadastros e OS ----------
+function ligarAbas(){
+  const mk = document.getElementById('prvManutTabs');
+  if(mk && !mk._prvLigado){
+    mk._prvLigado = true;
+    mk.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-prvmanut]'); if(!b) return;
+      mk.querySelectorAll('[data-prvmanut]').forEach(x => x.classList.toggle('active', x === b));
+      const tab = b.dataset.prvmanut;
+      document.getElementById('prvManutVisitas').style.display = tab === 'visitas' ? '' : 'none';
+      document.getElementById('prvManutConfig').style.display = tab === 'config' ? '' : 'none';
+      document.getElementById('prvManutCatalogo').style.display = tab === 'catalogo' ? '' : 'none';
+      document.getElementById('prvManutHistorico').style.display = tab === 'historico' ? '' : 'none';
+      if(tab === 'config') renderConfig();
+      if(tab === 'catalogo') renderCatalogo();
+      if(tab === 'historico'){ renderHistorico(); garantirRelatorios(); }
+    });
+  }
+  const os = document.getElementById('prvOsTabs');
+  if(os && !os._prvLigado){
+    os._prvLigado = true;
+    os.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-prvos]'); if(!b) return;
+      os.querySelectorAll('[data-prvos]').forEach(x => x.classList.toggle('active', x === b));
+      const tab = b.dataset.prvos;
+      document.getElementById('prvOsAguardando').style.display = tab === 'aguardando' ? '' : 'none';
+      document.getElementById('prvOsRelatorios').style.display = tab === 'relatorios' ? '' : 'none';
+      if(tab === 'relatorios'){ renderOsRelatorios(); garantirRelatorios(); }
+    });
+  }
+  ligarConfig();
+}
+
+async function iniciarGestor(){
+  try{ await carregarUnidades(); }catch(e){ console.error('prev: unidades', e); }
+  try{ await garantirRelatorios(); }catch(e){ console.error('prev: relatórios', e); }
+  renderOsRelatorios();
+}
+
+
+// ---------------- Inicialização e API mínima que o restante do app chama ----------------
+(function(){ const st = document.createElement('style'); st.id = 'prvCssRelatorio'; st.textContent = CSS_RELATORIO; document.head.appendChild(st); })();
+ligarAbas();
+window.PREV_API = {
+  montarSlot,
+  gerarRelatorioAoConcluir,
+  carregarUnidades,
+  iniciarGestor,
+  flush,
+};
+})();
+
 init();
 </script>
 </body>
