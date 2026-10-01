@@ -1642,6 +1642,28 @@
   .prv-kpi.tom-neutro{ --kpi-cor:var(--ink); --kpi-fundo:var(--panel-2); }
   .prv-kpi.zero{ --kpi-cor:var(--text-dim); --kpi-fundo:var(--panel-2); }   /* zerado: fica discreto */
   @media (max-width:520px){ .prv-kpi{ padding:12px 12px 12px 16px; gap:10px; } .prv-kpi-icone{ width:34px; height:34px; border-radius:10px; } .prv-kpi-icone svg{ width:17px; height:17px; } .prv-kpi-num{ font-size:26px; } }
+  /* O botão "+ Agendar serviço" flutua no canto superior direito (position:absolute) em telas largas. Tudo que fica no
+     TOPO de uma aba precisa sair de baixo dele: o quadro de resumo de Manutenções começa abaixo do botão, e as abas de
+     Cadastros e OS reservam o espaço (como os títulos das outras abas já fazem com o padding de 150px). */
+  @media (min-width: 760px){
+    #maintResumoCards{ margin-top: 52px; }
+    #prvOsTabs{ padding-right: 150px !important; }
+  }
+  /* ===== Quadros de resumo em espaço estreito (ex.: aba Oficina): o texto nunca pode ser cortado =====
+     Quando o quadro fica estreito, o cartão troca o ícone-ao-lado por: ícone + número na primeira linha e o rótulo
+     embaixo, ocupando a largura inteira do cartão. Decide pela largura do PRÓPRIO quadro (container query), então vale
+     para qualquer tela/aba. O overflow-wrap é a rede de segurança para navegadores muito antigos. */
+  .prv-kpi-grid, #oficinaGestorResumoCards{ container-type:inline-size; container-name:prvkpi; }
+  .prv-kpi-rotulo, .prv-kpi-sub{ overflow-wrap:break-word; }
+  @container prvkpi (max-width: 720px){
+    .prv-kpi{ display:grid; grid-template-columns:auto 1fr; grid-template-areas:"icone num" "rotulo rotulo" "sub sub"; align-items:center; column-gap:9px; row-gap:7px; padding:12px 9px 12px 15px; }
+    .prv-kpi-texto{ display:contents; }
+    .prv-kpi-icone{ grid-area:icone; width:36px; height:36px; border-radius:10px; }
+    .prv-kpi-icone svg{ width:18px; height:18px; }
+    .prv-kpi-num{ grid-area:num; font-size:28px; justify-self:start; }
+    .prv-kpi-rotulo{ grid-area:rotulo; margin-top:0; font-size:12px; }
+    .prv-kpi-sub{ grid-area:sub; margin-top:-3px; }
+  }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -2310,6 +2332,7 @@
       <div class="tecnicos-date mono" id="agendaContextLabel"></div>
     </div>
   </div>
+  <div class="prv-kpi-grid" id="agendaResumoCards"></div>
   <div class="search-bar">
     <div class="search-input-wrap">
       <input type="text" id="clientSearchInput" placeholder="Buscar cliente finalizado..." autocomplete="off">
@@ -5034,6 +5057,7 @@ function renderDayBoxes(){
   document.getElementById('tomorrowBoxTitle').textContent = nwd.isTomorrow ? 'Amanhã' : capitalize(DOW_FULL[nwd.dowIdx]);
   renderTodayByTechnician();
   renderMiniBox('tomorrowServices', tmr);
+  if(window.PREV_API) PREV_API.resumoAgenda();   // quadro de resumo da Agenda (atividades de hoje)
 }
 
 function renderCalendar(){
@@ -13696,6 +13720,8 @@ function renderTechView(){
       const svc = services.find(x => x.id === id);
       if(!svc) return;
       if(svc.status === 'concluido') return; // idempotente: já foi concluída, não repete nada
+      const pendRel = window.PREV_API ? PREV_API.pendenciasRelatorio(svc) : null;   // relatório de manutenção preventiva com campos por preencher?
+      if(pendRel){ PREV_API.avisarPendencias(svc, pendRel, () => executarConclusaoAtividade(id)); return; }
       customConfirm('Finalizar esta atividade? O horário de conclusão será registrado.', () => executarConclusaoAtividade(id), 'Concluir atividade');
     });
   });
@@ -17664,6 +17690,8 @@ const BOM_DEFEITO_TROCAR = [
 function campoCategoria(id, label, opcoes, status){ return {id, label, tipo:'categoria', opcoes, status: status||'ok'}; }
 function campoFaixa(id, label, status){ return {id, label, tipo:'faixa', opcoes:FAIXA_ISOLAMENTO, status: status||'ok'}; }
 function campoNumerico(id, label, unidade, status){ return {id, label, tipo:'numerico', unidade, status: status||'ok'}; }
+// Campo "só equipe" (30/09): o técnico preenche e o Gestor vê no app, mas NÃO vai no PDF do cliente.
+function internoEquipe(campo){ return Object.assign(campo, { interno:true }); }
 // Campo de texto livre e OPCIONAL (as linhas "obs" da tabela do Sítio Santo Antônio).
 function campoTexto(id, label){ return {id, label, tipo:'texto', opcional:true, status:'ok'}; }
 // Medição trifásica: três valores (RS, ST, RT) do mesmo parâmetro, mostrados juntos na tela do técnico e
@@ -17691,10 +17719,10 @@ function itensPiscinaSpa(){
     ]},
     { nome:'Filtro', campos:[
         campoCategoria('vazamento', 'Vazamento', VAZAMENTO),
-        campoCategoria('pressao', 'Pressão', [
-          {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ]),
-        campoCategoria('retrolavagem', 'Retrolavagem', [
-          {v:'feita', label:'Retrolavado', cor:'green'}, {v:'nexec', label:'Não executado', cor:'amber'} ]),
+        internoEquipe(campoCategoria('pressao', 'Pressão', [
+          {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ])),
+        internoEquipe(campoCategoria('retrolavagem', 'Retrolavagem', [
+          {v:'feita', label:'Retrolavado', cor:'green'}, {v:'nexec', label:'Não executado', cor:'amber'} ])),
     ]},
     { nome:'Filtro UV', campos:[
         campoCategoria('lampada', 'Lâmpada', [
@@ -17919,8 +17947,8 @@ const CATALOGO = [
           campoCategoria('lampada', 'Lâmpada', [ {v:'func', label:'Funcionando', cor:'green'}, {v:'queimada', label:'Queimada', cor:'red'} ]),
           campoNumerico('corrente', 'Corrente (A)', 'A') ]},
       { nome:'Filtro Piscina', campos:[
-          campoCategoria('retrolavagem', 'Retrolavagem', [ {v:'feita', label:'Retrolavado', cor:'green'}, {v:'nexec', label:'Não executado', cor:'amber'} ]),
-          campoCategoria('pressao', 'Pressão', [ {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ]),
+          internoEquipe(campoCategoria('retrolavagem', 'Retrolavagem', [ {v:'feita', label:'Retrolavado', cor:'green'}, {v:'nexec', label:'Não executado', cor:'amber'} ])),
+          internoEquipe(campoCategoria('pressao', 'Pressão', [ {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ])),
           campoCategoria('vazamento', 'Vazando', VAZAMENTO) ]},
       { nome:'BBA de Calor', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU), campoNumerico('corrente', 'Corrente (A)', 'A') ]},
       { nome:'Mastertemp', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU), campoCategoria('vazamento', 'Vazando', VAZAMENTO) ]},
@@ -18048,7 +18076,7 @@ function montarSnapshotUnidade(unit, respostas){
   const tipo = tipoPorId(unit.tipo);
   const grupos = agruparPorItem(estruturaDaUnidade(unit)).map(g => ({
     titulo: g.itemLabel,
-    linhas: g.campos.map(({key, campo}) => {
+    linhas: g.campos.map((entrada) => { const l = ((({key, campo}) => {
       const v = respostas[key];
       const vazio = (v === undefined || v === '');
       if(campo.opcional && vazio) return null;                       // observação opcional em branco: nem entra no relatório
@@ -18058,71 +18086,94 @@ function montarSnapshotUnidade(unit, respostas){
       if(campo.tipo === 'numerico') return Object.assign({ campo: campo.label, texto: v + ' ' + campo.unidade, cor: null }, tri);
       const o = campo.opcoes.find(o => o.v === v);
       return { campo: campo.label, texto: o ? o.label : String(v), cor: o ? o.cor : null };
-    }).filter(Boolean).concat(linhasEquilibrio(g.campos, respostas)),
+    })(entrada)); if(l && entrada.campo.interno) l.interno = true; return l; }).filter(Boolean).concat(linhasEquilibrio(g.campos, respostas)),
   }));
   return { unitId: unit.id, local: unit.local, tipoNome: tipo.nome, grupos };
 }
 
-function resumoRelatorio(r){
+// Linha "só equipe": Retrolavagem e Pressão do filtro de piscina/SPA. Vale a marca gravada no relatório (interno:true) e,
+// para relatórios gerados ANTES dessa marca existir, o mesmo critério pelo nome (exceto o Filtro de água, cujo único campo é a pressão).
+function ehLinhaInterna(l, g, u){
+  if(l.interno === true) return true;
+  return /^Filtro/i.test((g && g.titulo) || '') && /^(Retrolavagem|Pressão)$/.test(l.campo || '') && !/Filtro de água/i.test((u && u.tipoNome) || '');
+}
+// opts.pdf = true → conta só o que vai no PDF do cliente (sem as linhas "só equipe").
+// A lista "Pontos que precisam de atenção" traz SÓ os itens vermelhos; os amarelos continuam contados e aparecem nas tabelas.
+function resumoRelatorio(r, opts){
+  const pdf = !!(opts && opts.pdf);
   const res = { verdes:0, amarelos:0, vermelhos:0, vazios:0, atencao:[] };
   (r.unidades || []).forEach(u => (u.grupos || []).forEach(g => (g.linhas || []).forEach(l => {
+    const interno = ehLinhaInterna(l, g, u);
+    if(pdf && interno) return;
     if(l.texto == null){ res.vazios++; return; }
     if(l.cor === 'green') res.verdes++;
-    else if(l.cor === 'amber' || l.cor === 'red'){
-      if(l.cor === 'amber') res.amarelos++; else res.vermelhos++;
-      res.atencao.push({ unidade:u.local, grupo:g.titulo, campo:l.campo, texto:l.texto, cor:l.cor, unidadeTipo:u.tipoNome });
+    else if(l.cor === 'amber') res.amarelos++;
+    else if(l.cor === 'red'){
+      res.vermelhos++;
+      res.atencao.push({ unidade:u.local, grupo:g.titulo, campo:l.campo, texto:l.texto, cor:l.cor, unidadeTipo:u.tipoNome, interno });
     }
   })));
-  res.atencao.sort((a,b) => (a.cor === b.cor ? 0 : a.cor === 'red' ? -1 : 1));
   return res;
 }
 
 
 const CSS_RELATORIO = `
-.rp{font-family:'Inter',-apple-system,Arial,sans-serif;color:#1B1C1F;font-size:13px;line-height:1.4;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+.rp{font-family:'Inter',-apple-system,Arial,sans-serif;color:#1B1C1F;font-size:13px;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 .rp *{box-sizing:border-box;}
-.rp-head{display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:3px solid #D91A22;padding-bottom:14px;margin-bottom:16px;flex-wrap:wrap;}
-.rp-brand{display:flex;align-items:center;gap:10px;}
-.rp-logo{width:36px;height:36px;border-radius:50%;background:#17181A;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-weight:800;font-size:20px;}
-.rp-brand b{font-family:Georgia,'Roboto Slab',serif;font-size:18px;display:block;line-height:1.1;}
-.rp-brand .sub{font-size:11px;color:#6B7076;}
-.rp-title{font-family:Georgia,'Roboto Slab',serif;font-size:19px;font-weight:700;text-align:right;}
-.rp-meta{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 20px;margin-bottom:16px;}
-.rp-meta span{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:#6B7076;font-weight:700;}
-.rp-meta b{font-size:13.5px;}
-.rp-resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;}
-.rp-stat{border:1px solid #E3E4E6;border-radius:10px;padding:10px 12px;}
-.rp-stat b{display:block;font-size:22px;line-height:1.1;}
-.rp-stat span{font-size:11px;color:#6B7076;}
-.rp-stat.green{background:rgba(46,125,79,.10);border-color:rgba(46,125,79,.35);} .rp-stat.green b{color:#1F5A38;}
-.rp-stat.amber{background:rgba(135,92,31,.10);border-color:rgba(135,92,31,.35);} .rp-stat.amber b{color:#875C1F;}
-.rp-stat.red{background:rgba(192,57,43,.10);border-color:rgba(192,57,43,.35);} .rp-stat.red b{color:#C0392B;}
-.rp-nota{font-size:11.5px;color:#6B7076;margin:0 0 14px;}
-.rp-atencao{border:1px solid rgba(192,57,43,.35);background:rgba(192,57,43,.05);border-radius:10px;padding:12px 14px;margin-bottom:18px;}
-.rp-atencao h4{margin:0 0 8px;font-size:13px;}
-.rp-atencao ul{margin:0;padding-left:18px;} .rp-atencao li{margin:3px 0;}
-.rp-ok{border:1px solid rgba(46,125,79,.35);background:rgba(46,125,79,.06);border-radius:10px;padding:10px 14px;margin-bottom:18px;color:#1F5A38;font-weight:600;}
-.rp-unit{border:1px solid #E3E4E6;border-radius:12px;padding:12px 14px;margin-bottom:12px;break-inside:avoid;}
-.rp-unit h3{margin:0 0 8px;font-size:14.5px;} .rp-unit h3 small{font-weight:500;color:#6B7076;font-size:12px;margin-left:6px;}
-.rp-grupo{margin-top:10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#6B7076;font-weight:700;}
+.rp-head{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:16px;margin-bottom:18px;border-bottom:3px solid #D91A22;}
+.rp-logo-img{height:76px;width:auto;display:block;flex:none;}
+.rp-head-txt{text-align:right;}
+.rp-kicker{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:#6B7076;font-weight:700;}
+.rp-title{font-family:Georgia,'Roboto Slab',serif;font-size:27px;font-weight:700;line-height:1.1;margin-top:3px;color:#17181A;}
+.rp-empresa{font-size:11.5px;color:#6B7076;margin-top:5px;}
+.rp-info{display:grid;grid-template-columns:1.25fr 1fr;border:1px solid #E3E4E6;border-left:5px solid #D91A22;border-radius:12px;background:#FAFAFB;margin-bottom:18px;overflow:hidden;}
+.rp-info-c{padding:12px 16px;border-bottom:1px solid #ECEDEF;min-width:0;}
+.rp-info-c:nth-child(odd){border-right:1px solid #ECEDEF;}
+.rp-info-c:nth-last-child(-n+2){border-bottom:none;}
+.rp-info-c span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#6B7076;font-weight:700;margin-bottom:3px;}
+.rp-info-c b{display:block;font-size:14.5px;line-height:1.3;overflow-wrap:anywhere;}
+.rp-info-c small{display:block;font-size:12px;color:#6B7076;margin-top:2px;}
+.rp-resumo{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:8px;}
+.rp-stat{position:relative;border:1px solid #E3E4E6;border-radius:12px;padding:13px 14px 11px;background:#fff;overflow:hidden;}
+.rp-stat::before{content:'';position:absolute;left:0;right:0;top:0;height:4px;background:#17181A;}
+.rp-stat b{display:block;font-size:29px;line-height:1.05;font-weight:800;letter-spacing:-.5px;}
+.rp-stat span{display:block;font-size:11px;color:#6B7076;font-weight:600;margin-top:4px;}
+.rp-stat.green::before{background:#2E7D4F;} .rp-stat.green b{color:#1F5A38;}
+.rp-stat.amber::before{background:#B7791F;} .rp-stat.amber b{color:#875C1F;}
+.rp-stat.red::before{background:#D91A22;} .rp-stat.red b{color:#C0392B;}
+.rp-nota{font-size:11.5px;color:#6B7076;margin:2px 0 14px;}
+.rp-atencao{border:1px solid rgba(217,26,34,.28);border-left:5px solid #D91A22;background:#FFF5F5;border-radius:12px;padding:14px 16px;margin:12px 0 18px;}
+.rp-atencao h4{margin:0 0 10px;font-size:13.5px;display:flex;align-items:center;gap:8px;color:#8E1117;}
+.rp-ico{display:inline-flex;width:20px;height:20px;border-radius:50%;background:#D91A22;color:#fff;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none;}
+.rp-atencao ul{margin:0;padding-left:18px;} .rp-atencao li{margin:5px 0;}
+.rp-ok{border:1px solid rgba(46,125,79,.30);border-left:5px solid #2E7D4F;background:#F2F9F5;border-radius:12px;padding:12px 16px;margin:12px 0 18px;color:#1F5A38;font-weight:700;}
+.rp-unit{border:1px solid #E3E4E6;border-radius:14px;margin-bottom:14px;break-inside:avoid;overflow:hidden;background:#fff;}
+.rp-unit h3{margin:0;padding:11px 16px;background:#F5F5F6;border-bottom:1px solid #E3E4E6;font-size:15px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.rp-unit-tipo{font-weight:800;color:#17181A;}
+.rp-unit-local{font-size:11.5px;font-weight:700;padding:2px 11px;border-radius:999px;background:#fff;border:1px solid #CFD2D6;color:#4A4E54;}
+.rp-unit-corpo{padding:4px 16px 12px;}
+.rp-grupo{margin-top:12px;font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:#6B7076;font-weight:700;display:flex;align-items:center;gap:7px;}
+.rp-grupo::before{content:'';width:14px;height:3px;border-radius:2px;background:#D91A22;}
 .rp-tab{width:100%;border-collapse:collapse;margin-top:4px;}
-.rp-tab td{padding:5px 0;border-bottom:1px dashed #E3E4E6;vertical-align:top;} .rp-tab tr:last-child td{border-bottom:none;}
+.rp-tab td{padding:6px 0;border-bottom:1px dashed #E3E4E6;vertical-align:top;} .rp-tab tr:last-child td{border-bottom:none;}
 .rp-tab td.v{text-align:right;font-weight:700;white-space:nowrap;}
 .rp-fase{white-space:nowrap;font-weight:600;} .rp-fase b{font-weight:800;}
 .rp-texto{white-space:pre-wrap;font-weight:400;margin-top:2px;}
-.rp-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;}
+.rp-interno td:first-child{color:#6B7076;}
+.rp-tag-int{display:inline-block;margin-left:8px;font-size:10px;font-weight:700;padding:1px 8px;border-radius:999px;background:#EEF0F3;color:#5A5F66;border:1px dashed #AEB3BA;white-space:nowrap;}
+.rp-pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;}
 .rp-pill.green{background:rgba(46,125,79,.12);color:#1F5A38;} .rp-pill.amber{background:rgba(135,92,31,.14);color:#875C1F;} .rp-pill.red{background:rgba(192,57,43,.12);color:#C0392B;} .rp-pill.none{color:#6B7076;background:#F0F1F2;font-weight:600;}
-.rp-obs{margin-top:16px;border:1px solid #E3E4E6;border-radius:12px;padding:12px 14px;break-inside:avoid;}
+.rp-obs{margin-top:16px;border:1px solid #E3E4E6;border-left:5px solid #17181A;border-radius:12px;padding:13px 16px;break-inside:avoid;}
 .rp-obs h3{margin:0 0 8px;font-size:14.5px;}
-.rp-obs-texto{white-space:pre-wrap;font-size:13.5px;line-height:1.5;}
+.rp-obs-texto{white-space:pre-wrap;font-size:13.5px;line-height:1.55;}
 .rp-fotos{margin-top:16px;}
 .rp-fotos h3{margin:0 0 8px;font-size:14.5px;}
 .rp-fotos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .rp-fotos-grid figure{margin:0;break-inside:avoid;}
 .rp-fotos-grid img{width:100%;height:auto;display:block;border-radius:8px;border:1px solid #E3E4E6;}
 .rp-fotos-grid figcaption{font-size:10.5px;color:#6B7076;margin-top:2px;}
-.rp-foot{margin-top:16px;padding-top:10px;border-top:1px solid #E3E4E6;font-size:11px;color:#6B7076;}
-@media (max-width:560px){ .rp-resumo{grid-template-columns:repeat(2,1fr);} .rp-meta{grid-template-columns:1fr;} .rp-title{text-align:left;} .rp-fotos-grid{grid-template-columns:repeat(2,1fr);} }
+.rp-foot{margin-top:20px;padding-top:10px;border-top:2px solid #E3E4E6;font-size:11px;color:#6B7076;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+@media (max-width:560px){ .rp-head{flex-direction:column;align-items:flex-start;} .rp-head-txt{text-align:left;} .rp-title{font-size:22px;} .rp-info{grid-template-columns:1fr;} .rp-info-c:nth-child(odd){border-right:none;} .rp-info-c:nth-last-child(-n+2){border-bottom:1px solid #ECEDEF;} .rp-info-c:last-child{border-bottom:none;} .rp-resumo{grid-template-columns:repeat(2,1fr);} .rp-fotos-grid{grid-template-columns:repeat(2,1fr);} }
 `;
 
 const SUBSTITUICOES = {
@@ -18169,6 +18220,7 @@ const estado = {
   abertoSec: new Set(), abertoUnid: new Set(),
   cfgCliente: '', cfgEditando: null, histFiltro: '',
   cfgForm: { tipo: '', local: '', comp: {} },
+  enviados: {}, envioChecado: {},          // relatórios já ENVIADOS ao cliente (a partir daí o técnico não altera mais)
   editandoDica: '', dicaRascunho: {},   // edição da dica de localização (chave = atividade:unidade)
 };
 
@@ -18488,7 +18540,8 @@ function htmlUnidade(sid, u, r, travado){
 }
 function htmlSlot(svc, units, r){
   const sid = svc.id;
-  const travado = svc.status === 'concluido';
+  const travado = !!estado.enviados[sid];          // só trava quando o relatório já foi ENVIADO ao cliente
+  const concluida = svc.status === 'concluido';
   const feitas = units.filter(u => unidadeCompleta(u, r)).length;
   const aberto = estado.abertoSec.has(sid);
   const fotoIds = Object.keys(r.fotos || {}).sort();
@@ -18497,7 +18550,8 @@ function htmlSlot(svc, units, r){
     corpo = `
       <div class="prv-prog"><div class="prv-prog-bar" data-prv-bar style="width:${units.length ? Math.round(feitas / units.length * 100) : 0}%"></div></div>
       ${r.offline ? '<div class="prv-aviso">Sem conexão ao abrir: o que você preencher fica guardado neste aparelho e sobe sozinho quando a internet voltar.</div>' : ''}
-      ${travado ? '<div class="prv-aviso" style="background:var(--panel-2);color:var(--text-dim);border-color:var(--line);">Atividade concluída — o relatório foi registrado e não pode mais ser alterado por aqui.</div>' : ''}
+      ${travado ? '<div class="prv-aviso" style="background:var(--panel-2);color:var(--text-dim);border-color:var(--line);">Este relatório já foi enviado ao cliente e não pode mais ser alterado.</div>' : ''}
+      ${(concluida && !travado) ? `<div class="prv-aviso" style="background:var(--panel-2);color:var(--text);border-color:var(--line);">Atividade concluída — ${rascunhoTemConteudo(r) ? 'se esqueceu de marcar algo, ' : 'o relatório ainda não foi preenchido. '}<b>você ainda pode ${rascunhoTemConteudo(r) ? 'marcar e corrigir' : 'preencher'}</b>. O relatório é atualizado sozinho até ser enviado ao cliente.</div>` : ''}
       ${units.map(u => htmlUnidade(sid, u, r, travado)).join('')}
       <div class="prv-field" style="margin-top:14px;">
         <div class="prv-flabel">Observações e recomendações</div>
@@ -18525,7 +18579,11 @@ function renderSlot(slot, svc){
     garantirRascunho(svc.id).then(() => remontarSlots(svc.id)).catch(() => {});
     return;
   }
-  if(svc.status === 'concluido' && !rascunhoTemConteudo(r)){ slot.remove(); return; }
+  if(svc.status === 'concluido' && !(svc.id in estado.envioChecado)){      // concluída: confere se o relatório já foi enviado (trava) — só uma vez por atividade
+    estado.envioChecado[svc.id] = true;
+    lerRelatorioRemoto(svc.id).then(rem => { if(rem && rem.enviadoEm){ estado.enviados[svc.id] = true; remontarSlots(svc.id); } }).catch(() => {});
+  }
+  if(estado.enviados[svc.id] && !rascunhoTemConteudo(r)){ slot.remove(); return; }
   slot.innerHTML = htmlSlot(svc, units, r);
 }
 function remontarSlots(sid){
@@ -18562,12 +18620,14 @@ function gravarResposta(sid, unitId, key, valor){
   if(valor === '' || valor == null){ delete r.respostas[unitId][key]; escrever(path, null); }
   else { r.respostas[unitId][key] = valor; escrever(path, valor); }
   cacheRascunho(sid);
+  aposAlterar(sid);
 }
 function gravarObs(sid, texto){
   const r = estado.rascunhos[sid]; if(!r) return;
   r.obs = texto;
   escrever(NOS.rascunhos + '/' + sid + '/obs', texto === '' ? null : texto);
   cacheRascunho(sid);
+  aposAlterar(sid);
 }
 function gravarFoto(sid, dataUrl){
   const r = estado.rascunhos[sid]; if(!r) return false;
@@ -18591,7 +18651,7 @@ function ligarSlot(slot){
       const fid = rm.dataset.prvRmfoto;
       customConfirm('Excluir esta foto? Essa ação não pode ser desfeita.', () => {
         const r = estado.rascunhos[sid]; if(!r) return;
-        delete r.fotos[fid]; escrever(NOS.fotos + '/' + sid + '/' + fid, null); remontarSlots(sid);
+        delete r.fotos[fid]; escrever(NOS.fotos + '/' + sid + '/' + fid, null); remontarSlots(sid); aposAlterar(sid);
       });
       return;
     }
@@ -18622,7 +18682,7 @@ function ligarSlot(slot){
       remontarSlots(sid); return;
     }
     if(b.dataset.prvV !== undefined){
-      if(svc.status === 'concluido') return;
+      if(estado.enviados[sid]) return;
       descarregarTimers();   // garante que texto/números digitados antes já foram gravados
       gravarResposta(sid, b.dataset.prvU, b.dataset.prvK, b.dataset.prvV);
       remontarSlots(sid);
@@ -18632,7 +18692,7 @@ function ligarSlot(slot){
     const svc = svcDe(); if(!svc) return;
     const sid = svc.id; const t = e.target;
     if(t.classList.contains('prv-dica-txt')){ estado.dicaRascunho[sid + ':' + t.dataset.prvU] = t.value; return; }   // a dica pode ser editada mesmo com a atividade concluída
-    if(svc.status === 'concluido') return;
+    if(estado.enviados[sid]) return;
     if(t.classList.contains('prv-txt')){
       const u = t.dataset.prvU, k = t.dataset.prvK, v = t.value;
       const r = estado.rascunhos[sid]; if(!r) return;
@@ -18658,7 +18718,7 @@ function ligarSlot(slot){
   slot.addEventListener('keydown', (e) => { const el = e.target.closest('[data-prv-act="dica-editar"]'); if(el && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); el.click(); } });
   slot.addEventListener('change', async (e) => {
     const inp = e.target.closest('[data-prv-addfoto]'); if(!inp) return;
-    const svc = svcDe(); if(!svc || svc.status === 'concluido') return;
+    const svc = svcDe(); if(!svc || estado.enviados[svc.id]) return;
     const sid = svc.id; const r = estado.rascunhos[sid]; if(!r) return;
     const room = MAX_FOTOS - Object.keys(r.fotos).length;
     const arquivos = Array.from(inp.files || []);
@@ -18666,6 +18726,7 @@ function ligarSlot(slot){
     for(const f of arquivos.slice(0, Math.max(0, room))){
       try{ const url = await compressImageFile(f); gravarFoto(sid, url); remontarSlots(sid); }catch(err){ /* ignora arquivo que falhar, como nas outras fotos do app */ }
     }
+    aposAlterar(sid);
   });
 }
 function montarSlot(card, svc){
@@ -18719,7 +18780,107 @@ async function gerarRelatorioAoConcluir(svc){
   }catch(e){ console.error('prev: falha ao gerar o relatório ao concluir (a conclusão da atividade não foi afetada)', e); }
 }
 
+
+// ====================================================================================
+// DEPOIS DE CONCLUIR (30/09): o técnico continua podendo marcar o que esqueceu — até o relatório ser ENVIADO ao cliente.
+// Cada mudança atualiza o relatório fixo sozinha (com um pequeno atraso para juntar várias marcações numa gravação só),
+// sem apagar baixado/enviado/removido e sem pisar no texto que o Gestor já revisou.
+// ====================================================================================
+async function lerRelatorioRemoto(sid){
+  try{
+    const snap = await comTimeout(rtdb.ref(NOS.relatorios + '/rel_' + sid).get(), 4500);
+    return snap.exists() ? snap.val() : { inexistente: true };
+  }catch(e){ return null; }          // sem conexão / lento: não dá para saber (o chamador decide)
+}
+function aposAlterar(sid){
+  const svc = services.find(s => String(s.id) === String(sid));
+  if(!svc || svc.status !== 'concluido' || estado.enviados[sid]) return;
+  agendar('rel:' + sid, () => atualizarRelatorioPosConclusao(svc), 1800);
+}
+async function atualizarRelatorioPosConclusao(svc){
+  try{
+    if(!ehPreventiva(svc) || svc.status !== 'concluido') return;
+    const sid = svc.id; const units = unidadesDoCliente(svc.client); if(!units.length) return;
+    const r = estado.rascunhos[sid]; if(!r || !r.carregado) return;
+    const remoto = await lerRelatorioRemoto(sid);
+    if(remoto && remoto.enviadoEm){                     // enviado enquanto o técnico editava: não altera mais
+      estado.enviados[sid] = true; remontarSlots(sid);
+      aviso('Este relatório já foi enviado ao cliente e não pode mais ser alterado. A última marcação não entrou nele.', 8000);
+      return;
+    }
+    const existe = !!(remoto && !remoto.inexistente);
+    if(!existe && !rascunhoTemConteudo(r)) return;      // nada preenchido e ainda sem relatório: não cria vazio
+    const id = 'rel_' + sid; const agora = new Date().toISOString();
+    const rel = construirRelatorio(svc, units, r);
+    // O Gestor já revisou o texto das observações? Então o texto dele fica; o do técnico vira o "original" atualizado.
+    if(remoto && remoto.observacoesOriginal != null){
+      const novoTecnico = String(rel.observacoes || '');
+      delete rel.observacoes;
+      if(novoTecnico !== String(remoto.observacoesOriginal)){
+        escrever(NOS.relatorios + '/' + id + '/observacoesOriginal', novoTecnico === '' ? null : novoTecnico);
+        escrever(NOS.relatorios + '/' + id + '/obsTecnicoAtualizadaEm', agora);
+      }
+    }
+    Object.keys(rel).forEach(campo => { const v = rel[campo]; escrever(NOS.relatorios + '/' + id + '/' + campo, v === undefined || v === '' ? null : v); });
+    escrever(NOS.relatorios + '/' + id + '/atualizadoPosConclusaoEm', agora);
+    escrever(NOS.relatorios + '/' + id + '/atualizadoPosConclusaoPor', (typeof currentActingName === 'function' && currentActingName()) || null);
+    if(estado.relatorios[id]) estado.relatorios[id] = Object.assign({}, estado.relatorios[id], JSON.parse(JSON.stringify(rel)), { atualizadoPosConclusaoEm: agora });
+    atualizarTelasRelatorios();
+  }catch(e){ console.error('prev: falha ao atualizar o relatório depois de concluir (o que o técnico marcou continua salvo no rascunho)', e); }
+}
+
+// ====================================================================================
+// AVISO DE PENDÊNCIAS ao tocar em "Concluir atividade": voltar para o relatório ou continuar com a conclusão.
+// pendenciasRelatorio devolve null quando não há o que avisar (atividade comum, cliente sem unidades configuradas,
+// relatório completo, já concluída, ou rascunho ainda não carregado — nesses casos nada muda no fluxo de sempre).
+// ====================================================================================
+function pendenciasRelatorio(svc){
+  if(!ehPreventiva(svc) || svc.status === 'concluido') return null;
+  const units = unidadesDoCliente(svc.client); if(!units.length) return null;
+  const r = estado.rascunhos[svc.id]; if(!r || !r.carregado) return null;
+  const porUnidade = []; let total = 0;
+  units.forEach(u => {
+    const resp = (r.respostas && r.respostas[u.id]) || {};
+    const falt = estruturaDaUnidade(u).filter(e => !e.campo.opcional && (resp[e.key] === undefined || resp[e.key] === '')).length;
+    if(falt){ porUnidade.push({ id: u.id, nome: (tipoPorId(u.tipo) ? tipoPorId(u.tipo).nome : u.tipo) + ' — ' + u.local, faltam: falt }); total += falt; }
+  });
+  return total ? { total, porUnidade, nadaPreenchido: !rascunhoTemConteudo(r) } : null;
+}
+function garantirModalPendencias(){
+  let ov = document.getElementById('prvPendOverlay'); if(ov) return ov;
+  ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'prvPendOverlay';
+  ov.innerHTML = '<div class="modal" style="max-width:460px;"><h3 id="prvPendTitulo">Há pendências no relatório de manutenção</h3><div id="prvPendCorpo"></div>'
+    + '<div class="modal-actions" style="justify-content:flex-end; flex-wrap:wrap; margin-top:16px;"><button type="button" class="btn-ghost" id="prvPendContinuar">Continuar com a conclusão</button><button type="button" class="btn-primary" id="prvPendVoltar">Voltar ao relatório</button></div></div>';
+  document.body.appendChild(ov);
+  return ov;
+}
+function avisarPendencias(svc, pend, aoContinuar){
+  const ov = garantirModalPendencias();
+  const lista = pend.porUnidade.slice(0, 6).map(p => '<li><b>' + esc(p.nome) + '</b> — ' + p.faltam + (p.faltam === 1 ? ' campo' : ' campos') + '</li>').join('')
+    + (pend.porUnidade.length > 6 ? '<li>…e mais ' + (pend.porUnidade.length - 6) + (pend.porUnidade.length - 6 === 1 ? ' unidade' : ' unidades') + '</li>' : '');
+  document.getElementById('prvPendCorpo').innerHTML =
+    (pend.nadaPreenchido ? '<p style="margin:0 0 8px;">O relatório de manutenção <b>ainda não foi preenchido</b>.</p>'
+      : '<p style="margin:0 0 8px;">Ainda faltam <b>' + pend.total + (pend.total === 1 ? ' campo' : ' campos') + '</b> em <b>' + pend.porUnidade.length + (pend.porUnidade.length === 1 ? ' unidade' : ' unidades') + '</b>:</p><ul style="margin:0 0 8px; padding-left:20px;">' + lista + '</ul>')
+    + '<p style="margin:0; font-size:12.5px; color:var(--text-dim);">Se continuar, a atividade é concluída agora (o horário de conclusão será registrado). Você ainda poderá completar o relatório depois, até ele ser enviado ao cliente.</p>';
+  const fechar = () => ov.classList.remove('open');
+  document.getElementById('prvPendVoltar').onclick = () => {
+    fechar();
+    const sid = svc.id; estado.abertoSec.add(sid);
+    const primeira = pend.porUnidade[0]; if(primeira) estado.abertoUnid.add(sid + ':' + primeira.id);
+    remontarSlots(sid);
+    const slot = document.querySelector('[data-prvslot="' + String(sid).replace(/"/g, '') + '"]');
+    if(slot && slot.scrollIntoView) slot.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  document.getElementById('prvPendContinuar').onclick = () => { fechar(); aoContinuar(); };
+  ov.onclick = (e) => { if(e.target === ov) fechar(); };
+  ov.classList.add('open');
+}
+
 const PREV_IMPORT_PLANILHAS = [{"cliente":"Bruno Pandolfi","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]}]},{"cliente":"Bulus","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"conforto","local":"SmartStart","componentes":[{"itemNome":"Bomba","quantidade":1}]},{"tipo":"piscina","local":"Piscina e SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]},{"tipo":"drenagem","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]}]},{"cliente":"Castro Neves","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"aquecimento_direto","local":"Anexo","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"conforto","local":"Conforto","componentes":[{"itemNome":"Bomba","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"pressurizacao","local":"Anexo","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"drenagem","local":"Esgoto","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Casa principal","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]},{"tipo":"piscina","local":"Anexo","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]}]},{"cliente":"Catarina Façanha","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"drenagem","local":"Águas pluviais 1","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais 2","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais 3","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Esgoto 1","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"recalque_industrial","local":"Poço","componentes":[{"itemNome":"Bomba/poço","quantidade":1}]},{"tipo":"recalque_residencial","local":"Irrigação","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":1}]}]},{"cliente":"Claudio Moniz","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]}]},{"cliente":"CNS - José Mauro","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":1}]}]},{"cliente":"Eric Hime","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":1},{"itemNome":"Bomba de conforto","quantidade":1},{"itemNome":"Bomba de apoio solar","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":1}]}]},{"cliente":"Fernando Pires","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":3},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Fran Marinho","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":1},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]}]},{"cliente":"Brandão - Búzios","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Casa","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"aquecimento_direto","local":"Caseiro","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":6},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Gustavo Miguez","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]}]},{"cliente":"João Basílio","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Esgoto","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]}]},{"cliente":"José Evandro Lopez","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":3}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":2}]}]},{"cliente":"José Mario Osório","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]}]},{"cliente":"José Paulo Amaral","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2}]}]},{"cliente":"José Ribamar Sabóia","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":10},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"piscina","local":"Filtração (Jacuzzi)","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Lucyna - Petrópolis","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":3}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Hóspedes (Harman 2437)","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Hóspedes (Rinnai E21)","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Charles","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Serviço / casa de máquinas da piscina","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":2},{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1}]}]},{"cliente":"Lucyna - Rio","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Área de serviço","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":3}]}]},{"cliente":"Maria Beltrão","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":4},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"piscina","local":"Espelho d'água","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Maria Salim","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"drenagem","local":"Esgoto","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de recirculação do aquecimento","quantidade":1}]}]},{"cliente":"Carlos Montenegro","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":4}]},{"tipo":"aquecimento_boiler","local":"Lado social","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Lado anexo","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":6},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":2}]}]},{"cliente":"Patrice de Camaret","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Box banheiro","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"conforto","local":"SmartStart","componentes":[{"itemNome":"Bomba","quantidade":1}]}]},{"cliente":"Paulo Fernando - Areal","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Social","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"aquecimento_direto","local":"Hóspedes","componentes":[{"itemNome":"Aquecedor","quantidade":4}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":4}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":1}]},{"tipo":"spa","local":"SPA","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]}]},{"cliente":"Paulo Fernando - Rio","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Apoio solar (coletor)","quantidade":6},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Paulo Marinho","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Anexo","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"conforto","local":"Anexo","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"pressurizacao","local":"Anexo","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"drenagem","local":"Esgoto casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Águas pluviais casa principal","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":4},{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Bomba de recirculação do aquecimento","quantidade":2},{"itemNome":"Aquecedor a gás","quantidade":2}]},{"tipo":"piscina","local":"Lago","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Filtro","quantidade":1}]},{"tipo":"drenagem","local":"Gerador","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Espelho d'água","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Adega","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Depósito","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"drenagem","local":"Lateral academia","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]}]},{"cliente":"Raimundo Oliveira","unidades":[{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":3}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]}]},{"cliente":"Renata Moll","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Serviço","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Bomba de hidromassagem","quantidade":2}]}]},{"cliente":"Renato Pimentel","unidades":[{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Casa principal","componentes":[{"itemNome":"Aquecedor","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de hidromassagem","quantidade":1}]},{"tipo":"piscina","local":"Espelho d'água","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Ricardo Botelho","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":4}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":4},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":2}]}]},{"cliente":"Roberto Carneiro","unidades":[{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1},{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Trocador de calor","quantidade":1}]},{"tipo":"piscina","local":"Espelho d'água","componentes":[{"itemNome":"Bomba de recirculação","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Apoio solar (coletor)","quantidade":5},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2},{"itemNome":"Bomba de apoio solar","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":2}]}]},{"cliente":"Roberto Thompson","unidades":[{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Bomba de recirculação","quantidade":3},{"itemNome":"Trocador de calor","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Coletor solar","quantidade":21}]},{"tipo":"spa","local":"SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":3},{"itemNome":"Bomba de hidromassagem","quantidade":2},{"itemNome":"Aquecedor a gás","quantidade":1},{"itemNome":"Gerador de cloro","quantidade":1},{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Roni Argalji","unidades":[{"tipo":"recalque_residencial","local":"Recalque","componentes":[{"itemNome":"Bomba","quantidade":4}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina e SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":2},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Aquecedor a gás","quantidade":1}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":1}]}]},{"cliente":"Sacra Familia","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":3},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":4}]}]},{"cliente":"Santo Antonio","unidades":[{"tipo":"sitio_pocos","local":"Cachoeirinha — Poços","componentes":[{"itemNome":"Poço","quantidade":7},{"itemNome":"Poço novo","quantidade":2},{"itemNome":"Acionamento dos poços","quantidade":1}]},{"tipo":"sitio_recalque","local":"Cachoeirinha — Recalque inferior","componentes":[{"itemNome":"BBA Recalque","quantidade":2},{"itemNome":"Quadro de comando","quantidade":1}]},{"tipo":"sitio_recalque","local":"Cachoeirinha — Recalque superior (Heliporto)","componentes":[{"itemNome":"BBA Recalque","quantidade":2},{"itemNome":"Quadro de comando","quantidade":1}]},{"tipo":"sitio_pocos","local":"Lago Pedro Carvalho — Poços","componentes":[{"itemNome":"Poço","quantidade":7},{"itemNome":"Acionamento dos poços","quantidade":1}]},{"tipo":"sitio_recalque","local":"Lago Pedro Carvalho — Recalque (para 16 caixas)","componentes":[{"itemNome":"BBA Recalque","quantidade":2},{"itemNome":"Quadro de comando","quantidade":1}]},{"tipo":"sitio_caixa","local":"Lago Pedro Carvalho — Caixa superior 16 caixas","componentes":[{"itemNome":"Quadro de comando","quantidade":1},{"itemNome":"BBA Press","quantidade":2}]},{"tipo":"sitio_bombas","local":"Lago Pedro Carvalho — Bombas de recalque (rampa entre a sede e as 16 caixas)","componentes":[{"itemNome":"Bomba","quantidade":6}]},{"tipo":"sitio_piscina","local":"Piscina","componentes":[{"itemNome":"BBA1 Intelliflo","quantidade":1},{"itemNome":"BBA2 Intelliflo","quantidade":1},{"itemNome":"BBA Hidro","quantidade":2},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro Piscina","quantidade":1},{"itemNome":"BBA de Calor","quantidade":2},{"itemNome":"Mastertemp","quantidade":1}]},{"tipo":"sitio_sauna","local":"Sauna Vapor","componentes":[{"itemNome":"Sauna Vapor","quantidade":1}]}]},{"cliente":"Wildson Nunes","unidades":[{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":1},{"itemNome":"Apoio de aquecedor a gás","quantidade":1},{"itemNome":"Apoio solar (coletor)","quantidade":4},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"pressurizacao","local":"Irrigação","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Tanque de expansão","quantidade":1}]},{"tipo":"drenagem","local":"Drenagem","componentes":[{"itemNome":"Bomba","quantidade":1},{"itemNome":"Boias/eletrodos","quantidade":1}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":1}]},{"tipo":"piscina","local":"Piscina","componentes":[{"itemNome":"Filtro UV","quantidade":1},{"itemNome":"Filtro","quantidade":1},{"itemNome":"Bomba de recirculação","quantidade":1}]}]},{"cliente":"José Ziltemann","unidades":[{"tipo":"recalque_residencial","local":"Recalque morro","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"recalque_residencial","local":"Recalque casa","componentes":[{"itemNome":"Bomba","quantidade":2}]},{"tipo":"aquecimento_boiler","local":"Casa principal","componentes":[{"itemNome":"Boiler","quantidade":2},{"itemNome":"Apoio de aquecedor a gás","quantidade":2},{"itemNome":"Bomba de apoio a gás","quantidade":2},{"itemNome":"Bomba de conforto","quantidade":2}]},{"tipo":"aquecimento_direto","local":"Caseiro","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"aquecimento_direto","local":"Hóspedes","componentes":[{"itemNome":"Aquecedor","quantidade":1}]},{"tipo":"pressurizacao","local":"Casa de máquinas","componentes":[{"itemNome":"Bomba","quantidade":2},{"itemNome":"Tanque de expansão","quantidade":2}]},{"tipo":"sauna","local":"Sauna","componentes":[{"itemNome":"Sauna","quantidade":2}]},{"tipo":"piscina","local":"Piscina e SPA","componentes":[{"itemNome":"Bomba de recirculação","quantidade":2},{"itemNome":"Bomba de hidromassagem","quantidade":1},{"itemNome":"Filtro UV","quantidade":2},{"itemNome":"Filtro","quantidade":2},{"itemNome":"Trocador de calor","quantidade":2}]},{"tipo":"filtro_agua","local":"Filtros de água","componentes":[{"itemNome":"Filtro","quantidade":4}]}]}];
+
+// Logo atual da Equiper (JPEG recortado, ~17 KB) para o cabeçalho do relatório.
+const LOGO_EQUIPER = 'data:image/jpeg;base64,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';
+
 
 // ====================================================================================
 // GESTOR — Manutenções (Configuração, Catálogo, Histórico) e Cadastros e OS (Relatórios)
@@ -18730,7 +18891,7 @@ function normalizarRelatorio(rel){
   });
 }
 // Linhas de um grupo: medições trifásicas (RS/ST/RT) saem numa linha só; textos livres saem em bloco.
-function linhasDaTabela(linhas, pill){
+function linhasDaTabela(linhas, pill, ehInterno){
   let html = '';
   for(let i = 0; i < linhas.length; i++){
     const l = linhas[i];
@@ -18742,30 +18903,48 @@ function linhasDaTabela(linhas, pill){
       i = j - 1; continue;
     }
     if(l.longo && l.texto != null){ html += `<tr><td colspan="2">${esc(l.campo)}<div class="rp-texto">${esc(l.texto)}</div></td></tr>`; continue; }
-    html += `<tr><td>${esc(l.campo)}</td><td class="v">${pill(l)}</td></tr>`;
+    const interna = !!(ehInterno && ehInterno(l));
+    html += `<tr${interna ? ' class="rp-interno"' : ''}><td>${esc(l.campo)}${interna ? ' <span class="rp-tag-int" title="Só aparece para a equipe; não vai no PDF do cliente">só equipe</span>' : ''}</td><td class="v">${pill(l)}</td></tr>`;
   }
   return html;
 }
-function htmlRelatorio(rel, fotos){
+function semAcentoRp(t){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+// opts.pdf = true → versão do CLIENTE: sem as linhas "só equipe" (Retrolavagem e Pressão do filtro). Sem opts → versão da tela
+// do Gestor: mostra tudo e marca essas linhas com "só equipe" para ficar claro que não vão no PDF.
+function htmlRelatorio(rel, fotos, opts){
+  const pdf = !!(opts && opts.pdf);
   const r = normalizarRelatorio(rel);
-  const res = resumoRelatorio(r);
+  const res = resumoRelatorio(r, { pdf });
   const avaliados = res.verdes + res.amarelos + res.vermelhos;
   const pill = l => `<span class="rp-pill ${l.texto == null ? 'none' : corSegura(l.cor)}">${l.texto == null ? 'não preenchido' : esc(l.texto)}</span>`;
-  const quando = esc(fmtData(r.dataVisita) || fmtDataHora(r.criadoEm)) + (fmtData(r.dataVisita) && r.inicio ? ' · ' + esc(r.inicio) + (r.fim ? ' às ' + esc(r.fim) : '') : '');
+  const dataTxt = fmtData(r.dataVisita) || fmtDataHora(r.criadoEm);
+  const horaTxt = (fmtData(r.dataVisita) && r.inicio) ? esc(r.inicio) + (r.fim ? ' às ' + esc(r.fim) : '') : '';
+  const geradoEm = fmtData(String(r.criadoEm || '').slice(0, 10));
   const fotosHtml = (num(r.nFotos) > 0 || (fotos && fotos.length))
     ? (fotos ? `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-fotos-grid">${fotos.map((src, i) => `<figure><img src="${esc(src)}" alt="Foto ${i + 1}"><figcaption>Foto ${i + 1}</figcaption></figure>`).join('')}</div></div>`
                : `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">Carregando fotos…</div></div>`)
     : '';
+  const unidadesHtml = r.unidades.map(u => {
+    const grupos = u.grupos.map(g => ({ g, linhas: pdf ? g.linhas.filter(l => !ehLinhaInterna(l, g, u)) : g.linhas })).filter(x => x.linhas.length);
+    if(pdf && u.grupos.length && !grupos.length) return '';          // unidade que só tinha itens "só equipe": não vai no PDF
+    return `<div class="rp-unit">
+      <h3><span class="rp-unit-tipo">${esc(u.tipoNome)}</span>${semAcentoRp(u.local) !== semAcentoRp(u.tipoNome) ? `<span class="rp-unit-local">${esc(u.local)}</span>` : ''}</h3>
+      <div class="rp-unit-corpo">${grupos.length ? grupos.map(x => `
+        ${u.grupos.length > 1 ? `<div class="rp-grupo">${esc(x.g.titulo)}</div>` : ''}
+        <table class="rp-tab">${linhasDaTabela(x.linhas, pill, pdf ? null : (l => ehLinhaInterna(l, x.g, u)))}</table>`).join('')
+        : '<div class="rp-nota" style="margin:8px 0 0;">Nenhum subitem estava configurado para esta unidade na data da visita.</div>'}</div>
+    </div>`;
+  }).join('');
   return `<div class="rp">
     <div class="rp-head">
-      <div class="rp-brand"><div class="rp-logo">e</div><div><b>Equiper</b><span class="sub">Serviços</span></div></div>
-      <div class="rp-title">Relatório de manutenção preventiva</div>
+      <img class="rp-logo-img" src="${LOGO_EQUIPER}" alt="Equiper">
+      <div class="rp-head-txt"><div class="rp-kicker">Relatório de</div><div class="rp-title">Manutenção preventiva</div><div class="rp-empresa">Equiper Serviços</div></div>
     </div>
-    <div class="rp-meta">
-      <div><span>Cliente</span><b>${esc(r.cliente)}</b></div>
-      <div><span>Data da visita</span><b>${quando}</b></div>
-      <div><span>Endereço</span><b>${esc(r.endereco || '—')}</b></div>
-      <div><span>Técnico</span><b>${esc(r.tecnico || '—')}</b></div>
+    <div class="rp-info">
+      <div class="rp-info-c"><span>Cliente</span><b>${esc(r.cliente)}</b></div>
+      <div class="rp-info-c"><span>Data da visita</span><b>${esc(dataTxt)}</b>${horaTxt ? `<small>${horaTxt}</small>` : ''}</div>
+      <div class="rp-info-c"><span>Endereço</span><b>${esc(r.endereco || '—')}</b></div>
+      <div class="rp-info-c"><span>Técnico</span><b>${esc(r.tecnico || '—')}</b></div>
     </div>
     <div class="rp-resumo">
       <div class="rp-stat"><b>${avaliados}</b><span>pontos avaliados</span></div>
@@ -18774,26 +18953,20 @@ function htmlRelatorio(rel, fotos){
       <div class="rp-stat red"><b>${res.vermelhos}</b><span>precisam de ação</span></div>
     </div>
     ${res.vazios ? `<div class="rp-nota">${res.vazios} campo(s) não preenchido(s) na visita.</div>` : '<div class="rp-nota"></div>'}
-    ${res.atencao.length ? `<div class="rp-atencao"><h4>Pontos que precisam de atenção</h4><ul>${res.atencao.map(a =>
-        `<li><b>${a.grupo ? esc(a.grupo) + ' — ' : ''}${esc(a.unidade)}</b> · ${esc(a.campo)}: <span class="rp-pill ${corSegura(a.cor)}">${esc(a.texto)}</span></li>`).join('')}</ul></div>`
-      : (avaliados ? '<div class="rp-ok">✓ Nenhum ponto de atenção nesta visita.</div>' : '')}
-    ${r.unidades.map(u => `<div class="rp-unit">
-      <h3>${esc(u.local)}<small>${esc(u.tipoNome)}</small></h3>
-      ${u.grupos.length ? u.grupos.map(g => `
-        ${u.grupos.length > 1 ? `<div class="rp-grupo">${esc(g.titulo)}</div>` : ''}
-        <table class="rp-tab">${linhasDaTabela(g.linhas, pill)}</table>`).join('')
-        : '<div class="rp-nota" style="margin:0;">Nenhum subitem estava configurado para esta unidade na data da visita.</div>'}
-    </div>`).join('')}
+    ${res.atencao.length ? `<div class="rp-atencao"><h4><span class="rp-ico">!</span>Pontos que precisam de atenção</h4><ul>${res.atencao.map(a =>
+        `<li><b>${a.grupo ? esc(a.grupo) + ' — ' : ''}${esc(a.unidade)}</b> · ${esc(a.campo)}: <span class="rp-pill ${corSegura(a.cor)}">${esc(a.texto)}</span>${a.interno ? ' <span class="rp-tag-int" title="Só aparece para a equipe; não vai no PDF do cliente">só equipe</span>' : ''}</li>`).join('')}</ul></div>`
+      : (avaliados ? '<div class="rp-ok">✓ Nenhum ponto crítico nesta visita.</div>' : '')}
+    ${unidadesHtml}
     ${r.observacoes ? `<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto">${esc(r.observacoes)}</div></div>` : ''}
     ${fotosHtml}
-    <div class="rp-foot">Relatório gerado pelo Equiper Serviços</div>
+    <div class="rp-foot"><span>Relatório gerado pelo Equiper Serviços</span>${geradoEm ? `<span>Concluído em ${esc(geradoEm)}</span>` : ''}</div>
   </div>`;
 }
 // "Baixar em PDF": abre o documento numa janela e chama a impressão (o usuário escolhe "Salvar como PDF") —
 // o mesmo mecanismo que o relatório de compra do Estoque já usa.
 function documentoImpressao(rel, fotos){
   const titulo = 'relatorio-preventiva-' + slug(rel.cliente) + '-' + String(rel.dataVisita || rel.criadoEm || '').slice(0, 10);
-  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>' + esc(titulo) + '</title><style>body{margin:0;padding:24px;background:#fff;}' + CSS_RELATORIO + '@media print{body{padding:0;}}</style></head><body>' + htmlRelatorio(rel, fotos || []) + '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400);});<\/script></body></html>';
+  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>' + esc(titulo) + '</title><style>body{margin:0;padding:24px;background:#fff;}' + CSS_RELATORIO + '@page{size:A4;margin:12mm 11mm;}@media print{body{padding:0;}}</style></head><body>' + htmlRelatorio(rel, fotos || [], { pdf: true }) + '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},400);});<\/script></body></html>';
 }
 
 // ---------- ações sobre um relatório ----------
@@ -18851,7 +19024,8 @@ function chipsStatus(r){
   return `<span class="prv-chip ${r.baixadoEm ? 'green' : 'gray'}">${r.baixadoEm ? '⬇ Baixado ' + esc(fmtDataHora(r.baixadoEm)) : 'Não baixado'}</span>
     <span class="prv-chip ${r.enviadoEm ? 'green' : 'gray'}">${r.enviadoEm ? '✉ Enviado ' + esc(fmtDataHora(r.enviadoEm)) : 'Não enviado'}</span>
     ${r.removidoDeOSEm ? '<span class="prv-chip amber">Fora de Cadastros e OS · guardado em Manutenções</span>' : '<span class="prv-chip gray">Na lista de Cadastros e OS</span>'}
-    ${r.observacoesOriginal != null ? '<span class="prv-chip gray">Texto revisado pelo Gestor</span>' : ''}`;
+    ${r.observacoesOriginal != null ? '<span class="prv-chip gray">Texto revisado pelo Gestor</span>' : ''}
+    ${r.atualizadoPosConclusaoEm ? (r.baixadoEm && String(r.atualizadoPosConclusaoEm) > String(r.baixadoEm) ? '<span class="prv-chip amber">⚠ Mudou depois de baixado — baixe de novo</span>' : '<span class="prv-chip gray">✎ Atualizado pelo técnico após concluir ' + esc(fmtDataHora(r.atualizadoPosConclusaoEm)) + '</span>') : ''}`;
 }
 function garantirModal(){
   if(document.getElementById('prvModal')) return;
@@ -18911,6 +19085,7 @@ function renderRevisao(r){
   box.innerHTML = `
     <h4>Revisar observações antes de enviar</h4>
     <div class="prv-sub">Só o Gestor vê este painel — ele não aparece no PDF. Nada é trocado sozinho: você vê a sugestão e decide.</div>
+    ${r.observacoesOriginal != null && r.obsTecnicoAtualizadaEm ? '<div class="prv-aviso">O técnico mudou o texto dele depois da sua revisão (' + esc(fmtDataHora(r.obsTecnicoAtualizadaEm)) + '). O seu texto foi mantido; use "Voltar ao texto original do técnico" para ver e usar a versão nova.</div>' : ''}
     <textarea class="prv-obs" id="prvObsEdit" rows="5" placeholder="Sem observações. Você pode escrever aqui antes de enviar.">${esc(r.observacoes || '')}</textarea>
     <div class="prv-linha">
       <button type="button" class="btn-ghost" data-prv-r="sugerir">Sugerir correção automática</button>
@@ -18938,10 +19113,12 @@ function renderRevisao(r){
       if(novo === String(ag.observacoes || '')){ aviso('Nenhuma alteração no texto'); return; }
       if(ag.observacoesOriginal == null) setRelCampo(ag.id, 'observacoesOriginal', String(ag.observacoes || ''));   // guarda o que o técnico escreveu (uma vez só)
       setRelCampo(ag.id, 'observacoes', novo === '' ? null : novo);
+      if(ag.obsTecnicoAtualizadaEm) setRelCampo(ag.id, 'obsTecnicoAtualizadaEm', null);
       abrirRelatorio(ag.id); atualizarTelasRelatorios(); aviso('Texto salvo — o relatório já mostra a nova redação');
     } else if(a === 'voltar'){
       setRelCampo(ag.id, 'observacoes', String(ag.observacoesOriginal) === '' ? null : String(ag.observacoesOriginal));
       setRelCampo(ag.id, 'observacoesOriginal', null);
+      if(ag.obsTecnicoAtualizadaEm) setRelCampo(ag.id, 'obsTecnicoAtualizadaEm', null);
       abrirRelatorio(ag.id); atualizarTelasRelatorios(); aviso('Texto original do técnico restaurado');
     }
   };
@@ -19244,6 +19421,8 @@ const ICONES_KPI = {
   alerta: svgIcone('<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
   busca:  svgIcone('<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
   chave:  svgIcone('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),
+  agenda: svgIcone('<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>'),
+  andamento: svgIcone('<circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>'),
   caixa:  svgIcone('<path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/>'),
 };
 const TONS_KPI = { red:'vermelho', yellow:'amarelo', green:'verde', blue:'azul', gray:'neutro', vermelho:'vermelho', amarelo:'amarelo', verde:'verde', azul:'azul', neutro:'neutro' };
@@ -19255,6 +19434,22 @@ function kpiCards(itens){
       <div class="prv-kpi-texto"><div class="prv-kpi-num">${n}</div><div class="prv-kpi-rotulo">${esc(i.rotulo)}</div>${i.sub ? `<div class="prv-kpi-sub">${esc(i.sub)}</div>` : ''}</div>
     </div>`;
   }).join('');
+}
+// Quadro da Agenda: atividades de HOJE. Usa o mesmo filtro da caixa "Hoje" (getTodayByTechnician), que junta as duplas
+// numa atividade só — por isso os números sempre batem com a lista logo abaixo. Agendadas = todas as de hoje; as outras
+// três dividem esse total: ainda não iniciadas (aguardando técnico ou atribuídas), em andamento e concluídas.
+function resumoAgenda(){
+  const box = document.getElementById('agendaResumoCards'); if(!box) return;
+  const { groupedServices, semTecnico } = getTodayByTechnician(todayStr());
+  const total = groupedServices.length; let naoIni = 0, andamento = 0, concluidas = 0;
+  groupedServices.forEach(s => { if(s.status === 'concluido') concluidas++; else if(s.status === 'em_andamento') andamento++; else naoIni++; });
+  const semTec = semTecnico.filter(s => s.status !== 'concluido').length;
+  box.innerHTML = kpiCards([
+    { tom:'neutro',   icone:'agenda',    numero: total,      rotulo:'Agendadas hoje', sub: total ? 'atividades marcadas para hoje' : 'nenhuma atividade para hoje' },
+    { tom:'amarelo',  icone:'relogio',   numero: naoIni,     rotulo:'Não iniciadas',  sub:'ainda não começaram' + (semTec ? ' · ' + semTec + ' sem técnico' : '') },
+    { tom:'azul',     icone:'andamento', numero: andamento,  rotulo:'Em andamento',   sub:'técnico em campo agora' },
+    { tom:'verde',    icone:'ok',        numero: concluidas, rotulo:'Concluídas',     sub:'finalizadas hoje' + (total ? ' · ' + Math.round(concluidas / total * 100) + '%' : '') },
+  ]);
 }
 // Quadro de Manutenções: usa as MESMAS linhas já classificadas por renderManutencoes (em dia / vencendo em até
 // 15 dias / atrasada), então os números sempre batem com as listas logo abaixo.
@@ -19285,8 +19480,11 @@ window.PREV_API = {
   carregarUnidades,
   iniciarGestor,
   flush,
+  pendenciasRelatorio,
+  avisarPendencias,
   kpiCards,
   resumoManutencoes,
+  resumoAgenda,
 };
 })();
 
