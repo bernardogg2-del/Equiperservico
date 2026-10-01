@@ -1138,15 +1138,21 @@
   .estoque-alerta-baixo::before{ content:'⚠'; font-size:16px; line-height:1; flex:none; }
   /* Outbox offline (30/09): faixa fixa enquanto houver alteração ainda não confirmada pelo servidor,
      e aviso não bloqueante (substitui o alert() nos casos em que a alteração ficou guardada). */
+  /* Indicador de pendências offline: uma bolinha no canto inferior direito, para não cobrir a tela.
+     Tocar nela abre o texto completo; tocar de novo, tocar fora ou esperar ~8 s fecha. */
   #outboxBanner{
-    position:fixed; left:50%; transform:translateX(-50%); bottom:calc(14px + env(safe-area-inset-bottom, 0px));
-    z-index:9998; max-width:min(560px, calc(100vw - 24px)); background:var(--warning); color:#fff;
-    border-radius:999px; padding:10px 18px; font-size:13px; font-weight:700; box-shadow:var(--shadow-md);
-    display:none; align-items:center; gap:10px; text-align:center;
+    position:fixed; right:calc(14px + env(safe-area-inset-right, 0px)); bottom:calc(14px + env(safe-area-inset-bottom, 0px));
+    z-index:9998; display:none; flex-direction:row-reverse; align-items:center; gap:8px; cursor:pointer;
+    -webkit-tap-highlight-color:transparent; user-select:none;
   }
   #outboxBanner.show{ display:flex; }
-  #outboxBanner.ok{ background:var(--success); }
-  #outboxBanner .spin{ display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,0.45); border-top-color:#fff; border-radius:50%; animation:outboxspin 0.9s linear infinite; flex:none; }
+  @media (max-width: 700px){ #outboxBanner{ bottom:calc(80px + env(safe-area-inset-bottom, 0px)); } } /* acima da barra de navegação inferior */
+  #outboxBanner .ob-dot{ position:relative; width:38px; height:38px; border-radius:50%; background:var(--warning); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; box-shadow:var(--shadow-md); flex:none; }
+  #outboxBanner.ok .ob-dot{ background:var(--success); font-size:16px; }
+  #outboxBanner .ob-ring{ position:absolute; inset:3px; border:2px solid rgba(255,255,255,0.35); border-top-color:#fff; border-radius:50%; animation:outboxspin 0.9s linear infinite; }
+  #outboxBanner .ob-txt{ display:none; background:var(--warning); color:#fff; border-radius:var(--radius-sm); padding:9px 13px; font-size:12.5px; font-weight:700; line-height:1.35; box-shadow:var(--shadow-md); max-width:min(280px, calc(100vw - 84px)); text-align:left; }
+  #outboxBanner.ok .ob-txt{ background:var(--success); }
+  #outboxBanner.aberto .ob-txt{ display:block; }
   @keyframes outboxspin{ to{ transform:rotate(360deg); } }
   #avisoNaoBloqueante{
     position:fixed; left:50%; transform:translateX(-50%); top:calc(14px + env(safe-area-inset-top, 0px));
@@ -1527,7 +1533,11 @@
   .prv-unit{ border:1px solid var(--line); border-radius:var(--radius-sm); margin-bottom:8px; overflow:hidden; background:var(--panel); }
   .prv-unit.done .prv-unit-head{ background:var(--success-soft); }
   .prv-unit-head{ width:100%; display:flex; justify-content:space-between; align-items:center; gap:8px; padding:11px 12px; background:transparent; border:none; font-family:inherit; font-size:13.5px; color:var(--text); text-align:left; cursor:pointer; }
-  .prv-unit-head small{ display:block; font-size:11px; color:var(--text-dim); font-weight:500; }
+  /* Cabeçalho da unidade: o TIPO em cima e o LOCAL embaixo, os dois grandes e em destaque */
+  .prv-unit-nomes{ display:flex; flex-direction:column; gap:1px; min-width:0; }
+  .prv-unit-tipo, .prv-unit-local{ font-size:16px; line-height:1.25; color:var(--ink); }
+  .prv-unit-tipo{ font-weight:800; }
+  .prv-unit-local{ font-weight:700; }
   .prv-unit-corpo{ padding:0 12px 12px; border-top:1px solid var(--line); }
   .prv-grupo{ margin-top:12px; }
   .prv-grupo-t{ font-size:11.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; }
@@ -1601,6 +1611,72 @@
   .prv-tri-c .prv-num{ padding:10px 6px; }
   .prv-txt{ width:100%; padding:9px 11px; border:1.5px solid var(--line); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; line-height:1.4; resize:vertical; background:var(--panel); }
   .prv-txt:disabled{ opacity:.6; }
+
+  .prv-dica{ cursor:pointer; }
+  .prv-dica-texto{ white-space:pre-wrap; }
+  .prv-dica-autor{ font-size:11px; margin-top:3px; opacity:.85; }
+  .prv-dica-edit{ display:inline-block; margin-top:6px; font-size:11.5px; font-weight:700; text-decoration:underline; color:var(--ink); }
+  .prv-dica.editando{ cursor:default; background:var(--panel-2); border-radius:var(--radius-sm); padding:10px; margin-top:12px; }
+  .prv-dica-txt{ width:100%; padding:9px 11px; border:1.5px solid var(--line); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; line-height:1.4; resize:vertical; background:var(--panel); }
+  .prv-dica-linha{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+  .prv-dica-aviso{ font-size:11.5px; color:var(--text-dim); margin-top:6px; }
+
+  /* Manutenções → formulário de nova manutenção: contorno em volta de todos os campos e do botão,
+     para mostrar que fazem parte do mesmo processo (cadastrar um contrato). Só visual. */
+  .maint-add-form{ background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); }
+  /* ===== Quadros de resumo (Manutenções e Oficina): ícone, número grande e faixa colorida ===== */
+  .prv-kpi-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+  @media (max-width:700px){ .prv-kpi-grid{ grid-template-columns:repeat(2,1fr); } }
+  #oficinaGestorResumoCards{ gap:12px !important; }
+  .prv-kpi{ position:relative; display:flex; align-items:center; gap:12px; padding:14px 16px 14px 20px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow-sm); overflow:hidden; min-width:0; }
+  .prv-kpi::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--kpi-cor); }
+  .prv-kpi-icone{ flex:none; width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--kpi-fundo); color:var(--kpi-cor); }
+  .prv-kpi-texto{ min-width:0; }
+  .prv-kpi-num{ font-size:30px; font-weight:800; line-height:1; letter-spacing:-0.5px; color:var(--kpi-cor); font-variant-numeric:tabular-nums; }
+  .prv-kpi-rotulo{ font-size:12.5px; font-weight:700; color:var(--text); margin-top:5px; line-height:1.25; }
+  .prv-kpi-sub{ font-size:11px; color:var(--text-dim); margin-top:2px; line-height:1.3; }
+  .prv-kpi.tom-vermelho{ --kpi-cor:var(--red); --kpi-fundo:var(--danger-soft); }
+  .prv-kpi.tom-amarelo{ --kpi-cor:var(--warning); --kpi-fundo:var(--warning-soft); }
+  .prv-kpi.tom-verde{ --kpi-cor:var(--success-dark); --kpi-fundo:var(--success-soft); }
+  .prv-kpi.tom-azul{ --kpi-cor:var(--status-atribuido); --kpi-fundo:var(--status-atribuido-soft); }
+  .prv-kpi.tom-neutro{ --kpi-cor:var(--ink); --kpi-fundo:var(--panel-2); }
+  .prv-kpi.zero{ --kpi-cor:var(--text-dim); --kpi-fundo:var(--panel-2); }   /* zerado: fica discreto */
+  @media (max-width:520px){ .prv-kpi{ padding:12px 12px 12px 16px; gap:10px; } .prv-kpi-icone{ width:34px; height:34px; border-radius:10px; } .prv-kpi-icone svg{ width:17px; height:17px; } .prv-kpi-num{ font-size:26px; } }
+  /* ===== Quadros de comando (Gestor) ===== */
+  .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
+  .qd-form .field{ margin-bottom:0; min-width:180px; }
+  .qd-f-cli{ flex:2; } .qd-f-tipo{ flex:1; }
+  .qd-btn-add{ height:41px; }
+  .qd-dica{ color:var(--text-dim); font-size:13px; margin:0 0 14px; }
+  .qd-semtipos{ background:var(--warning-soft); border:1px solid var(--warning-line); color:var(--warning); border-radius:var(--radius-sm); padding:10px 14px; font-size:13px; font-weight:600; margin-bottom:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .qd-erro{ color:var(--danger); font-size:12.5px; font-weight:600; min-height:0; margin:0 0 8px; }
+  .qd-erro:empty{ display:none; }
+  .qd-secao{ font-size:11.5px; color:var(--text-dim); margin:20px 0 10px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; }
+  .qd-card{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--ink); border-radius:var(--radius); box-shadow:var(--shadow-sm); padding:13px 16px; margin-bottom:10px; }
+  .qd-card.montado{ border-left-color:var(--success); opacity:.92; }
+  .qd-card-main{ min-width:0; }
+  .qd-cli{ font-size:15px; font-weight:800; }
+  .qd-linha{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:5px; }
+  .qd-tipo{ display:inline-block; background:var(--ink); color:#fff; font-size:12px; font-weight:700; padding:3px 11px; border-radius:999px; }
+  .qd-card.montado .qd-tipo{ background:var(--success-dark); }
+  .qd-meta{ font-size:12px; color:var(--text-dim); }
+  .qd-acoes{ display:flex; gap:8px; flex-wrap:wrap; }
+  .qd-remover{ color:var(--red); }
+  .qd-montados{ margin-top:22px; }
+  .qd-montados > summary{ cursor:pointer; font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; font-weight:700; margin-bottom:10px; }
+  /* etapas do quadro (montagem e testes) */
+  .qd-card.tom-amarelo{ border-left-color:var(--warning); }
+  .qd-card.tom-azul{ border-left-color:var(--status-atribuido); }
+  .qd-card.tom-verde{ border-left-color:var(--success); }
+  .qd-card.tom-cinza{ border-left-color:var(--ink); }
+  .qd-chip{ display:inline-block; font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:999px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); }
+  .qd-chip.tom-amarelo{ background:var(--warning-soft); border-color:var(--warning-line); color:var(--warning); }
+  .qd-chip.tom-azul{ background:var(--status-atribuido-soft); border-color:var(--status-atribuido); color:var(--status-atribuido); }
+  .qd-chip.tom-verde{ background:var(--success-soft); border-color:var(--success-line); color:var(--success-dark); }
+  .qd-hist{ font-size:11.5px; color:var(--text-dim); margin-top:7px; line-height:1.5; }
+  .qd-acao{ min-height:44px; padding-left:18px; padding-right:18px; }
+
+  .os-quadro-tag{ display:inline-flex; align-items:center; font-size:11px; font-weight:700; letter-spacing:.3px; padding:4px 11px; border-radius:999px; background:var(--ink); color:#fff; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -1772,6 +1848,7 @@
     <div class="portal-greeting" id="oficinaUserLabel"></div>
     <div class="portal-tabs">
       <button type="button" class="portal-tab active" id="oficinaTabEquip" data-oficinaportaltab="equipamentos">Equipamentos</button>
+      <button type="button" class="portal-tab" id="quadrosOpenBtnOficina" data-oficinaportaltab="quadros">Quadros</button>
       <button type="button" class="portal-tab" id="estoqueOpenBtnOficina" data-oficinaportaltab="estoque">Estoque</button>
       <button type="button" class="portal-tab" id="galeriaOpenBtnOficina" data-oficinaportaltab="galeria">Galeria</button>
     </div>
@@ -1799,6 +1876,8 @@
     </div>
   </div>
 </div>
+
+<div id="quadrosOficinaView" style="display:none;"></div>
 
 <div id="galeriaView" style="display:none;">
   <div class="header">
@@ -2135,6 +2214,7 @@
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnPainel"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Painel de Controle</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnGaleria"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galeria</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnEstoque"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Estoque</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnQuadros"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h16a1 1 0 0 1 1 1v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M7.5 7h9"/><circle cx="9" cy="12.5" r="1"/><circle cx="15" cy="12.5" r="1"/><path d="M8 17.5h8"/></svg><span>Quadros de comando</span></button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user" id="sidebarUserLabel">Gestor</div>
@@ -2216,6 +2296,10 @@
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnEstoque">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
       <span>Estoque</span>
+    </button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnQuadros">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h16a1 1 0 0 1 1 1v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M7.5 7h9"/><circle cx="9" cy="12.5" r="1"/><circle cx="15" cy="12.5" r="1"/><path d="M8 17.5h8"/></svg>
+      <span>Quadros de comando</span>
     </button>
   </div>
 
@@ -2325,6 +2409,7 @@
   </div>
 
   <div id="tabManutencoes" style="display:none;">
+    <div class="prv-kpi-grid" id="maintResumoCards"></div>
     <div class="portal-tabs estoque-subnav-v2" id="prvManutTabs" style="padding:0 0 14px;">
       <button type="button" class="portal-tab active" data-prvmanut="visitas">Controle de visitas</button>
       <button type="button" class="portal-tab" data-prvmanut="config">Configuração por cliente</button>
@@ -2418,6 +2503,7 @@
       <button type="button" class="btn-ghost os-filtro-limpar" id="osFiltrosLimpar" style="display:none;">Limpar filtros</button>
     </div>
     <div id="osList"></div>
+    <div id="osQuadrosBox"></div>
     <div class="maint-section-title" style="margin-top:26px;">Processados recentemente</div>
     <div id="osProcessedList"></div>
     </div><!-- /prvOsAguardando -->
@@ -2675,6 +2761,7 @@
        até ele (mesmo elemento, sem duplicar HTML/JS/IDs) — veja openEstoqueGestorTab(). Volta a
        viver no nível do body quando Técnico/Oficina abrem a própria tela cheia (openEstoque()). -->
   <div id="tabEstoque" style="display:none;"></div>
+  <div id="tabQuadros" style="display:none;"></div>
 
   <!-- Detalhes de um equipamento da Oficina (visão do Gestor) — só leitura nesta etapa. -->
   <div class="overlay" id="oficinaGestorDetalheOverlay">
@@ -2959,6 +3046,15 @@
       <input type="text" id="oficinaCriarEquipClienteManual" placeholder="Nome do cliente">
     </div>
     <div class="field"><label>Equipamento</label><input type="text" id="oficinaCriarEquipNome" list="oficinaEquipNomesList" autocomplete="off" placeholder="Ex.: Bomba d'água 1/2 CV, Pressurizador, Inversor, etc."></div>
+    <div class="field">
+      <label for="oficinaCriarEquipTecnico">Técnico responsável pela retirada</label>
+      <select id="oficinaCriarEquipTecnico"></select>
+      <div style="font-size:11.5px; color:var(--text-dim); margin-top:4px;">Se deixar em branco, fica registrado quem está cadastrando.</div>
+    </div>
+    <div class="field">
+      <label for="oficinaCriarEquipDataRetirada">Data da retirada</label>
+      <input type="date" id="oficinaCriarEquipDataRetirada">
+    </div>
     <div class="field">
       <label>Observação</label>
       <textarea id="oficinaCriarEquipObs" maxlength="500" placeholder="Observações sobre o equipamento..."></textarea>
@@ -3522,6 +3618,7 @@ function attachRealtimeServicesListener(){
     if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
     services = mergeRemoteServices(raw || {});
     cacheGravarSnapshot('services', servicesSnapshot); // mergeRemoteServices já atualizou o snapshot com o confirmado
+    if(window.REINST_API) REINST_API.agendar();        // confere equipamentos x atividades (reinstalação)
 
     if(isUserBusyTyping()) return; // evita apagar o que a pessoa está digitando/gravando
 
@@ -3672,7 +3769,18 @@ function outboxAplicarNaLista(nome, lista){
 function outboxGarantirElementos(){
   if(!document.body) return;
   if(!document.getElementById('outboxBanner')){
-    const b = document.createElement('div'); b.id = 'outboxBanner'; document.body.appendChild(b);
+    const b = document.createElement('div'); b.id = 'outboxBanner';
+    b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0');
+    const alternar = (abrir) => {
+      const vaiAbrir = (abrir === undefined) ? !b.classList.contains('aberto') : abrir;
+      b.classList.toggle('aberto', vaiAbrir);
+      clearTimeout(b._autoFechar);
+      if(vaiAbrir) b._autoFechar = setTimeout(() => b.classList.remove('aberto'), 8000);
+    };
+    b.addEventListener('click', () => alternar());
+    b.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); alternar(); } });
+    document.addEventListener('click', (e) => { if(b.classList.contains('aberto') && !b.contains(e.target)) alternar(false); });
+    document.body.appendChild(b);
   }
   if(!document.getElementById('avisoNaoBloqueante')){
     const a = document.createElement('div'); a.id = 'avisoNaoBloqueante'; document.body.appendChild(a);
@@ -3685,13 +3793,17 @@ function outboxAtualizarIndicador(){
   if(n > 0){
     clearTimeout(outboxIndicadorOkTimer);
     b.classList.remove('ok');
-    b.innerHTML = '<span class="spin"></span><span>' + n + (n === 1 ? ' alteração aguardando conexão' : ' alterações aguardando conexão') + ' — será enviada sozinha quando a internet voltar</span>';
+    const texto = n + (n === 1 ? ' alteração aguardando conexão' : ' alterações aguardando conexão') + ' — será enviada sozinha quando a internet voltar';
+    b.innerHTML = '<span class="ob-dot"><span class="ob-ring"></span><span>' + (n > 9 ? '9+' : n) + '</span></span><span class="ob-txt">' + texto + '</span>';
+    b.setAttribute('aria-label', texto);
     b.classList.add('show');
   } else if(b.classList.contains('show') && !b.classList.contains('ok')){
     // acabou de zerar: mostra "tudo sincronizado" por alguns segundos e some
-    b.classList.add('ok'); b.innerHTML = '<span>✓ Tudo sincronizado com o servidor</span>';
+    b.classList.add('ok');
+    b.innerHTML = '<span class="ob-dot">✓</span><span class="ob-txt">Tudo sincronizado com o servidor</span>';
+    b.setAttribute('aria-label', 'Tudo sincronizado com o servidor');
     clearTimeout(outboxIndicadorOkTimer);
-    outboxIndicadorOkTimer = setTimeout(() => { b.classList.remove('show', 'ok'); }, 3500);
+    outboxIndicadorOkTimer = setTimeout(() => { b.classList.remove('show', 'ok', 'aberto'); }, 3500);
   }
 }
 let avisoTimer = null;
@@ -8212,6 +8324,8 @@ function renderManutencoes(){
     return Object.assign({}, c, { nextDue, days, statusClass, statusLabel });
   }).sort((a,b) => a.nextDue.localeCompare(b.nextDue));
 
+  if(window.PREV_API) PREV_API.resumoManutencoes(rows); // quadro de resumo no topo de Manutenções (mesmos números das listas abaixo)
+
   const alertRows = rows.filter(r => r.days <= 15);
   const alertBox = document.getElementById('maintenanceAlerts');
   if(alertRows.length === 0){
@@ -9282,6 +9396,7 @@ function attachRealtimeOficinaEquipamentosListener(){
     const raw = snap.exists() ? snap.val() : {};
     oficinaEquipamentos = mergeRemoteOficinaEquipamentos(raw || {});
     cacheGravarSnapshot('oficinaEquipamentos', oficinaEquipamentosSnapshot);
+    if(window.REINST_API) REINST_API.agendar();        // confere equipamentos x atividades (reinstalação)
     if(isUserBusyTyping()) return;
     if(currentRole === 'oficina') renderOficinaView();
     if(currentRole === 'oficina' && oeCurrentDetalheId !== null) renderOficinaEquipDetalhe(oeCurrentDetalheId);
@@ -9699,18 +9814,28 @@ async function releaseForReinstallation(equipId, btn, restoreLabel){
   }
 
   // Só vincula no equipamento DEPOIS de confirmar que a atividade existe de verdade.
-  const prevStatus = eq.status;
-  const prevRefId = eq.reinstallationServiceId;
-  eq.status = 'reinstalacao_pendente';
-  eq.reinstallationServiceId = svc.id;
+  // IMPORTANTE: enquanto a atividade era salva, a tela pode ter recebido atualizações em tempo real e TROCADO a lista de
+  // equipamentos por objetos novos. Alterar o "eq" lido lá em cima não valeria mais (o vínculo era gravado num objeto
+  // descartado e o equipamento ficava "sem agendar"). Por isso o equipamento ATUAL é reencontrado agora.
+  const eqAtual = oficinaEquipamentos.find(x => x.id === equipId);
+  if(!eqAtual || (eqAtual.status !== 'liberado_para_reinstalacao' && eqAtual.status !== 'reinstalacao_pendente')){
+    releaseInFlight[equipId] = false;      // equipamento removido/alterado por outra pessoa: a atividade fica, a conferência automática resolve
+    if(btn){ btn.disabled = false; btn.textContent = restoreLabel; }
+    return;
+  }
+  const prevStatus = eqAtual.status;
+  const prevRefId = eqAtual.reinstallationServiceId;
+  eqAtual.status = 'reinstalacao_pendente';
+  eqAtual.reinstallationServiceId = svc.id;
   const ok2 = await saveOficinaEquipamentos();
   releaseInFlight[equipId] = false;
   if(!ok2){
     // A atividade já existe (não é desfeita); só o vínculo não foi confirmado ainda. Reverte a
     // exibição local pra permitir tentar de novo — a próxima tentativa reencontra a mesma
     // atividade via findReinstallationService e não cria uma segunda.
-    eq.status = prevStatus;
-    eq.reinstallationServiceId = prevRefId;
+    const eqRev = oficinaEquipamentos.find(x => x.id === equipId) || eqAtual;
+    eqRev.status = prevStatus;
+    eqRev.reinstallationServiceId = prevRefId;
     if(btn){ btn.disabled = false; btn.textContent = restoreLabel; }
     return;
   }
@@ -9727,11 +9852,17 @@ async function releaseForReinstallation(equipId, btn, restoreLabel){
 // confirmado na auditoria; reinstalação não tem contrato, então nunca toca nesse campo). Nenhuma
 // lógica de agendamento nova: esta função só ORQUESTRA as duas já existentes, sem duplicá-las.
 async function agendarReinstalacaoComData(equipId, date){
-  const eq = oficinaEquipamentos.find(x => x.id === equipId);
+  let eq = oficinaEquipamentos.find(x => x.id === equipId);
   if(!eq) return { ok: false, reason: 'Equipamento não encontrado.' };
   if(!date) return { ok: false, reason: 'Escolha uma data.' };
+  // Vínculo "pendurado": o equipamento aponta para uma atividade que não existe mais (foi apagada da Agenda). Antes isso
+  // travava o equipamento para sempre; agora ele volta a poder ser agendado (uma atividade nova é criada).
+  if(eq.reinstallationServiceId && !services.some(s => s.id === eq.reinstallationServiceId)){
+    eq.reinstallationServiceId = null; eq.status = 'liberado_para_reinstalacao';
+  }
   if(!eq.reinstallationServiceId){
     await releaseForReinstallation(equipId, null); // cria a atividade + vincula (idempotente, já existente)
+    eq = oficinaEquipamentos.find(x => x.id === equipId) || eq;   // reencontra: a lista pode ter sido trocada durante o salvamento
     if(!eq.reinstallationServiceId) return { ok: false, reason: 'Não foi possível criar a atividade de reinstalação. Verifique sua internet e tente novamente.' };
   }
   const ok = await rescheduleService(eq.reinstallationServiceId, date); // mesma função usada por qualquer reagendamento da Agenda
@@ -10075,7 +10206,10 @@ function renderOficinaGestorTab(){
   ];
   const resumoBox = document.getElementById('oficinaGestorResumoCards');
   if(resumoBox){
-    resumoBox.innerHTML = resumoBuckets.map(b => `
+    const iconeOf = { vistoria: 'busca', manutencao: 'chave', teste: 'ok', reinstalacao: 'caixa' };
+    resumoBox.innerHTML = window.PREV_API
+      ? PREV_API.kpiCards(resumoBuckets.map(b => ({ tom: b.tone, icone: iconeOf[b.grupo], numero: b.count, rotulo: OE_GRUPO_LABEL[b.grupo] })))
+      : resumoBuckets.map(b => `
       <div class="oe-summary-card oe-${b.tone}">
         <div class="oe-summary-count">${b.count}</div>
         <div class="oe-summary-label">${escapeHtml(OE_GRUPO_LABEL[b.grupo])}</div>
@@ -10128,10 +10262,15 @@ function renderOficinaGestorTab(){
       // ter atividade vinculada; depois disso a informação relevante é a data agendada.
       const svcVinculado = eq.reinstallationServiceId ? services.find(s => s.id === eq.reinstallationServiceId) : null;
       const testadoHtml = !svcVinculado ? `<div style="margin-top:8px;">Testado por ${escapeHtml(eq.testeCompletedBy || '—')} em ${fmt(eq.testeCompletedAt)}</div>` : '';
+      const tecAtiv = svcVinculado ? getServiceTechnicians(svcVinculado).join(' e ') : '';
       const agendamentoHtml = (svcVinculado && svcVinculado.date)
-        ? `<div style="margin-top:8px;">Reinstalação agendada<br><b>${shortLabel(svcVinculado.date)}</b></div>
+        ? `<div style="margin-top:8px;">Reinstalação agendada<br><b>${shortLabel(svcVinculado.date)}</b> · ${tecAtiv ? 'Técnico: ' + escapeHtml(tecAtiv) : 'ainda sem técnico na Agenda'}</div>
            <button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Reagendar reinstalação</button>`
-        : `<button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Agendar reinstalação</button>`;
+        : (svcVinculado
+          ? `<div style="margin-top:8px;">Atividade já criada na Agenda — falta escolher a data</div>
+             <button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Agendar reinstalação</button>`
+          : `<button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Agendar reinstalação</button>
+             <button type="button" class="btn-ghost" data-reinstvincular="${eq.id}" style="margin-top:8px;">Vincular a uma atividade já criada</button>`);
       return orcamentoHtml + testadoHtml + agendamentoHtml;
     }
     return '';
@@ -10180,6 +10319,9 @@ function renderOficinaGestorTab(){
       e.stopPropagation();
       abrirAgendarReinstalacaoModal(Number(btn.dataset.agendarreinstalacao));
     });
+  });
+  document.querySelectorAll('[data-reinstvincular]').forEach(btn => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); if(window.REINST_API) REINST_API.abrirVincular(Number(btn.dataset.reinstvincular)); });
   });
 }
 
@@ -10246,6 +10388,11 @@ function abrirCriarEquipamentoOficina(){
   document.getElementById('oficinaCriarEquipObs').value = '';
   document.getElementById('oficinaCriarEquipObsCount').textContent = '0/500';
   document.getElementById('oficinaCriarEquipErr').textContent = '';
+  const selTec = document.getElementById('oficinaCriarEquipTecnico');
+  selTec.innerHTML = '<option value="">Selecionar técnico...</option>' + tecnicosAtuaisOrdenados().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+  selTec.value = (currentRole === 'tech' && currentTechName && tecnicosAtuaisOrdenados().includes(currentTechName)) ? currentTechName : '';   // técnico cadastrando: já vem ele mesmo
+  const dataRet = document.getElementById('oficinaCriarEquipDataRetirada');
+  dataRet.max = todayStr(); dataRet.value = todayStr();
   document.getElementById('oficinaCriarEquipClientes').innerHTML = clients.map(cl => `<option value="${escapeHtml(cl.name)}"></option>`).join('');
   popularEquipNomesDatalist();
   document.getElementById('oficinaCriarEquipOverlay').classList.add('open');
@@ -10257,11 +10404,19 @@ async function criarEquipamentoOficina(dados){
   const client = (dados.client || '').trim(), equipment = (dados.equipment || '').trim(), observation = (dados.observation || '').trim();
   if(!client) return { ok: false, reason: 'Informe o cliente.' };
   if(!equipment) return { ok: false, reason: 'Informe o equipamento.' };
+  // Data da retirada: hoje = agora; dia anterior = meio-dia daquele dia (evita virar o dia por fuso). Nunca no futuro.
+  let withdrawnAt = new Date().toISOString();
+  const dia = (dados.withdrawnDate || '').trim();
+  if(dia){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(dia)) return { ok: false, reason: 'Data da retirada inválida.' };
+    if(dia > todayStr()) return { ok: false, reason: 'A data da retirada não pode ser futura.' };
+    if(dia !== todayStr()){ const [y, m, d2] = dia.split('-').map(Number); withdrawnAt = new Date(y, m - 1, d2, 12, 0, 0).toISOString(); }
+  }
   const record = {
     id: Date.now(),
     client, equipment, observation,
-    withdrawnBy: currentActingName(),
-    withdrawnAt: new Date().toISOString(),
+    withdrawnBy: (dados.technician || '').trim() || currentActingName(),
+    withdrawnAt,
     status: 'aguardando_vistoria'
   };
   oficinaEquipamentos.push(record);
@@ -10280,7 +10435,7 @@ document.getElementById('oficinaCriarEquipConfirmBtn').addEventListener('click',
   const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
   const clienteManual = document.getElementById('oficinaCriarEquipClienteManual').value.trim();
   const clienteBusca = document.getElementById('oficinaCriarEquipCliente').value.trim();
-  const r = await criarEquipamentoOficina({ client: clienteManual || clienteBusca, equipment: document.getElementById('oficinaCriarEquipNome').value, observation: document.getElementById('oficinaCriarEquipObs').value });
+  const r = await criarEquipamentoOficina({ client: clienteManual || clienteBusca, equipment: document.getElementById('oficinaCriarEquipNome').value, observation: document.getElementById('oficinaCriarEquipObs').value, technician: document.getElementById('oficinaCriarEquipTecnico').value, withdrawnDate: document.getElementById('oficinaCriarEquipDataRetirada').value });
   btn.disabled = false; btn.textContent = lbl; oficinaCriarEquipInFlight = false;
   if(!r.ok){ document.getElementById('oficinaCriarEquipErr').textContent = r.reason; return; }
   fecharCriarEquipamentoOficina();
@@ -11005,6 +11160,7 @@ function renderOS(){
   const box = document.getElementById('osList');
   const badge = document.getElementById('osBadge');
   if(!box) return;
+  const qOS = window.QUADROS_API ? QUADROS_API.pendentesOS() : 0;   // quadros de comando com testes finalizados aguardando OS
 
   const pending = groupPaired(services.filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido))
     .sort((a,b) => {
@@ -11035,31 +11191,31 @@ function renderOS(){
   const contextLabel = document.getElementById('osContextLabel');
   if(contextLabel){
     contextLabel.textContent = pending.length === 0
-      ? 'Nenhuma atividade aguardando cadastro'
+      ? (qOS ? qOS + (qOS === 1 ? ' quadro de comando aguardando cadastro de OS' : ' quadros de comando aguardando cadastro de OS') : 'Nenhuma atividade aguardando cadastro')
       : filtroAtivo
         ? `${visiveis.length} de ${pending.length} atividade${pending.length === 1 ? '' : 's'} aguardando cadastro de OS`
         : `${pending.length} atividade${pending.length === 1 ? '' : 's'} aguardando cadastro de OS`;
   }
 
   if(badge){
-    if(pending.length > 0){ badge.style.display = 'inline-flex'; badge.textContent = pending.length; }
+    if(pending.length + qOS > 0){ badge.style.display = 'inline-flex'; badge.textContent = pending.length + qOS; }
     else { badge.style.display = 'none'; }
   }
   const sidebarBadge = document.getElementById('osBadgeSidebar');
   if(sidebarBadge){
-    if(pending.length > 0){ sidebarBadge.style.display = 'inline-flex'; sidebarBadge.textContent = pending.length; }
+    if(pending.length + qOS > 0){ sidebarBadge.style.display = 'inline-flex'; sidebarBadge.textContent = pending.length + qOS; }
     else { sidebarBadge.style.display = 'none'; }
   }
   const bottomNavBadge = document.getElementById('osBadgeBottomNav');
   if(bottomNavBadge){
-    if(pending.length > 0){ bottomNavBadge.style.display = 'inline-flex'; bottomNavBadge.textContent = pending.length; }
+    if(pending.length + qOS > 0){ bottomNavBadge.style.display = 'inline-flex'; bottomNavBadge.textContent = pending.length + qOS; }
     else { bottomNavBadge.style.display = 'none'; }
   }
   // "Cadastros" agora mora dentro de "Mais" na navegação inferior — o próprio botão "Mais"
   // ganha um pontinho de aviso quando há pendência, pra não ficar escondida atrás do menu.
   const maisIndicator = document.getElementById('maisIndicatorDot');
   if(maisIndicator){
-    if(pending.length > 0){ maisIndicator.style.display = 'inline-flex'; maisIndicator.textContent = ''; }
+    if(pending.length + qOS > 0){ maisIndicator.style.display = 'inline-flex'; maisIndicator.textContent = ''; }
     else { maisIndicator.style.display = 'none'; }
   }
 
@@ -11069,7 +11225,7 @@ function renderOS(){
   const focoCaret = focoOsId ? focoAtivo.selectionStart : null;
 
   if(pending.length === 0){
-    box.innerHTML = `<p class="os-empty">Nenhuma atividade aguardando cadastro/OS no momento.</p>`;
+    box.innerHTML = qOS ? '' : `<p class="os-empty">Nenhuma atividade aguardando cadastro/OS no momento.</p>`;
   } else if(visiveis.length === 0){
     box.innerHTML = `<p class="os-empty">Nenhuma atividade encontrada com esses filtros.</p>`;
   } else {
@@ -11175,6 +11331,7 @@ function renderOS(){
   if(processedBox){
     const processed = services
       .filter(s => s.processedForOS)
+      .concat(window.QUADROS_API ? QUADROS_API.processadosOS() : [])
       .sort((a,b) => (b.processedForOSAt || '').localeCompare(a.processedForOSAt || ''))
       .slice(0, 10);
     if(processed.length === 0){
@@ -11186,6 +11343,7 @@ function renderOS(){
       }).join('');
     }
   }
+  if(window.QUADROS_API) QUADROS_API.renderOS();   // quadros de comando aguardando OS (seção abaixo das atividades)
 }
 
 // Rastreia qual aba principal está visível agora, pra saber se vale a pena recalcular o Painel
@@ -11212,6 +11370,7 @@ function switchTab(tab){
   document.getElementById('tabPainel').style.display = tab === 'painel' ? '' : 'none';
   document.getElementById('tabOficinaGestor').style.display = tab === 'oficinagestor' ? '' : 'none';
   document.getElementById('tabEstoque').style.display = tab === 'estoque' ? '' : 'none';
+  document.getElementById('tabQuadros').style.display = tab === 'quadros' ? '' : 'none';
   document.getElementById('tabBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('tabBtnTecnicos').classList.toggle('active', tab === 'tecnicos');
   document.getElementById('tabBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
@@ -11230,9 +11389,10 @@ function switchTab(tab){
   document.getElementById('sidebarBtnPainel').classList.toggle('active', tab === 'painel');
   document.getElementById('sidebarBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('sidebarBtnEstoque').classList.toggle('active', tab === 'estoque');
+  document.getElementById('sidebarBtnQuadros').classList.toggle('active', tab === 'quadros');
   // Navegação inferior (mobile): 4 destinos primários + "Mais" (fica ativo quando o destino
   // atual é um dos 3 que moram dentro da folha "Mais": Enviar agenda, Clientes, Acessos).
-  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque';
+  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque' || tab === 'quadros';
   document.getElementById('bottomNavBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('bottomNavBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
   document.getElementById('bottomNavBtnOS').classList.toggle('active', tab === 'os');
@@ -11243,11 +11403,13 @@ function switchTab(tab){
   document.getElementById('bottomNavBtnAcessos').classList.toggle('active', tab === 'acessos');
   document.getElementById('bottomNavBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('bottomNavBtnEstoque').classList.toggle('active', tab === 'estoque');
+  document.getElementById('bottomNavBtnQuadros').classList.toggle('active', tab === 'quadros');
   if(tab === 'clientes') renderClientes();
   if(tab === 'acessos') renderAcessosUsuariosList();
   if(tab === 'painel') renderPainelDeControle();
   if(tab === 'oficinagestor') renderOficinaGestorTab();
   if(tab === 'estoque') openEstoqueGestorTab();
+  if(tab === 'quadros' && window.QUADROS_API) QUADROS_API.abrir();
 }
 document.getElementById('tabBtnAgenda').addEventListener('click', () => switchTab('agenda'));
 document.getElementById('tabBtnTecnicos').addEventListener('click', () => switchTab('tecnicos'));
@@ -11264,6 +11426,7 @@ document.getElementById('sidebarBtnOficinaGestor').addEventListener('click', () 
 document.getElementById('bottomNavBtnOficinaGestor').addEventListener('click', () => { switchTab('oficinagestor'); toggleBottomNavSheet(false); });
 document.getElementById('bottomNavBtnGaleria').addEventListener('click', () => { toggleBottomNavSheet(false); openGaleria('managerView'); });
 document.getElementById('bottomNavBtnEstoque').addEventListener('click', () => { toggleBottomNavSheet(false); switchTab('estoque'); });
+document.getElementById('bottomNavBtnQuadros').addEventListener('click', () => { toggleBottomNavSheet(false); switchTab('quadros'); });
 document.getElementById('sidebarBtnPainel').addEventListener('click', () => switchTab('painel'));
 document.getElementById('sidebarLogoutBtn').addEventListener('click', logout);
 // Navegação inferior (mobile) — mesmos destinos das abas originais, nenhuma lógica nova.
@@ -12725,24 +12888,24 @@ function renderOeRelease(equipId){
   if(!box) return;
   const eq = oficinaEquipamentos.find(x => x.id === equipId);
   if(!eq){ box.innerHTML = ''; return; }
-  if(eq.status === 'liberado_para_reinstalacao'){
-    // Reaproveita EXATAMENTE a função já existente — nenhuma lógica nova de liberação/reinstalação.
+  const svcLig = eq.reinstallationServiceId ? services.find(s => s.id === eq.reinstallationServiceId) : null;
+  const abrirDatas = () => { closeOficinaEquipDetalhe(); abrirAgendarReinstalacaoModal(equipId); };   // o modal de data fica atrás do detalhe: fecha o detalhe antes
+  if((eq.status === 'liberado_para_reinstalacao' || eq.status === 'reinstalacao_pendente') && !svcLig){
+    // Pronto e SEM atividade (ou com vínculo pendurado): o botão pede a data e cria a atividade já agendada.
     box.innerHTML = `<div class="oe-stage">
         <div class="oe-stage-head"><div class="oe-stage-title">✅ Pronto para reinstalação</div></div>
         <button type="button" class="btn-primary" id="oeReleaseBtn">Agendar reinstalação</button>
       </div>`;
-    document.getElementById('oeReleaseBtn').addEventListener('click', async (e) => {
-      await releaseForReinstallation(equipId, e.currentTarget, 'Agendar reinstalação');
-      oeAfterMutation(equipId);
-    });
-  } else if(eq.status === 'reinstalacao_pendente' && eq.reinstallationServiceId){
-    // A atividade já foi criada por releaseForReinstallation() — só oferece abrir a atividade já
-    // existente (reaproveitando openServiceDetails), sem nenhuma lógica nova aqui.
+    document.getElementById('oeReleaseBtn').addEventListener('click', abrirDatas);
+  } else if((eq.status === 'reinstalacao_pendente' || eq.status === 'liberado_para_reinstalacao') && svcLig){
+    const tecL = getServiceTechnicians(svcLig).join(' e ');
     box.innerHTML = `<div class="oe-stage">
-        <div class="oe-stage-head"><div class="oe-stage-title">🔧 Reinstalação agendada</div></div>
-        <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:8px;">Atividade #${eq.reinstallationServiceId} — aguardando data/técnico na Agenda.</div>
+        <div class="oe-stage-head"><div class="oe-stage-title">${svcLig.date ? '🔧 Reinstalação agendada' : '🔧 Atividade criada — falta definir a data'}</div></div>
+        <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:8px;">${svcLig.date ? 'Para <b>' + shortLabel(svcLig.date) + '</b> · ' : ''}${tecL ? 'Técnico: ' + escapeHtml(tecL) : 'ainda sem técnico na Agenda'}</div>
+        <button type="button" class="btn-primary" id="oeReagendarBtn">${svcLig.date ? 'Reagendar reinstalação' : 'Definir data'}</button>
         <button type="button" class="btn-ghost" id="oeAbrirAtividadeBtn">Abrir atividade de reinstalação</button>
       </div>`;
+    document.getElementById('oeReagendarBtn').addEventListener('click', abrirDatas);
     document.getElementById('oeAbrirAtividadeBtn').addEventListener('click', () => {
       if(services.some(s => s.id === eq.reinstallationServiceId)) openServiceDetails(eq.reinstallationServiceId);
     });
@@ -12870,6 +13033,7 @@ function renderOficinaEquipListOnly(){
         ${oficinaBadgeHtml(eq.status)}
       </div>
       <div class="mono" style="font-size:12px; color:var(--text-dim); margin-top:6px;">${fmt(eq.withdrawnAt)}</div>
+      ${window.REINST_API ? REINST_API.linhaAgenda(eq) : ''}
     </div>`).join('') : '<div class="painel-block-empty">Nenhum equipamento aguardando vistoria.</div>';
   el.querySelectorAll('[data-oeopen]').forEach(card => card.addEventListener('click', () => openOficinaEquipDetalhe(Number(card.dataset.oeopen))));
 }
@@ -14899,7 +15063,7 @@ let galeriaReturnViewId = null;
 let galeriaNoGestor = false;
 let galeriaPrecisaRestaurarAba = false; // gestor saiu (logout) de dentro da Galeria: os painéis de aba ficaram escondidos
 const galeriaOrigem = { pai: null, prox: null };
-const PAINEIS_DE_ABA_GESTOR = ['tabAgenda','tabTecnicos','tabManutencoes','tabOS','tabClientes','tabAcessos','tabPainel','tabOficinaGestor','tabEstoque'];
+const PAINEIS_DE_ABA_GESTOR = ['tabAgenda','tabTecnicos','tabManutencoes','tabOS','tabClientes','tabAcessos','tabPainel','tabOficinaGestor','tabEstoque','tabQuadros'];
 function galeriaMoverParaGestor(){
   const g = document.getElementById('galeriaView');
   if(!galeriaOrigem.pai){ galeriaOrigem.pai = g.parentNode; galeriaOrigem.prox = g.nextSibling; }
@@ -16223,8 +16387,10 @@ document.getElementById('estoqueRetiradaConfirmBtn').addEventListener('click', (
 
 // Pontos de entrada
 document.getElementById('estoqueOpenBtnOficina').addEventListener('click', () => openEstoque('oficinaView'));
+document.getElementById('quadrosOpenBtnOficina').addEventListener('click', () => { if(window.QUADROS_API) QUADROS_API.abrirOficina(); });
 document.getElementById('estoqueOpenBtnTech').addEventListener('click', () => openEstoque('techView'));
 document.getElementById('sidebarBtnEstoque').addEventListener('click', () => switchTab('estoque'));
+document.getElementById('sidebarBtnQuadros').addEventListener('click', () => switchTab('quadros'));
 
 
 // =====================================================================================
@@ -16436,6 +16602,8 @@ async function ensureRoleDataLoaded(role){
     ]);
     await garantirImportarEquipNomesExistentes(); // só depois do Promise.all: precisa de oficinaEquipamentos E do catálogo já carregados
     if(window.PREV_API) PREV_API.iniciarGestor(); // relatório preventivo: em segundo plano, não atrasa o login
+    if(window.QUADROS_API) QUADROS_API.iniciar();  // quadros de comando: em segundo plano (alimenta o contador de Cadastros e OS)
+    if(window.REINST_API) REINST_API.agendar();    // confere equipamentos x atividades (reinstalação)
   } else if(role === 'tech'){
     await ensureServicesLoaded();
     // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
@@ -16455,6 +16623,7 @@ async function ensureRoleDataLoaded(role){
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
     await garantirImportarEquipNomesExistentes();
+    if(window.REINST_API) REINST_API.agendar();        // confere equipamentos x atividades (reinstalação)
   }
   // galleryPhotos: nenhum perfil carrega no login — só quando a Galeria é aberta (openGaleria).
   perfMark('role_data_done', { role, listenersOnAfter: countAttachedRealtimeListeners() });
@@ -16726,7 +16895,8 @@ const ABAS_GESTOR = [
   { id: 'oficinagestor', label: 'Oficina',            botoes: ['sidebarBtnOficinaGestor', 'bottomNavBtnOficinaGestor'] },
   { id: 'painel',        label: 'Painel de Controle', botoes: ['tabBtnPainel', 'sidebarBtnPainel', 'bottomNavBtnPainel'] },
   { id: 'galeria',       label: 'Galeria',            botoes: ['sidebarBtnGaleria', 'bottomNavBtnGaleria'] },
-  { id: 'estoque',       label: 'Estoque',            botoes: ['sidebarBtnEstoque', 'bottomNavBtnEstoque'] }
+  { id: 'estoque',       label: 'Estoque',            botoes: ['sidebarBtnEstoque', 'bottomNavBtnEstoque'] },
+  { id: 'quadros',       label: 'Quadros de comando', botoes: ['sidebarBtnQuadros', 'bottomNavBtnQuadros'] }
 ];
 const ABAS_GESTOR_IDS = ABAS_GESTOR.map(a => a.id);
 
@@ -17498,8 +17668,12 @@ function campoNumerico(id, label, unidade, status){ return {id, label, tipo:'num
 function campoTexto(id, label){ return {id, label, tipo:'texto', opcional:true, status:'ok'}; }
 // Medição trifásica: três valores (RS, ST, RT) do mesmo parâmetro, mostrados juntos na tela do técnico e
 // numa linha só no relatório. Cada fase é um campo numérico próprio (chave própria), só o desenho agrupa.
-function camposTri(idBase, rotulo, unidade){
-  return ['RS','ST','RT'].map((f, i) => ({ id: idBase + f, label: rotulo + ' — ' + f, tipo:'numerico', unidade, status:'ok', tri:{ grupo: rotulo, fase: f, pos: i } }));
+// Regra de equilíbrio entre as três fases (30/09): na corrente da sauna as três fases devem ser próximas
+// (ex.: 29, 30 e 31 A está ok). Se a diferença entre quaisquer duas passar de 4 A, indica problema no relatório.
+const EQUILIBRIO_CORRENTE_SAUNA = { grupo:'corrente', limite:4, rotulo:'Equilíbrio das correntes' };
+function comEquilibrio(campo, eq){ return Object.assign(campo, { equilibrio: eq }); }
+function camposTri(idBase, rotulo, unidade, equilibrio){
+  return ['RS','ST','RT'].map((f, i) => Object.assign({ id: idBase + f, label: rotulo + ' — ' + f, tipo:'numerico', unidade, status:'ok', tri:{ grupo: rotulo, fase: f, pos: i } }, equilibrio ? { equilibrio } : {}));
 }
 // Bomba/poço do Sítio Santo Antônio: isolamento + resistência + corrente, nas três fases.
 // Na tabela original a resistência aparece como "(W)" — é a resistência do enrolamento, em ohms (Ω).
@@ -17712,9 +17886,9 @@ const CATALOGO = [
       { nome:'Sauna', campos:[
           campoFaixa('isolamento', 'Isolamento das resistências'),
           campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU),
-          campoNumerico('correnteR', 'Corrente — fase R', 'A'),
-          campoNumerico('correnteS', 'Corrente — fase S', 'A'),
-          campoNumerico('correnteT', 'Corrente — fase T', 'A'),
+          comEquilibrio(campoNumerico('correnteR', 'Corrente — fase R', 'A'), EQUILIBRIO_CORRENTE_SAUNA),
+          comEquilibrio(campoNumerico('correnteS', 'Corrente — fase S', 'A'), EQUILIBRIO_CORRENTE_SAUNA),
+          comEquilibrio(campoNumerico('correnteT', 'Corrente — fase T', 'A'), EQUILIBRIO_CORRENTE_SAUNA),
       ]},
   ]},
   // ====== Exclusivos do Sítio Santo Antônio (tabela de medições do cliente, 30/09) ======
@@ -17752,7 +17926,7 @@ const CATALOGO = [
       { nome:'Mastertemp', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('acionamento', 'Acionamento', FUNC_FALHOU), campoCategoria('vazamento', 'Vazando', VAZAMENTO) ]},
   ]},
   { tipo:'sitio_sauna', nome:'Sauna Vapor (Sítio Santo Antônio)', exclusivoDe:['Santo Antonio'], itens:[
-      { nome:'Sauna Vapor', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('vazamento', 'Vazando', VAZAMENTO), ...camposTri('cor', 'Corrente (A)', 'A') ]},
+      { nome:'Sauna Vapor', campos:[ campoFaixa('isolamento', 'Isolamento'), campoCategoria('vazamento', 'Vazando', VAZAMENTO), ...camposTri('cor', 'Corrente (A)', 'A', EQUILIBRIO_CORRENTE_SAUNA) ]},
   ]},
 ];
 function tipoPorId(id){ return CATALOGO.find(t=>t.tipo===id); }
@@ -17848,6 +18022,28 @@ function agruparPorItem(estrutura){
 }
 
 // Congela uma unidade como estava na visita: nomes, valores e cores já resolvidos.
+// Verificação de equilíbrio entre as três fases: se a maior diferença entre quaisquer duas passar do limite,
+// o relatório ganha uma linha vermelha ("Desequilibrada: 7 A de diferença"); se ficar dentro, uma linha verde.
+// Só avalia com as três fases preenchidas e com números válidos. A linha vai gravada no registro fixo do relatório.
+function linhasEquilibrio(entries, respostas){
+  const grupos = {};
+  entries.forEach(({ key, campo }) => {
+    if(!campo.equilibrio) return;
+    const q = campo.equilibrio; const g = grupos[q.grupo] = grupos[q.grupo] || { q, unidade: campo.unidade, valores: [] };
+    g.valores.push(respostas[key]);
+  });
+  const out = [];
+  Object.keys(grupos).forEach(k => {
+    const { q, unidade, valores } = grupos[k];
+    if(valores.length !== 3) return;
+    const nums = valores.map(v => (v === undefined || v === null || v === '') ? NaN : Number(v));
+    if(nums.some(n => !isFinite(n))) return;
+    const dif = Math.round((Math.max(...nums) - Math.min(...nums)) * 100) / 100;
+    const problema = dif > q.limite;
+    out.push({ campo: q.rotulo + ' (máx. ' + q.limite + ' ' + unidade + ')', texto: (problema ? 'Desequilibrada: ' : 'Equilibrada: ') + dif + ' ' + unidade + ' de diferença', cor: problema ? 'red' : 'green' });
+  });
+  return out;
+}
 function montarSnapshotUnidade(unit, respostas){
   const tipo = tipoPorId(unit.tipo);
   const grupos = agruparPorItem(estruturaDaUnidade(unit)).map(g => ({
@@ -17862,7 +18058,7 @@ function montarSnapshotUnidade(unit, respostas){
       if(campo.tipo === 'numerico') return Object.assign({ campo: campo.label, texto: v + ' ' + campo.unidade, cor: null }, tri);
       const o = campo.opcoes.find(o => o.v === v);
       return { campo: campo.label, texto: o ? o.label : String(v), cor: o ? o.cor : null };
-    }).filter(Boolean),
+    }).filter(Boolean).concat(linhasEquilibrio(g.campos, respostas)),
   }));
   return { unitId: unit.id, local: unit.local, tipoNome: tipo.nome, grupos };
 }
@@ -17973,6 +18169,7 @@ const estado = {
   abertoSec: new Set(), abertoUnid: new Set(),
   cfgCliente: '', cfgEditando: null, histFiltro: '',
   cfgForm: { tipo: '', local: '', comp: {} },
+  editandoDica: '', dicaRascunho: {},   // edição da dica de localização (chave = atividade:unidade)
 };
 
 // ---------------- Cache de leitura (estado CONFIRMADO pelo servidor; nunca com pendências) ----------------
@@ -18066,7 +18263,14 @@ function normalizarUnidade(u){
   // no banco (o Firebase também descarta listas vazias). Nos tipos que começam com 1 de cada, isso vale como o
   // padrão (1 de cada) — e não como "nenhum subitem", que esconderia o equipamento do técnico.
   if(!comps.length && tipoTemComponentesConfiguraveis(u.tipo) && REGRAS_COMPONENTES[u.tipo].inicio >= 1) comps = componentesDoEstado(estadoInicialDoTipo(u.tipo));
-  return { id: u.id, cliente: u.cliente || '', tipo: u.tipo, local: u.local || '', componentes: comps };
+  const out = { id: u.id, cliente: u.cliente || '', tipo: u.tipo, local: u.local || '', componentes: comps };
+  // Dica de onde encontrar o equipamento: escrita pelos próprios técnicos e guardada na unidade para o próximo a visitar.
+  if(typeof u.dicaLocal === 'string' && u.dicaLocal.trim()){
+    out.dicaLocal = u.dicaLocal;
+    if(typeof u.dicaLocalPor === 'string') out.dicaLocalPor = u.dicaLocalPor;
+    if(typeof u.dicaLocalEm === 'string') out.dicaLocalEm = u.dicaLocalEm;
+  }
+  return out;
 }
 function aplicarUnidadesBrutas(raw){
   const lista = Object.keys(raw || {}).map(k => raw[k]).filter(u => u && u.id != null && tipoPorId(u.tipo)).map(normalizarUnidade);
@@ -18225,6 +18429,42 @@ function htmlCampo(unitId, key, campo, valor, travado){
   return `<div class="prv-field"><div class="prv-flabel">${esc(campo.label)}</div><div class="prv-opts">${campo.opcoes.map(o =>
     `<button type="button" class="prv-opt ${valor === o.v ? 'sel-' + o.cor : ''}" data-prv-u="${esc(unitId)}" data-prv-k="${esc(key)}" data-prv-v="${esc(o.v)}" ${travado ? 'disabled' : ''}>${esc(o.label)}</button>`).join('')}</div></div>`;
 }
+// Nota de localização do equipamento. Sem edição ainda, mostra a frase padrão. Qualquer técnico pode tocar e
+// descrever onde encontrar o equipamento; o texto fica salvo NA UNIDADE e o próximo técnico já o vê.
+const LIMITE_DICA = 300;
+function htmlDicaLocal(sid, u){
+  const chave = sid + ':' + u.id;
+  if(estado.editandoDica === chave){
+    const valor = estado.dicaRascunho[chave] !== undefined ? estado.dicaRascunho[chave] : (u.dicaLocal || '');
+    return `<div class="prv-dica editando">
+      <div class="prv-flabel">Onde encontrar este equipamento</div>
+      <textarea class="prv-dica-txt" rows="3" maxlength="${LIMITE_DICA}" data-prv-u="${esc(u.id)}" placeholder="Ex.: Casa de máquinas, atrás da garagem, porta da direita. A chave fica com o caseiro.">${esc(valor)}</textarea>
+      <div class="prv-dica-linha">
+        <button type="button" class="btn-ghost" data-prv-act="dica-cancelar" data-prv-u="${esc(u.id)}">Cancelar</button>
+        <button type="button" class="btn-primary" data-prv-act="dica-salvar" data-prv-u="${esc(u.id)}">Salvar</button>
+      </div>
+      <div class="prv-dica-aviso">Esta descrição fica salva e aparece para os próximos técnicos que visitarem este equipamento.</div>
+    </div>`;
+  }
+  const texto = u.dicaLocal ? '📍 ' + esc(u.dicaLocal) : '📍 ' + esc(u.local) + ' — identificação da unidade, só para localizar o equipamento.';
+  const autor = (u.dicaLocal && u.dicaLocalPor) ? `<div class="prv-dica-autor">Atualizado por ${esc(u.dicaLocalPor)}${u.dicaLocalEm && fmtDataHora(u.dicaLocalEm) ? ' em ' + esc(fmtDataHora(u.dicaLocalEm)) : ''}</div>` : '';
+  return `<div class="prv-local prv-dica" role="button" tabindex="0" data-prv-act="dica-editar" data-prv-u="${esc(u.id)}">
+    <div class="prv-dica-texto">${texto}</div>${autor}
+    <span class="prv-dica-edit">✎ ${u.dicaLocal ? 'Editar' : 'Toque para descrever onde encontrar este equipamento'}</span></div>`;
+}
+function salvarDica(unitId, texto){
+  const u = estado.unidades.find(x => String(x.id) === String(unitId)); if(!u) return;
+  texto = String(texto || '').trim().slice(0, LIMITE_DICA);
+  const por = (typeof currentActingName === 'function' && currentActingName()) || '';
+  const agora = new Date().toISOString();
+  if(texto){ u.dicaLocal = texto; if(por) u.dicaLocalPor = por; else delete u.dicaLocalPor; u.dicaLocalEm = agora; }
+  else { delete u.dicaLocal; delete u.dicaLocalPor; delete u.dicaLocalEm; }
+  estado.unidadesJSON = JSON.stringify(estado.unidades);
+  const base = NOS.unidades + '/' + u.id + '/';
+  escrever(base + 'dicaLocal', texto || null);
+  escrever(base + 'dicaLocalPor', texto && por ? por : null);
+  escrever(base + 'dicaLocalEm', texto ? agora : null);
+}
 function htmlUnidade(sid, u, r, travado){
   const tipo = tipoPorId(u.tipo);
   const done = unidadeCompleta(u, r);
@@ -18238,11 +18478,11 @@ function htmlUnidade(sid, u, r, travado){
     } else {
       corpo = agruparPorItem(est).map(g => `<div class="prv-grupo"><div class="prv-grupo-t">${esc(g.itemLabel)}</div>${htmlCamposDoGrupo(u.id, g.campos, resp, travado)}</div>`).join('');
     }
-    corpo = `<div class="prv-unit-corpo">${corpo}<div class="prv-local">📍 ${esc(u.local)} — identificação da unidade, só para localizar o equipamento.</div></div>`;
+    corpo = `<div class="prv-unit-corpo">${corpo}${htmlDicaLocal(sid, u)}</div>`;
   }
   return `<div class="prv-unit ${done ? 'done' : ''}">
     <button type="button" class="prv-unit-head" data-prv-act="toggle-unit" data-prv-u="${esc(u.id)}">
-      <span><b>${esc(u.local)}</b><small>${esc(tipo.nome)}</small></span>
+      <span class="prv-unit-nomes"><span class="prv-unit-tipo">${esc(tipo.nome)}</span><b class="prv-unit-local">${esc(u.local)}</b></span>
       <span class="prv-chip ${done ? 'green' : 'gray'}" data-prv-chipu="${esc(u.id)}">${done ? '✓ preenchida' : 'pendente'}</span>
     </button>${corpo}</div>`;
 }
@@ -18357,6 +18597,21 @@ function ligarSlot(slot){
     }
     const b = e.target.closest('[data-prv-act],[data-prv-v]');
     if(!b) return;
+    if(b.dataset.prvAct === 'dica-editar'){
+      estado.editandoDica = sid + ':' + b.dataset.prvU; remontarSlots(sid);
+      const ta = slot.querySelector('.prv-dica-txt'); if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+      return;
+    }
+    if(b.dataset.prvAct === 'dica-cancelar'){
+      delete estado.dicaRascunho[sid + ':' + b.dataset.prvU]; estado.editandoDica = ''; remontarSlots(sid); return;
+    }
+    if(b.dataset.prvAct === 'dica-salvar'){
+      const k = sid + ':' + b.dataset.prvU; const ta = slot.querySelector('.prv-dica-txt');
+      salvarDica(b.dataset.prvU, ta ? ta.value : (estado.dicaRascunho[k] || ''));
+      delete estado.dicaRascunho[k]; estado.editandoDica = ''; remontarSlots(sid);
+      aviso('Descrição salva — os próximos técnicos já vão vê-la.');
+      return;
+    }
     if(b.dataset.prvAct === 'toggle-sec'){
       if(estado.abertoSec.has(sid)) estado.abertoSec.delete(sid); else estado.abertoSec.add(sid);
       remontarSlots(sid); return;
@@ -18374,8 +18629,10 @@ function ligarSlot(slot){
     }
   });
   slot.addEventListener('input', (e) => {
-    const svc = svcDe(); if(!svc || svc.status === 'concluido') return;
+    const svc = svcDe(); if(!svc) return;
     const sid = svc.id; const t = e.target;
+    if(t.classList.contains('prv-dica-txt')){ estado.dicaRascunho[sid + ':' + t.dataset.prvU] = t.value; return; }   // a dica pode ser editada mesmo com a atividade concluída
+    if(svc.status === 'concluido') return;
     if(t.classList.contains('prv-txt')){
       const u = t.dataset.prvU, k = t.dataset.prvK, v = t.value;
       const r = estado.rascunhos[sid]; if(!r) return;
@@ -18398,6 +18655,7 @@ function ligarSlot(slot){
     }
   });
   slot.addEventListener('focusout', () => descarregarTimers());
+  slot.addEventListener('keydown', (e) => { const el = e.target.closest('[data-prv-act="dica-editar"]'); if(el && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); el.click(); } });
   slot.addEventListener('change', async (e) => {
     const inp = e.target.closest('[data-prv-addfoto]'); if(!inp) return;
     const svc = svcDe(); if(!svc || svc.status === 'concluido') return;
@@ -18808,7 +19066,8 @@ function renderConfig(){
     ${!clientes.length ? '<div class="empty-state">Nenhum contrato de manutenção cadastrado ainda.</div>' : ''}
     <div id="prvCfgLista">${units.length ? units.map(u => { const rs = resumoComp(u); const edit = estado.cfgEditando && estado.cfgEditando.id === u.id;
       return `<div class="prv-unit-row"><div class="prv-unit-row-top"><div><div class="prv-unit-tipo">${esc(tipoPorId(u.tipo).nome)}</div><div class="prv-unit-local">${esc(u.local)}</div>
-        ${rs ? `<div class="prv-comp-res ${rs.vazio ? 'vazio' : ''}">${rs.vazio ? '⚠ ' : ''}${esc(rs.texto)}</div>` : ''}</div>
+        ${rs ? `<div class="prv-comp-res ${rs.vazio ? 'vazio' : ''}">${rs.vazio ? '⚠ ' : ''}${esc(rs.texto)}</div>` : ''}
+        ${u.dicaLocal ? `<div class="prv-comp-res">📍 ${esc(u.dicaLocal)}${u.dicaLocalPor ? ' — ' + esc(u.dicaLocalPor) : ''}</div>` : ''}</div>
         <div class="prv-linha" style="margin:0;">${tipoTemComponentesConfiguraveis(u.tipo) ? `<button type="button" class="btn-ghost" data-prv-g="editar" data-id="${esc(u.id)}">Editar subitens</button>` : ''}
         <button type="button" class="btn-ghost" style="color:var(--red);" data-prv-g="remover" data-id="${esc(u.id)}">Remover</button></div></div>
         ${edit ? `<div class="prv-painel"><div class="prv-painel-t">Subitens de "${esc(u.local)}"</div>${htmlSteppers(u.tipo, estado.cfgEditando.comp, 'edit')}
@@ -18973,6 +19232,50 @@ function abrirImportacao(){
 }
 
 
+// ====================================================================================
+// QUADROS DE RESUMO (30/09) — mesma aparência nova em Manutenções e na aba Oficina do Gestor.
+// kpiCards(itens): cada item = { tom, icone, numero, rotulo, sub? }. Tudo que vira texto passa por esc().
+// ====================================================================================
+function svgIcone(corpo){ return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + corpo + '</svg>'; }
+const ICONES_KPI = {
+  total:  svgIcone('<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><line x1="12" y1="11" x2="16" y2="11"/><line x1="12" y1="16" x2="16" y2="16"/><line x1="8" y1="11" x2="8.01" y2="11"/><line x1="8" y1="16" x2="8.01" y2="16"/>'),
+  ok:     svgIcone('<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>'),
+  relogio:svgIcone('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
+  alerta: svgIcone('<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'),
+  busca:  svgIcone('<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
+  chave:  svgIcone('<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>'),
+  caixa:  svgIcone('<path d="M16.5 9.4 7.5 4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96 12 12.01l8.73-5.05"/><path d="M12 22.08V12"/>'),
+};
+const TONS_KPI = { red:'vermelho', yellow:'amarelo', green:'verde', blue:'azul', gray:'neutro', vermelho:'vermelho', amarelo:'amarelo', verde:'verde', azul:'azul', neutro:'neutro' };
+function kpiCards(itens){
+  return itens.map(i => {
+    const n = num(i.numero);
+    return `<div class="prv-kpi tom-${TONS_KPI[i.tom] || 'neutro'}${n === 0 ? ' zero' : ''}">
+      <div class="prv-kpi-icone">${ICONES_KPI[i.icone] || ''}</div>
+      <div class="prv-kpi-texto"><div class="prv-kpi-num">${n}</div><div class="prv-kpi-rotulo">${esc(i.rotulo)}</div>${i.sub ? `<div class="prv-kpi-sub">${esc(i.sub)}</div>` : ''}</div>
+    </div>`;
+  }).join('');
+}
+// Quadro de Manutenções: usa as MESMAS linhas já classificadas por renderManutencoes (em dia / vencendo em até
+// 15 dias / atrasada), então os números sempre batem com as listas logo abaixo.
+function resumoManutencoes(rows){
+  const box = document.getElementById('maintResumoCards'); if(!box) return;
+  const c = { ok:0, soon:0, overdue:0, soonAg:0, overdueAg:0 };
+  rows.forEach(r => {
+    if(r.statusClass === 'ok') c.ok++;
+    else if(r.statusClass === 'soon'){ c.soon++; if(r.scheduledFor) c.soonAg++; }
+    else if(r.statusClass === 'overdue'){ c.overdue++; if(r.scheduledFor) c.overdueAg++; }
+  });
+  const ag = n => n ? ' · ' + n + (n === 1 ? ' já agendado' : ' já agendados') : '';
+  box.innerHTML = kpiCards([
+    { tom:'neutro',   icone:'total',   numero: rows.length, rotulo:'Total de contratos',  sub:'de manutenção cadastrados' },
+    { tom:'verde',    icone:'ok',      numero: c.ok,        rotulo:'Contratos em dia',    sub:'vencem em mais de 15 dias' },
+    { tom:'amarelo',  icone:'relogio', numero: c.soon,      rotulo:'Próximos de vencer',  sub:'vencem em até 15 dias' + ag(c.soonAg) },
+    { tom:'vermelho', icone:'alerta',  numero: c.overdue,   rotulo:'Atrasados',           sub:'passaram da data' + ag(c.overdueAg) },
+  ]);
+}
+
+
 // ---------------- Inicialização e API mínima que o restante do app chama ----------------
 (function(){ const st = document.createElement('style'); st.id = 'prvCssRelatorio'; st.textContent = CSS_RELATORIO; document.head.appendChild(st); })();
 ligarAbas();
@@ -18982,7 +19285,484 @@ window.PREV_API = {
   carregarUnidades,
   iniciarGestor,
   flush,
+  kpiCards,
+  resumoManutencoes,
 };
+})();
+
+
+// =====================================================================================
+// QUADROS DE COMANDO — lista dos quadros a montar (Gestor e Oficina) + lista dos tipos de quadro (Gestor).
+// Módulo isolado (IIFE). Dois nós NOVOS no Firebase, pelo armazenamento genérico que o app já usa (diff por
+// campo, nova tentativa, tempo real) e com a convenção de "remover" do resto do app (active:false, nada é apagado):
+//   quadrosTipos/<id>   { id, nome, active, criadoEm, criadoPor }
+//   quadrosComando/<id> { id, cliente, tipoId, tipoNome, status, criadoEm, criadoPor, active,
+//                         iniciouMontagemEm/Por, montadoEm/Por, iniciouTesteEm/Por, testadoEm/Por }
+// Fluxo do quadro (status): a_montar → montando → montado → testando → testado
+//   (iniciar montagem · concluir montagem · iniciar testes · finalizar testes)
+// A Oficina executa as quatro etapas; o Gestor também pode, e é o único que volta uma etapa ou remove.
+// =====================================================================================
+(function(){
+'use strict';
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDataHora(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle:'short', timeStyle:'short' }); }catch(e){ return ''; } }
+function semAcento(t){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' '); }
+function aviso(msg){ try{ avisoNaoBloqueante(msg, 5000); }catch(e){ console.warn(msg); } }
+
+const tiposStore   = createEstoqueStore('quadrosTipos',   '⚠️ Não foi possível salvar o tipo de quadro. Verifique sua internet e tente novamente.');
+const quadrosStore = createEstoqueStore('quadrosComando', '⚠️ Não foi possível salvar o quadro. Verifique sua internet e tente novamente.');
+
+// ---------------- Etapas ----------------
+const ETAPAS = [
+  { id:'a_montar', titulo:'A montar',          chip:'Aguardando montagem', tom:'cinza',
+    proxima:{ rotulo:'Iniciar montagem',   para:'montando', em:'iniciouMontagemEm', por:'iniciouMontagemPor', confirma:'Iniciar a montagem deste quadro?' } },
+  { id:'montando', titulo:'Em montagem',       chip:'Montando',            tom:'amarelo',
+    proxima:{ rotulo:'Concluir montagem',  para:'montado',  em:'montadoEm',         por:'montadoPor',         confirma:'Concluir a montagem deste quadro?' },
+    voltar:{ para:'a_montar', limpa:['iniciouMontagemEm','iniciouMontagemPor'] } },
+  { id:'montado',  titulo:'Aguardando testes', chip:'Montado · aguardando testes', tom:'azul',
+    proxima:{ rotulo:'Iniciar testes',     para:'testando', em:'iniciouTesteEm',    por:'iniciouTestePor',    confirma:'Iniciar os testes deste quadro?' },
+    voltar:{ para:'montando', limpa:['montadoEm','montadoPor'] } },
+  { id:'testando', titulo:'Em testes',         chip:'Testando',            tom:'amarelo',
+    proxima:{ rotulo:'Finalizar testes',   para:'testado',  em:'testadoEm',         por:'testadoPor',         confirma:'Finalizar os testes deste quadro?' },
+    voltar:{ para:'montado', limpa:['iniciouTesteEm','iniciouTestePor'] } },
+  { id:'testado',  titulo:'Concluídos',        chip:'Montado e testado',   tom:'verde',
+    proxima:null,
+    voltar:{ para:'testando', limpa:['testadoEm','testadoPor'] } },
+];
+function etapaDe(q){ return ETAPAS.find(e => e.id === q.status) || ETAPAS[0]; }
+
+let carregado = false, carregando = null, subAba = 'quadros', ultimoId = 0, concluidosAberto = false;
+function novoId(){ ultimoId = Math.max(ultimoId + 1, Date.now()); return ultimoId; }
+function quem(){ return (typeof currentActingName === 'function' && currentActingName()) || ''; }
+function porId(store, id){ return store.items.find(x => String(x.id) === String(id)); }
+
+function tiposAtivos(){ return tiposStore.items.filter(t => t && t.active !== false && t.nome).slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')); }
+function quadrosAtivos(){ return quadrosStore.items.filter(q => q && q.active !== false && q.cliente); }
+function nomeDoTipo(q){ const t = tiposStore.items.find(x => String(x.id) === String(q.tipoId)); return (t && t.nome) || q.tipoNome || '—'; }
+
+async function garantirCarregado(){
+  if(carregado) return;
+  if(!carregando) carregando = Promise.all([tiposStore.load(), quadrosStore.load()]).then(() => {
+    tiposStore.attach(() => renderListas()); quadrosStore.attach(() => renderListas());
+    carregado = true;
+  });
+  await carregando;
+}
+
+// ---------------- Cartões e seções (os mesmos nas duas telas; muda só o que cada perfil pode fazer) ----------------
+function cartaoQuadro(q, modo){
+  const et = etapaDe(q);
+  const hist = [
+    ['Cadastrado', q.criadoEm, q.criadoPor], ['Montagem iniciada', q.iniciouMontagemEm, q.iniciouMontagemPor], ['Montagem concluída', q.montadoEm, q.montadoPor],
+    ['Testes iniciados', q.iniciouTesteEm, q.iniciouTestePor], ['Testes finalizados', q.testadoEm, q.testadoPor],
+    q.processedForOS ? ['OS nº ' + (q.numeroOS || '—') + ' registrada', q.processedForOSAt, q.processedForOSBy] : [],
+  ].filter(h => h.length).filter(h => h[1]).map(h => `<div>${h[0]}: ${esc(fmtDataHora(h[1]))}${h[2] ? ' · ' + esc(h[2]) : ''}</div>`).join('');
+  return `<div class="qd-card tom-${et.tom}">
+    <div class="qd-card-main">
+      <div class="qd-cli">${esc(q.cliente)}</div>
+      <div class="qd-linha"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span></div>
+      <div class="qd-hist">${hist}</div>
+    </div>
+    <div class="qd-acoes">
+      ${et.proxima ? `<button type="button" class="btn-primary qd-acao" data-qd="avancar" data-id="${esc(q.id)}">${esc(et.proxima.rotulo)}</button>` : ''}
+      ${modo === 'gestor' && et.voltar && !q.processedForOS ? `<button type="button" class="btn-ghost" data-qd="voltar" data-id="${esc(q.id)}">↩ Voltar etapa</button>` : ''}
+      ${modo === 'gestor' ? `<button type="button" class="btn-ghost qd-remover" data-qd="remover-quadro" data-id="${esc(q.id)}">Remover</button>` : ''}
+    </div>
+  </div>`;
+}
+function htmlSecoes(modo){
+  const todos = quadrosAtivos();
+  let html = '';
+  ETAPAS.forEach(et => {
+    const lista = todos.filter(q => etapaDe(q).id === et.id);
+    if(et.id === 'testado'){
+      lista.sort((a, b) => String(b.testadoEm || '').localeCompare(String(a.testadoEm || '')));
+      if(lista.length) html += `<details class="qd-montados" data-qd-det ${concluidosAberto ? 'open' : ''}><summary>Concluídos (${lista.length})</summary>${lista.map(q => cartaoQuadro(q, modo)).join('')}</details>`;
+      return;
+    }
+    if(!lista.length && et.id !== 'a_montar') return;          // etapas vazias não aparecem
+    lista.sort((a, b) => String(a.criadoEm || '').localeCompare(String(b.criadoEm || '')));   // fila: o mais antigo primeiro
+    html += `<div class="qd-secao">${esc(et.titulo)} (${lista.length})</div>` +
+      (lista.length ? lista.map(q => cartaoQuadro(q, modo)).join('') : '<div class="empty-state">Nenhum quadro para montar no momento.</div>');
+  });
+  return html;
+}
+function renderListas(){
+  document.querySelectorAll('.qd-secoes').forEach(el => { el.innerHTML = htmlSecoes(el.dataset.qdSecoes); });
+  refrescarOS();
+  const box = document.getElementById('tabQuadros'); if(!box || !box._qdMontado) return;
+  // ---- só o Gestor: formulário e lista de tipos ----
+  document.getElementById('qdClientesList').innerHTML = (typeof clients !== 'undefined' ? clients : []).map(c => `<option value="${esc(c.name)}"></option>`).join('');
+  const sel = document.getElementById('qdTipo'); const atual = sel.value; const tipos = tiposAtivos();
+  sel.innerHTML = tipos.length ? '<option value="">Selecionar tipo...</option>' + tipos.map(t => `<option value="${esc(t.id)}">${esc(t.nome)}</option>`).join('') : '<option value="">Nenhum tipo cadastrado</option>';
+  sel.disabled = !tipos.length; if(tipos.some(t => String(t.id) === atual)) sel.value = atual;
+  document.getElementById('qdSemTipos').style.display = tipos.length ? 'none' : '';
+  const todos = quadrosAtivos();
+  document.getElementById('qdTituloTipos').textContent = 'Tipos cadastrados (' + tipos.length + ')';
+  document.getElementById('qdListaTipos').innerHTML = tipos.length ? tipos.map(t => {
+    const emUso = todos.filter(q => String(q.tipoId) === String(t.id)).length;
+    return `<div class="qd-card"><div class="qd-card-main"><div class="qd-cli">${esc(t.nome)}</div>
+      <div class="qd-meta">${emUso ? emUso + (emUso === 1 ? ' quadro' : ' quadros') + ' com este tipo' : 'ainda sem quadros'}</div></div>
+      <div class="qd-acoes"><button type="button" class="btn-ghost qd-remover" data-qd="remover-tipo" data-id="${esc(t.id)}">Remover</button></div></div>`;
+  }).join('') : '<div class="empty-state">Nenhum tipo de quadro cadastrado ainda. Adicione o primeiro acima.</div>';
+}
+
+// ---------------- Ações ----------------
+function avancar(id){
+  const q = porId(quadrosStore, id); if(!q) return;
+  const et = etapaDe(q); if(!et.proxima) return;
+  customConfirm(et.proxima.confirma + ' ' + q.cliente + ' — ' + nomeDoTipo(q), async () => {
+    const atual = porId(quadrosStore, id);
+    // Outra pessoa pode ter mexido neste quadro entre abrir a lista e confirmar: só avança se ele ainda estiver na mesma etapa.
+    if(!atual || etapaDe(atual).id !== et.id){ aviso('Este quadro acabou de ser atualizado por outra pessoa. A lista foi atualizada.'); renderListas(); return; }
+    atual.status = et.proxima.para; atual[et.proxima.em] = new Date().toISOString(); atual[et.proxima.por] = quem();
+    renderListas(); await quadrosStore.save();
+  }, et.proxima.rotulo);
+}
+function voltar(id){
+  const q = porId(quadrosStore, id); if(!q) return;
+  if(q.processedForOS){ aviso('Este quadro já teve a OS registrada em Cadastros e OS, então não dá para voltar etapa.'); return; }
+  const et = etapaDe(q); if(!et.voltar) return;
+  const destino = ETAPAS.find(e => e.id === et.voltar.para);
+  customConfirm('Voltar "' + q.cliente + ' — ' + nomeDoTipo(q) + '" uma etapa, para "' + destino.titulo + '"? O registro de data e responsável desta etapa será apagado.', async () => {
+    const atual = porId(quadrosStore, id);
+    if(!atual || etapaDe(atual).id !== et.id){ aviso('Este quadro acabou de ser atualizado por outra pessoa. A lista foi atualizada.'); renderListas(); return; }
+    atual.status = et.voltar.para; et.voltar.limpa.forEach(c => { atual[c] = null; });
+    renderListas(); await quadrosStore.save();
+  }, 'Voltar etapa');
+}
+async function adicionarQuadro(){
+  if(!carregado){ aviso('Aguarde a lista terminar de carregar.'); return; }
+  const erro = document.getElementById('qdErro'); erro.textContent = '';
+  const cliente = document.getElementById('qdCliente').value.trim();
+  const tipoId = document.getElementById('qdTipo').value;
+  if(!cliente){ erro.textContent = 'Informe o cliente.'; return; }
+  const tipo = tiposStore.items.find(t => String(t.id) === tipoId && t.active !== false);
+  if(!tipo){ erro.textContent = 'Escolha o tipo de quadro.'; return; }
+  quadrosStore.items.push({ id: novoId(), cliente, tipoId: tipo.id, tipoNome: tipo.nome, status: 'a_montar', criadoEm: new Date().toISOString(), criadoPor: quem(), active: true });
+  document.getElementById('qdCliente').value = '';
+  renderListas();
+  await quadrosStore.save();
+}
+async function adicionarTipo(){
+  if(!carregado){ aviso('Aguarde a lista terminar de carregar.'); return; }
+  const erro = document.getElementById('qdErroTipo'); erro.textContent = '';
+  const nome = document.getElementById('qdNovoTipo').value.trim().replace(/\s+/g, ' ');
+  if(nome.length < 2){ erro.textContent = 'Informe o nome do tipo de quadro.'; return; }
+  if(tiposAtivos().some(t => semAcento(t.nome) === semAcento(nome))){ erro.textContent = 'Esse tipo já está na lista.'; return; }
+  tiposStore.items.push({ id: novoId(), nome, active: true, criadoEm: new Date().toISOString(), criadoPor: quem() });
+  document.getElementById('qdNovoTipo').value = '';
+  renderListas();
+  await tiposStore.save();
+}
+function aoClicar(e){
+  const t = e.target.closest('[data-qd-tab]'); if(t){ trocarSubAba(t.dataset.qdTab); return; }
+  const b = e.target.closest('[data-qd]'); if(!b) return;
+  const a = b.dataset.qd; const id = b.dataset.id;
+  if(a === 'add') return adicionarQuadro();
+  if(a === 'add-tipo') return adicionarTipo();
+  if(a === 'avancar') return avancar(id);
+  if(a === 'voltar') return voltar(id);
+  if(a === 'remover-quadro'){
+    const q = porId(quadrosStore, id); if(!q) return;
+    customConfirm('Remover o quadro de "' + q.cliente + '" (' + nomeDoTipo(q) + ') da lista?', async () => { q.active = false; renderListas(); await quadrosStore.save(); }, 'Remover');
+    return;
+  }
+  if(a === 'remover-tipo'){
+    const tp = porId(tiposStore, id); if(!tp) return;
+    const emUso = quadrosAtivos().filter(q => String(q.tipoId) === String(tp.id)).length;
+    const extra = emUso ? ' Os ' + emUso + ' quadro(s) que já usam este tipo continuam na lista com o nome dele.' : '';
+    customConfirm('Remover o tipo "' + tp.nome + '" da Lista de quadros?' + extra, async () => { tp.active = false; renderListas(); await tiposStore.save(); }, 'Remover');
+  }
+}
+function aoAlternarDetalhes(e){ if(e.target && e.target.matches && e.target.matches('details[data-qd-det]')) concluidosAberto = e.target.open; }
+
+// ---------------- Tela do Gestor (aba "Quadros de comando": duas sub-abas) ----------------
+function trocarSubAba(qual){
+  subAba = qual;
+  document.querySelectorAll('#tabQuadros .portal-tab[data-qd-tab]').forEach(b => b.classList.toggle('active', b.dataset.qdTab === qual));
+  document.getElementById('qdPaneQuadros').style.display = qual === 'quadros' ? '' : 'none';
+  document.getElementById('qdPaneLista').style.display = qual === 'lista' ? '' : 'none';
+}
+function montarEsqueletoGestor(box){
+  box.innerHTML = `
+    <div class="tecnicos-head"><div><div class="tecnicos-title">Quadros de comando</div></div></div>
+    <div class="portal-tabs estoque-subnav-v2" style="padding:0 0 14px;">
+      <button type="button" class="portal-tab active" data-qd-tab="quadros">Quadros de comando</button>
+      <button type="button" class="portal-tab" data-qd-tab="lista">Lista de quadros</button>
+    </div>
+    <div id="qdPaneQuadros">
+      <div class="qd-form">
+        <div class="field qd-f-cli"><label for="qdCliente">Cliente</label>
+          <input type="text" id="qdCliente" list="qdClientesList" placeholder="Nome do cliente" autocomplete="off" maxlength="120"><datalist id="qdClientesList"></datalist></div>
+        <div class="field qd-f-tipo"><label for="qdTipo">Tipo de quadro</label><select id="qdTipo"></select></div>
+        <button type="button" class="btn-primary qd-btn-add" data-qd="add">+ Adicionar</button>
+      </div>
+      <div class="qd-semtipos" id="qdSemTipos" style="display:none;">Ainda não há tipos de quadro cadastrados. <button type="button" class="btn-ghost" data-qd-tab="lista" style="padding:4px 10px;">Cadastrar na Lista de quadros</button></div>
+      <div class="qd-erro" id="qdErro"></div>
+      <div class="qd-secoes" data-qd-secoes="gestor"></div>
+    </div>
+    <div id="qdPaneLista" style="display:none;">
+      <p class="qd-dica">Os tipos de quadro que vamos montar. Eles aparecem como opção ao adicionar um quadro na aba "Quadros de comando".</p>
+      <div class="qd-form">
+        <div class="field qd-f-cli"><label for="qdNovoTipo">Nome do tipo de quadro</label>
+          <input type="text" id="qdNovoTipo" placeholder="Nome do tipo de quadro" autocomplete="off" maxlength="60"></div>
+        <button type="button" class="btn-primary qd-btn-add" data-qd="add-tipo">+ Adicionar tipo</button>
+      </div>
+      <div class="qd-erro" id="qdErroTipo"></div>
+      <div class="qd-secao" id="qdTituloTipos"></div>
+      <div id="qdListaTipos"></div>
+    </div>`;
+  box.addEventListener('click', aoClicar);
+  box.addEventListener('toggle', aoAlternarDetalhes, true);
+  box.addEventListener('keydown', (e) => {
+    if(e.key !== 'Enter') return;
+    if(e.target.id === 'qdCliente') adicionarQuadro(); else if(e.target.id === 'qdNovoTipo') adicionarTipo();
+  });
+}
+async function abrir(){
+  const box = document.getElementById('tabQuadros'); if(!box) return;
+  if(!box._qdMontado){ montarEsqueletoGestor(box); box._qdMontado = true; trocarSubAba(subAba); }
+  if(!carregado){ box.querySelector('.qd-secoes').innerHTML = '<div class="empty-state">Carregando…</div>'; await garantirCarregado(); }
+  renderListas();
+}
+
+// ---------------- Tela da Oficina (aba "Quadros": tela própria com "Fechar", como Estoque e Galeria) ----------------
+async function abrirOficina(){
+  const v = document.getElementById('quadrosOficinaView'); if(!v) return;
+  if(!v._qdMontado){
+    v.innerHTML = `
+      <div class="header">
+        <div class="brand"><div class="brand-text"><h1>Quadros</h1></div></div>
+        <button class="btn-ghost" id="quadrosOficinaCloseBtn" type="button">Fechar</button>
+      </div>
+      <div class="tech-day-panel"><div style="padding:0 20px 24px;">
+        <p class="qd-dica">Quadros de comando para montar. Toque no botão de cada quadro para registrar o andamento: iniciar e concluir a montagem, iniciar e finalizar os testes.</p>
+        <div class="qd-secoes" data-qd-secoes="oficina"></div>
+      </div></div>`;
+    v.addEventListener('click', aoClicar);
+    v.addEventListener('toggle', aoAlternarDetalhes, true);
+    document.getElementById('quadrosOficinaCloseBtn').addEventListener('click', fecharOficina);
+    v._qdMontado = true;
+  }
+  document.getElementById('oficinaView').style.display = 'none';
+  v.style.display = '';
+  if(!carregado){ v.querySelector('.qd-secoes').innerHTML = '<div class="empty-state">Carregando…</div>'; await garantirCarregado(); }
+  renderListas();
+}
+function fecharOficina(){
+  const v = document.getElementById('quadrosOficinaView'); if(v) v.style.display = 'none';
+  document.getElementById('oficinaView').style.display = '';
+}
+
+// ====================================================================================
+// CADASTROS E OS — quando os testes de um quadro são finalizados, ele entra na fila de "Cadastro/OS" do Gestor
+// com o mesmo comportamento das atividades: só sai da fila ao preencher o número da OS e confirmar
+// "Cadastro/OS realizado"; aí vai para "Processados recentemente". Mesmos nomes de campo das atividades:
+// numeroOS, processedForOS, processedForOSBy, processedForOSAt (gravados no próprio quadro).
+// ====================================================================================
+const osRascunho = {};   // número de OS digitado e ainda não confirmado (sobrevive a atualizações em tempo real)
+function aguardandoOS(){ return quadrosAtivos().filter(q => etapaDe(q).id === 'testado' && !q.processedForOS); }
+function tecnicosDoQuadro(q){ return [...new Set([q.iniciouMontagemPor, q.montadoPor, q.iniciouTestePor, q.testadoPor].filter(Boolean))]; }
+function pendentesOS(){ return carregado ? aguardandoOS().length : 0; }
+function processadosOS(){
+  return quadrosAtivos().filter(q => q.processedForOS).map(q => ({ client: q.cliente + ' — Quadro de comando (' + nomeDoTipo(q) + ')', numeroOS: q.numeroOS, processedForOSBy: q.processedForOSBy, processedForOSAt: q.processedForOSAt }));
+}
+function refrescarOS(){
+  try{ if(typeof currentRole !== 'undefined' && currentRole === 'manager' && typeof renderOS === 'function') renderOS(); }catch(e){ console.error(e); }
+}
+function linhaHorario(rotulo, ini, iniPor, fim, fimPor){
+  const p = (t, por) => t ? esc(fmtDataHora(t)) + (por ? ' (' + esc(por) + ')' : '') : '—';
+  return rotulo + ': início ' + p(ini, iniPor) + ' · fim ' + p(fim, fimPor);
+}
+function cartaoOS(q){
+  const tecs = tecnicosDoQuadro(q);
+  const valor = osRascunho[q.id] !== undefined ? osRascunho[q.id] : (q.numeroOS || '');
+  return `<div class="os-row">
+    <div class="os-row-top">
+      <div><div class="os-client">${esc(q.cliente)}</div>
+        <div class="os-meta">${esc(fmtDataHora(q.testadoEm))} · Técnico: ${tecs.length ? esc(tecs.join(' e ')) : '—'}</div></div>
+      <span class="os-quadro-tag">🔌 QUADRO DE COMANDO</span>
+    </div>
+    <div class="field"><label>O que foi montado</label><div>${esc(nomeDoTipo(q))}</div></div>
+    <div class="field"><label>Horários</label>
+      <div class="mono">${linhaHorario('Montagem', q.iniciouMontagemEm, q.iniciouMontagemPor, q.montadoEm, q.montadoPor)}<br>${linhaHorario('Testes', q.iniciouTesteEm, q.iniciouTestePor, q.testadoEm, q.testadoPor)}</div></div>
+    <div class="field"><label>Número de OS</label>
+      <input type="text" data-qd-osnumero="${esc(q.id)}" value="${esc(valor)}" placeholder="Digite o número da ordem de serviço" autocomplete="off"></div>
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;">
+      <button type="button" class="btn-primary" data-qd-osdone="${esc(q.id)}">Cadastro/OS realizado</button>
+    </div>
+  </div>`;
+}
+function renderOSQuadros(){
+  const box = document.getElementById('osQuadrosBox'); if(!box) return;
+  let lista = carregado ? aguardandoOS() : [];
+  // mesmos filtros da fila de atividades (busca e técnico)
+  const termo = typeof osNormalizarTexto === 'function' ? osNormalizarTexto((document.getElementById('osSearchInput') || {}).value) : '';
+  const tecSel = (document.getElementById('osTecnicoFilter') || {}).value || '';
+  if(tecSel) lista = lista.filter(q => tecnicosDoQuadro(q).includes(tecSel));
+  if(termo) lista = lista.filter(q => osNormalizarTexto([q.cliente, nomeDoTipo(q), tecnicosDoQuadro(q).join(' ')].join(' ')).includes(termo));
+  lista.sort((a, b) => String(a.testadoEm || '').localeCompare(String(b.testadoEm || '')));
+  const foco = document.activeElement; const focoId = (foco && box.contains(foco) && foco.dataset) ? foco.dataset.qdOsnumero : null; const caret = focoId ? foco.selectionStart : null;
+  box.innerHTML = lista.length ? `<div class="maint-section-title" style="margin-top:22px;">Quadros de comando aguardando cadastro de OS (${lista.length})</div>` + lista.map(cartaoOS).join('') : '';
+  if(!box._qdLigado){
+    box._qdLigado = true;
+    box.addEventListener('input', (e) => { const id = e.target.dataset && e.target.dataset.qdOsnumero; if(id !== undefined) osRascunho[id] = e.target.value; });
+    box.addEventListener('click', (e) => { const b = e.target.closest('[data-qd-osdone]'); if(b) concluirOS(b.dataset.qdOsdone); });
+  }
+  if(focoId){ const alvo = box.querySelector(`[data-qd-osnumero="${focoId}"]`); if(alvo){ alvo.focus(); try{ if(caret !== null) alvo.setSelectionRange(caret, caret); }catch(e){} } }
+}
+async function concluirOS(id){
+  const q = porId(quadrosStore, id); if(!q) return;
+  const box = document.getElementById('osQuadrosBox');
+  const inp = box ? box.querySelector(`[data-qd-osnumero="${String(id).replace(/"/g, '')}"]`) : null;
+  const numero = inp ? inp.value.trim() : '';
+  if(!numero){ alert('Preencha o número da OS antes de marcar como feito.'); if(inp) inp.focus(); return; }
+  if(q.processedForOS || etapaDe(q).id !== 'testado' || q.active === false){ aviso('Este quadro acabou de ser atualizado por outra pessoa. A lista foi atualizada.'); refrescarOS(); return; }
+  delete osRascunho[id];
+  q.numeroOS = numero; q.processedForOS = true;
+  q.processedForOSBy = (typeof currentManagerName !== 'undefined' && currentManagerName) || quem() || null;
+  q.processedForOSAt = new Date().toISOString();
+  renderListas();
+  await quadrosStore.save();
+}
+// Chamado no login do Gestor: carrega os quadros em segundo plano para o contador de "Cadastros e OS" já aparecer.
+function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => console.error('quadros: falha ao carregar', e)); }
+window.QUADROS_API = { abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros };
+})();
+
+
+// =====================================================================================
+// REINSTALAÇÃO DE EQUIPAMENTOS DA OFICINA — amarração entre o equipamento, a atividade na Agenda e a conclusão.
+// (1) reconciliar(): conferência automática (Gestor e Oficina) que CONSERTA o que ficou torto:
+//     • atividade ligada ao equipamento (oficinaEquipamentoId), mas o equipamento não está marcado como agendado
+//     • atividade CONCLUÍDA e o equipamento ainda aparece na Oficina  → vira "reinstalado" (fica no Histórico)
+//     • equipamento apontando para uma atividade que foi apagada da Agenda → volta a poder ser agendado
+//     É idempotente: só grava quando há o que consertar, e dois aparelhos fazendo o mesmo gravam os mesmos valores.
+// (2) vincular: liga um equipamento a uma atividade que foi criada à mão na Agenda (sem o vínculo automático).
+// (3) linhaAgenda: texto "Reinstalação agendada para dd/mm" para a tela da Oficina.
+// =====================================================================================
+(function(){
+'use strict';
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const ESTADOS = ['liberado_para_reinstalacao', 'reinstalacao_pendente'];
+const concluida = s => !!s && s.status === 'concluido';
+function tecnicosDe(s){ try{ return getServiceTechnicians(s).filter(Boolean); }catch(e){ return s && s.technician ? [s.technician] : []; } }
+function quandoConcluiu(s){
+  if(s.completedAt && !isNaN(Date.parse(s.completedAt))) return s.completedAt;
+  if(s.date){ const hm = /^\d{1,2}:\d{2}$/.test(s.checkOut || '') ? s.checkOut : '12:00'; const d = new Date(s.date + 'T' + (hm.length < 5 ? '0' + hm : hm) + ':00'); if(!isNaN(d)) return d.toISOString(); }
+  return new Date().toISOString();
+}
+
+let timer = null, timerPendurado = null, emAndamento = false;
+const penduradoDesde = {};       // equipamentos cujo vínculo aponta para atividade inexistente (só desfaz se persistir)
+
+function reconciliar(){
+  if(emAndamento) return 0;
+  if(typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'oficina')) return 0;
+  if(!Array.isArray(oficinaEquipamentos) || !Array.isArray(services) || !services.length || !oficinaEquipamentos.length) return 0;
+  let n = 0, temPendurado = false;
+  oficinaEquipamentos.forEach(eq => {
+    if(ESTADOS.indexOf(eq.status) < 0) return;
+    const ligadas = services.filter(s => s.oficinaEquipamentoId === eq.id);
+    const porLink = eq.reinstallationServiceId ? services.find(s => s.id === eq.reinstallationServiceId) : null;
+    if(porLink && ligadas.indexOf(porLink) < 0) ligadas.push(porLink);
+    const feita = ligadas.filter(concluida).sort((a, b) => String(b.completedAt || '').localeCompare(String(a.completedAt || '')))[0];
+    if(feita){
+      // A atividade foi concluída mas o equipamento continuava na Oficina → sai (o registro fica no Histórico).
+      eq.status = 'reinstalado';
+      eq.reinstaladoAt = quandoConcluiu(feita);
+      eq.reinstaladoBy = tecnicosDe(feita).join(' e ') || (typeof currentActingName === 'function' && currentActingName()) || null;
+      if(!eq.reinstallationServiceId) eq.reinstallationServiceId = feita.id;
+      delete penduradoDesde[eq.id]; n++; return;
+    }
+    const ativa = (porLink && !concluida(porLink)) ? porLink : ligadas.filter(s => !concluida(s)).sort((a, b) => b.id - a.id)[0];
+    if(ativa){
+      if(eq.status !== 'reinstalacao_pendente' || eq.reinstallationServiceId !== ativa.id){ eq.status = 'reinstalacao_pendente'; eq.reinstallationServiceId = ativa.id; n++; }
+      delete penduradoDesde[eq.id]; return;
+    }
+    if(eq.reinstallationServiceId || eq.status === 'reinstalacao_pendente'){
+      // Aponta para uma atividade que não existe mais (foi apagada da Agenda). Só desfaz se continuar assim depois de alguns
+      // segundos, para nunca agir sobre uma lista de atividades que ainda estava carregando.
+      temPendurado = true;
+      if(!penduradoDesde[eq.id]) penduradoDesde[eq.id] = Date.now();
+      else if(Date.now() - penduradoDesde[eq.id] >= 8000){ eq.status = 'liberado_para_reinstalacao'; eq.reinstallationServiceId = null; delete penduradoDesde[eq.id]; n++; }
+    }
+  });
+  if(temPendurado){ clearTimeout(timerPendurado); timerPendurado = setTimeout(reconciliar, 9000); }
+  if(n){
+    emAndamento = true;
+    Promise.resolve(saveOficinaEquipamentos(true)).catch(e => console.error('reinstalação: falha ao gravar a conferência', e)).finally(() => {
+      emAndamento = false;
+      try{
+        if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab();
+        if(currentRole === 'oficina') renderOficinaView();
+      }catch(e){}
+    });
+  }
+  return n;
+}
+function agendar(){
+  if(typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'oficina')) return;
+  clearTimeout(timer); timer = setTimeout(reconciliar, 1200);
+}
+
+function linhaAgenda(eq){
+  if(!eq || eq.status !== 'reinstalacao_pendente') return '';
+  const svc = eq.reinstallationServiceId ? services.find(s => s.id === eq.reinstallationServiceId) : null;
+  if(!svc) return '';
+  const tec = tecnicosDe(svc).join(' e ');
+  const txt = svc.date ? 'Reinstalação agendada para ' + shortLabel(svc.date) + (tec ? ' · Técnico: ' + tec : ' · ainda sem técnico') : 'Atividade criada na Agenda — falta definir a data';
+  return '<div style="font-size:12.5px; margin-top:6px; font-weight:600;">🔧 ' + esc(txt) + '</div>';
+}
+
+// ---------------- vincular a uma atividade criada à mão ----------------
+function garantirModal(){
+  let ov = document.getElementById('reinstVincularOverlay'); if(ov) return ov;
+  ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'reinstVincularOverlay';
+  ov.innerHTML = '<div class="modal" style="max-width:560px; max-height:86vh; overflow-y:auto;"><h3>Vincular a uma atividade</h3><p class="modal-sub" id="reinstVincularSub"></p><div id="reinstVincularLista"></div><div class="field-error" id="reinstVincularErr"></div><div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="reinstVincularFechar">Fechar</button></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', (e) => {
+    if(e.target === ov || e.target.id === 'reinstVincularFechar'){ ov.classList.remove('open'); return; }
+    const b = e.target.closest('[data-reinst-svc]'); if(b) vincular(Number(ov.dataset.equip), Number(b.dataset.reinstSvc));
+  });
+  return ov;
+}
+function candidatos(eq){
+  const chave = normalizedClientKey(eq.client || '');
+  return services.filter(s => normalizedClientKey(s.client || '') === chave && (!s.oficinaEquipamentoId || s.oficinaEquipamentoId === eq.id))
+    .sort((a, b) => String(b.date || '9999').localeCompare(String(a.date || '9999'))).slice(0, 15);
+}
+function abrirVincular(equipId){
+  const eq = oficinaEquipamentos.find(x => x.id === equipId); if(!eq) return;
+  const ov = garantirModal(); ov.dataset.equip = String(equipId);
+  document.getElementById('reinstVincularSub').textContent = eq.equipment + ' — ' + eq.client + '. Escolha a atividade da Agenda que é a reinstalação deste equipamento: quando ela for concluída, o equipamento sai da Oficina sozinho.';
+  document.getElementById('reinstVincularErr').textContent = '';
+  const lista = candidatos(eq);
+  document.getElementById('reinstVincularLista').innerHTML = lista.length ? lista.map(s => `
+    <div class="oe-card" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+      <div><div><b>${s.date ? esc(shortLabel(s.date)) : 'Sem data'}</b> · ${esc(s.description || s.client)}</div>
+        <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">${esc(tecnicosDe(s).join(' e ') || 'sem técnico')} · ${esc(typeof statusLabelOf === 'function' ? statusLabelOf(s.status) : s.status)}</div></div>
+      <button type="button" class="btn-primary" data-reinst-svc="${esc(s.id)}">Vincular</button>
+    </div>`).join('') : '<div class="painel-block-empty">Não há atividade deste cliente na Agenda. Use "Agendar reinstalação" para criar uma.</div>';
+  ov.classList.add('open');
+}
+async function vincular(equipId, svcId){
+  const eq = oficinaEquipamentos.find(x => x.id === equipId); const svc = services.find(x => x.id === svcId);
+  const err = document.getElementById('reinstVincularErr'); if(err) err.textContent = '';
+  if(!eq || !svc) return;
+  if(svc.oficinaEquipamentoId && svc.oficinaEquipamentoId !== eq.id){ if(err) err.textContent = 'Essa atividade já está ligada a outro equipamento.'; return; }
+  const antes = svc.oficinaEquipamentoId;
+  svc.oficinaEquipamentoId = eq.id;
+  const ok = await saveServices();
+  if(!ok){ if(antes === undefined) delete svc.oficinaEquipamentoId; else svc.oficinaEquipamentoId = antes; if(err) err.textContent = 'Não foi possível salvar. Verifique sua internet e tente novamente.'; return; }
+  const atual = oficinaEquipamentos.find(x => x.id === equipId);     // reencontra: a lista pode ter sido trocada durante o salvamento
+  if(atual && ESTADOS.indexOf(atual.status) >= 0){ atual.status = 'reinstalacao_pendente'; atual.reinstallationServiceId = svc.id; await saveOficinaEquipamentos(true); }
+  reconciliar();    // se a atividade escolhida já estava concluída, o equipamento sai agora
+  document.getElementById('reinstVincularOverlay').classList.remove('open');
+  try{ if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab(); renderAll(); }catch(e){}
+}
+window.REINST_API = { agendar, reconciliar, linhaAgenda, abrirVincular };
 })();
 
 init();
