@@ -1671,6 +1671,17 @@
 
   .prv-sug-conferir{ margin:8px 0; font-size:12.5px; background:var(--warning-soft); border:1px solid var(--warning-line); border-radius:8px; padding:8px 11px; }
   .prv-sug-conferir ul{ margin:4px 0 0; padding-left:18px; } .prv-sug-conferir li{ margin:2px 0; }
+
+  /* ===== Configuração por cliente: ordem dos equipamentos, busca e prévia ===== */
+  .prv-ordem-col{ display:flex; align-items:center; gap:6px; flex:none; margin-right:10px; }
+  .prv-arrastar{ cursor:grab; user-select:none; touch-action:none; font-size:20px; line-height:1; padding:6px 7px; border-radius:8px; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--line); }
+  .prv-arrastar:active{ cursor:grabbing; }
+  .prv-ordem-btns{ display:flex; flex-direction:column; gap:2px; }
+  .prv-seta{ border:1px solid var(--line); background:var(--panel); color:var(--ink); border-radius:6px; font-size:9px; line-height:1; padding:3px 7px; cursor:pointer; }
+  .prv-seta:disabled{ opacity:.3; cursor:default; }
+  .prv-arrastando{ opacity:.55; background:var(--panel-2); }
+  .prv-unit-row-top{ align-items:center; }
+  .prv-modo-previa [data-prv-m="baixar"], .prv-modo-previa [data-prv-m="whats"], .prv-modo-previa [data-prv-m="enviado"]{ display:none; }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -2510,6 +2521,7 @@
     <div class="portal-tabs estoque-subnav-v2" id="prvOsTabs" style="padding:0 0 14px;">
       <button type="button" class="portal-tab active" data-prvos="aguardando">Aguardando cadastro de OS</button>
       <button type="button" class="portal-tab" data-prvos="relatorios" id="prvOsTabRel">Relatórios de manutenção</button>
+      <button type="button" class="portal-tab" data-prvos="oficina" id="prvOsTabOficina">Equipamentos da Oficina</button>
     </div>
     <div id="prvOsAguardando">
     <div class="tecnicos-head">
@@ -2538,6 +2550,7 @@
     <div id="osProcessedList"></div>
     </div><!-- /prvOsAguardando -->
     <div id="prvOsRelatorios" style="display:none;"></div>
+    <div id="prvOsOficina" style="display:none;"></div>
   </div>
 
   <div id="tabClientes" style="display:none;">
@@ -4032,7 +4045,12 @@ attachClientAutocomplete(
 // ===== Compatibilidade dupla: modelo novo (technicians[]) e modelo antigo (technician + pairId) =====
 // Retorna a lista de técnicos de uma atividade, não importa o formato (novo ou antigo).
 function getServiceTechnicians(s){
-  if(Array.isArray(s.technicians) && s.technicians.length > 0) return s.technicians;
+  if(Array.isArray(s.technicians) && s.technicians.length > 0){
+    // Lista desatualizada: o técnico foi trocado pelo seletor (que antes só mudava "technician") e a lista de uma dupla ficou para
+    // trás. Quando o técnico individual não faz parte da lista, vale ele — senão a atividade seguia aparecendo para os antigos.
+    if(s.technician && s.technicians.indexOf(s.technician) < 0) return [s.technician];
+    return s.technicians;
+  }
   if(s.technician) return [s.technician];
   return [];
 }
@@ -4051,7 +4069,7 @@ function getDuplaPartnerNames(svc, myName){
   return [];
 }
 function isMultiTechRecord(s){
-  return Array.isArray(s.technicians) && s.technicians.length > 1;
+  return Array.isArray(s.technicians) && s.technicians.length > 1 && getServiceTechnicians(s).length > 1;   // lista desatualizada não conta como dupla
 }
 
 // Função central de criação de retorno — usada por QUALQUER caminho de conclusão
@@ -4162,6 +4180,9 @@ function onTechSelectChange(e){
   }
 
   svc.technician = e.target.value || null;
+  // Atividade que veio de uma dupla (ex.: o retorno de uma dupla) traz a lista "technicians". As telas leem a lista primeiro,
+  // então ao escolher UM técnico a lista antiga precisa sair, senão a atividade continua presa aos técnicos anteriores.
+  if(svc.technicians !== undefined) delete svc.technicians;
   svc.status = svc.technician ? 'atribuido' : 'aguardando';
   saveServices();
   renderAll();
@@ -11191,7 +11212,9 @@ function renderOS(){
   const box = document.getElementById('osList');
   const badge = document.getElementById('osBadge');
   if(!box) return;
-  const qOS = window.QUADROS_API ? QUADROS_API.pendentesOS() : 0;   // quadros de comando com testes finalizados aguardando OS
+  const qOSq = window.QUADROS_API ? QUADROS_API.pendentesOS() : 0;   // quadros de comando com testes finalizados aguardando OS
+  const qOSe = window.OSOF_API ? OSOF_API.pendentesOS() : 0;         // equipamentos finalizados na Oficina aguardando OS
+  const qOS = qOSq + qOSe;
 
   const pending = groupPaired(services.filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido))
     .sort((a,b) => {
@@ -11222,7 +11245,7 @@ function renderOS(){
   const contextLabel = document.getElementById('osContextLabel');
   if(contextLabel){
     contextLabel.textContent = pending.length === 0
-      ? (qOS ? qOS + (qOS === 1 ? ' quadro de comando aguardando cadastro de OS' : ' quadros de comando aguardando cadastro de OS') : 'Nenhuma atividade aguardando cadastro')
+      ? (qOS ? [qOSq ? qOSq + (qOSq === 1 ? ' quadro de comando' : ' quadros de comando') : '', qOSe ? qOSe + (qOSe === 1 ? ' equipamento da Oficina' : ' equipamentos da Oficina') : ''].filter(Boolean).join(' e ') + ' aguardando cadastro de OS' : 'Nenhuma atividade aguardando cadastro')
       : filtroAtivo
         ? `${visiveis.length} de ${pending.length} atividade${pending.length === 1 ? '' : 's'} aguardando cadastro de OS`
         : `${pending.length} atividade${pending.length === 1 ? '' : 's'} aguardando cadastro de OS`;
@@ -11375,6 +11398,7 @@ function renderOS(){
     }
   }
   if(window.QUADROS_API) QUADROS_API.renderOS();   // quadros de comando aguardando OS (seção abaixo das atividades)
+  if(window.OSOF_API) OSOF_API.renderAba();        // equipamentos da Oficina aguardando OS (aba própria + contador)
 }
 
 // Rastreia qual aba principal está visível agora, pra saber se vale a pena recalcular o Painel
@@ -17647,6 +17671,7 @@ function fmtData(ymd){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(ymd||'')
 function corSegura(c){ return (c === 'green' || c === 'amber' || c === 'red') ? c : 'none'; }
 function num(v){ const n = Number(v); return isFinite(n) ? n : 0; }
 function aviso(msg, ms){ try{ avisoNaoBloqueante(msg, ms); }catch(e){ console.warn(msg); } }
+function semAcentoCfg(t){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
 function novoId(prefixo){ return prefixo + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function comTimeout(p, ms){ return Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]); }
 function paraLista(v){
@@ -18179,6 +18204,7 @@ const CSS_RELATORIO = `
 .rp-fotos-grid figure{margin:0;break-inside:avoid;}
 .rp-fotos-grid img{width:100%;height:auto;display:block;border-radius:8px;border:1px solid #E3E4E6;}
 .rp-fotos-grid figcaption{font-size:10.5px;color:#6B7076;margin-top:2px;}
+.rp-previa{border:1.5px dashed #B7791F;background:#FFF9EC;color:#6B4A12;border-radius:12px;padding:10px 14px;margin:0 0 14px;font-size:12.5px;}
 .rp-foot{margin-top:20px;padding-top:10px;border-top:2px solid #E3E4E6;font-size:11px;color:#6B7076;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;}
 @media (max-width:560px){ .rp-head{flex-direction:column;align-items:flex-start;} .rp-head-txt{text-align:left;} .rp-title{font-size:22px;} .rp-info{grid-template-columns:1fr;} .rp-info-c:nth-child(odd){border-right:none;} .rp-info-c:nth-last-child(-n+2){border-bottom:1px solid #ECEDEF;} .rp-info-c:last-child{border-bottom:none;} .rp-resumo{grid-template-columns:repeat(2,1fr);} .rp-fotos-grid{grid-template-columns:repeat(2,1fr);} }
 `;
@@ -18226,7 +18252,7 @@ const estado = {
   fotosRel: {},             // { atividadeId: [dataURL...] } fotos de relatórios já abertos
   abertoSec: new Set(), abertoUnid: new Set(),
   cfgCliente: '', cfgEditando: null, histFiltro: '',
-  cfgForm: { tipo: '', local: '', comp: {} },
+  cfgForm: { tipo: '', local: '', comp: {} }, cfgBusca: '',
   enviados: {}, envioChecado: {},          // relatórios já ENVIADOS ao cliente (a partir daí o técnico não altera mais)
   editandoDica: '', dicaRascunho: {},   // edição da dica de localização (chave = atividade:unidade)
 };
@@ -18323,6 +18349,7 @@ function normalizarUnidade(u){
   // padrão (1 de cada) — e não como "nenhum subitem", que esconderia o equipamento do técnico.
   if(!comps.length && tipoTemComponentesConfiguraveis(u.tipo) && REGRAS_COMPONENTES[u.tipo].inicio >= 1) comps = componentesDoEstado(estadoInicialDoTipo(u.tipo));
   const out = { id: u.id, cliente: u.cliente || '', tipo: u.tipo, local: u.local || '', componentes: comps };
+  if(typeof u.ordem === 'number' && isFinite(u.ordem)) out.ordem = u.ordem;      // posição escolhida pelo Gestor (1, 2, 3…)
   // Dica de onde encontrar o equipamento: escrita pelos próprios técnicos e guardada na unidade para o próximo a visitar.
   if(typeof u.dicaLocal === 'string' && u.dicaLocal.trim()){
     out.dicaLocal = u.dicaLocal;
@@ -18370,9 +18397,30 @@ function aoMudarUnidades(){
   }catch(e){ console.error(e); }
 }
 function ehPreventiva(svc){ return !!(svc && (svc.maintenanceContractId || /^\s*preventiva\s*[–-]/i.test(svc.client || ''))); }
+// Ordem em que os equipamentos aparecem na tela do técnico e no relatório: a que o Gestor escolheu (campo "ordem");
+// unidades sem ordem (cadastradas antes deste recurso) vêm depois, na ordem de sempre (pelo identificador).
+function ordenarUnidades(lista){
+  const tem = (u) => typeof u.ordem === 'number' && isFinite(u.ordem);
+  return lista.slice().sort((a, b) => {
+    if(tem(a) && tem(b) && a.ordem !== b.ordem) return a.ordem - b.ordem;
+    if(tem(a) !== tem(b)) return tem(a) ? -1 : 1;
+    return String(a.id).localeCompare(String(b.id));
+  });
+}
 function unidadesDoCliente(nome){
   const k = normalizedClientKey(nome || '');
-  return estado.unidades.filter(u => normalizedClientKey(u.cliente) === k).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  return ordenarUnidades(estado.unidades.filter(u => normalizedClientKey(u.cliente) === k));
+}
+// Grava a posição 1..n de cada unidade do cliente (só escreve o que mudou). `ids` = a nova ordem; sem ids, mantém a atual.
+function aplicarOrdem(cliente, ids){
+  const atuais = unidadesDoCliente(cliente);
+  const porId = new Map(atuais.map(u => [String(u.id), u]));
+  const seq = (ids || atuais.map(u => u.id)).map(String).filter(id => porId.has(id));
+  atuais.forEach(u => { if(!seq.includes(String(u.id))) seq.push(String(u.id)); });     // nunca perde uma unidade
+  let mudou = 0;
+  seq.forEach((id, i) => { const u = porId.get(id); if(u.ordem !== i + 1){ u.ordem = i + 1; escrever(NOS.unidades + '/' + u.id + '/ordem', i + 1); mudou++; } });
+  estado.unidadesJSON = JSON.stringify(estado.unidades);
+  return mudou;
 }
 
 // ---------------- Rascunho da visita (técnico) ----------------
@@ -19315,7 +19363,7 @@ function normalizarRelatorio(rel){
   });
 }
 // Linhas de um grupo: medições trifásicas (RS/ST/RT) saem numa linha só; textos livres saem em bloco.
-function linhasDaTabela(linhas, pill, ehInterno){
+function linhasDaTabela(linhas, pill, ehInterno, vazioTxt){
   let html = '';
   for(let i = 0; i < linhas.length; i++){
     const l = linhas[i];
@@ -19323,7 +19371,7 @@ function linhasDaTabela(linhas, pill, ehInterno){
       const trio = [l]; let j = i + 1;
       while(j < linhas.length && trio.length < 3 && linhas[j].tri && linhas[j].tri.g === l.tri.g){ trio.push(linhas[j]); j++; }
       const algum = trio.some(x => x.texto != null);
-      html += `<tr><td>${esc(l.tri.g)}</td><td class="v">${algum ? trio.map(x => `<span class="rp-fase">${esc(x.tri.f)} <b>${x.texto == null ? '—' : esc(x.texto)}</b></span>`).join(' · ') : '<span class="rp-pill none">não preenchido</span>'}</td></tr>`;
+      html += `<tr><td>${esc(l.tri.g)}</td><td class="v">${algum ? trio.map(x => `<span class="rp-fase">${esc(x.tri.f)} <b>${x.texto == null ? '—' : esc(x.texto)}</b></span>`).join(' · ') : `<span class="rp-pill none">${vazioTxt || 'não preenchido'}</span>`}</td></tr>`;
       i = j - 1; continue;
     }
     if(l.longo && l.texto != null){ html += `<tr><td colspan="2">${esc(l.campo)}<div class="rp-texto">${esc(l.texto)}</div></td></tr>`; continue; }
@@ -19337,10 +19385,12 @@ function semAcentoRp(t){ return String(t || '').normalize('NFD').replace(/[\u030
 // do Gestor: mostra tudo e marca essas linhas com "só equipe" para ficar claro que não vão no PDF.
 function htmlRelatorio(rel, fotos, opts){
   const pdf = !!(opts && opts.pdf);
+  const previa = !!(opts && opts.previa);          // modelo em branco: mostra os equipamentos na ordem, sem resultados
   const r = normalizarRelatorio(rel);
   const res = resumoRelatorio(r, { pdf });
   const avaliados = res.verdes + res.amarelos + res.vermelhos;
-  const pill = l => `<span class="rp-pill ${l.texto == null ? 'none' : corSegura(l.cor)}">${l.texto == null ? 'não preenchido' : esc(l.texto)}</span>`;
+  const vazioTxt = previa ? 'a preencher' : 'não preenchido';
+  const pill = l => `<span class="rp-pill ${l.texto == null ? 'none' : corSegura(l.cor)}">${l.texto == null ? vazioTxt : esc(l.texto)}</span>`;
   const dataTxt = fmtData(r.dataVisita) || fmtDataHora(r.criadoEm);
   const horaTxt = (fmtData(r.dataVisita) && r.inicio) ? esc(r.inicio) + (r.fim ? ' às ' + esc(r.fim) : '') : '';
   const geradoEm = fmtData(String(r.criadoEm || '').slice(0, 10));
@@ -19355,22 +19405,23 @@ function htmlRelatorio(rel, fotos, opts){
       <h3><span class="rp-unit-tipo">${esc(u.tipoNome)}</span>${semAcentoRp(u.local) !== semAcentoRp(u.tipoNome) ? `<span class="rp-unit-local">${esc(u.local)}</span>` : ''}</h3>
       <div class="rp-unit-corpo">${grupos.length ? grupos.map(x => `
         ${u.grupos.length > 1 ? `<div class="rp-grupo">${esc(x.g.titulo)}</div>` : ''}
-        <table class="rp-tab">${linhasDaTabela(x.linhas, pill, pdf ? null : (l => ehLinhaInterna(l, x.g, u)))}</table>`).join('')
+        <table class="rp-tab">${linhasDaTabela(x.linhas, pill, pdf ? null : (l => ehLinhaInterna(l, x.g, u)), vazioTxt)}</table>`).join('')
         : '<div class="rp-nota" style="margin:8px 0 0;">Nenhum subitem estava configurado para esta unidade na data da visita.</div>'}</div>
     </div>`;
   }).join('');
   return `<div class="rp">
+    ${previa ? '<div class="rp-previa"><b>PRÉVIA DO MODELO</b> — assim o relatório de <b>' + esc(r.cliente) + '</b> vai ficar, com os equipamentos na ordem configurada. Os campos são preenchidos pelo técnico na visita; os dados do cabeçalho vêm da atividade.</div>' : ''}
     <div class="rp-head">
       <img class="rp-logo-img" src="${LOGO_EQUIPER}" alt="Equiper">
       <div class="rp-head-txt"><div class="rp-kicker">Relatório de</div><div class="rp-title">Manutenção preventiva</div><div class="rp-empresa">Equiper Serviços</div></div>
     </div>
     <div class="rp-info">
       <div class="rp-info-c"><span>Cliente</span><b>${esc(r.cliente)}</b></div>
-      <div class="rp-info-c"><span>Data da visita</span><b>${esc(dataTxt)}</b>${horaTxt ? `<small>${horaTxt}</small>` : ''}</div>
+      <div class="rp-info-c"><span>Data da visita</span><b>${esc(dataTxt || (previa ? 'a definir' : '—'))}</b>${horaTxt ? `<small>${horaTxt}</small>` : ''}</div>
       <div class="rp-info-c"><span>Endereço</span><b>${esc(r.endereco || '—')}</b></div>
       <div class="rp-info-c"><span>Técnico</span><b>${esc(r.tecnico || '—')}</b></div>
     </div>
-    <div class="rp-resumo">
+    ${previa ? '' : `    <div class="rp-resumo">
       <div class="rp-stat"><b>${avaliados}</b><span>pontos avaliados</span></div>
       <div class="rp-stat green"><b>${res.verdes}</b><span>em ordem</span></div>
       <div class="rp-stat amber"><b>${res.amarelos}</b><span>atenção</span></div>
@@ -19380,9 +19431,10 @@ function htmlRelatorio(rel, fotos, opts){
     ${res.atencao.length ? `<div class="rp-atencao"><h4><span class="rp-ico">!</span>Pontos que precisam de atenção</h4><ul>${res.atencao.map(a =>
         `<li><b>${a.grupo ? esc(a.grupo) + ' — ' : ''}${esc(a.unidade)}</b> · ${esc(a.campo)}: <span class="rp-pill ${corSegura(a.cor)}">${esc(a.texto)}</span>${a.interno ? ' <span class="rp-tag-int" title="Só aparece para a equipe; não vai no PDF do cliente">só equipe</span>' : ''}</li>`).join('')}</ul></div>`
       : (avaliados ? '<div class="rp-ok">✓ Nenhum ponto crítico nesta visita.</div>' : '')}
+`}
     ${unidadesHtml}
-    ${r.observacoes ? `<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto">${esc(r.observacoes)}</div></div>` : ''}
-    ${fotosHtml}
+    ${previa ? '<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto" style="color:#6B7076;">(texto escrito pelo técnico ao fim da visita)</div></div><div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">(até 10 fotos tiradas pelo técnico)</div></div>' : `${r.observacoes ? `<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto">${esc(r.observacoes)}</div></div>` : ''}
+    ${fotosHtml}`}
     <div class="rp-foot"><span>Relatório gerado pelo Equiper Serviços</span>${geradoEm ? `<span>Concluído em ${esc(geradoEm)}</span>` : ''}</div>
   </div>`;
 }
@@ -19583,6 +19635,7 @@ function textoNaoSalvo(){
 async function abrirRelatorio(id){
   const r = achaRel(id); if(!r) return;
   garantirModal();
+  document.getElementById('prvModal').classList.remove('prv-modo-previa');
   relAbertoId = id;
   document.getElementById('prvModalChips').innerHTML = chipsStatus(r);
   document.getElementById('prvModalCorpo').innerHTML = htmlRelatorio(r, null);
@@ -19596,6 +19649,20 @@ async function abrirRelatorio(id){
       const c = document.getElementById('prvModalCorpo'); if(c && relAbertoId === id) c.innerHTML = c.innerHTML.replace('Carregando fotos…', 'Não foi possível carregar as fotos agora (sem conexão?).');
     }
   }
+}
+// Prévia do relatório de um cliente (modelo em branco): usa a MESMA função que desenha o relatório de verdade, com os
+// equipamentos na ordem configurada, para o Gestor ver como vai ficar antes de qualquer visita.
+function abrirPrevia(cliente){
+  const units = unidadesDoCliente(cliente);
+  if(!units.length){ aviso('Este cliente ainda não tem equipamentos configurados.'); return; }
+  garantirModal(); relAbertoId = null;
+  const m = document.getElementById('prvModal'); m.classList.add('prv-modo-previa');
+  document.getElementById('prvModalChips').innerHTML = '<span class="prv-chip amber">PRÉVIA</span> <b>' + esc(cliente) + '</b> · ' + units.length + (units.length === 1 ? ' equipamento' : ' equipamentos') + ' na ordem configurada';
+  document.getElementById('prvRevisao').innerHTML = '';
+  const rel = { cliente, endereco: '', dataVisita: '', criadoEm: '', tecnico: '', observacoes: '', nFotos: 0, unidades: units.map(u => montarSnapshotUnidade(u, {})) };
+  document.getElementById('prvModalCorpo').innerHTML = htmlRelatorio(rel, null, { previa: true });
+  document.getElementById('prvModalCorpo').scrollTop = 0;
+  m.classList.add('open');
 }
 function fecharRelatorio(){ relAbertoId = null; const m = document.getElementById('prvModal'); if(m) m.classList.remove('open'); }
 function renderRevisao(r){
@@ -19776,19 +19843,34 @@ function tipoVisivelParaCliente(t, cliente){
 function renderConfig(){
   const box = document.getElementById('prvManutConfig'); if(!box || box.style.display === 'none') return;
   const foco = document.activeElement; if(foco && box.contains(foco) && foco.id === 'prvCfgLocal') estado.cfgForm.local = foco.value;
-  const clientes = nomesDeClientes();
-  if(!clientes.includes(estado.cfgCliente)) estado.cfgCliente = clientes[0] || '';
+  const todosClientes = nomesDeClientes();
+  const buscaFoco = (foco && box.contains(foco) && foco.id === 'prvCfgBusca') ? { pos: foco.selectionStart } : null;
+  const termo = semAcentoCfg(estado.cfgBusca);
+  const clientes = termo ? todosClientes.filter(c => semAcentoCfg(c).includes(termo)) : todosClientes;
+  if(clientes.length && !clientes.includes(estado.cfgCliente)) estado.cfgCliente = clientes[0];            // digitou: pula para o 1º que bate
+  else if(!clientes.length && !termo) estado.cfgCliente = '';
+  const contaUnid = (c) => { const kk = normalizedClientKey(c); return estado.unidades.filter(u => normalizedClientKey(u.cliente) === kk).length; };
   const k = normalizedClientKey(estado.cfgCliente);
-  const units = estado.unidades.filter(u => normalizedClientKey(u.cliente) === k).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const units = clientes.length ? unidadesDoCliente(estado.cfgCliente) : [];       // busca sem resultado: não mostra equipamentos de outro cliente
   const f = estado.cfgForm;
   if(!f.tipo || !tipoPorId(f.tipo) || !tipoVisivelParaCliente(tipoPorId(f.tipo), estado.cfgCliente)){ f.tipo = CATALOGO.filter(t => tipoVisivelParaCliente(t, estado.cfgCliente))[0].tipo; f.comp = estadoInicialDoTipo(f.tipo); }
   box.innerHTML = `<p class="prv-hint">Escolha o cliente e cadastre os equipamentos que ele realmente tem. Só o que estiver aqui aparece no relatório do técnico. Os clientes vêm dos contratos de manutenção.</p>
     <div class="prv-linha" style="margin:0 0 14px;"><button type="button" class="btn-ghost" data-prv-g="importar">⇪ Importar equipamentos das planilhas</button><span class="prv-hint" style="margin:0;">Prévia antes de gravar; não altera clientes já configurados.</span></div>
-    <div class="field" style="max-width:360px;"><label for="prvCfgCliente">Cliente</label>
-      <select id="prvCfgCliente">${clientes.map(c => `<option value="${esc(c)}" ${c === estado.cfgCliente ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
-    ${!clientes.length ? '<div class="empty-state">Nenhum contrato de manutenção cadastrado ainda.</div>' : ''}
+    <div class="prv-linha" style="align-items:flex-end; margin:0 0 6px;">
+      <div class="field" style="min-width:230px; flex:1; max-width:360px; margin:0;"><label for="prvCfgBusca">Localizar cliente</label>
+        <input type="search" id="prvCfgBusca" value="${esc(estado.cfgBusca)}" placeholder="Digite o nome do cliente…" autocomplete="off"></div>
+      <div class="field" style="min-width:230px; flex:1; max-width:360px; margin:0;"><label for="prvCfgCliente">Cliente</label>
+        <select id="prvCfgCliente" ${clientes.length ? '' : 'disabled'}>${clientes.length ? clientes.map(c => { const n = contaUnid(c); return `<option value="${esc(c)}" ${c === estado.cfgCliente ? 'selected' : ''}>${esc(c)} ${n ? '· ' + n : '· sem equipamentos'}</option>`; }).join('') : '<option>(nenhum encontrado)</option>'}</select></div>
+    </div>
+    <div class="prv-hint" style="margin:0 0 12px; font-size:12px;" id="prvCfgBuscaInfo">${termo ? (clientes.length ? clientes.length + ' de ' + todosClientes.length + ' clientes encontrados para "' + esc(estado.cfgBusca.trim()) + '"' : 'Nenhum cliente encontrado para "' + esc(estado.cfgBusca.trim()) + '"') : 'Digite parte do nome para localizar; o número depois do nome é a quantidade de equipamentos configurados.'}</div>
+    ${!todosClientes.length ? '<div class="empty-state">Nenhum contrato de manutenção cadastrado ainda.</div>' : ''}
+    ${(clientes.length && units.length) ? `<div class="prv-linha" style="margin:0 0 10px;">
+      <button type="button" class="btn-primary" data-prv-g="previa">👁 Ver prévia do relatório</button>
+      ${units.length > 1 ? '<button type="button" class="btn-ghost" data-prv-g="ordenar">↕ Organizar por tipo</button>' : ''}
+      ${units.length > 1 ? '<span class="prv-hint" style="margin:0; font-size:12px;">Arraste pelo <b>⠿</b> (ou use ▲ ▼) para mudar a ordem em que os equipamentos aparecem no relatório e na tela do técnico.</span>' : ''}</div>` : ''}
     <div id="prvCfgLista">${units.length ? units.map(u => { const rs = resumoComp(u); const edit = estado.cfgEditando && estado.cfgEditando.id === u.id;
-      return `<div class="prv-unit-row"><div class="prv-unit-row-top"><div><div class="prv-unit-tipo">${esc(tipoPorId(u.tipo).nome)}</div><div class="prv-unit-local">${esc(u.local)}</div>
+      const pos = units.indexOf(u);
+      return `<div class="prv-unit-row" data-id="${esc(u.id)}"><div class="prv-unit-row-top"><div class="prv-ordem-col">${units.length > 1 ? `<span class="prv-arrastar" title="Arraste para mudar a ordem" aria-label="Arrastar">⠿</span><span class="prv-ordem-btns"><button type="button" class="prv-seta" data-prv-g="subir" data-id="${esc(u.id)}" ${pos === 0 ? 'disabled' : ''} aria-label="Subir">▲</button><button type="button" class="prv-seta" data-prv-g="descer" data-id="${esc(u.id)}" ${pos === units.length - 1 ? 'disabled' : ''} aria-label="Descer">▼</button></span>` : ''}</div><div style="flex:1; min-width:0;"><div class="prv-unit-tipo">${esc(tipoPorId(u.tipo).nome)}</div><div class="prv-unit-local">${esc(u.local)}</div>
         ${rs ? `<div class="prv-comp-res ${rs.vazio ? 'vazio' : ''}">${rs.vazio ? '⚠ ' : ''}${esc(rs.texto)}</div>` : ''}
         ${u.dicaLocal ? `<div class="prv-comp-res">📍 ${esc(u.dicaLocal)}${u.dicaLocalPor ? ' — ' + esc(u.dicaLocalPor) : ''}</div>` : ''}</div>
         <div class="prv-linha" style="margin:0;">${tipoTemComponentesConfiguraveis(u.tipo) ? `<button type="button" class="btn-ghost" data-prv-g="editar" data-id="${esc(u.id)}">Editar subitens</button>` : ''}
@@ -19801,6 +19883,17 @@ function renderConfig(){
       <div class="field"><label for="prvCfgLocal">Identificação / local</label><input type="text" id="prvCfgLocal" value="${esc(f.local)}" placeholder='Ex.: "Social", "Hóspedes", "Casa de máquinas"' autocomplete="off"></div>
       <button type="button" class="btn-primary" data-prv-g="adicionar">+ Adicionar unidade</button></div>
       ${tipoTemComponentesConfiguraveis(f.tipo) ? `<div class="prv-painel"><div class="prv-painel-t">Quais subitens esta unidade tem, e quantos de cada</div>${htmlSteppers(f.tipo, f.comp, 'add')}</div>` : ''}</div>` : ''}`;
+  if(buscaFoco){ const bi = document.getElementById('prvCfgBusca'); if(bi){ bi.focus(); try{ bi.setSelectionRange(buscaFoco.pos, buscaFoco.pos); }catch(e){} } }
+  // arrastar e soltar (mesma biblioteca da Agenda); no celular segura um instante para arrastar, a rolagem continua livre
+  if(estado._sortCfg){ try{ estado._sortCfg.destroy(); }catch(e){} estado._sortCfg = null; }
+  const listaEl = document.getElementById('prvCfgLista');
+  if(listaEl && units.length > 1 && typeof Sortable !== 'undefined'){
+    try{
+      estado._sortCfg = new Sortable(listaEl, { handle: '.prv-arrastar', draggable: '.prv-unit-row', animation: 150, ghostClass: 'prv-arrastando',
+        forceFallback: true, fallbackOnBody: true, fallbackTolerance: 3, delay: 120, delayOnTouchOnly: true, touchStartThreshold: 4,
+        onEnd: () => { const ids = [...listaEl.querySelectorAll('.prv-unit-row')].map(r => r.dataset.id); const n = aplicarOrdem(estado.cfgCliente, ids); if(n){ aviso('Ordem salva — vale para o relatório e para a tela do técnico.'); renderConfig(); } } });
+    }catch(e){ console.error('prev: arrastar indisponível', e); }
+  }
 }
 function ligarConfig(){
   const box = document.getElementById('prvManutConfig'); if(!box || box._prvLigado) return; box._prvLigado = true;
@@ -19808,7 +19901,11 @@ function ligarConfig(){
     if(e.target.id === 'prvCfgCliente'){ estado.cfgCliente = e.target.value; estado.cfgEditando = null; renderConfig(); }
     else if(e.target.id === 'prvCfgTipo'){ estado.cfgForm.tipo = e.target.value; estado.cfgForm.comp = tipoTemComponentesConfiguraveis(e.target.value) ? estadoInicialDoTipo(e.target.value) : {}; renderConfig(); }
   });
-  box.addEventListener('input', (e) => { if(e.target.id === 'prvCfgLocal') estado.cfgForm.local = e.target.value; });
+  box.addEventListener('input', (e) => {
+    if(e.target.id === 'prvCfgLocal') estado.cfgForm.local = e.target.value;
+    else if(e.target.id === 'prvCfgBusca'){ estado.cfgBusca = e.target.value; estado.cfgEditando = null; renderConfig(); }
+  });
+  box.addEventListener('keydown', (e) => { if(e.target.id === 'prvCfgBusca' && e.key === 'Escape'){ estado.cfgBusca = ''; renderConfig(); } });
   box.addEventListener('click', (e) => {
     const b = e.target.closest('[data-prv-g]'); if(!b || b.disabled) return;
     const a = b.dataset.prvG;
@@ -19820,13 +19917,29 @@ function ligarConfig(){
       renderConfig(); return;
     }
     if(a === 'importar'){ abrirImportacao(); return; }
+    if(a === 'previa'){ abrirPrevia(estado.cfgCliente); return; }
+    if(a === 'subir' || a === 'descer'){
+      const ids = unidadesDoCliente(estado.cfgCliente).map(u => String(u.id)); const i = ids.indexOf(String(b.dataset.id)); const j = a === 'subir' ? i - 1 : i + 1;
+      if(i < 0 || j < 0 || j >= ids.length) return;
+      [ids[i], ids[j]] = [ids[j], ids[i]]; aplicarOrdem(estado.cfgCliente, ids); renderConfig(); return;
+    }
+    if(a === 'ordenar'){
+      customConfirm('Organizar os equipamentos de "' + estado.cfgCliente + '" pela ordem padrão (por tipo de equipamento e depois pelo nome do local)? Isso substitui a ordem atual.', () => {
+        const idxTipo = (t) => { const i = CATALOGO.findIndex(c => c.tipo === t); return i < 0 ? 999 : i; };
+        const ordenadas = unidadesDoCliente(estado.cfgCliente).sort((x, y) => idxTipo(x.tipo) - idxTipo(y.tipo) || String(x.local).localeCompare(String(y.local), 'pt-BR', { numeric: true }));
+        aplicarOrdem(estado.cfgCliente, ordenadas.map(u => u.id)); renderConfig(); aviso('Equipamentos organizados por tipo.');
+      }, 'Organizar');
+      return;
+    }
     if(a === 'adicionar'){
       const local = estado.cfgForm.local.trim();
       if(!estado.cfgCliente){ aviso('Escolha o cliente'); return; }
       if(!local){ aviso('Informe a identificação/local da unidade'); return; }
+      aplicarOrdem(estado.cfgCliente);          // fixa 1..n nas existentes (as antigas ainda não tinham ordem) para a nova entrar no FIM
       const u = { id: novoId('u'), cliente: estado.cfgCliente, tipo: estado.cfgForm.tipo, local, componentes: tipoTemComponentesConfiguraveis(estado.cfgForm.tipo) ? componentesDoEstado(estado.cfgForm.comp) : [] };
+      u.ordem = unidadesDoCliente(estado.cfgCliente).length + 1;
       estado.unidades.push(u); estado.unidadesJSON = JSON.stringify(estado.unidades);
-      escrever(NOS.unidades + '/' + u.id, { id: u.id, cliente: u.cliente, tipo: u.tipo, local: u.local, componentes: u.componentes.length ? u.componentes : null });
+      escrever(NOS.unidades + '/' + u.id, { id: u.id, cliente: u.cliente, tipo: u.tipo, local: u.local, ordem: u.ordem, componentes: u.componentes.length ? u.componentes : null });
       estado.cfgForm.local = ''; estado.cfgForm.comp = tipoTemComponentesConfiguraveis(u.tipo) ? estadoInicialDoTipo(u.tipo) : {};
       renderConfig();
       aviso(tipoTemComponentesConfiguraveis(u.tipo) && !u.componentes.length ? 'Unidade adicionada, mas sem nenhum subitem escolhido — edite os subitens antes de usar' : 'Unidade adicionada — já aparece para o técnico neste cliente');
@@ -19880,7 +19993,9 @@ function ligarAbas(){
       const tab = b.dataset.prvos;
       document.getElementById('prvOsAguardando').style.display = tab === 'aguardando' ? '' : 'none';
       document.getElementById('prvOsRelatorios').style.display = tab === 'relatorios' ? '' : 'none';
+      const po = document.getElementById('prvOsOficina'); if(po) po.style.display = tab === 'oficina' ? '' : 'none';
       if(tab === 'relatorios'){ renderOsRelatorios(); garantirRelatorios(); }
+      if(tab === 'oficina' && window.OSOF_API) OSOF_API.renderAba();
     });
   }
   ligarConfig();
@@ -19921,7 +20036,7 @@ function resumoUnidadeImport(u){
   return `${t ? t.nome : u.tipo} — ${u.local}` + (comps.length ? ` (${comps.map(c => c.quantidade + '× ' + c.itemNome).join(', ')})` : '');
 }
 function abrirImportacao(){
-  garantirModal();
+  garantirModal(); document.getElementById('prvModal').classList.add('prv-modo-previa');
   const plano = planoImportacao();
   relAbertoId = null;
   document.getElementById('prvModalChips').innerHTML = '<b>Importar equipamentos das planilhas</b>';
@@ -19943,10 +20058,10 @@ function abrirImportacao(){
   document.getElementById('prvImportarConfirmar').onclick = () => {
     const plano2 = planoImportacao();   // recalcula na hora do clique (o banco pode ter mudado)
     let n = 0;
-    plano2.importar.forEach(p => p.unidades.forEach(un => {
-      const u = { id: novoId('u'), cliente: p.cliente, tipo: un.tipo, local: un.local, componentes: (un.componentes || []).filter(c => c.quantidade > 0) };
+    plano2.importar.forEach(p => p.unidades.forEach((un, idx) => {
+      const u = { id: novoId('u'), cliente: p.cliente, tipo: un.tipo, local: un.local, ordem: idx + 1, componentes: (un.componentes || []).filter(c => c.quantidade > 0) };
       estado.unidades.push(u); n++;
-      escrever(NOS.unidades + '/' + u.id, { id: u.id, cliente: u.cliente, tipo: u.tipo, local: u.local, componentes: u.componentes.length ? u.componentes : null, importadoDe: 'planilhas-2026-09-30' });
+      escrever(NOS.unidades + '/' + u.id, { id: u.id, cliente: u.cliente, tipo: u.tipo, local: u.local, ordem: u.ordem, componentes: u.componentes.length ? u.componentes : null, importadoDe: 'planilhas-2026-09-30' });
     }));
     estado.unidadesJSON = JSON.stringify(estado.unidades);
     fecharRelatorio(); renderConfig();
@@ -20450,6 +20565,7 @@ function reconciliar(){
 function agendar(){
   if(typeof currentRole === 'undefined' || (currentRole !== 'manager' && currentRole !== 'oficina')) return;
   clearTimeout(timer); timer = setTimeout(reconciliar, 1200);
+  if(window.OSOF_API) OSOF_API.agendar();     // fila de OS dos equipamentos finalizados (mesmos pontos de gancho)
 }
 
 function linhaAgenda(eq){
@@ -20508,6 +20624,117 @@ async function vincular(equipId, svcId){
   try{ if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab(); renderAll(); }catch(e){}
 }
 window.REINST_API = { agendar, reconciliar, linhaAgenda, abrirVincular };
+})();
+
+
+// =====================================================================================
+// EQUIPAMENTOS DA OFICINA → CADASTROS E OS (01/10)
+// Quando a Oficina FINALIZA um equipamento (teste final concluído → "Liberado para reinstalação"), ele entra numa aba nova de
+// Cadastros e OS, igual às atividades: mostra quem retirou e quando, quem fez a manutenção e quando, as peças usadas, e só sai da
+// lista quando o Gestor digita o número da OS e confirma "Cadastro/OS realizado".
+//
+// Regra da fila (sem nó novo no Firebase — tudo no próprio registro do equipamento, nos mesmos campos das atividades):
+//   • osFila           → carimbo "entrou na fila de OS" (gravado pelo Gestor quando vê o equipamento finalizado; é o que faz o
+//                         equipamento CONTINUAR na fila depois de reinstalado e removido do quadro da Oficina)
+//   • numeroOS, processedForOS, processedForOSBy, processedForOSAt → o registro da OS
+// Os que já estão finalizados na Oficina hoje entram na primeira vez que o Gestor abre o app. Os que já tinham sido reinstalados
+// ANTES desta função existir não entram (não têm o carimbo).
+// =====================================================================================
+(function(){
+'use strict';
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDH(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }catch(e){ return ''; } }
+const FINALIZADO = ['liberado_para_reinstalacao', 'reinstalacao_pendente'];     // ainda no quadro da Oficina, com o trabalho terminado
+const osRascunho = {};          // número de OS digitado e ainda não confirmado (sobrevive às atualizações em tempo real)
+
+function lista(){ return (typeof oficinaEquipamentos !== 'undefined' && Array.isArray(oficinaEquipamentos)) ? oficinaEquipamentos : []; }
+function naFila(eq){
+  if(!eq || eq.processedForOS) return false;
+  if(FINALIZADO.indexOf(eq.status) >= 0) return true;          // finalizado agora (mesmo que o carimbo ainda não tenha sido gravado)
+  return eq.status === 'reinstalado' && !!eq.osFila;           // já foi reinstalado, mas entrou na fila antes e a OS ainda não foi registrada
+}
+function aguardando(){ return lista().filter(naFila).sort((a, b) => String(a.testeCompletedAt || a.osFila || '').localeCompare(String(b.testeCompletedAt || b.osFila || ''))); }
+function pendentesOS(){ return aguardando().length; }
+function processados(){ return lista().filter(eq => eq.processedForOS).sort((a, b) => String(b.processedForOSAt || '').localeCompare(String(a.processedForOSAt || ''))); }
+
+// ---------- carimbo da fila (gravado só por Gestor; só escreve o que falta) ----------
+let timer = null, gravando = false;
+function marcarFila(){
+  if(typeof currentRole === 'undefined' || currentRole !== 'manager') return 0;
+  const novos = lista().filter(eq => FINALIZADO.indexOf(eq.status) >= 0 && !eq.processedForOS && !eq.osFila);
+  if(!novos.length || gravando) return 0;
+  const agora = new Date().toISOString();
+  novos.forEach(eq => { eq.osFila = eq.testeCompletedAt || agora; });
+  gravando = true;
+  Promise.resolve(saveOficinaEquipamentos(true)).catch(e => console.error('osof: falha ao gravar o carimbo da fila', e)).finally(() => { gravando = false; });
+  return novos.length;
+}
+function refrescar(){ try{ if(typeof currentRole !== 'undefined' && currentRole === 'manager' && typeof renderOS === 'function') renderOS(); }catch(e){ console.error(e); } }
+function agendar(){
+  if(typeof currentRole === 'undefined' || currentRole !== 'manager') return;
+  clearTimeout(timer); timer = setTimeout(() => { marcarFila(); refrescar(); }, 1200);
+}
+
+// ---------- tela ----------
+function linhaPessoa(rotulo, por, em){ return por || em ? rotulo + ' <b>' + esc(por || '—') + '</b>' + (em ? ' em ' + esc(fmtDH(em)) : '') : ''; }
+function cartao(eq){
+  const pecas = (Array.isArray(eq.partsUsed) ? eq.partsUsed : []);
+  const valor = osRascunho[eq.id] !== undefined ? osRascunho[eq.id] : (eq.numeroOS || '');
+  const fez = [...new Set([eq.manutencaoStartedBy, eq.manutencaoCompletedBy].filter(Boolean))];
+  return `<div class="os-row">
+    <div class="os-row-top">
+      <div><div class="os-client">${esc(eq.client)}</div>
+        <div class="os-meta">${esc(eq.equipment)}${eq.testeCompletedAt ? ' · finalizado em ' + esc(fmtDH(eq.testeCompletedAt)) : ''}</div></div>
+      <span class="os-quadro-tag">🔧 OFICINA</span>
+    </div>
+    <div class="field"><label>Retirada</label><div>${linhaPessoa('Retirado por', eq.withdrawnBy, eq.withdrawnAt) || '—'}</div></div>
+    <div class="field"><label>Manutenção${fez.length ? ' · ' + esc(fez.join(' e ')) : ''}</label>
+      <div class="mono">${eq.manutencaoStartedAt || eq.manutencaoCompletedAt
+        ? 'início ' + (eq.manutencaoStartedAt ? esc(fmtDH(eq.manutencaoStartedAt)) + (eq.manutencaoStartedBy ? ' (' + esc(eq.manutencaoStartedBy) + ')' : '') : '—') + '<br>fim ' + (eq.manutencaoCompletedAt ? esc(fmtDH(eq.manutencaoCompletedAt)) + (eq.manutencaoCompletedBy ? ' (' + esc(eq.manutencaoCompletedBy) + ')' : '') : '—')
+        : '—'}</div></div>
+    ${eq.testeCompletedAt ? `<div class="field"><label>Testes</label><div class="mono">${eq.testeStartedAt ? 'início ' + esc(fmtDH(eq.testeStartedAt)) + (eq.testeStartedBy ? ' (' + esc(eq.testeStartedBy) + ')' : '') + '<br>' : ''}fim ${esc(fmtDH(eq.testeCompletedAt))}${eq.testeCompletedBy ? ' (' + esc(eq.testeCompletedBy) + ')' : ''}</div></div>` : ''}
+    <div class="field"><label>Peças utilizadas</label>${pecas.length
+      ? `<ul style="margin:2px 0 0; padding-left:18px;">${pecas.map(p => `<li>${esc(p.quantity)}× ${esc(p.name)}${p.observation ? ' <span style="color:var(--text-dim);">— ' + esc(p.observation) + '</span>' : ''}</li>`).join('')}</ul>`
+      : '<div style="color:var(--text-dim);">Nenhuma peça registrada.</div>'}</div>
+    ${eq.orcamentoNumero ? `<div class="field"><label>Orçamento</label><div>nº ${esc(eq.orcamentoNumero)}</div></div>` : ''}
+    <div class="field"><label>Número de OS</label>
+      <input type="text" data-osof-numero="${esc(eq.id)}" value="${esc(valor)}" placeholder="Digite o número da ordem de serviço" autocomplete="off"></div>
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;"><button type="button" class="btn-primary" data-osof-feito="${esc(eq.id)}">Cadastro/OS realizado</button></div>
+  </div>`;
+}
+function renderAba(){
+  const aba = document.getElementById('prvOsTabOficina');
+  const fila = aguardando();
+  if(aba) aba.textContent = 'Equipamentos da Oficina' + (fila.length ? ' (' + fila.length + ')' : '');
+  const box = document.getElementById('prvOsOficina'); if(!box || box.style.display === 'none') return;
+  const foco = document.activeElement; const focoId = (foco && box.contains(foco) && foco.dataset) ? foco.dataset.osofNumero : null; const caret = focoId ? foco.selectionStart : null;
+  const feitos = processados().slice(0, 10);
+  box.innerHTML = `<p class="prv-hint">Equipamentos que a Oficina finalizou (teste final concluído). Confira quem retirou, quem fez a manutenção e as peças; digite o número da OS e confirme para tirar da lista. O equipamento continua aqui mesmo depois de reinstalado, até a OS ser registrada.</p>`
+    + (fila.length ? fila.map(cartao).join('') : '<div class="empty-state">Nenhum equipamento da Oficina aguardando cadastro de OS.</div>')
+    + (feitos.length ? `<div class="maint-section-title" style="margin-top:26px;">Processados recentemente</div>` + feitos.map(eq => `<div class="os-processed-row"><div><b>${esc(eq.client)}</b> — ${esc(eq.equipment)}</div><div class="os-meta">OS nº ${esc(eq.numeroOS || '—')} · processado por ${esc(eq.processedForOSBy || '—')} em ${esc(fmtDH(eq.processedForOSAt))}</div></div>`).join('') : '');
+  if(!box._osofLigado){
+    box._osofLigado = true;
+    box.addEventListener('input', (e) => { const id = e.target.dataset && e.target.dataset.osofNumero; if(id !== undefined) osRascunho[id] = e.target.value; });
+    box.addEventListener('click', (e) => { const b = e.target.closest('[data-osof-feito]'); if(b) concluir(b.dataset.osofFeito); });
+  }
+  if(focoId){ const alvo = box.querySelector(`[data-osof-numero="${focoId}"]`); if(alvo){ alvo.focus(); try{ if(caret !== null) alvo.setSelectionRange(caret, caret); }catch(e){} } }
+}
+async function concluir(id){
+  const eq = lista().find(x => String(x.id) === String(id)); if(!eq) return;
+  const box = document.getElementById('prvOsOficina');
+  const inp = box ? box.querySelector(`[data-osof-numero="${String(id).replace(/"/g, '')}"]`) : null;
+  const numero = inp ? inp.value.trim() : '';
+  if(!numero){ alert('Preencha o número da OS antes de marcar como feito.'); if(inp) inp.focus(); return; }
+  if(eq.processedForOS || !naFila(eq)){ try{ avisoNaoBloqueante('Este equipamento acabou de ser atualizado por outra pessoa. A lista foi atualizada.', 5000); }catch(e){} refrescar(); return; }
+  delete osRascunho[id];
+  eq.numeroOS = numero; eq.processedForOS = true;
+  eq.processedForOSBy = (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
+  eq.processedForOSAt = new Date().toISOString();
+  if(!eq.osFila) eq.osFila = eq.testeCompletedAt || eq.processedForOSAt;
+  refrescar();
+  await saveOficinaEquipamentos(true);
+}
+window.OSOF_API = { pendentesOS, renderAba, agendar, marcarFila };
 })();
 
 init();
