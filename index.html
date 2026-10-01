@@ -1682,6 +1682,11 @@
   .prv-arrastando{ opacity:.55; background:var(--panel-2); }
   .prv-unit-row-top{ align-items:center; }
   .prv-modo-previa [data-prv-m="baixar"], .prv-modo-previa [data-prv-m="whats"], .prv-modo-previa [data-prv-m="enviado"]{ display:none; }
+
+  /* ===== Observação e fotos no fim de cada equipamento (técnico) ===== */
+  .prv-unit-fim{ margin-top:16px; padding-top:4px; border-top:1.5px dashed #CDD0D4; }
+  .prv-foto-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .prv-foto-btn{ min-height:42px; padding-left:14px; padding-right:14px; font-weight:700; }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -18120,7 +18125,10 @@ function montarSnapshotUnidade(unit, respostas){
       return { campo: campo.label, texto: o ? o.label : String(v), cor: o ? o.cor : null };
     })(entrada)); if(l && entrada.campo.interno) l.interno = true; return l; }).filter(Boolean).concat(linhasEquilibrio(g.campos, respostas)),
   }));
-  return { unitId: unit.id, local: unit.local, tipoNome: tipo.nome, grupos };
+  const out = { unitId: unit.id, local: unit.local, tipoNome: tipo.nome, grupos };
+  const obsUnid = String((respostas && respostas.__obs) || '').trim();      // linha de observação ao fim do equipamento (opcional)
+  if(obsUnid) out.observacao = obsUnid;
+  return out;
 }
 
 // Linha "só equipe": Retrolavagem e Pressão do filtro de piscina/SPA. Vale a marca gravada no relatório (interno:true) e,
@@ -18199,6 +18207,7 @@ const CSS_RELATORIO = `
 .rp-obs h3{margin:0 0 8px;font-size:14.5px;}
 .rp-obs-texto{white-space:pre-wrap;font-size:13.5px;line-height:1.55;}
 .rp-fotos{margin-top:16px;}
+.rp-unit-obs{margin-top:10px;} .rp-unit-fotos{margin-top:10px;} .rp-unit-fotos .rp-fotos-grid{margin-top:6px;}
 .rp-fotos h3{margin:0 0 8px;font-size:14.5px;}
 .rp-fotos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .rp-fotos-grid figure{margin:0;break-inside:avoid;}
@@ -18482,13 +18491,17 @@ function setRelCampo(id, campo, valor){
   if(valor === null) delete estado.relatorios[id][campo]; else estado.relatorios[id][campo] = valor;
   escrever(NOS.relatorios + '/' + id + '/' + campo, valor);
 }
+// Foto tirada pelo atalho de um equipamento leva o id da unidade no próprio id da foto ("f<tempo><sorteio>~<idDaUnidade>"),
+// assim não existe nenhum campo novo no Firebase e as fotos antigas (sem "~") continuam sendo as "gerais".
+function unidadeDaFoto(fid){ const i = String(fid).indexOf('~'); return i < 0 ? '' : String(fid).slice(i + 1); }
 async function fotosDoRelatorio(rel){
   const sid = rel.fotosDe;
   if(sid == null) return [];
-  if(estado.fotosRel[sid]) return estado.fotosRel[sid];
+  // refaz a leitura se o técnico acrescentou/tirou fotos depois da última vez que alguém abriu este relatório
+  if(estado.fotosRel[sid] && estado.fotosRel[sid].length === num(rel.nFotos)) return estado.fotosRel[sid];
   const snap = await comTimeout(rtdb.ref(NOS.fotos + '/' + sid).get(), 15000);
   const obj = snap.exists() ? snap.val() : {};
-  const lista = Object.keys(obj).sort().map(k => obj[k]).filter(Boolean);
+  const lista = Object.keys(obj).sort().filter(k => obj[k]).map(k => ({ id: k, src: obj[k], u: unidadeDaFoto(k) }));
   estado.fotosRel[sid] = lista;
   return lista;
 }
@@ -18572,6 +18585,25 @@ function salvarDica(unitId, texto){
   escrever(base + 'dicaLocalPor', texto && por ? por : null);
   escrever(base + 'dicaLocalEm', texto ? agora : null);
 }
+// Miniaturas (com botão de remover) de um conjunto de fotos do rascunho.
+function htmlMiniaturas(r, ids, travado){
+  return ids.map(id => `<div class="prv-foto"><img src="${esc(r.fotos[id])}" alt="Foto" data-prv-foto>${travado ? '' : `<button type="button" data-prv-rmfoto="${esc(id)}" aria-label="Remover foto">✕</button>`}</div>`).join('');
+}
+// Fim de cada equipamento: uma linha de observação (opcional) e as fotos DESTE equipamento, com atalho para tirar foto na hora.
+// As fotos ficam agrupadas aqui, no fim do equipamento, e vão para o mesmo lugar no relatório.
+function htmlFimUnidade(sid, u, r, resp, travado){
+  const fotoIds = Object.keys(r.fotos || {}).filter(id => unidadeDaFoto(id) === String(u.id)).sort();
+  const total = Object.keys(r.fotos || {}).length;
+  const botoes = (!travado && total < MAX_FOTOS) ? `<div class="prv-foto-acoes">
+      <button type="button" class="btn-ghost prv-foto-btn" data-prv-foto-cam="${esc(u.id)}">📷 Tirar foto</button>
+      <button type="button" class="btn-ghost prv-foto-btn" data-prv-foto-gal="${esc(u.id)}">🖼 Da galeria</button></div>` : (total >= MAX_FOTOS && !travado ? `<div class="prv-fotos-n">Limite de ${MAX_FOTOS} fotos atingido neste relatório.</div>` : '');
+  return `<div class="prv-unit-fim">
+    <div class="prv-field"><div class="prv-flabel">Observação deste equipamento <small style="text-transform:none; font-weight:500;">(opcional)</small></div>
+      <textarea class="prv-txt" rows="2" data-prv-u="${esc(u.id)}" data-prv-k="__obs" placeholder="Algo a registrar sobre este equipamento…" ${travado ? 'disabled' : ''}>${esc(resp.__obs || '')}</textarea></div>
+    <div class="prv-field"><div class="prv-flabel">Fotos deste equipamento</div>
+      ${fotoIds.length ? `<div class="prv-fotos">${htmlMiniaturas(r, fotoIds, travado)}</div>` : ''}${botoes}</div>
+  </div>`;
+}
 function htmlUnidade(sid, u, r, travado){
   const tipo = tipoPorId(u.tipo);
   const done = unidadeCompleta(u, r);
@@ -18585,7 +18617,7 @@ function htmlUnidade(sid, u, r, travado){
     } else {
       corpo = agruparPorItem(est).map(g => `<div class="prv-grupo"><div class="prv-grupo-t">${esc(g.itemLabel)}</div>${htmlCamposDoGrupo(u.id, g.campos, resp, travado)}</div>`).join('');
     }
-    corpo = `<div class="prv-unit-corpo">${corpo}${htmlDicaLocal(sid, u)}</div>`;
+    corpo = `<div class="prv-unit-corpo">${corpo}${htmlFimUnidade(sid, u, r, resp, travado)}${htmlDicaLocal(sid, u)}</div>`;
   }
   return `<div class="prv-unit ${done ? 'done' : ''}">
     <button type="button" class="prv-unit-head" data-prv-act="toggle-unit" data-prv-u="${esc(u.id)}">
@@ -18599,7 +18631,8 @@ function htmlSlot(svc, units, r){
   const concluida = svc.status === 'concluido';
   const feitas = units.filter(u => unidadeCompleta(u, r)).length;
   const aberto = estado.abertoSec.has(sid);
-  const fotoIds = Object.keys(r.fotos || {}).sort();
+  const fotoIds = Object.keys(r.fotos || {}).sort();                       // todas (contagem e limite)
+  const fotoIdsGerais = fotoIds.filter(id => !unidadeDaFoto(id));          // as que não são de um equipamento específico
   let corpo = '';
   if(aberto){
     corpo = `
@@ -18613,10 +18646,10 @@ function htmlSlot(svc, units, r){
         <textarea class="prv-obs" rows="4" placeholder="O que foi feito, problemas encontrados e recomendações para o cliente..." ${travado ? 'disabled' : ''}>${esc(r.obs || '')}</textarea>
       </div>
       <div class="prv-field">
-        <div class="prv-flabel">Fotos (até ${MAX_FOTOS})</div>
-        <div class="prv-fotos">${fotoIds.map(id => `<div class="prv-foto"><img src="${esc(r.fotos[id])}" alt="Foto" data-prv-foto>${travado ? '' : `<button type="button" data-prv-rmfoto="${esc(id)}" aria-label="Remover foto">✕</button>`}</div>`).join('')}
-          ${(!travado && fotoIds.length < MAX_FOTOS) ? `<label class="prv-foto-add">+<input type="file" accept="image/*" multiple style="display:none;" data-prv-addfoto></label>` : ''}</div>
-        <div class="prv-fotos-n">${fotoIds.length} de ${MAX_FOTOS} fotos</div>
+        <div class="prv-flabel">Fotos gerais da visita (até ${MAX_FOTOS} no relatório todo)</div>
+        ${fotoIdsGerais.length ? `<div class="prv-fotos">${htmlMiniaturas(r, fotoIdsGerais, travado)}</div>` : ''}
+        ${(!travado && fotoIds.length < MAX_FOTOS) ? `<div class="prv-foto-acoes"><button type="button" class="btn-ghost prv-foto-btn" data-prv-foto-add="geral">＋ Adicionar foto</button></div>` : ''}
+        <div class="prv-fotos-n">${fotoIds.length} de ${MAX_FOTOS} fotos no relatório (as de cada equipamento contam aqui)</div>
       </div>`;
   }
   return `<div class="prv-sec">
@@ -18684,10 +18717,10 @@ function gravarObs(sid, texto){
   cacheRascunho(sid);
   aposAlterar(sid);
 }
-function gravarFoto(sid, dataUrl){
+function gravarFoto(sid, dataUrl, unitId){
   const r = estado.rascunhos[sid]; if(!r) return false;
   if(Object.keys(r.fotos).length >= MAX_FOTOS) return false;
-  const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + (unitId ? '~' + unitId : '');
   r.fotos[id] = dataUrl;
   escrever(NOS.fotos + '/' + sid + '/' + id, dataUrl);
   return true;
@@ -18708,6 +18741,16 @@ function ligarSlot(slot){
         const r = estado.rascunhos[sid]; if(!r) return;
         delete r.fotos[fid]; escrever(NOS.fotos + '/' + sid + '/' + fid, null); remontarSlots(sid); aposAlterar(sid);
       });
+      return;
+    }
+    const fc = e.target.closest('[data-prv-foto-cam]'), fg = e.target.closest('[data-prv-foto-gal]'), fa = e.target.closest('[data-prv-foto-add]');
+    if(fc || fg || fa){
+      if(estado.enviados[sid]) return;
+      const rr = estado.rascunhos[sid]; if(!rr) return;
+      if(Object.keys(rr.fotos).length >= MAX_FOTOS){ aviso('Limite de ' + MAX_FOTOS + ' fotos neste relatório.'); return; }
+      if(fc) abrirSeletorFoto(sid, fc.dataset.prvFotoCam, 'camera');            // atalho: abre a câmera direto
+      else if(fg) abrirSeletorFoto(sid, fg.dataset.prvFotoGal, 'galeria');
+      else escolherOrigemFoto(sid);                                              // geral: pergunta "tirar foto" ou "galeria"
       return;
     }
     const b = e.target.closest('[data-prv-act],[data-prv-v]');
@@ -18771,18 +18814,51 @@ function ligarSlot(slot){
   });
   slot.addEventListener('focusout', () => descarregarTimers());
   slot.addEventListener('keydown', (e) => { const el = e.target.closest('[data-prv-act="dica-editar"]'); if(el && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); el.click(); } });
-  slot.addEventListener('change', async (e) => {
-    const inp = e.target.closest('[data-prv-addfoto]'); if(!inp) return;
-    const svc = svcDe(); if(!svc || estado.enviados[svc.id]) return;
-    const sid = svc.id; const r = estado.rascunhos[sid]; if(!r) return;
-    const room = MAX_FOTOS - Object.keys(r.fotos).length;
-    const arquivos = Array.from(inp.files || []);
-    if(arquivos.length > room) aviso('Limite de ' + MAX_FOTOS + ' fotos — as que passaram do limite foram ignoradas');
-    for(const f of arquivos.slice(0, Math.max(0, room))){
-      try{ const url = await compressImageFile(f); gravarFoto(sid, url); remontarSlots(sid); }catch(err){ /* ignora arquivo que falhar, como nas outras fotos do app */ }
-    }
-    aposAlterar(sid);
-  });
+}
+// ---------- fotos: tirar na hora ou escolher da galeria ----------
+// Dois campos de arquivo escondidos, criados uma vez: um com capture="environment" (no celular abre a CÂMERA direto) e outro sem
+// (galeria/arquivos, vários de uma vez). No computador "tirar foto" cai no seletor de arquivos, porque o navegador não abre câmera
+// por esse caminho. unitId vazio = foto geral; com unitId = foto daquele equipamento.
+function garantirCamposFoto(){
+  if(document.getElementById('prvFotoCam')) return;
+  const mk = (id, cam) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.id = id; i.style.display = 'none'; if(cam) i.setAttribute('capture', 'environment'); else i.multiple = true; document.body.appendChild(i); i.addEventListener('change', () => processarArquivosFoto(i)); };
+  mk('prvFotoCam', true); mk('prvFotoGal', false);
+}
+function abrirSeletorFoto(sid, unitId, modo){
+  garantirCamposFoto();
+  estado.fotoAlvo = { sid, unitId: unitId && unitId !== 'geral' ? String(unitId) : '' };
+  const inp = document.getElementById(modo === 'camera' ? 'prvFotoCam' : 'prvFotoGal'); inp.value = ''; inp.click();
+}
+async function processarArquivosFoto(inp){
+  const alvo = estado.fotoAlvo; estado.fotoAlvo = null;
+  const arquivos = Array.from(inp.files || []);
+  if(!alvo || !arquivos.length) return;
+  const sid = alvo.sid; const svc = services.find(s => String(s.id) === String(sid));
+  if(!svc || estado.enviados[sid]) return;
+  const r = estado.rascunhos[sid]; if(!r) return;
+  const room = MAX_FOTOS - Object.keys(r.fotos).length;
+  if(arquivos.length > room) aviso('Limite de ' + MAX_FOTOS + ' fotos — as que passaram do limite foram ignoradas');
+  for(const f of arquivos.slice(0, Math.max(0, room))){
+    try{ const url = await compressImageFile(f); gravarFoto(sid, url, alvo.unitId); remontarSlots(sid); }catch(err){ /* ignora arquivo que falhar, como nas outras fotos do app */ }
+  }
+  inp.value = '';
+  aposAlterar(sid);
+}
+function escolherOrigemFoto(sid){
+  let ov = document.getElementById('prvFotoEscolha');
+  if(!ov){
+    ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'prvFotoEscolha';
+    ov.innerHTML = '<div class="modal" style="max-width:380px;"><h3>Adicionar foto</h3><p class="modal-sub" style="margin:0 0 12px;">Como você quer adicionar?</p>'
+      + '<div style="display:flex; flex-direction:column; gap:8px;"><button type="button" class="btn-primary" id="prvFotoEscCam" style="width:100%;">📷 Tirar foto agora</button>'
+      + '<button type="button" class="btn-ghost" id="prvFotoEscGal" style="width:100%;">🖼 Escolher da galeria</button>'
+      + '<button type="button" class="btn-ghost" id="prvFotoEscCancel" style="width:100%;">Cancelar</button></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', (e) => { if(e.target === ov) ov.classList.remove('open'); });
+    document.getElementById('prvFotoEscCancel').onclick = () => ov.classList.remove('open');
+  }
+  document.getElementById('prvFotoEscCam').onclick = () => { ov.classList.remove('open'); abrirSeletorFoto(sid, '', 'camera'); };
+  document.getElementById('prvFotoEscGal').onclick = () => { ov.classList.remove('open'); abrirSeletorFoto(sid, '', 'galeria'); };
+  ov.classList.add('open');
 }
 function montarSlot(card, svc){
   try{
@@ -18974,6 +19050,16 @@ function gerarPdfRelatorio(rel, fotos){
   const J = carregarJsPdf();
   const r = normalizarRelatorio(rel);
   const res = resumoRelatorio(r, { pdf: true });
+  // Fotos: TODAS no fim do relatório, numeradas; a legenda traz o equipamento de onde a foto foi tirada (botão do equipamento) ou
+  // "Foto geral" (adicionada pela seção geral). Ordem: equipamentos na ordem do relatório, depois as gerais.
+  const lote = (fotos || []).map(f => typeof f === 'string' ? { src: f, u: '' } : f);
+  const unidDaFoto = (f) => f.u ? r.unidades.find(u => String(u.unitId) === String(f.u)) : null;
+  const semAcPdf = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const legendaFoto = (f) => { const u = unidDaFoto(f); return u ? (semAcPdf(u.local) !== semAcPdf(u.tipoNome) ? u.tipoNome + ' — ' + u.local : u.tipoNome) : 'Foto geral'; };
+  const todasFotos = [];
+  r.unidades.forEach(u => lote.filter(f => String(f.u || '') === String(u.unitId)).forEach(f => todasFotos.push(f)));
+  lote.filter(f => !unidDaFoto(f)).forEach(f => todasFotos.push(f));
+  const numFoto = new Map(); todasFotos.forEach((f, i) => numFoto.set(f, i + 1));
   const avaliados = res.verdes + res.amarelos + res.vermelhos;
   const doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   doc.addFileToVFS('LibSans.ttf', FONTE_SANS); doc.addFont('LibSans.ttf', 'LibSans', 'normal');
@@ -19109,7 +19195,7 @@ function gerarPdfRelatorio(rel, fotos){
   const semAc = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   r.unidades.forEach(u => {
     const grupos = u.grupos.map(g => ({ g, linhas: g.linhas.filter(l => !ehLinhaInterna(l, g, u)) })).filter(x => x.linhas.length);
-    if(u.grupos.length && !grupos.length) return;
+    if(u.grupos.length && !grupos.length && !u.observacao) return;
     const itens = [];
     itens.push({ h: 10.5, keep: true, draw: (yy) => {
       doc.setFillColor(C.cinzaBloco); doc.rect(M + 0.15, yy + 0.15, W - 0.3, 10.2, 'F'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.line(M, yy + 10.5, M + W, yy + 10.5);
@@ -19154,8 +19240,27 @@ function gerarPdfRelatorio(rel, fotos){
         i++;
       }
     });
+    // ---- fim do equipamento: observação (as fotos vão todas para o fim do relatório) ----
+    if(u.observacao){
+      itens.push({ h: 8.4, keep: true, draw: (yy) => { doc.setFillColor(C.red); doc.roundedRect(M + 5, yy + 5.1, 3.4, 0.9, 0.4, 0.4, 'F'); setF('sansB', 7, C.dim); doc.setCharSpace(0.4); txt('OBSERVAÇÃO', M + 10, yy + 6.2); doc.setCharSpace(0); } });
+      setF('sans', 9, C.texto); const lnObs = doc.splitTextToSize(limparPdf(u.observacao), W - 10);
+      lnObs.forEach(t2 => itens.push({ h: 4.4, draw: (yy) => { setF('sans', 9, '#33363B'); txt(t2, M + 5, yy + 3.4); } }));
+    }
     cartao(itens, { fill: '#FFFFFF', stroke: C.linha, r: 1.6, padB: 1.4, gap: 4.5, continuacao: u.tipoNome + (semAc(u.local) !== semAc(u.tipoNome) ? ' — ' + u.local : '') + ' (continuação)' });
   });
+  function medirFoto(f, colW, maxH){
+    let w = colW, h = colW * 0.75, ok = true, fmt = 'JPEG';
+    try{ const p = doc.getImageProperties(f.src); fmt = String(p.fileType || 'JPEG'); const esc2 = Math.min(colW / p.width, maxH / p.height); w = p.width * esc2; h = p.height * esc2; }catch(e){ ok = false; }
+    setF('sans', 7, C.dim); const leg = doc.splitTextToSize(limparPdf(legendaFoto(f)), colW);
+    return { f, src: f.src, w, h, ok, fmt, n: numFoto.get(f), leg };
+  }
+  function desenharFoto(o, x, yy){
+    if(o.ok){ try{ doc.addImage(o.src, o.fmt, x, yy, o.w, o.h); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.roundedRect(x, yy, o.w, o.h, 1.2, 1.2, 'S'); }catch(e){ o.ok = false; } }
+    if(!o.ok){ setF('sans', 8, C.dim); txt('(foto não pôde ser incluída)', x, yy + 6); }
+    const yl = yy + (o.ok ? o.h : 8) + 3.4;
+    setF('sansB', 7, C.texto); txt('Foto ' + o.n, x, yl);
+    setF('sans', 7, C.dim); o.leg.forEach((ln, k) => txt(ln, x, yl + 3.1 * (k + 1)));
+  }
   function linhaPontilhada(yy){ doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.setLineDashPattern([0.7, 0.7], 0); doc.line(M + 5, yy, M + W - 5, yy); doc.setLineDashPattern([], 0); }
 
   // ---------------- observações ----------------
@@ -19166,24 +19271,16 @@ function gerarPdfRelatorio(rel, fotos){
     cartao(itens, { fill: '#FFFFFF', stroke: C.linha, r: 2.2, barra: C.ink, barraW: 1.7, padB: 3, gap: 5, continuacao: 'Observações e recomendações (continuação)' });
   }
 
-  // ---------------- fotos ----------------
-  if(fotos && fotos.length){
-    garantir(14); setF('sansB', 10.5, C.ink); txt('Fotos da visita', M, y + 4.5); y += 8;
+  // ---------------- fotos (todas, no fim) ----------------
+  if(todasFotos.length){
     const colW = (W - 2 * 3) / 3; const maxH = 46;
-    for(let i = 0; i < fotos.length; i += 3){
-      const linha = fotos.slice(i, i + 3).map((src, k) => {
-        let w = colW, h = colW * 0.75, ok = true, fmt = 'JPEG';
-        try{ const p = doc.getImageProperties(src); fmt = String(p.fileType || 'JPEG'); const esc2 = Math.min(colW / p.width, maxH / p.height); w = p.width * esc2; h = p.height * esc2; }catch(e){ ok = false; }
-        return { src, w, h, ok, fmt, n: i + k + 1 };
-      });
-      const hLinha = Math.max(...linha.map(f => f.h)) + 6;
-      garantir(hLinha);
-      linha.forEach((f, k) => {
-        const x = M + k * (colW + 3);
-        if(f.ok){ try{ doc.addImage(f.src, f.fmt, x, y, f.w, f.h); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.roundedRect(x, y, f.w, f.h, 1.2, 1.2, 'S'); }catch(e){ f.ok = false; } }
-        if(!f.ok){ setF('sans', 8, C.dim); txt('(foto não pôde ser incluída)', x, y + 6); }
-        setF('sans', 7, C.dim); txt('Foto ' + f.n, x, y + f.h + 3.4);
-      });
+    for(let i = 0; i < todasFotos.length; i += 3){
+      const linha = todasFotos.slice(i, i + 3).map(f => medirFoto(f, colW, maxH));
+      const hLinha = Math.max(...linha.map(f => f.h + 3.4 + 3.1 * (1 + f.leg.length))) + 3;
+      if(i === 0){                              // o título nunca fica sozinho no fim de uma página: vai junto com a 1ª linha de fotos
+        garantir(8 + hLinha); setF('sansB', 10.5, C.ink); txt('Fotos da visita', M, y + 4.5); y += 8;
+      } else garantir(hLinha);
+      linha.forEach((f, k) => desenharFoto(f, M + k * (colW + 3), y));
       y += hLinha;
     }
   }
@@ -19394,19 +19491,27 @@ function htmlRelatorio(rel, fotos, opts){
   const dataTxt = fmtData(r.dataVisita) || fmtDataHora(r.criadoEm);
   const horaTxt = (fmtData(r.dataVisita) && r.inicio) ? esc(r.inicio) + (r.fim ? ' às ' + esc(r.fim) : '') : '';
   const geradoEm = fmtData(String(r.criadoEm || '').slice(0, 10));
-  const fotosHtml = (num(r.nFotos) > 0 || (fotos && fotos.length))
-    ? (fotos ? `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-fotos-grid">${fotos.map((src, i) => `<figure><img src="${esc(src)}" alt="Foto ${i + 1}"><figcaption>Foto ${i + 1}</figcaption></figure>`).join('')}</div></div>`
-               : `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">Carregando fotos…</div></div>`)
-    : '';
+  // Fotos: TODAS ficam no fim do relatório, numeradas. A legenda diz de qual equipamento é a foto, quando ela foi tirada pelo botão
+  // daquele equipamento; as adicionadas pela seção geral saem como "Foto geral". Ordem: equipamentos na ordem do relatório, depois as gerais.
+  const lote = fotos ? fotos.map(f => typeof f === 'string' ? { src: f, u: '' } : f) : null;
+  const unidDaFoto = (f) => f.u ? r.unidades.find(u => String(u.unitId) === String(f.u)) : null;
+  const legendaFoto = (f) => { const u = unidDaFoto(f); return u ? (semAcentoRp(u.local) !== semAcentoRp(u.tipoNome) ? u.tipoNome + ' — ' + u.local : u.tipoNome) : 'Foto geral'; };
+  const ordenadas = [];
+  if(lote){ r.unidades.forEach(u => lote.filter(f => String(f.u || '') === String(u.unitId)).forEach(f => ordenadas.push(f))); lote.filter(f => !unidDaFoto(f)).forEach(f => ordenadas.push(f)); }
+  const fotosHtml = previa ? '' : (lote
+    ? (ordenadas.length ? `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-fotos-grid">${ordenadas.map((f, i) => `<figure><img src="${esc(f.src)}" alt="Foto ${i + 1}"><figcaption><b>Foto ${i + 1}</b> · ${esc(legendaFoto(f))}</figcaption></figure>`).join('')}</div></div>` : '')
+    : (num(r.nFotos) > 0 ? `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">Carregando fotos…</div></div>` : ''));
   const unidadesHtml = r.unidades.map(u => {
     const grupos = u.grupos.map(g => ({ g, linhas: pdf ? g.linhas.filter(l => !ehLinhaInterna(l, g, u)) : g.linhas })).filter(x => x.linhas.length);
-    if(pdf && u.grupos.length && !grupos.length) return '';          // unidade que só tinha itens "só equipe": não vai no PDF
+    if(pdf && u.grupos.length && !grupos.length && !u.observacao) return '';          // unidade que só tinha itens "só equipe" (e nada mais): não vai no PDF
     return `<div class="rp-unit">
       <h3><span class="rp-unit-tipo">${esc(u.tipoNome)}</span>${semAcentoRp(u.local) !== semAcentoRp(u.tipoNome) ? `<span class="rp-unit-local">${esc(u.local)}</span>` : ''}</h3>
       <div class="rp-unit-corpo">${grupos.length ? grupos.map(x => `
         ${u.grupos.length > 1 ? `<div class="rp-grupo">${esc(x.g.titulo)}</div>` : ''}
         <table class="rp-tab">${linhasDaTabela(x.linhas, pill, pdf ? null : (l => ehLinhaInterna(l, x.g, u)), vazioTxt)}</table>`).join('')
-        : '<div class="rp-nota" style="margin:8px 0 0;">Nenhum subitem estava configurado para esta unidade na data da visita.</div>'}</div>
+        : '<div class="rp-nota" style="margin:8px 0 0;">Nenhum subitem estava configurado para esta unidade na data da visita.</div>'}
+        ${u.observacao ? `<div class="rp-unit-obs"><div class="rp-grupo">Observação</div><div class="rp-texto">${esc(u.observacao)}</div></div>` : ''}
+        ${previa ? '<div class="rp-nota" style="margin:10px 0 0;">(observação deste equipamento, se o técnico registrar)</div>' : ''}</div>
     </div>`;
   }).join('');
   return `<div class="rp">
@@ -19433,7 +19538,7 @@ function htmlRelatorio(rel, fotos, opts){
       : (avaliados ? '<div class="rp-ok">✓ Nenhum ponto crítico nesta visita.</div>' : '')}
 `}
     ${unidadesHtml}
-    ${previa ? '<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto" style="color:#6B7076;">(texto escrito pelo técnico ao fim da visita)</div></div><div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">(até 10 fotos tiradas pelo técnico)</div></div>' : `${r.observacoes ? `<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto">${esc(r.observacoes)}</div></div>` : ''}
+    ${previa ? '<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto" style="color:#6B7076;">(texto escrito pelo técnico ao fim da visita)</div></div><div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">(até 10 fotos tiradas pelo técnico; cada uma leva na legenda o nome do equipamento em que foi tirada, ou "Foto geral")</div></div>' : `${r.observacoes ? `<div class="rp-obs"><h3>Observações e recomendações</h3><div class="rp-obs-texto">${esc(r.observacoes)}</div></div>` : ''}
     ${fotosHtml}`}
     <div class="rp-foot"><span>Relatório gerado pelo Equiper Serviços</span>${geradoEm ? `<span>Concluído em ${esc(geradoEm)}</span>` : ''}</div>
   </div>`;
