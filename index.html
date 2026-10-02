@@ -3859,13 +3859,21 @@ function cacheLer(nome){
 }
 // Reaplica os caminhos pendentes do outbox sobre uma lista de registros em memória (sem tocar
 // no snapshot — é exatamente isso que mantém a alteração "pendente" e faz o próximo save reenviar).
+// Nível de cada status no fluxo da Oficina: um pendente velho (fila) ou um merge nunca pode levar o status para um nível
+// MENOR do que o já confirmado — era isso que fazia o equipamento voltar de "liberado" para "em teste" (as datas ficavam e
+// só o status regredia, a cada reenvio automático). Voltar de verdade só pela correção do Gestor (_gestorCorrecao).
+const OE_NIVEL = { aguardando_vistoria: 0, vistoria_iniciada: 1, vistoria_concluida: 2, manutencao_iniciada: 3, manutencao_concluida: 4, teste_iniciado: 5, liberado_para_reinstalacao: 6, reinstalacao_pendente: 6, reinstalado: 7, removido_oficina: 7 };
+function oeStatusRegride(de, para){ return OE_NIVEL[de] !== undefined && OE_NIVEL[para] !== undefined && OE_NIVEL[para] < OE_NIVEL[de]; }
 function outboxAplicarNaLista(nome, lista){
   const updates = outboxLer(nome);
   const porId = {}; lista.forEach(r => { porId[String(r.id)] = r; });
-  let aplicou = 0;
+  let aplicou = 0, descartados = 0;
   Object.keys(updates).forEach(path => {
     const parts = path.split('/'); if(parts[0] !== nome) return;
     const id = parts[1], campo = parts[2];
+    if(nome === 'oficinaEquipamentos' && campo === 'status' && porId[id] && oeStatusRegride(porId[id].status, updates[path])){
+      delete updates[path]; descartados++; return;          // pendente obsoleto: o servidor já está mais à frente
+    }
     if(campo === undefined){
       if(updates[path] === null){ const i = lista.findIndex(r => String(r.id) === id); if(i >= 0) lista.splice(i, 1); aplicou++; }
       return;
@@ -3875,6 +3883,7 @@ function outboxAplicarNaLista(nome, lista){
     if(updates[path] === null) delete r[campo]; else r[campo] = updates[path];
     aplicou++;
   });
+  if(descartados){ outboxGravar(nome, updates); console.warn('outbox: ' + descartados + ' pendente(s) de status obsoleto(s) descartado(s) em ' + nome); }
   return aplicou;
 }
 
@@ -9486,7 +9495,7 @@ function mergeRemoteOficinaEquipamentos(remoteMap){
       allFields.forEach(field => {
         const localFieldJson = JSON.stringify(local[field]);
         const confirmedFieldJson = confirmedFields[field];
-        if(confirmedFieldJson !== undefined && localFieldJson !== confirmedFieldJson){
+        if(confirmedFieldJson !== undefined && localFieldJson !== confirmedFieldJson && !(field === 'status' && !local._gestorCorrecao && oeStatusRegride(remote.status, local.status))){
           mergedRecord[field] = local[field]; // edição local pendente, não sobrescreve
         } else {
           mergedRecord[field] = remote[field];
@@ -9586,7 +9595,11 @@ async function writeOficinaEquipamentosDiff(attempt){
       const confirmedFields = oficinaEquipamentosSnapshot[id] || {};
       let changed = false;
       const changedFields = {};
+      if(!eq._gestorCorrecao && confirmedFields.status !== undefined){
+        try{ const confirmado = JSON.parse(confirmedFields.status); if(oeStatusRegride(confirmado, eq.status)){ console.warn('oficina: status local ' + eq.status + ' regrediria o confirmado ' + confirmado + ' — adotado o confirmado'); eq.status = confirmado; } }catch(e){}
+      }
       Object.keys(eq).forEach(field => {
+        if(field === '_gestorCorrecao') return;           // marcador local, não vai para o banco
         const fieldJson = JSON.stringify(eq[field]);
         if(confirmedFields[field] !== fieldJson){
           updates['oficinaEquipamentos/' + id + '/' + field] = eq[field];
@@ -9602,6 +9615,8 @@ async function writeOficinaEquipamentosDiff(attempt){
       Object.keys(sentFieldSnapshots).forEach(id => {
         oficinaEquipamentosSnapshot[id] = Object.assign({}, oficinaEquipamentosSnapshot[id], sentFieldSnapshots[id]);
       });
+    } else if(outboxTem('oficinaEquipamentos')){
+      outboxGravar('oficinaEquipamentos', {});       // tudo que estava na fila já é igual ao confirmado: nada a reenviar
     }
     return true;
   }catch(e){
@@ -12936,8 +12951,9 @@ async function oeGestorDefinirStatus(equipId, novo){
   campos.forEach(([a, p, nivel]) => { if(nivel <= idx){ if(!eq[a]){ eq[a] = agora; eq[p] = por; } } else { eq[a] = null; eq[p] = null; } });
   if(idx < 6 && eq.reinstallationServiceId){ eq.reinstallationServiceId = null; }     // voltou antes da liberação: o vínculo com a reinstalação sai (a atividade na Agenda fica)
   eq.status = (novo === 'liberado_para_reinstalacao' && antes.status === 'reinstalacao_pendente' && antes.reinstallationServiceId) ? 'reinstalacao_pendente' : novo;
-  eq.corrigidoPeloGestorEm = agora; eq.corrigidoPeloGestorPor = por;
+  eq.corrigidoPeloGestorEm = agora; eq.corrigidoPeloGestorPor = por; eq._gestorCorrecao = true;
   const ok = await saveOficinaEquipamentos();
+  delete eq._gestorCorrecao;
   if(!ok){ Object.keys(antes).forEach(k => { eq[k] = antes[k]; }); return false; }
   renderOficinaEquipDetalhe(equipId); renderOficinaEquipListOnly(); if(typeof renderOficinaGestorTab === 'function' && currentRole === 'manager') renderOficinaGestorTab();
   return true;
