@@ -1687,6 +1687,20 @@
   .prv-unit-fim{ margin-top:16px; padding-top:4px; border-top:1.5px dashed #CDD0D4; }
   .prv-foto-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
   .prv-foto-btn{ min-height:42px; padding-left:14px; padding-right:14px; font-weight:700; }
+
+  /* ===== Oficina (Gestor): "Liberado para reinstalação" compacto ===== */
+  .oe-sub-t{ font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin:14px 0 8px; }
+  .oe-sub-t:first-child{ margin-top:0; }
+  #oficinaGestorGrupoReinstalacaoList .oe-card{ padding:10px 14px; }
+  .oe-compact-row{ display:flex; align-items:center; gap:10px 14px; flex-wrap:wrap; margin-top:8px; font-size:13px; }
+  .oe-orc{ display:inline-flex; align-items:center; gap:6px; } .oe-orc-l{ color:var(--text-dim); font-size:12px; }
+  .oe-orc input[type=text]{ width:88px; padding:5px 8px; font-size:13px; min-height:0; }
+  .oe-orc label{ display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-dim); cursor:pointer; margin:0; font-weight:400; }
+  .oe-orc label input{ width:auto; margin:0; }
+  .oe-orc .field-error:empty{ display:none; }
+  .oe-info{ color:var(--text-dim); } .oe-info-ag{ color:var(--text); }
+  .oe-compact-acoes{ margin-left:auto; display:inline-flex; gap:6px; flex-wrap:wrap; }
+  .oe-mini{ padding:6px 12px; font-size:12.5px; min-height:0; }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -1937,10 +1951,12 @@
     <!-- Vistoria, manutenção, teste e liberação continuam para as próximas etapas. -->
     <div class="painel-block" id="oficinaEquipamentosPlaceholder" style="margin: 0 20px 16px;">
       <div class="painel-block-title-row">
-        <div class="painel-block-title">Equipamentos aguardando vistoria<span class="access-count mono" id="oficinaEquipCount"></span></div>
-        <div class="painel-block-desc">Equipamentos retirados pelos técnicos em atividades ativas ou cadastrados diretamente aqui</div>
+        <div class="painel-block-title">Equipamentos na Oficina<span class="access-count mono" id="oficinaEquipCount"></span></div>
+        <div class="painel-block-desc">Organizados por etapa: vistoria → manutenção → teste → liberados. Toque no cartão para ver o detalhe.</div>
       </div>
-      <div style="margin-bottom:10px;"><button type="button" class="btn-primary" id="oficinaCriarEquipBtn">+ Criar equipamento</button></div>
+      <div style="margin-bottom:10px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="oficinaCriarEquipBtn">+ Criar equipamento</button>
+        <div class="search-clear-wrap" style="flex:1; min-width:200px; max-width:420px;"><input type="search" id="oficinaEquipBusca" placeholder="Buscar por cliente ou equipamento…" autocomplete="off"><button type="button" class="search-clear-btn" data-clearsearch="oficinaEquipBusca">✕</button></div>
+        <span class="prv-hint" id="oficinaEquipBuscaInfo" style="margin:0; font-size:12px;"></span></div>
       <div class="painel-block-body" id="oficinaEquipList"></div>
     </div>
   </div>
@@ -2717,7 +2733,9 @@
       </div>
 
       <div id="oficinaGestorEquipamentosPane">
-      <div style="padding:0 20px 16px;"><button type="button" class="btn-primary" id="oficinaGestorCriarEquipBtn">+ Criar equipamento</button></div>
+      <div style="padding:0 20px 16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="oficinaGestorCriarEquipBtn">+ Criar equipamento</button>
+        <div class="search-clear-wrap" style="flex:1; min-width:220px; max-width:420px;"><input type="search" id="oficinaGestorBusca" placeholder="Buscar por cliente ou equipamento…" autocomplete="off"><button type="button" class="search-clear-btn" data-clearsearch="oficinaGestorBusca">✕</button></div>
+        <span class="prv-hint" id="oficinaGestorBuscaInfo" style="margin:0; font-size:12px;"></span></div>
 
       <!-- Resumo (4 contadores) — mesmo vocabulário de status já usado no restante da Oficina -->
       <div id="oficinaGestorResumoCards" style="padding:0 20px 20px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px;"></div>
@@ -3081,6 +3099,7 @@
       </div>
     </div>
 
+    <div id="oeGestorCorrecao"></div>
     <div id="oeStageVistoria"></div>
     <div id="oeStageManutencao"></div>
     <div id="oeStageTeste"></div>
@@ -10325,7 +10344,13 @@ function renderOficinaGestorTab(){
   // ficam de fora dos 4 (continuam só no Histórico, como já era antes desta etapa). =====
   const porTempoParado = (a, b) => { const da = getEquipmentStaleInfo(a).daysStopped; const db = getEquipmentStaleInfo(b).daysStopped; return (db !== null ? db : -1) - (da !== null ? da : -1); };
   const gruposEquip = { vistoria: [], manutencao: [], teste: [], reinstalacao: [] };
-  oficinaEquipamentos.forEach(eq => { const g = oficinaEquipGrupo(eq); if(g) gruposEquip[g].push(eq); });
+  // Busca no topo (02/10): filtra os 4 grupos por cliente ou equipamento (sem acento/maiúsculas); os contadores do resumo seguem totais.
+  const buscaEl = document.getElementById('oficinaGestorBusca');
+  const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const termoBusca = fold(buscaEl ? buscaEl.value : '');
+  let nBusca = 0;
+  oficinaEquipamentos.forEach(eq => { const g = oficinaEquipGrupo(eq); if(!g) return; if(termoBusca && !fold(eq.client + ' ' + eq.equipment).includes(termoBusca)) return; gruposEquip[g].push(eq); nBusca++; });
+  const infoBusca = document.getElementById('oficinaGestorBuscaInfo'); if(infoBusca) infoBusca.textContent = termoBusca ? (nBusca ? nBusca + (nBusca === 1 ? ' equipamento encontrado' : ' equipamentos encontrados') : 'Nenhum equipamento com esse nome nas 4 listas') : '';
   Object.keys(gruposEquip).forEach(g => gruposEquip[g].sort(porTempoParado));
 
   const extraHtmlPorEquip = (eq) => {
@@ -10343,21 +10368,19 @@ function renderOficinaGestorTab(){
         <div class="field-error" data-orcamentoerr="${eq.id}"></div>
       </div>` : '';
     if(eq.status === 'liberado_para_reinstalacao' || eq.status === 'reinstalacao_pendente'){
-      // Melhoria 6: mesma atividade (reinstallationServiceId) usada tanto pro 1º agendamento
-      // quanto pro reagendamento — nunca cria uma segunda. "Testado por" só faz sentido antes de
-      // ter atividade vinculada; depois disso a informação relevante é a data agendada.
+      // Cartão COMPACTO (02/10): orçamento, "testado por" e agendamento numa linha só de dados e uma de ações.
+      // Mesma atividade (reinstallationServiceId) pro 1º agendamento e pro reagendamento — nunca cria uma segunda.
       const svcVinculado = eq.reinstallationServiceId ? services.find(s => s.id === eq.reinstallationServiceId) : null;
-      const testadoHtml = !svcVinculado ? `<div style="margin-top:8px;">Testado por ${escapeHtml(eq.testeCompletedBy || '—')} em ${fmt(eq.testeCompletedAt)}</div>` : '';
       const tecAtiv = svcVinculado ? getServiceTechnicians(svcVinculado).join(' e ') : '';
-      const agendamentoHtml = (svcVinculado && svcVinculado.date)
-        ? `<div style="margin-top:8px;">Reinstalação agendada<br><b>${shortLabel(svcVinculado.date)}</b> · ${tecAtiv ? 'Técnico: ' + escapeHtml(tecAtiv) : 'ainda sem técnico na Agenda'}</div>
-           <button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Reagendar reinstalação</button>`
-        : (svcVinculado
-          ? `<div style="margin-top:8px;">Atividade já criada na Agenda — falta escolher a data</div>
-             <button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Agendar reinstalação</button>`
-          : `<button type="button" class="btn-primary" data-agendarreinstalacao="${eq.id}" style="margin-top:8px;">Agendar reinstalação</button>
-             <button type="button" class="btn-ghost" data-reinstvincular="${eq.id}" style="margin-top:8px;">Vincular a uma atividade já criada</button>`);
-      return orcamentoHtml + testadoHtml + agendamentoHtml;
+      const orc = `<span class="oe-orc" data-orcamentoblock="${eq.id}"><span class="oe-orc-l">Orç.</span><input type="text" data-orcamentonumero="${eq.id}" value="${escapeHtml(eq.orcamentoNumero || '')}" placeholder="nº"><label title="Orçamento enviado"><input type="checkbox" data-orcamentoenviado="${eq.id}" ${eq.orcamentoEnviado ? 'checked' : ''} ${eq.orcamentoNumero ? '' : 'disabled'}> enviado</label><span class="field-error" data-orcamentoerr="${eq.id}"></span></span>`;
+      const fmtCurto = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
+      const info = (svcVinculado && svcVinculado.date)
+        ? `<span class="oe-info oe-info-ag">📅 <b>${shortLabel(svcVinculado.date)}</b> · ${tecAtiv ? escapeHtml(tecAtiv) : 'sem técnico na Agenda'}</span>`
+        : (svcVinculado ? `<span class="oe-info">atividade criada — falta a data</span>` : `<span class="oe-info">Testado por ${escapeHtml(eq.testeCompletedBy || '—')} em ${fmtCurto(eq.testeCompletedAt)}</span>`);
+      const acoes = (svcVinculado && svcVinculado.date)
+        ? `<button type="button" class="btn-ghost oe-mini" data-agendarreinstalacao="${eq.id}">Reagendar</button>`
+        : `<button type="button" class="btn-primary oe-mini" data-agendarreinstalacao="${eq.id}">Agendar reinstalação</button>${svcVinculado ? '' : `<button type="button" class="btn-ghost oe-mini" data-reinstvincular="${eq.id}">Vincular a atividade</button>`}`;
+      return `<div class="oe-compact-row">${orc}${info}<span class="oe-compact-acoes">${acoes}</span></div>`;
     }
     return '';
   };
@@ -10370,7 +10393,18 @@ function renderOficinaGestorTab(){
   renderGrupo('vistoria', 'oficinaGestorGrupoVistoriaList', 'oficinaGestorGrupoVistoriaCount', 'Nenhum equipamento aguardando vistoria no momento.');
   renderGrupo('manutencao', 'oficinaGestorGrupoManutencaoList', 'oficinaGestorGrupoManutencaoCount', 'Nenhum equipamento aguardando manutenção no momento.');
   renderGrupo('teste', 'oficinaGestorGrupoTesteList', 'oficinaGestorGrupoTesteCount', 'Nenhum equipamento aguardando teste no momento.');
-  renderGrupo('reinstalacao', 'oficinaGestorGrupoReinstalacaoList', 'oficinaGestorGrupoReinstalacaoCount', 'Nenhum equipamento liberado no momento.');
+  // "Liberado para reinstalação" (02/10): duas listas — Falta agendar (sem atividade com data) e Agendados.
+  {
+    const lista = gruposEquip.reinstalacao;
+    const agendado = (eq) => { const s = eq.reinstallationServiceId ? services.find(x => x.id === eq.reinstallationServiceId) : null; return !!(s && s.date); };
+    const falta = lista.filter(eq => !agendado(eq)), ag = lista.filter(agendado).sort((a, b) => { const sa = services.find(x => x.id === a.reinstallationServiceId), sb = services.find(x => x.id === b.reinstallationServiceId); return String(sa.date).localeCompare(String(sb.date)); });
+    const countEl = document.getElementById('oficinaGestorGrupoReinstalacaoCount'); if(countEl) countEl.textContent = `(${lista.length})`;
+    const box = document.getElementById('oficinaGestorGrupoReinstalacaoList');
+    if(box) box.innerHTML = lista.length
+      ? `<div class="oe-sub-t">Falta agendar <span class="mono">(${falta.length})</span></div>${falta.length ? falta.map(eq => cardHtml(eq, extraHtmlPorEquip(eq))).join('') : '<div class="painel-block-empty">Todos os liberados já têm reinstalação agendada.</div>'}
+         <div class="oe-sub-t">Agendados <span class="mono">(${ag.length})</span></div>${ag.length ? ag.map(eq => cardHtml(eq, extraHtmlPorEquip(eq))).join('') : '<div class="painel-block-empty">Nenhuma reinstalação agendada ainda.</div>'}`
+      : '<div class="painel-block-empty">Nenhum equipamento liberado no momento.</div>';
+  }
 
   // Orçamento (melhoria 5): campos e comportamento só existem dentro da seção "Liberado para
   // reinstalação" — stopPropagation em tudo, pra digitar/marcar nunca abrir o modal de detalhe
@@ -10512,6 +10546,9 @@ async function criarEquipamentoOficina(dados){
 }
 document.getElementById('oficinaCriarEquipBtn').addEventListener('click', abrirCriarEquipamentoOficina);
 document.getElementById('oficinaGestorCriarEquipBtn').addEventListener('click', abrirCriarEquipamentoOficina);
+(function(){ const b = document.getElementById('oficinaGestorBusca'); if(!b) return; const rerender = () => { const foco = b === document.activeElement, pos = b.selectionStart; const sub = document.querySelector('[data-oficinagestortab].active'); renderOficinaGestorTab(); if(sub && sub.dataset.oficinagestortab !== 'equipamentos') oficinaGestorSwitchSubTab(sub.dataset.oficinagestortab); if(foco){ b.focus(); try{ b.setSelectionRange(pos, pos); }catch(e){} } };
+  b.addEventListener('input', rerender); b.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ b.value = ''; rerender(); } });
+  const x = document.querySelector('[data-clearsearch="oficinaGestorBusca"]'); if(x) x.addEventListener('click', () => { b.value = ''; rerender(); b.focus(); }); })();
 document.getElementById('oficinaCriarEquipBtnTech').addEventListener('click', abrirCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipCancelBtn').addEventListener('click', fecharCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharCriarEquipamentoOficina(); });
@@ -12847,14 +12884,67 @@ async function saveOeStageMeta(equipId, stageKey){
   if(completedAtInp && !completedAtInp.disabled && completedAtInp.value) eq[cfg.completedAtField] = fromLocalDatetimeValue(completedAtInp.value);
   if(startedByInp && !startedByInp.disabled) eq[cfg.startedByField] = startedByInp.value.trim() || null;
   if(completedByInp && !completedByInp.disabled) eq[cfg.completedByField] = completedByInp.value.trim() || null;
+  const prevStatus = eq.status;
+  eq.status = oeStatusDerivado(eq);         // o status acompanha as etapas (antes ficava preso, ex.: "Em teste" com o teste já concluído)
   const ok = await saveOficinaEquipamentos();
   if(!ok){
     eq[cfg.startedAtField] = prev.startedAt; eq[cfg.completedAtField] = prev.completedAt;
-    eq[cfg.startedByField] = prev.startedBy; eq[cfg.completedByField] = prev.completedBy;
+    eq[cfg.startedByField] = prev.startedBy; eq[cfg.completedByField] = prev.completedBy; eq.status = prevStatus;
     if(errBox) errBox.textContent = 'Não foi possível salvar. Verifique sua internet e tente novamente.';
     return;
   }
-  renderOeStage(equipId, stageKey);
+  renderOficinaEquipDetalhe(equipId); renderOficinaEquipListOnly(); if(typeof renderOficinaGestorTab === 'function' && currentRole === 'manager') renderOficinaGestorTab();
+}
+// Status que corresponde às datas das etapas. Equipamento já reinstalado/removido não entra; "reinstalação pendente" (atividade
+// vinculada) é preservado quando o teste está concluído.
+const OE_FLUXO = ['aguardando_vistoria', 'vistoria_iniciada', 'vistoria_concluida', 'manutencao_iniciada', 'manutencao_concluida', 'teste_iniciado', 'liberado_para_reinstalacao'];
+function oeStatusDerivado(eq){
+  if(eq.status === 'reinstalado' || eq.status === 'removido_oficina') return eq.status;
+  if(eq.testeCompletedAt) return (eq.status === 'reinstalacao_pendente' && eq.reinstallationServiceId) ? 'reinstalacao_pendente' : 'liberado_para_reinstalacao';
+  if(eq.testeStartedAt) return 'teste_iniciado';
+  if(eq.manutencaoCompletedAt) return 'manutencao_concluida';
+  if(eq.manutencaoStartedAt) return 'manutencao_iniciada';
+  if(eq.vistoriaCompletedAt) return 'vistoria_concluida';
+  if(eq.vistoriaStartedAt) return 'vistoria_iniciada';
+  return 'aguardando_vistoria';
+}
+// Painel do GESTOR (02/10): muda a situação do equipamento para qualquer etapa; as datas das etapas são ajustadas para bater
+// (etapas posteriores são desfeitas; etapas anteriores que faltavam ganham a data de agora e o nome do Gestor).
+async function oeGestorDefinirStatus(equipId, novo){
+  const eq = oficinaEquipamentos.find(x => x.id === equipId); if(!eq || !OE_FLUXO.includes(novo)) return false;
+  const agora = new Date().toISOString(), por = currentActingName();
+  const idx = OE_FLUXO.indexOf(novo);
+  const campos = [['vistoriaStartedAt', 'vistoriaStartedBy', 1], ['vistoriaCompletedAt', 'vistoriaCompletedBy', 2], ['manutencaoStartedAt', 'manutencaoStartedBy', 3], ['manutencaoCompletedAt', 'manutencaoCompletedBy', 4], ['testeStartedAt', 'testeStartedBy', 5], ['testeCompletedAt', 'testeCompletedBy', 6]];
+  const antes = {}; campos.forEach(([a, p]) => { antes[a] = eq[a]; antes[p] = eq[p]; }); antes.status = eq.status; antes.reinstallationServiceId = eq.reinstallationServiceId;
+  campos.forEach(([a, p, nivel]) => { if(nivel <= idx){ if(!eq[a]){ eq[a] = agora; eq[p] = por; } } else { eq[a] = null; eq[p] = null; } });
+  if(idx < 6 && eq.reinstallationServiceId){ eq.reinstallationServiceId = null; }     // voltou antes da liberação: o vínculo com a reinstalação sai (a atividade na Agenda fica)
+  eq.status = (novo === 'liberado_para_reinstalacao' && antes.status === 'reinstalacao_pendente' && antes.reinstallationServiceId) ? 'reinstalacao_pendente' : novo;
+  eq.corrigidoPeloGestorEm = agora; eq.corrigidoPeloGestorPor = por;
+  const ok = await saveOficinaEquipamentos();
+  if(!ok){ Object.keys(antes).forEach(k => { eq[k] = antes[k]; }); return false; }
+  renderOficinaEquipDetalhe(equipId); renderOficinaEquipListOnly(); if(typeof renderOficinaGestorTab === 'function' && currentRole === 'manager') renderOficinaGestorTab();
+  return true;
+}
+function renderOeGestorCorrecao(eq){
+  const box = document.getElementById('oeGestorCorrecao'); if(!box) return;
+  if(currentRole !== 'manager' || eq.status === 'reinstalado' || eq.status === 'removido_oficina'){ box.innerHTML = ''; return; }
+  const atual = eq.status === 'reinstalacao_pendente' ? 'liberado_para_reinstalacao' : eq.status;
+  const incoerente = oeStatusDerivado(eq) !== eq.status;
+  box.innerHTML = `<div class="oe-stage" style="border-left:4px solid var(--ink);">
+      <div class="oe-stage-head"><div class="oe-stage-title">🛠 Correção de etapas (Gestor)</div>${incoerente ? '<span class="oe-badge oe-yellow">situação travada</span>' : ''}</div>
+      <div class="prv-hint" style="margin:0 0 8px;">Mude a situação para qualquer etapa. As etapas posteriores são desfeitas e as anteriores que faltavam ganham a data de agora. Datas e nomes de cada etapa podem ser corrigidos abaixo, em "Salvar correções".${incoerente ? ' <b>Esta situação não bate com as etapas marcadas.</b>' : ''}</div>
+      <div class="prv-linha" style="align-items:flex-end;">
+        <div class="field" style="margin:0; min-width:240px;"><label for="oeGestorStatus">Situação</label><select id="oeGestorStatus">${OE_FLUXO.map(s => `<option value="${s}" ${s === atual ? 'selected' : ''}>${escapeHtml(OE_STATUS_BADGES[s].label)}</option>`).join('')}</select></div>
+        <button type="button" class="btn-primary" id="oeGestorStatusOk">Aplicar</button>
+        ${incoerente ? `<button type="button" class="btn-ghost" id="oeGestorStatusAuto">Acertar pelas etapas (${escapeHtml(OE_STATUS_BADGES[oeStatusDerivado(eq)].label)})</button>` : ''}
+      </div>
+      <div class="field-error" id="oeGestorStatusErr"></div></div>`;
+  document.getElementById('oeGestorStatusOk').onclick = () => {
+    const novo = document.getElementById('oeGestorStatus').value;
+    customConfirm('Mudar a situação de "' + eq.equipment + ' — ' + eq.client + '" para "' + OE_STATUS_BADGES[novo].label + '"? As etapas serão ajustadas para bater com isso.', async () => { const ok = await oeGestorDefinirStatus(eq.id, novo); const err = document.getElementById('oeGestorStatusErr'); if(err && !ok) err.textContent = 'Não foi possível salvar. Verifique sua internet e tente novamente.'; }, 'Aplicar');
+  };
+  const auto = document.getElementById('oeGestorStatusAuto');
+  if(auto) auto.onclick = async () => { const e2 = oficinaEquipamentos.find(x => x.id === eq.id); const prev = e2.status; e2.status = oeStatusDerivado(e2); e2.corrigidoPeloGestorEm = new Date().toISOString(); e2.corrigidoPeloGestorPor = currentActingName(); const ok = await saveOficinaEquipamentos(); if(!ok){ e2.status = prev; return; } renderOficinaEquipDetalhe(eq.id); renderOficinaEquipListOnly(); if(typeof renderOficinaGestorTab === 'function') renderOficinaGestorTab(); };
 }
 
 // Observação/fotos/áudio de cada etapa — SEMPRE editável, mesmo depois de concluída (pedido
@@ -13057,6 +13147,7 @@ function renderOficinaEquipDetalhe(equipId){
   if(!eq){ closeOficinaEquipDetalhe(); return; }
   renderOeTopo(eq);
   renderOeTimeline(eq);
+  renderOeGestorCorrecao(eq);
   ['vistoria', 'manutencao', 'teste'].forEach(stageKey => renderOeStage(equipId, stageKey));
   renderOeRelease(equipId);
   renderOeRemocao(equipId);
@@ -13117,11 +13208,17 @@ function renderOficinaEquipListOnly(){
   if(!el) return;
   const relevant = oficinaEquipamentos.filter(eq => ['aguardando_vistoria', 'vistoria_iniciada', 'vistoria_concluida', 'manutencao_iniciada', 'manutencao_concluida', 'teste_iniciado', 'liberado_para_reinstalacao', 'reinstalacao_pendente'].includes(eq.status))
     .sort((a, b) => (b.withdrawnAt || '').localeCompare(a.withdrawnAt || ''));
-  const pendingCount = relevant.filter(eq => eq.status === 'aguardando_vistoria').length;
   const countEl = document.getElementById('oficinaEquipCount');
-  if(countEl) countEl.textContent = `(${pendingCount})`;
+  if(countEl) countEl.textContent = `(${relevant.length})`;
   const fmt = iso => iso ? new Date(iso).toLocaleString('pt-BR') : '—';
-  el.innerHTML = relevant.length ? relevant.map(eq => `
+  // Busca (02/10): por cliente ou equipamento, sem acento/maiúsculas. Grupos por etapa, na ordem do fluxo (mais antigo primeiro dentro de cada um).
+  const buscaEl = document.getElementById('oficinaEquipBusca');
+  const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const termo = fold(buscaEl ? buscaEl.value : '');
+  const filtrados = termo ? relevant.filter(eq => fold(eq.client + ' ' + eq.equipment).includes(termo)) : relevant;
+  const infoEl = document.getElementById('oficinaEquipBuscaInfo'); if(infoEl) infoEl.textContent = termo ? (filtrados.length ? filtrados.length + (filtrados.length === 1 ? ' equipamento encontrado' : ' equipamentos encontrados') : 'Nenhum equipamento com esse nome') : '';
+  const ETAPAS = [['vistoria', 'Aguardando vistoria', ['aguardando_vistoria', 'vistoria_iniciada']], ['manutencao', 'Aguardando manutenção', ['vistoria_concluida', 'manutencao_iniciada']], ['teste', 'Aguardando teste', ['manutencao_concluida', 'teste_iniciado']], ['reinstalacao', 'Liberados para reinstalação', ['liberado_para_reinstalacao', 'reinstalacao_pendente']]];
+  const cardDe = (eq) => `
     <div class="oe-card" data-oeopen="${eq.id}">
       <div class="oe-card-row">
         <div>
@@ -13132,7 +13229,10 @@ function renderOficinaEquipListOnly(){
       </div>
       <div class="mono" style="font-size:12px; color:var(--text-dim); margin-top:6px;">${fmt(eq.withdrawnAt)}</div>
       ${window.REINST_API ? REINST_API.linhaAgenda(eq) : ''}
-    </div>`).join('') : '<div class="painel-block-empty">Nenhum equipamento aguardando vistoria.</div>';
+    </div>`;
+  el.innerHTML = filtrados.length
+    ? ETAPAS.map(([g, rotulo, sts]) => { const l = filtrados.filter(eq => sts.includes(eq.status)).sort((a, b) => (a.withdrawnAt || '').localeCompare(b.withdrawnAt || '')); return l.length ? `<div class="oe-sub-t">${rotulo} <span class="mono">(${l.length})</span></div>${l.map(cardDe).join('')}` : ''; }).join('')
+    : `<div class="painel-block-empty">${termo ? 'Nenhum equipamento com esse nome.' : 'Nenhum equipamento na Oficina no momento.'}</div>`;
   el.querySelectorAll('[data-oeopen]').forEach(card => card.addEventListener('click', () => openOficinaEquipDetalhe(Number(card.dataset.oeopen))));
 }
 
@@ -13146,6 +13246,9 @@ function renderOficinaView(){
 }
 
 document.getElementById('oficinaLogoutBtn').addEventListener('click', logout);
+(function(){ const b = document.getElementById('oficinaEquipBusca'); if(!b) return; const re = () => { const foco = b === document.activeElement, pos = b.selectionStart; renderOficinaEquipListOnly(); if(foco){ b.focus(); try{ b.setSelectionRange(pos, pos); }catch(e){} } };
+  b.addEventListener('input', re); b.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ b.value = ''; re(); } });
+  const x = document.querySelector('[data-clearsearch="oficinaEquipBusca"]'); if(x) x.addEventListener('click', () => { b.value = ''; re(); b.focus(); }); })();
 
 function enterTech(name){
   currentRole = 'tech';
