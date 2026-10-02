@@ -1701,6 +1701,23 @@
   .oe-info{ color:var(--text-dim); } .oe-info-ag{ color:var(--text); }
   .oe-compact-acoes{ margin-left:auto; display:inline-flex; gap:6px; flex-wrap:wrap; }
   .oe-mini{ padding:6px 12px; font-size:12.5px; min-height:0; }
+
+  /* ===== Oficina (perfil): seções por etapa ===== */
+  .oe-secao{ margin:0 0 22px; padding:0 0 4px; border-radius:var(--radius); }
+  .oe-secao-t{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:800; color:var(--ink); padding:10px 14px; margin:0 0 10px; border-radius:var(--radius-sm); background:var(--panel-2); border-left:6px solid var(--ink); position:sticky; top:0; z-index:2; }
+  .oe-secao-ic{ font-size:16px; }
+  .oe-secao-n{ margin-left:auto; min-width:28px; text-align:center; font-size:13px; font-weight:800; background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:2px 9px; }
+  .oe-secao-red .oe-secao-t{ border-left-color:var(--red); background:var(--danger-soft); } .oe-secao-red .oe-secao-n{ color:var(--danger); }
+  .oe-secao-yellow .oe-secao-t{ border-left-color:var(--warning); background:var(--warning-soft); } .oe-secao-yellow .oe-secao-n{ color:var(--warning); }
+  .oe-secao-green .oe-secao-t{ border-left-color:var(--success); background:var(--success-soft); } .oe-secao-green .oe-secao-n{ color:var(--success-dark); }
+  .oe-secao-blue .oe-secao-t{ border-left-color:#2F6FB0; background:rgba(47,111,176,.10); } .oe-secao-blue .oe-secao-n{ color:#2F6FB0; }
+  .oe-secao .oe-card{ margin-bottom:8px; }
+  /* O selo de status sempre à direita, na primeira linha, qualquer que seja o tamanho da observação. */
+  #oficinaEquipList .oe-card-row{ flex-wrap:nowrap; }
+  #oficinaEquipList .oe-card-row > div:first-child{ flex:1 1 auto; min-width:0; }
+  #oficinaEquipList .oe-card-row .oe-badge{ flex:0 1 auto; margin-left:auto; white-space:normal; text-align:center; line-height:1.2; max-width:44%; }
+  #oficinaEquipList .oe-card-row > div:first-child{ flex:1 1 56%; }
+  @media (max-width:480px){ #oficinaEquipList .oe-card-row .oe-badge{ font-size:11.5px; padding:5px 9px; } }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -13217,7 +13234,7 @@ function renderOficinaEquipListOnly(){
   const termo = fold(buscaEl ? buscaEl.value : '');
   const filtrados = termo ? relevant.filter(eq => fold(eq.client + ' ' + eq.equipment).includes(termo)) : relevant;
   const infoEl = document.getElementById('oficinaEquipBuscaInfo'); if(infoEl) infoEl.textContent = termo ? (filtrados.length ? filtrados.length + (filtrados.length === 1 ? ' equipamento encontrado' : ' equipamentos encontrados') : 'Nenhum equipamento com esse nome') : '';
-  const ETAPAS = [['vistoria', 'Aguardando vistoria', ['aguardando_vistoria', 'vistoria_iniciada']], ['manutencao', 'Aguardando manutenção', ['vistoria_concluida', 'manutencao_iniciada']], ['teste', 'Aguardando teste', ['manutencao_concluida', 'teste_iniciado']], ['reinstalacao', 'Liberados para reinstalação', ['liberado_para_reinstalacao', 'reinstalacao_pendente']]];
+  const ETAPAS = [['vistoria', 'Aguardando vistoria', ['aguardando_vistoria', 'vistoria_iniciada'], 'red', '📋'], ['manutencao', 'Aguardando manutenção', ['vistoria_concluida', 'manutencao_iniciada'], 'yellow', '🔧'], ['teste', 'Aguardando teste', ['manutencao_concluida', 'teste_iniciado'], 'green', '🧪'], ['reinstalacao', 'Liberados para reinstalação', ['liberado_para_reinstalacao', 'reinstalacao_pendente'], 'blue', '📦']];
   const cardDe = (eq) => `
     <div class="oe-card" data-oeopen="${eq.id}">
       <div class="oe-card-row">
@@ -13231,7 +13248,7 @@ function renderOficinaEquipListOnly(){
       ${window.REINST_API ? REINST_API.linhaAgenda(eq) : ''}
     </div>`;
   el.innerHTML = filtrados.length
-    ? ETAPAS.map(([g, rotulo, sts]) => { const l = filtrados.filter(eq => sts.includes(eq.status)).sort((a, b) => (a.withdrawnAt || '').localeCompare(b.withdrawnAt || '')); return l.length ? `<div class="oe-sub-t">${rotulo} <span class="mono">(${l.length})</span></div>${l.map(cardDe).join('')}` : ''; }).join('')
+    ? ETAPAS.map(([g, rotulo, sts, tom, icone]) => { const l = filtrados.filter(eq => sts.includes(eq.status)).sort((a, b) => (a.withdrawnAt || '').localeCompare(b.withdrawnAt || '')); return l.length ? `<section class="oe-secao oe-secao-${tom}"><div class="oe-secao-t"><span class="oe-secao-ic">${icone}</span><span>${rotulo}</span><span class="oe-secao-n">${l.length}</span></div>${l.map(cardDe).join('')}</section>` : ''; }).join('')
     : `<div class="painel-block-empty">${termo ? 'Nenhum equipamento com esse nome.' : 'Nenhum equipamento na Oficina no momento.'}</div>`;
   el.querySelectorAll('[data-oeopen]').forEach(card => card.addEventListener('click', () => openOficinaEquipDetalhe(Number(card.dataset.oeopen))));
 }
