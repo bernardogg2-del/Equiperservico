@@ -1722,6 +1722,29 @@
   .qd-acao{ min-height:44px; padding-left:18px; padding-right:18px; }
 
   .os-quadro-tag{ display:inline-flex; align-items:center; font-size:11px; font-weight:700; letter-spacing:.3px; padding:4px 11px; border-radius:999px; background:var(--ink); color:#fff; white-space:nowrap; }
+  /* ===== lista de sugestões própria (cliente / equipamento) ===== */
+  .app-sug{ position:absolute; left:0; right:0; top:100%; z-index:50; margin-top:4px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); max-height:240px; overflow:auto; }
+  .app-sug-item{ padding:10px 12px; font-size:14px; cursor:pointer; border-bottom:1px solid var(--line); }
+  .app-sug-item:last-child{ border-bottom:none; }
+  .app-sug-item:hover, .app-sug-item.ativo{ background:var(--panel-2); }
+  /* ===== Ordens de serviço (Cadastros e OS → Cobrar / Não cobrar) ===== */
+  .os-secao{ margin:14px 0; } .os-secao > summary{ cursor:pointer; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin-bottom:8px; }
+  .os-linhas{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
+  .os-linhas td{ padding:5px 6px; border-top:1px dashed var(--line); vertical-align:top; }
+  .os-linhas tr.os-compl td{ background:var(--warning-soft); }
+  .os-origem{ font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel-2); color:var(--text-dim); white-space:nowrap; }
+  @media (max-width:600px){ .os-linhas td:nth-child(4){ display:none; } }
+  .os-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  /* ===== Financeiro → Ordens de serviço ===== */
+  .fin-filtros{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:0 20px 12px; }
+  .fin-filtros input[type=search]{ flex:1; min-width:180px; } .fin-filtros label{ font-size:12.5px; color:var(--text-dim); display:flex; align-items:center; gap:4px; }
+  .fin-alerta{ border:1px solid var(--warning-line); background:var(--warning-soft); border-radius:var(--radius); padding:10px 14px; margin-bottom:10px; font-size:13px; }
+  .fin-alerta-t{ font-weight:700; margin-bottom:4px; color:var(--warning); }
+  .fin-os.fin-atrasada{ border-left:4px solid var(--red); }
+  .fin-valor{ font-size:17px; font-weight:800; }
+  .fin-acoes{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  .fin-valor-edit{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-dim); } .fin-valor-edit input{ width:120px; }
+  .fin-hist{ margin-top:8px; font-size:12px; color:var(--text-dim); border-top:1px dashed var(--line); padding-top:6px; }
 </style>
 </head>
 <body>
@@ -1877,6 +1900,7 @@
     </div>
     <div id="financeiroOSList" style="padding:0 20px 30px;"></div>
   </div>
+  <div class="tech-day-panel" id="finOsView" style="display:none;"></div>
 </div>
 
 <div id="oficinaView" style="display:none;">
@@ -2527,6 +2551,7 @@
       <button type="button" class="portal-tab active" data-prvos="aguardando">Aguardando cadastro de OS</button>
       <button type="button" class="portal-tab" data-prvos="relatorios" id="prvOsTabRel">Relatórios de manutenção</button>
       <button type="button" class="portal-tab" data-prvos="oficina" id="prvOsTabOficina">Equipamentos da Oficina</button>
+      <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao">Cobrar / Não cobrar</button>
     </div>
     <div id="prvOsAguardando">
     <div class="tecnicos-head">
@@ -2556,6 +2581,7 @@
     </div><!-- /prvOsAguardando -->
     <div id="prvOsRelatorios" style="display:none;"></div>
     <div id="prvOsOficina" style="display:none;"></div>
+    <div id="prvOsDecisao" style="display:none;"></div>
   </div>
 
   <div id="tabClientes" style="display:none;">
@@ -2574,6 +2600,8 @@
         <label>Endereço</label>
         <input type="text" id="newClienteAddressInput" placeholder="Rua, número, bairro, cidade/UF">
       </div>
+      <div class="field"><label>Pessoa de contato</label><input type="text" id="newClienteContatoInput" placeholder="Nome (cargo)"></div>
+      <div class="field"><label>WhatsApp / telefone</label><input type="text" id="newClienteFoneInput" placeholder="+55 24 90000-0000"></div>
       <div class="cliente-row-actions">
         <button type="button" class="btn-primary" id="addClienteBtn">+ Adicionar cliente</button>
       </div>
@@ -2915,6 +2943,7 @@
       </div>
     </div>
   </div>
+  <div id="painelOsRel"></div>
   </div>
 </div>
 </div>
@@ -11381,6 +11410,7 @@ function renderOS(){
           });
           await saveServices();
           renderOS();
+          if(window.OS_API) targets.forEach(t => OS_API.registrarEGravar(numero, OS_API.linhaDeAtividade(t)).catch(err => console.error('os: atividade', err)));   // a OS reúne tudo que tem esse número
         }
       });
     });
@@ -11469,6 +11499,7 @@ function switchTab(tab){
   if(tab === 'painel') renderPainelDeControle();
   if(tab === 'oficinagestor') renderOficinaGestorTab();
   if(tab === 'estoque') openEstoqueGestorTab();
+  if(tab === 'painel' && window.REL_API) REL_API.abrir();   // Relatórios de OS
   if(tab === 'quadros' && window.QUADROS_API) QUADROS_API.abrir();
 }
 document.getElementById('tabBtnAgenda').addEventListener('click', () => switchTab('agenda'));
@@ -11605,6 +11636,8 @@ function renderClientes(){
         <label>Endereço</label>
         <input type="text" data-clienteaddress value="${escapeHtml(c.address || '')}" placeholder="Rua, número, bairro, cidade/UF">
       </div>
+      <div class="field"><label>Pessoa de contato</label><input type="text" data-clientecontato value="${escapeHtml(c.contato || '')}" placeholder="Nome (cargo)"></div>
+      <div class="field"><label>WhatsApp / telefone</label><input type="text" data-clientefone value="${escapeHtml(c.fone || '')}" placeholder="+55 24 90000-0000"></div>
       <div class="cliente-row-actions">
         <button type="button" class="btn-primary" data-clientesave="${c.id}">Salvar</button>
         <span class="cliente-saved-tag" data-clientesavedtag style="display:none;">Salvo ✓</span>
@@ -11618,6 +11651,8 @@ function renderClientes(){
       const row = e.target.closest('.cliente-row');
       const newName = row.querySelector('[data-clientename]').value;
       const newAddress = row.querySelector('[data-clienteaddress]').value;
+      const cRec = clients.find(x => String(x.id) === String(id));
+      if(cRec){ cRec.contato = row.querySelector('[data-clientecontato]').value.trim(); cRec.fone = row.querySelector('[data-clientefone]').value.trim(); }   // salvos pelo mesmo saveClients de updateClientRecord
       const ok = await updateClientRecord(id, newName, newAddress);
       if(ok){
         renderClientes();
@@ -11631,6 +11666,10 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
   const addrInput = document.getElementById('newClienteAddressInput');
   const ok = await createNewClient(nameInput.value, addrInput.value);
   if(ok){
+    const novoCli = clients.find(c => c.name.toLowerCase() === nameInput.value.trim().toLowerCase());
+    const ct = document.getElementById('newClienteContatoInput').value.trim(), fo = document.getElementById('newClienteFoneInput').value.trim();
+    if(novoCli && (ct || fo)){ novoCli.contato = ct; novoCli.fone = fo; await saveClients(true); }
+    document.getElementById('newClienteContatoInput').value = ''; document.getElementById('newClienteFoneInput').value = '';
     nameInput.value = '';
     addrInput.value = '';
     renderClientes();
@@ -12271,8 +12310,7 @@ function enterFinanceiro(name){
   document.getElementById('managerView').style.display = 'none';
   document.getElementById('oficinaView').style.display = 'none';
   document.getElementById('financeiroView').style.display = '';
-  ensureFinancialStatusDefaults().then(renderFinanceiroOS);
-  renderFinanceiroOS();
+  if(window.FIN_API) FIN_API.abrir(); else { ensureFinancialStatusDefaults().then(renderFinanceiroOS); renderFinanceiroOS(); }
 }
 
 let currentOficinaName = null;
@@ -16666,6 +16704,7 @@ async function ensureRoleDataLoaded(role){
     if(window.PREV_API) PREV_API.iniciarGestor(); // relatório preventivo: em segundo plano, não atrasa o login
     if(window.QUADROS_API) QUADROS_API.iniciar();  // quadros de comando: em segundo plano (alimenta o contador de Cadastros e OS)
     if(window.REINST_API) REINST_API.agendar();    // confere equipamentos x atividades (reinstalação)
+    if(window.OS_API) OS_API.iniciar();            // ordens de serviço (agrupamento por número)
   } else if(role === 'tech'){
     await ensureServicesLoaded();
     // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
@@ -16680,6 +16719,9 @@ async function ensureRoleDataLoaded(role){
     if(window.PREV_API) { try{ await PREV_API.carregarUnidades(); }catch(e){ console.error('prev: unidades', e); } } // relatório preventivo (usa cache se estiver sem sinal)
   } else if(role === 'financeiro'){
     await ensureServicesLoaded();
+    await ensureClientsLoaded();                 // contatos para a cobrança
+    await ensureMaintenanceContractsLoaded();
+    if(window.OS_API) await OS_API.garantirCarregado();
   } else if(role === 'oficina'){
     await ensureServicesLoaded();
     await ensureOficinaEquipamentosLoaded();
@@ -20099,6 +20141,8 @@ function ligarAbas(){
       document.getElementById('prvOsAguardando').style.display = tab === 'aguardando' ? '' : 'none';
       document.getElementById('prvOsRelatorios').style.display = tab === 'relatorios' ? '' : 'none';
       const po = document.getElementById('prvOsOficina'); if(po) po.style.display = tab === 'oficina' ? '' : 'none';
+      const pd = document.getElementById('prvOsDecisao'); if(pd) pd.style.display = tab === 'decisao' ? '' : 'none';
+      if(tab === 'decisao' && window.OS_API) OS_API.renderAba();
       if(tab === 'relatorios'){ renderOsRelatorios(); garantirRelatorios(); }
       if(tab === 'oficina' && window.OSOF_API) OSOF_API.renderAba();
     });
@@ -20590,10 +20634,11 @@ async function concluirOS(id){
   q.processedForOSAt = new Date().toISOString();
   renderListas();
   await quadrosStore.save();
+  if(window.OS_API) OS_API.registrarEGravar(numero, OS_API.linhaDeQuadro(q, nomeDoTipo(q))).catch(e => console.error('os: quadro', e));   // a OS reúne tudo que tem esse número
 }
 // Chamado no login do Gestor: carrega os quadros em segundo plano para o contador de "Cadastros e OS" já aparecer.
 function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => console.error('quadros: falha ao carregar', e)); }
-window.QUADROS_API = { abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros };
+window.QUADROS_API = { abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
 })();
 
 
@@ -20838,8 +20883,585 @@ async function concluir(id){
   if(!eq.osFila) eq.osFila = eq.testeCompletedAt || eq.processedForOSAt;
   refrescar();
   await saveOficinaEquipamentos(true);
+  if(window.OS_API) OS_API.registrarEGravar(numero, OS_API.linhaDeEquipamento(eq)).catch(e => console.error('os: equipamento', e));
 }
 window.OSOF_API = { pendentesOS, renderAba, agendar, marcarFila };
+})();
+
+
+// =====================================================================================
+// SUGESTÕES PRÓPRIAS DO APP (01/10) — substitui a lista nativa do navegador (<datalist>) nos campos de cliente e de
+// equipamento do cadastro da Oficina. A lista nativa depende do navegador: em alguns celulares e versões ela não abre, e cada
+// um filtra de um jeito. Esta lista abre sempre que a pessoa digita, procura em QUALQUER parte do nome, ignora acentos e
+// maiúsculas, e funciona por toque, mouse e teclado (↑ ↓ Enter Esc). O campo continua aceitando texto livre.
+// =====================================================================================
+(function(){
+'use strict';
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fold(t){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' '); }
+const MAX = 8;
+// fontes de nomes
+const FONTES = {
+  clientes: () => (typeof clients !== 'undefined' && Array.isArray(clients) ? clients : []).map(c => c && c.name).filter(Boolean),
+  equipamentos: () => (typeof equipNomesAtivos === 'function' ? equipNomesAtivos() : []).map(e => e && e.name).filter(Boolean),
+};
+function ligar(input, fonte){
+  if(!input || input._sugLigado) return; input._sugLigado = true;
+  input.removeAttribute('list');                        // sem a lista nativa, para não abrir duas
+  input.setAttribute('autocomplete', 'off');
+  const campo = input.parentElement; if(campo && getComputedStyle(campo).position === 'static') campo.style.position = 'relative';
+  const box = document.createElement('div'); box.className = 'app-sug'; box.setAttribute('role', 'listbox'); box.style.display = 'none';
+  (campo || document.body).appendChild(box);
+  let itens = [], ativo = -1;
+  const fechar = () => { box.style.display = 'none'; box.innerHTML = ''; itens = []; ativo = -1; };
+  const escolher = (v) => { input.value = v; fechar(); input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); };
+  const desenhar = () => {
+    if(!itens.length){ fechar(); return; }
+    box.innerHTML = itens.map((v, i) => `<div class="app-sug-item${i === ativo ? ' ativo' : ''}" role="option" data-i="${i}">${esc(v)}</div>`).join('');
+    box.style.display = '';
+  };
+  const procurar = () => {
+    const q = fold(input.value); const todos = FONTES[fonte]();
+    const vistos = new Set();
+    itens = todos.filter(n => { const k = fold(n); if(vistos.has(k)) return false; vistos.add(k); return !q || k.includes(q); })
+      .sort((a, b) => { const fa = fold(a).startsWith(q) ? 0 : 1, fb = fold(b).startsWith(q) ? 0 : 1; return fa - fb || a.localeCompare(b, 'pt-BR'); })
+      .slice(0, MAX);
+    if(itens.length === 1 && fold(itens[0]) === q) itens = [];     // já está exatamente igual: nada a sugerir
+    ativo = -1; desenhar();
+  };
+  input.addEventListener('input', procurar);
+  input.addEventListener('focus', () => { if(input.value.trim()) procurar(); });
+  input.addEventListener('keydown', (e) => {
+    if(box.style.display === 'none'){ if(e.key === 'ArrowDown'){ procurar(); e.preventDefault(); } return; }
+    if(e.key === 'ArrowDown'){ ativo = (ativo + 1) % itens.length; desenhar(); e.preventDefault(); }
+    else if(e.key === 'ArrowUp'){ ativo = (ativo - 1 + itens.length) % itens.length; desenhar(); e.preventDefault(); }
+    else if(e.key === 'Enter'){ if(ativo >= 0){ escolher(itens[ativo]); e.preventDefault(); } else fechar(); }
+    else if(e.key === 'Escape'){ fechar(); }
+  });
+  box.addEventListener('mousedown', (e) => { const it = e.target.closest('.app-sug-item'); if(it){ e.preventDefault(); escolher(itens[Number(it.dataset.i)]); } });
+  input.addEventListener('blur', () => setTimeout(fechar, 150));
+}
+function iniciar(){
+  ligar(document.getElementById('oficinaCriarEquipCliente'), 'clientes');
+  ligar(document.getElementById('oficinaCriarEquipNome'), 'equipamentos');
+  ligar(document.getElementById('oeEditCliente'), 'clientes');
+  ligar(document.getElementById('oeEditEquipamento'), 'equipamentos');
+  ligar(document.getElementById('equipWithdrawEquipment'), 'equipamentos');
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+window.SUG_API = { ligar, iniciar };
+})();
+
+
+// =====================================================================================
+// ORDENS DE SERVIÇO (01/10) — a OS como registro próprio. Tudo o que recebe um número de OS em "Cadastros e OS" (atividade da
+// Agenda, quadro de comando, equipamento da Oficina) vira uma LINHA dentro da OS de mesmo número. A decisão de cobrar é tomada
+// uma vez, pela OS inteira; o Financeiro recebe a OS com todas as linhas.
+// Nó novo: ordensServico/<chave>  (chave = número normalizado: maiúsculas, sem espaços repetidos, sem zeros à esquerda)
+//   { id, numero, cliente, status, motivoNaoCobrar, motivoTexto, decididoPor, decididoEm, criadoEm,
+//     fin: { status, valor, cobradaEm, cobradaPor, vencimento, recebidaEm, recebidaPor, forma, documento, obs },
+//     itens: { "<origem>_<ref>": { origem, refId, cliente, descricao, data, tecnicos:[...], inicio, fim, complemento, adicionadoEm, adicionadoPor } },
+//     historico: [ { em, por, acao } ] }
+// status da OS (decisão do Gestor): 'decidir' | 'aguardando' | 'cobrar' | 'nao_cobrar'
+// fin.status (Financeiro, só quando status = 'cobrar'): 'a_cobrar' | 'cobrada' | 'recebida' | 'cancelada'
+// Pela mesma fábrica de armazenamento do Estoque (diff por campo, tentativa, tempo real) — nenhuma camada nova.
+// =====================================================================================
+(function(){
+'use strict';
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtD(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
+function fmtDH(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }catch(e){ return ''; } }
+function quem(){ return (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || ''; }
+const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['outro', 'Outro']];
+const store = createEstoqueStore('ordensServico', '⚠️ Não foi possível salvar a ordem de serviço. Verifique sua internet e tente novamente.');
+let carregado = false, carregando = null;
+
+function normalizarNumero(n){
+  const t = String(n == null ? '' : n).trim().toUpperCase().replace(/\s+/g, ' ');
+  return t.replace(/^0+(?=\d)/, '');            // "0012" e "12" são a mesma OS; o texto original fica em "numero"
+}
+function chaveDe(n){ const k = normalizarNumero(n).replace(/[^A-Z0-9]+/g, '_').replace(/^_|_$/g, ''); return k ? 'os_' + k : ''; }
+function porNumero(n){ const k = chaveDe(n); return k ? store.items.find(o => o && o.id === k) : null; }
+function todas(){ return store.items.filter(o => o && o.id); }
+function itensDe(os){ return Object.values((os && os.itens) || {}).filter(Boolean); }
+function hist(os, acao){ os.historico = (Array.isArray(os.historico) ? os.historico : Object.values(os.historico || {})).concat([{ em: new Date().toISOString(), por: quem() || null, acao }]).slice(-60); }
+
+async function garantirCarregado(){
+  if(carregado) return;
+  if(!carregando) carregando = store.load().then(() => { store.attach(() => atualizarTelas()); carregado = true; });
+  await carregando;
+}
+function atualizarTelas(){ try{ renderAba(); if(window.FIN_API) FIN_API.render(); if(window.REL_API) REL_API.render(); }catch(e){ console.error(e); } }
+
+// ---------- entrada: uma linha recebe número de OS em Cadastros e OS ----------
+// item = { origem:'atividade'|'quadro'|'equipamento', refId, cliente, descricao, data, tecnicos:[], inicio, fim }
+// Devolve { os, aviso } — aviso quando a OS já tinha sido liquidada como cobrada/recebida pelo Financeiro.
+function registrar(numero, item){
+  const chave = chaveDe(numero); if(!chave) return { os: null, aviso: '' };
+  const agora = new Date().toISOString(); let os = porNumero(numero); let aviso = '';
+  if(!os){
+    os = { id: chave, numero: String(numero).trim(), cliente: item.cliente || '', status: 'decidir', criadoEm: agora, criadoPor: quem() || null, fin: { status: null }, itens: {}, historico: [] };
+    hist(os, 'OS criada'); store.items.push(os);
+  }
+  const k = item.origem + '_' + String(item.refId);
+  if(os.itens[k]) return { os, aviso: '' };                               // a mesma linha já estava nela (reprocessamento): não duplica
+  const linha = { origem: item.origem, refId: item.refId, cliente: item.cliente || '', descricao: item.descricao || '', data: item.data || '', tecnicos: (item.tecnicos || []).filter(Boolean), inicio: item.inicio || null, fim: item.fim || null, adicionadoEm: agora, adicionadoPor: quem() || null };
+  const liquidada = os.status === 'cobrar' && os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida');
+  if(liquidada){
+    linha.complemento = true; os.status = 'decidir'; os.complementoEm = agora;
+    aviso = 'O número de OS ' + os.numero + ' já foi liquidado como ' + (os.fin.status === 'recebida' ? 'RECEBIDO' : 'COBRADO') + ' pelo Financeiro. A atividade entrou nela como complemento, mas é melhor criar uma nova OS. Ela voltou para a decisão em "Cobrar / Não cobrar".';
+    hist(os, 'Atividade entrou DEPOIS de ' + os.fin.status + ' — OS voltou para decisão');
+  } else if(os.status === 'nao_cobrar' || os.status === 'cobrar'){
+    os.status = 'decidir'; hist(os, 'Nova atividade: OS voltou para decisão');
+  } else if(os.status === 'aguardando'){ hist(os, 'Nova atividade adicionada'); }
+  if(os.cliente && item.cliente && normalizedClientKey(os.cliente) !== normalizedClientKey(item.cliente)){ linha.clienteDiferente = true; hist(os, 'Atenção: cliente diferente nesta linha (' + item.cliente + ')'); }
+  os.itens[k] = linha; os.itens = Object.assign({}, os.itens);     // objeto novo: o diff por campo detecta a mudança
+  return { os, aviso };
+}
+async function registrarEGravar(numero, item){
+  await garantirCarregado();
+  const r = registrar(numero, item);
+  if(r.os){ await store.save(true); renderAba(); }
+  if(r.aviso){ try{ customConfirm(r.aviso, () => {}, 'Entendi'); }catch(e){ alert(r.aviso); } }
+  return r;
+}
+// montadores das linhas, a partir dos registros de cada fila
+function linhaDeAtividade(s){ return { origem: 'atividade', refId: s.id, cliente: typeof stripPreventivaPrefix === 'function' ? stripPreventivaPrefix(s.client || '') : (s.client || ''), descricao: s.description || s.client || '', data: s.date || '', tecnicos: typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician], inicio: s.checkIn || null, fim: s.checkOut || null }; }
+function linhaDeQuadro(q, nomeTipo){ return { origem: 'quadro', refId: q.id, cliente: q.cliente || '', descricao: 'Quadro de comando — ' + (nomeTipo || q.tipoNome || ''), data: String(q.testadoEm || q.criadoEm || '').slice(0, 10), tecnicos: [q.iniciouMontagemPor, q.montadoPor, q.iniciouTestePor, q.testadoPor].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i), inicio: null, fim: null }; }
+function linhaDeEquipamento(eq){ return { origem: 'equipamento', refId: eq.id, cliente: eq.client || '', descricao: 'Oficina — ' + (eq.equipment || ''), data: String(eq.testeCompletedAt || eq.withdrawnAt || '').slice(0, 10), tecnicos: [eq.withdrawnBy, eq.manutencaoStartedBy, eq.manutencaoCompletedBy].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i), inicio: null, fim: null }; }
+
+// ---------- migração do que já existe (com prévia e confirmação) ----------
+function planoMigracao(){
+  const grupos = {};
+  const add = (numero, linha, finStatus) => { const k = chaveDe(numero); if(!k) return; const g = grupos[k] = grupos[k] || { chave: k, numero: String(numero).trim(), cliente: linha.cliente, linhas: [], fins: [] }; if(!g.cliente) g.cliente = linha.cliente; g.linhas.push(linha); if(finStatus) g.fins.push(finStatus); };
+  (typeof services !== 'undefined' ? services : []).filter(s => s.processedForOS && s.numeroOS).forEach(s => add(s.numeroOS, Object.assign(linhaDeAtividade(s), { _svc: s }), s.financialStatus || 'Cobrar'));
+  if(window.QUADROS_API && QUADROS_API.listaQuadros) QUADROS_API.listaQuadros().filter(q => q.processedForOS && q.numeroOS).forEach(q => add(q.numeroOS, linhaDeQuadro(q), null));
+  (typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []).filter(e => e.processedForOS && e.numeroOS).forEach(e => add(e.numeroOS, linhaDeEquipamento(e), null));
+  const plano = { criar: [], jaExistem: [], linhasNovasEmExistentes: 0 };
+  Object.values(grupos).forEach(g => {
+    const existente = store.items.find(o => o.id === g.chave);
+    const novas = g.linhas.filter(l => !(existente && existente.itens && existente.itens[l.origem + '_' + l.refId]));
+    if(existente){ plano.jaExistem.push(g); plano.linhasNovasEmExistentes += novas.length; g.novas = novas; return; }
+    // situação financeira da OS, pelas atividades: todas pagas → recebida; alguma enviada → cobrada; senão a cobrar
+    const fins = g.fins; let fin = 'a_cobrar';
+    if(fins.length && fins.every(f => f === 'Pago')) fin = 'recebida'; else if(fins.some(f => f === 'Enviado')) fin = 'cobrada';
+    const svcs = g.linhas.map(l => l._svc).filter(Boolean);
+    const maxData = (campo) => svcs.map(s => s[campo]).filter(Boolean).sort().pop() || null;
+    g.fin = fin; g.cobradaEm = fin !== 'a_cobrar' ? (maxData('financialSentAt') || maxData('processedForOSAt')) : null; g.recebidaEm = fin === 'recebida' ? maxData('financialSentAt') || maxData('processedForOSAt') : null;
+    g.mesmoCliente = g.linhas.every(l => normalizedClientKey(l.cliente) === normalizedClientKey(g.cliente));
+    plano.criar.push(g);
+  });
+  plano.criar.sort((a, b) => a.numero.localeCompare(b.numero, 'pt-BR', { numeric: true }));
+  return plano;
+}
+async function executarMigracao(){
+  await garantirCarregado();
+  const plano = planoMigracao(); const agora = new Date().toISOString(); let nOs = 0, nLinhas = 0;
+  plano.criar.forEach(g => {
+    const os = { id: g.chave, numero: g.numero, cliente: g.cliente || '', status: 'cobrar', criadoEm: agora, criadoPor: quem() || null, migradaEm: agora,
+      fin: { status: g.fin, cobradaEm: g.cobradaEm, recebidaEm: g.recebidaEm, valor: null }, itens: {}, historico: [] };
+    g.linhas.forEach(l => { const x = Object.assign({}, l); delete x._svc; x.adicionadoEm = agora; x.adicionadoPor = 'migração'; os.itens[l.origem + '_' + l.refId] = x; nLinhas++; });
+    hist(os, 'Migrada do fluxo antigo (' + g.fin + ')'); store.items.push(os); nOs++;
+  });
+  plano.jaExistem.forEach(g => { const os = store.items.find(o => o.id === g.chave); (g.novas || []).forEach(l => { const x = Object.assign({}, l); delete x._svc; x.adicionadoEm = agora; x.adicionadoPor = 'migração'; os.itens[l.origem + '_' + l.refId] = x; nLinhas++; }); if((g.novas || []).length){ os.itens = Object.assign({}, os.itens); hist(os, 'Linhas acrescentadas pela migração'); } });
+  await store.save(true); renderAba();
+  return { nOs, nLinhas };
+}
+function abrirMigracao(){
+  const plano = planoMigracao();
+  let ov = document.getElementById('osMigraOverlay');
+  if(!ov){ ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'osMigraOverlay'; ov.innerHTML = '<div class="modal" style="max-width:640px; max-height:88vh; overflow-y:auto;"><h3>Migrar as OS já cadastradas</h3><div id="osMigraCorpo"></div><div class="modal-actions" style="justify-content:flex-end; margin-top:14px;"><button type="button" class="btn-ghost" id="osMigraFechar">Cancelar</button><button type="button" class="btn-primary" id="osMigraOk">Migrar</button></div></div>'; document.body.appendChild(ov); ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'osMigraFechar') ov.classList.remove('open'); }); }
+  const nLin = plano.criar.reduce((n, g) => n + g.linhas.length, 0);
+  const rot = { a_cobrar: 'a cobrar', cobrada: 'cobrada (enviada ao cliente)', recebida: 'recebida (paga)' };
+  document.getElementById('osMigraCorpo').innerHTML = `<p class="prv-hint">Prévia feita agora com o que está em Cadastros e OS e no Financeiro. Cada número de OS vira um registro com todas as suas linhas; a situação financeira vem do que o Financeiro já marcou (Cobrar → a cobrar, Enviado → cobrada, Pago → recebida; para recebida vale a data em que foi marcada). Nada é gravado até você confirmar; as telas antigas continuam iguais.</p>
+    <h3 style="margin:12px 0 6px;">Vão ser criadas: ${plano.criar.length} OS, com ${nLin} linha(s)</h3>
+    ${plano.criar.map(g => `<div class="prv-card"><div class="prv-nome">OS ${esc(g.numero)} — ${esc(g.cliente)} <span class="prv-chip ${g.fin === 'recebida' ? 'green' : g.fin === 'cobrada' ? 'amber' : 'gray'}">${rot[g.fin]}</span>${g.mesmoCliente ? '' : ' <span class="prv-chip amber">⚠ clientes diferentes no mesmo número</span>'}</div><ul style="margin:6px 0 0 18px; padding:0; font-size:13px;">${g.linhas.map(l => `<li>${esc(fmtD(l.data) || l.data || 's/ data')} · ${esc(l.descricao)}${l.tecnicos.length ? ' · ' + esc(l.tecnicos.join(' e ')) : ''}${g.mesmoCliente ? '' : ' <i>(' + esc(l.cliente) + ')</i>'}</li>`).join('')}</ul></div>`).join('') || '<div class="empty-state">Nenhuma OS nova para migrar.</div>'}
+    ${plano.jaExistem.length ? `<h3 style="margin:14px 0 6px;">Já migradas: ${plano.jaExistem.length}${plano.linhasNovasEmExistentes ? ' (' + plano.linhasNovasEmExistentes + ' linha(s) nova(s) serão acrescentadas)' : ''}</h3>` : ''}`;
+  const okBtn = document.getElementById('osMigraOk'); okBtn.disabled = !(plano.criar.length || plano.linhasNovasEmExistentes); okBtn.textContent = 'Migrar ' + plano.criar.length + ' OS';
+  okBtn.onclick = async () => { okBtn.disabled = true; const r = await executarMigracao(); ov.classList.remove('open'); try{ avisoNaoBloqueante(r.nOs + ' OS migrada(s), ' + r.nLinhas + ' linha(s).', 6000); }catch(e){} };
+  ov.classList.add('open');
+}
+
+// ---------- tela (Cadastros e OS → "Cobrar / Não cobrar"): por enquanto só a listagem agrupada ----------
+const ROT_STATUS = { decidir: 'A decidir', aguardando: 'Aguardando mais atividades', cobrar: 'Cobradas (no Financeiro)', nao_cobrar: 'Não cobrar' };
+const ROT_FIN = { a_cobrar: 'a cobrar', cobrada: 'cobrada', recebida: 'recebida', cancelada: 'cancelada' };
+function cartao(os){
+  const linhas = itensDe(os).sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  const chip = os.status === 'cobrar' ? `<span class="prv-chip ${os.fin && os.fin.status === 'recebida' ? 'green' : 'amber'}">${esc(ROT_FIN[(os.fin || {}).status] || 'a cobrar')}</span>` : os.status === 'nao_cobrar' ? `<span class="prv-chip gray">${esc((MOTIVOS.find(m => m[0] === os.motivoNaoCobrar) || ['', 'sem motivo'])[1])}${os.motivoTexto ? ' — ' + esc(os.motivoTexto) : ''}</span>` : '';
+  const finSt = (os.fin || {}).status; const noFinanceiro = os.status === 'cobrar';
+  const liquidada = noFinanceiro && (finSt === 'cobrada' || finSt === 'recebida');
+  let acoes = '';
+  if(os.status === 'decidir' || os.status === 'aguardando'){
+    acoes = `<button type="button" class="btn-primary" data-os-act="cobrar" data-id="${esc(os.id)}">Cobrar</button>
+      <button type="button" class="btn-ghost" data-os-act="nao-cobrar" data-id="${esc(os.id)}">Não cobrar</button>
+      ${os.status === 'decidir' ? `<button type="button" class="btn-ghost" data-os-act="aguardar" data-id="${esc(os.id)}">Aguardar</button>` : ''}`;
+  } else if(os.status === 'nao_cobrar' || (noFinanceiro && !liquidada)){
+    acoes = `<button type="button" class="btn-ghost" data-os-act="voltar" data-id="${esc(os.id)}">↩ Voltar para decisão</button>`;
+  }
+  const quemDecidiu = os.decididoEm ? `<div class="os-meta">${os.status === 'cobrar' ? 'Cobrar' : os.status === 'nao_cobrar' ? 'Não cobrar' : 'Aguardar'} por ${esc(os.decididoPor || '—')} em ${esc(fmtDH(os.decididoEm))}</div>` : '';
+  return `<div class="os-row" data-os="${esc(os.id)}">
+    <div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div><div class="os-meta">${linhas.length} ${linhas.length === 1 ? 'linha' : 'linhas'}${os.complementoEm ? ' · ⚠ recebeu atividade depois de cobrada' : ''}</div>${quemDecidiu}</div>${chip}</div>
+    ${acoes ? `<div class="os-acoes">${acoes}</div>` : ''}
+    <table class="os-linhas"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
+  </div>`;
+}
+function renderAba(){
+  const box = document.getElementById('prvOsDecisao'); if(!box) return;
+  const lista = todas(); const n = lista.filter(o => o.status === 'decidir' || o.status === 'aguardando').length;
+  const aba = document.getElementById('prvOsTabDecisao'); if(aba) aba.textContent = 'Cobrar / Não cobrar' + (n ? ' (' + n + ')' : '');
+  if(box.style.display === 'none') return;
+  const sec = (st, aberto) => { const l = lista.filter(o => o.status === st).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm))); if(!l.length) return ''; return `<details ${aberto ? 'open' : ''} class="os-secao"><summary>${esc(ROT_STATUS[st])} (${l.length})</summary>${l.map(cartao).join('')}</details>`; };
+  box.innerHTML = `<p class="prv-hint">Cada número de OS reúne todas as atividades, quadros e equipamentos que receberam esse número em Cadastros e OS. Decida por OS: <b>Cobrar</b> manda ao Financeiro; <b>Não cobrar</b> registra o motivo e fica guardada; <b>Aguardar</b> deixa aberta para mais atividades.</p>
+    <div class="prv-linha" style="margin:0 0 12px;"><button type="button" class="btn-ghost" data-os-act="migrar">⇪ Migrar as OS já cadastradas</button><span class="prv-hint" style="margin:0;">Prévia antes de gravar; não repete o que já foi migrado.</span></div>`
+    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? sec('decidir', true) + sec('aguardando', true) + sec('cobrar', false) + sec('nao_cobrar', false) : '<div class="empty-state">Nenhuma OS registrada ainda. Use "Migrar" para trazer as que já estão em Cadastros e OS, ou cadastre uma OS numa atividade.</div>'));
+  if(!box._osLigado){ box._osLigado = true; box.addEventListener('click', (e) => { const b = e.target.closest('[data-os-act]'); if(!b) return; const a = b.dataset.osAct; if(a === 'migrar') abrirMigracao(); else if(a === 'cobrar') decidir(b.dataset.id, 'cobrar'); else if(a === 'aguardar') decidir(b.dataset.id, 'aguardando'); else if(a === 'voltar') decidir(b.dataset.id, 'decidir'); else if(a === 'nao-cobrar') abrirNaoCobrar(b.dataset.id); }); }
+}
+// ---------- decisão do Gestor ----------
+async function decidir(id, status, motivo, texto){
+  await garantirCarregado();
+  const os = store.items.find(o => o.id === id); if(!os) return;
+  const agora = new Date().toISOString();
+  const liquidada = os.status === 'cobrar' && os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida');
+  if(status === 'decidir' && liquidada){ try{ avisoNaoBloqueante('Esta OS já foi cobrada pelo Financeiro e não pode voltar para a decisão.', 6000); }catch(e){} return; }
+  os.status = status; os.decididoEm = agora; os.decididoPor = quem() || null;
+  if(status === 'cobrar'){ os.fin = Object.assign({}, os.fin || {}, { status: (os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida')) ? os.fin.status : 'a_cobrar', enviadaAoFinanceiroEm: agora }); os.motivoNaoCobrar = null; os.motivoTexto = null; hist(os, 'Decisão: COBRAR (enviada ao Financeiro)'); }
+  else if(status === 'nao_cobrar'){ os.motivoNaoCobrar = motivo || null; os.motivoTexto = texto || null; hist(os, 'Decisão: NÃO COBRAR (' + (MOTIVOS.find(m => m[0] === motivo) || ['', motivo])[1] + (texto ? ' — ' + texto : '') + ')'); }
+  else if(status === 'aguardando'){ hist(os, 'Decisão: AGUARDAR mais atividades'); }
+  else { os.motivoNaoCobrar = null; os.motivoTexto = null; if(os.fin && os.fin.status === 'a_cobrar') os.fin = Object.assign({}, os.fin, { status: null }); hist(os, 'Voltou para decisão'); }
+  renderAba(); await store.save(true);
+  try{ avisoNaoBloqueante(status === 'cobrar' ? 'OS ' + os.numero + ' enviada ao Financeiro.' : status === 'nao_cobrar' ? 'OS ' + os.numero + ' registrada como "não cobrar".' : status === 'aguardando' ? 'OS ' + os.numero + ' aguardando mais atividades.' : 'OS ' + os.numero + ' voltou para a decisão.', 5000); }catch(e){}
+}
+function abrirNaoCobrar(id){
+  const os = store.items.find(o => o.id === id); if(!os) return;
+  let ov = document.getElementById('osNaoCobrarOverlay');
+  if(!ov){
+    ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'osNaoCobrarOverlay';
+    ov.innerHTML = '<div class="modal" style="max-width:460px;"><h3>Não cobrar esta OS</h3><p class="modal-sub" id="osNcSub"></p><div class="field"><label for="osNcMotivo">Motivo (obrigatório)</label><select id="osNcMotivo"><option value="">Selecionar motivo...</option>' + MOTIVOS.map(m => '<option value="' + m[0] + '">' + esc(m[1]) + '</option>').join('') + '</select></div><div class="field" id="osNcTextoWrap" style="display:none;"><label for="osNcTexto">Qual o motivo?</label><textarea id="osNcTexto" rows="2" maxlength="300" placeholder="Descreva o motivo"></textarea></div><div class="field-error" id="osNcErr"></div><div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="osNcCancel">Cancelar</button><button type="button" class="btn-primary" id="osNcOk">Registrar como não cobrar</button></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'osNcCancel') ov.classList.remove('open'); });
+    document.getElementById('osNcMotivo').addEventListener('change', (e) => { document.getElementById('osNcTextoWrap').style.display = e.target.value === 'outro' ? '' : 'none'; });
+  }
+  document.getElementById('osNcSub').textContent = 'OS ' + os.numero + ' — ' + os.cliente + '. Ela fica registrada com o motivo e não vai para o Financeiro.';
+  document.getElementById('osNcMotivo').value = ''; document.getElementById('osNcTexto').value = ''; document.getElementById('osNcTextoWrap').style.display = 'none'; document.getElementById('osNcErr').textContent = '';
+  document.getElementById('osNcOk').onclick = async () => {
+    const m = document.getElementById('osNcMotivo').value, t = document.getElementById('osNcTexto').value.trim();
+    if(!m){ document.getElementById('osNcErr').textContent = 'Escolha o motivo.'; return; }
+    if(m === 'outro' && !t){ document.getElementById('osNcErr').textContent = 'Descreva o motivo para concluir.'; return; }
+    ov.classList.remove('open'); await decidir(id, 'nao_cobrar', m, m === 'outro' ? t : '');
+  };
+  ov.classList.add('open');
+}
+function iniciar(){ garantirCarregado().then(renderAba).catch(e => console.error('os: falha ao carregar', e)); }
+window.OS_API = { iniciar, renderAba, decidir, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
+})();
+
+
+// =====================================================================================
+// FINANCEIRO → ORDENS DE SERVIÇO (01/10) — a tela do Financeiro passa a trabalhar com a OS como registro (ordensServico),
+// recebendo só as OS que o Gestor mandou COBRAR. Ciclo: a cobrar → cobrada (enviada ao cliente) → recebida; "cancelada" devolve ao
+// Gestor. Valor é opcional (preenchido pelo Financeiro quando quiser). Não há recebimento parcial.
+// Grava só no nó ordensServico (campo fin e histórico) pela mesma fábrica de armazenamento. A tela antiga (por atividade) fica
+// escondida; as funções antigas continuam no código, sem uso.
+// =====================================================================================
+(function(){
+'use strict';
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const fmtD = (iso) => OS_API.fmtD(iso), fmtDH = (iso) => OS_API.fmtDH(iso);
+const brl = (v) => (v == null || v === '' || isNaN(Number(v))) ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dias = (iso) => { const t = Date.parse(iso); if(!isFinite(t)) return null; return Math.max(0, Math.floor((Date.now() - t) / 86400000)); };
+const hojeStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const DIAS_ALERTA_COBRADA = 30, DIAS_ALERTA_A_COBRAR = 7;
+let filtro = { busca: '', valor: '', status: 'abertas', de: '', ate: '' };
+let aberto = {};          // OS com o painel de edição aberto
+function quem(){ return (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || (typeof currentActingName === 'function' && currentActingName()) || ''; }
+function parseValor(t){ const s = String(t == null ? '' : t).trim().replace(/[R$\s]/g, ''); if(!s) return null; const n = Number(s.indexOf(',') >= 0 ? s.replace(/\./g, '').replace(',', '.') : s); return isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN; }
+function cobradas(){ return OS_API.todas().filter(o => o.status === 'cobrar'); }
+function fin(o){ return o.fin || {}; }
+function st(o){ return fin(o).status || 'a_cobrar'; }
+function valor(o){ const v = fin(o).valor; return (v == null || v === '') ? null : Number(v); }
+function soma(lista){ return lista.reduce((n, o) => n + (valor(o) || 0), 0); }
+
+// ---------- busca por valor: dígitos do valor contêm os dígitos digitados; e combinações de 2 ou 3 OS do mesmo cliente que somam exato ----------
+function digitos(v){ return String(Math.round((v || 0) * 100)).replace(/^0+/, ''); }
+function buscaValor(lista, texto){
+  const alvo = parseValor(texto); if(alvo == null || isNaN(alvo)) return { diretas: [], combos: [] };
+  const dAlvo = String(texto).replace(/\D/g, '').replace(/^0+/, '');
+  const diretas = lista.filter(o => valor(o) != null && (Math.abs(valor(o) - alvo) < 0.005 || Math.abs(valor(o) - alvo) <= 1 || (dAlvo && digitos(valor(o)).includes(dAlvo))));
+  const combos = []; const porCliente = {};
+  lista.filter(o => valor(o) != null && st(o) !== 'recebida').forEach(o => { const k = normalizedClientKey(o.cliente || ''); (porCliente[k] = porCliente[k] || []).push(o); });
+  Object.values(porCliente).forEach(arr => {
+    for(let i = 0; i < arr.length; i++) for(let j = i + 1; j < arr.length; j++){
+      if(Math.abs(valor(arr[i]) + valor(arr[j]) - alvo) < 0.005) combos.push([arr[i], arr[j]]);
+      for(let k = j + 1; k < arr.length; k++) if(Math.abs(valor(arr[i]) + valor(arr[j]) + valor(arr[k]) - alvo) < 0.005) combos.push([arr[i], arr[j], arr[k]]);
+    }
+  });
+  return { diretas, combos: combos.slice(0, 10) };
+}
+
+// ---------- contatos para a cobrança ----------
+function contatos(os){
+  const k = normalizedClientKey(os.cliente || ''); const out = [];
+  (typeof clients !== 'undefined' ? clients : []).filter(c => normalizedClientKey(c.name || '') === k && c.fone && phoneDigits(c.fone).length >= 10).forEach(c => out.push({ nome: c.contato || c.name, fone: c.fone, origem: 'Clientes' }));
+  (typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []).filter(c => normalizedClientKey(c.client || '') === k && c.contact && phoneDigits(c.contact).length >= 10).forEach(c => { if(!out.some(x => phoneDigits(x.fone) === phoneDigits(c.contact))) out.push({ nome: c.contactName || c.client, fone: c.contact, origem: 'Manutenções' }); });
+  return out;
+}
+function mensagemCobranca(os, contato){
+  const primeiro = String(contato && contato.nome || '').split('(')[0].trim().split(/\s+/)[0];
+  const linhas = OS_API.itensDe(os).map(l => '• ' + (fmtD(l.data) || '') + ' ' + l.descricao).join('\n');
+  return 'Olá' + (primeiro ? ', ' + primeiro : '') + '! Segue a ordem de serviço nº ' + os.numero + (valor(os) != null ? ' no valor de ' + brl(valor(os)) : '') + ', referente a:\n' + linhas + '\n\nQualquer dúvida, é só falar. Equiper';
+}
+
+// ---------- ações ----------
+// Sempre reencontra a OS pelo id na hora de gravar: a atualização em tempo real pode ter trocado os objetos da lista
+// enquanto uma janela estava aberta (senão a mudança cairia num objeto descartado e nada seria salvo).
+function atual(osOuId){ const id = typeof osOuId === 'string' ? osOuId : osOuId.id; return OS_API.store.items.find(o => o.id === id) || (typeof osOuId === 'string' ? null : osOuId); }
+async function gravar(os, campos, acao){
+  const o = atual(os); if(!o) return;
+  o.fin = Object.assign({}, o.fin || {}, campos); if(acao) OS_API.hist(o, acao);
+  render(); await OS_API.store.save(true);
+}
+function abrirCobrar(id){
+  const os = OS_API.store.items.find(o => o.id === id); if(!os) return;
+  const lista = contatos(os);
+  let ov = document.getElementById('finCobrarOverlay');
+  if(!ov){ ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'finCobrarOverlay'; ov.innerHTML = '<div class="modal" style="max-width:520px;"><h3 id="finCobTitulo"></h3><div id="finCobCorpo"></div><div class="field-error" id="finCobErr"></div><div id="finCobAcoes" style="display:flex; flex-direction:column; gap:8px; margin-top:12px;"></div></div>'; document.body.appendChild(ov); ov.addEventListener('click', (e) => { if(e.target === ov) ov.classList.remove('open'); }); }
+  document.getElementById('finCobTitulo').textContent = 'Cobrar OS ' + os.numero + ' — ' + os.cliente;
+  document.getElementById('finCobErr').textContent = '';
+  const val = valor(os);
+  document.getElementById('finCobCorpo').innerHTML = `<div class="field"><label for="finCobValor">Valor (opcional)</label><input type="text" id="finCobValor" inputmode="decimal" value="${val != null ? esc(val.toFixed(2).replace('.', ',')) : ''}" placeholder="0,00"></div>
+    <div class="field"><label for="finCobVenc">Vencimento (opcional)</label><input type="date" id="finCobVenc" value="${esc(fin(os).vencimento || '')}"></div>
+    ${lista.length ? `<div class="field"><label for="finCobContato">Enviar pelo WhatsApp para</label><select id="finCobContato">${lista.map((c, i) => `<option value="${i}">${esc(c.nome)} · ${esc(c.fone)} (${c.origem})</option>`).join('')}</select></div>
+      <p class="prv-hint" style="margin:0;">O WhatsApp abre com a mensagem pronta; anexe o PDF da OS gerado no ERP e envie. Depois confirme aqui.</p>`
+      : `<p class="prv-hint" style="margin:0;">Este cliente não tem contato com telefone cadastrado (Clientes → pessoa de contato). Envie a cobrança por outro canal e marque abaixo.</p>`}`;
+  const acoes = document.getElementById('finCobAcoes'); acoes.innerHTML = '';
+  const botao = (rotulo, classe, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = classe; b.style.width = '100%'; b.textContent = rotulo; b.onclick = fn; acoes.appendChild(b); };
+  const lerCampos = () => { const v = parseValor(document.getElementById('finCobValor').value); if(isNaN(v)){ document.getElementById('finCobErr').textContent = 'Valor inválido.'; return null; } return { valor: v, vencimento: document.getElementById('finCobVenc').value || null }; };
+  if(lista.length) botao('📲 Abrir WhatsApp com a cobrança', 'btn-ghost', async () => { const c = lerCampos(); if(!c) return; await gravar(os, c, null); const ct = lista[Number(document.getElementById('finCobContato').value)]; openWhatsapp(phoneDigits(ct.fone), mensagemCobranca(os, ct)); });
+  botao('✓ Marcar como cobrada (enviada ao cliente)', 'btn-primary', async () => { const c = lerCampos(); if(!c) return; ov.classList.remove('open'); await gravar(os, Object.assign(c, { status: 'cobrada', cobradaEm: new Date().toISOString(), cobradaPor: quem() || null }), 'Financeiro: COBRADA' + (c.valor != null ? ' (' + brl(c.valor) + ')' : '')); });
+  botao('Fechar', 'btn-ghost', () => ov.classList.remove('open'));
+  ov.classList.add('open');
+}
+function abrirReceber(id){
+  const os = OS_API.store.items.find(o => o.id === id); if(!os) return;
+  let ov = document.getElementById('finReceberOverlay');
+  if(!ov){ ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'finReceberOverlay'; ov.innerHTML = '<div class="modal" style="max-width:480px;"><h3 id="finRecTitulo"></h3><div id="finRecCorpo"></div><div class="field-error" id="finRecErr"></div><div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="finRecCancel">Cancelar</button><button type="button" class="btn-primary" id="finRecOk">Confirmar recebimento</button></div></div>'; document.body.appendChild(ov); ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'finRecCancel') ov.classList.remove('open'); }); }
+  document.getElementById('finRecTitulo').textContent = 'Recebimento — OS ' + os.numero + ' (' + os.cliente + ')';
+  document.getElementById('finRecErr').textContent = '';
+  const val = valor(os);
+  document.getElementById('finRecCorpo').innerHTML = `<div class="field"><label for="finRecValor">Valor recebido (integral)</label><input type="text" id="finRecValor" inputmode="decimal" value="${val != null ? esc(val.toFixed(2).replace('.', ',')) : ''}" placeholder="0,00"></div>
+    <div class="field"><label for="finRecData">Data do recebimento</label><input type="date" id="finRecData" value="${hojeStr()}" max="${hojeStr()}"></div>
+    <div class="field"><label for="finRecForma">Forma</label><select id="finRecForma"><option value="">—</option><option>PIX</option><option>Transferência</option><option>Boleto</option><option>Cartão</option><option>Dinheiro</option><option>Cheque</option><option>Outro</option></select></div>
+    <div class="field"><label for="finRecDoc">Nota / comprovante (opcional)</label><input type="text" id="finRecDoc" value="${esc(fin(os).documento || '')}"></div>
+    <div class="field"><label for="finRecObs">Observação (opcional)</label><input type="text" id="finRecObs" value="${esc(fin(os).obs || '')}"></div>`;
+  document.getElementById('finRecOk').onclick = async () => {
+    const v = parseValor(document.getElementById('finRecValor').value); if(isNaN(v)){ document.getElementById('finRecErr').textContent = 'Valor inválido.'; return; }
+    const data = document.getElementById('finRecData').value; if(!data){ document.getElementById('finRecErr').textContent = 'Informe a data do recebimento.'; return; }
+    if(data > hojeStr()){ document.getElementById('finRecErr').textContent = 'A data não pode ser futura.'; return; }
+    ov.classList.remove('open');
+    await gravar(os, { status: 'recebida', valor: v, recebidaEm: data + 'T12:00:00.000Z', recebidaPor: quem() || null, forma: document.getElementById('finRecForma').value || null, documento: document.getElementById('finRecDoc').value.trim() || null, obs: document.getElementById('finRecObs').value.trim() || null }, 'Financeiro: RECEBIDA' + (v != null ? ' (' + brl(v) + ')' : ''));
+  };
+  ov.classList.add('open');
+}
+async function salvarValor(id, texto){
+  const os = OS_API.store.items.find(o => o.id === id); if(!os) return;
+  const v = parseValor(texto); if(isNaN(v)){ try{ avisoNaoBloqueante('Valor inválido.', 4000); }catch(e){} return; }
+  if((valor(os) == null && v == null) || (valor(os) != null && v != null && Math.abs(valor(os) - v) < 0.005)) return;
+  await gravar(os, { valor: v }, 'Financeiro: valor ' + brl(v));
+}
+function cancelar(id){
+  const os = OS_API.store.items.find(o => o.id === id); if(!os) return;
+  customConfirm('Devolver a OS ' + os.numero + ' ao Gestor? Ela sai do Financeiro e volta para a decisão "Cobrar / Não cobrar".', async () => { const o = atual(id); if(!o) return; o.status = 'decidir'; o.fin = Object.assign({}, o.fin || {}, { status: null, canceladaEm: new Date().toISOString(), canceladaPor: quem() || null }); OS_API.hist(o, 'Financeiro: devolvida ao Gestor'); render(); await OS_API.store.save(true); }, 'Devolver');
+}
+function reabrir(id){
+  const os = OS_API.store.items.find(o => o.id === id); if(!os) return;
+  const stAtual = st(os); const para = stAtual === 'recebida' ? 'cobrada' : 'a_cobrar';
+  customConfirm('Voltar a OS ' + os.numero + ' para "' + (para === 'cobrada' ? 'cobrada' : 'a cobrar') + '"? O registro desta etapa será apagado.', async () => { const c = { status: para }; if(stAtual === 'recebida'){ c.recebidaEm = null; c.recebidaPor = null; c.forma = null; } else { c.cobradaEm = null; c.cobradaPor = null; } await gravar(os, c, 'Financeiro: voltou para ' + para); }, 'Voltar');
+}
+
+// ---------- tela ----------
+function kpis(lista){
+  const aCobrar = lista.filter(o => st(o) === 'a_cobrar'), cobr = lista.filter(o => st(o) === 'cobrada');
+  const mes = hojeStr().slice(0, 7); const recMes = lista.filter(o => st(o) === 'recebida' && String(fin(o).recebidaEm || '').startsWith(mes));
+  const atras = cobr.filter(o => (dias(fin(o).cobradaEm) || 0) >= DIAS_ALERTA_COBRADA);
+  return PREV_API.kpiCards([
+    { tom: 'amarelo', icone: 'relogio', numero: aCobrar.length, rotulo: 'A cobrar', sub: 'chegaram do Gestor · ' + brl(soma(aCobrar)) },
+    { tom: 'azul', icone: 'andamento', numero: cobr.length, rotulo: 'Cobradas, não recebidas', sub: 'em aberto · ' + brl(soma(cobr)) },
+    { tom: 'verde', icone: 'ok', numero: recMes.length, rotulo: 'Recebidas no mês', sub: brl(soma(recMes)) },
+    { tom: 'vermelho', icone: 'alerta', numero: atras.length, rotulo: 'Cobradas há +' + DIAS_ALERTA_COBRADA + ' dias', sub: 'sem recebimento · ' + brl(soma(atras)) },
+  ]);
+}
+function alertas(lista){
+  const blocos = [];
+  const atras = lista.filter(o => st(o) === 'cobrada' && (dias(fin(o).cobradaEm) || 0) >= DIAS_ALERTA_COBRADA).sort((a, b) => dias(fin(b).cobradaEm) - dias(fin(a).cobradaEm));
+  if(atras.length) blocos.push({ titulo: '⚠ Cobradas há mais de ' + DIAS_ALERTA_COBRADA + ' dias e ainda não recebidas (' + atras.length + ')', itens: atras.map(o => 'OS ' + o.numero + ' — ' + o.cliente + ' · ' + dias(fin(o).cobradaEm) + ' dias · ' + brl(valor(o))) });
+  const parado = lista.filter(o => st(o) === 'a_cobrar' && (dias(fin(o).enviadaAoFinanceiroEm || o.decididoEm) || 0) >= DIAS_ALERTA_A_COBRAR).sort((a, b) => dias(fin(b).enviadaAoFinanceiroEm || b.decididoEm) - dias(fin(a).enviadaAoFinanceiroEm || a.decididoEm));
+  if(parado.length) blocos.push({ titulo: '⏱ A cobrar há mais de ' + DIAS_ALERTA_A_COBRAR + ' dias sem envio ao cliente (' + parado.length + ')', itens: parado.map(o => 'OS ' + o.numero + ' — ' + o.cliente + ' · ' + dias(fin(o).enviadaAoFinanceiroEm || o.decididoEm) + ' dias') });
+  const semValor = lista.filter(o => st(o) === 'cobrada' && valor(o) == null);
+  if(semValor.length) blocos.push({ titulo: 'ℹ Cobradas sem valor preenchido (' + semValor.length + ')', itens: semValor.map(o => 'OS ' + o.numero + ' — ' + o.cliente) });
+  const compl = lista.filter(o => o.complementoEm && st(o) !== 'recebida');
+  if(compl.length) blocos.push({ titulo: 'ℹ Receberam atividade depois de cobradas (' + compl.length + ')', itens: compl.map(o => 'OS ' + o.numero + ' — ' + o.cliente) });
+  return blocos.map(b => `<div class="fin-alerta"><div class="fin-alerta-t">${esc(b.titulo)}</div>${b.itens.slice(0, 8).map(i => `<div>${esc(i)}</div>`).join('')}${b.itens.length > 8 ? '<div>…e mais ' + (b.itens.length - 8) + '</div>' : ''}</div>`).join('');
+}
+const ROT = { a_cobrar: ['A cobrar', 'amber'], cobrada: ['Cobrada', 'azul'], recebida: ['Recebida', 'green'] };
+function cartao(os){
+  const s = st(os); const r = ROT[s] || ROT.a_cobrar; const linhas = OS_API.itensDe(os).sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  const d = s === 'cobrada' ? dias(fin(os).cobradaEm) : null;
+  const meta = [s === 'a_cobrar' ? 'chegou em ' + fmtD(fin(os).enviadaAoFinanceiroEm || os.decididoEm) : '', s === 'cobrada' ? 'cobrada em ' + fmtD(fin(os).cobradaEm) + (d != null ? ' (' + d + ' dias)' : '') + (fin(os).vencimento ? ' · vence ' + fmtD(fin(os).vencimento) : '') : '', s === 'recebida' ? 'recebida em ' + fmtD(fin(os).recebidaEm) + (fin(os).forma ? ' · ' + fin(os).forma : '') : ''].filter(Boolean).join(' · ');
+  const atrasada = s === 'cobrada' && d != null && d >= DIAS_ALERTA_COBRADA;
+  const hist = (Array.isArray(os.historico) ? os.historico : Object.values(os.historico || {})).slice(-5).reverse();
+  return `<div class="os-row fin-os ${atrasada ? 'fin-atrasada' : ''}" data-id="${esc(os.id)}">
+    <div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div><div class="os-meta">${esc(meta)}${os.complementoEm ? ' · ⚠ recebeu atividade depois de cobrada' : ''}</div></div>
+      <div style="text-align:right;"><div class="fin-valor">${esc(brl(valor(os)))}</div><span class="prv-chip ${r[1] === 'azul' ? 'gray' : r[1]}">${esc(r[0])}</span></div></div>
+    <table class="os-linhas"><tbody>${linhas.map(l => `<tr><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc((l.tecnicos || []).join(' e ') || '—')}</td></tr>`).join('')}</tbody></table>
+    <div class="fin-acoes">
+      <label class="fin-valor-edit">Valor <input type="text" inputmode="decimal" data-fin-valor="${esc(os.id)}" value="${valor(os) != null ? esc(valor(os).toFixed(2).replace('.', ',')) : ''}" placeholder="0,00" ${s === 'recebida' ? 'disabled' : ''}></label>
+      ${s === 'a_cobrar' ? `<button type="button" class="btn-primary" data-fin="cobrar" data-id="${esc(os.id)}">Cobrar</button><button type="button" class="btn-ghost" data-fin="cancelar" data-id="${esc(os.id)}">Devolver ao Gestor</button>` : ''}
+      ${s === 'cobrada' ? `<button type="button" class="btn-primary" data-fin="receber" data-id="${esc(os.id)}">✓ Recebida</button><button type="button" class="btn-ghost" data-fin="cobrar" data-id="${esc(os.id)}">Reenviar cobrança</button><button type="button" class="btn-ghost" data-fin="reabrir" data-id="${esc(os.id)}">↩ Voltar a "a cobrar"</button>` : ''}
+      ${s === 'recebida' ? `<button type="button" class="btn-ghost" data-fin="reabrir" data-id="${esc(os.id)}">↩ Desfazer recebimento</button>` : ''}
+      <button type="button" class="btn-ghost" data-fin="hist" data-id="${esc(os.id)}">Histórico</button>
+    </div>
+    ${aberto[os.id] ? `<div class="fin-hist">${hist.map(h => `<div>${esc(fmtDH(h.em))} · ${esc(h.por || '—')} · ${esc(h.acao)}</div>`).join('') || '<div>—</div>'}</div>` : ''}
+  </div>`;
+}
+function render(){
+  const box = document.getElementById('finOsView'); if(!box || box.style.display === 'none') return;
+  const foco = document.activeElement; const focoId = (foco && box.contains(foco)) ? foco.id || foco.dataset.finValor : null; const caret = focoId && foco.selectionStart;
+  const todas = cobradas();
+  let lista = todas;
+  if(filtro.status === 'abertas') lista = lista.filter(o => st(o) !== 'recebida'); else if(filtro.status !== 'todas') lista = lista.filter(o => st(o) === filtro.status);
+  const q = (filtro.busca || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if(q) lista = lista.filter(o => (o.cliente + ' ' + o.numero).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(q));
+  if(filtro.de) lista = lista.filter(o => String(fin(o).cobradaEm || fin(o).enviadaAoFinanceiroEm || o.decididoEm || '').slice(0, 10) >= filtro.de);
+  if(filtro.ate) lista = lista.filter(o => String(fin(o).cobradaEm || fin(o).enviadaAoFinanceiroEm || o.decididoEm || '').slice(0, 10) <= filtro.ate);
+  let bv = null; if(filtro.valor.trim()){ bv = buscaValor(filtro.status === 'todas' ? todas : lista, filtro.valor); lista = bv.diretas; }
+  lista = lista.slice().sort((a, b) => { const oa = st(a) === 'a_cobrar' ? 0 : st(a) === 'cobrada' ? 1 : 2, ob = st(b) === 'a_cobrar' ? 0 : st(b) === 'cobrada' ? 1 : 2; return oa - ob || String(fin(b).cobradaEm || fin(b).enviadaAoFinanceiroEm || '').localeCompare(String(fin(a).cobradaEm || fin(a).enviadaAoFinanceiroEm || '')); });
+  box.innerHTML = `<div class="tech-day-head"><div class="tech-day-title">Ordens de serviço</div><div class="tech-day-date mono">${lista.length} OS · ${esc(brl(soma(lista)))}</div></div>
+    <div class="prv-kpi-grid" style="margin:0 20px 14px;">${kpis(todas)}</div>
+    <div style="margin:0 20px;">${alertas(todas)}</div>
+    <div class="fin-filtros">
+      <input type="search" id="finBusca" placeholder="Cliente ou número da OS" value="${esc(filtro.busca)}">
+      <input type="search" id="finValor" inputmode="decimal" placeholder="Valor (ex.: 1250 ou 1.250,00)" value="${esc(filtro.valor)}">
+      <select id="finStatus"><option value="abertas" ${filtro.status === 'abertas' ? 'selected' : ''}>Em aberto (a cobrar + cobradas)</option><option value="a_cobrar" ${filtro.status === 'a_cobrar' ? 'selected' : ''}>A cobrar</option><option value="cobrada" ${filtro.status === 'cobrada' ? 'selected' : ''}>Cobradas</option><option value="recebida" ${filtro.status === 'recebida' ? 'selected' : ''}>Recebidas</option><option value="todas" ${filtro.status === 'todas' ? 'selected' : ''}>Todas</option></select>
+      <label>De <input type="date" id="finDe" value="${esc(filtro.de)}"></label><label>até <input type="date" id="finAte" value="${esc(filtro.ate)}"></label>
+      <button type="button" class="btn-ghost" id="finCsv">⤓ CSV</button>
+    </div>
+    ${bv ? `<div class="prv-hint" style="margin:0 20px 8px;">${bv.diretas.length ? bv.diretas.length + ' OS com esse valor (ou que contêm esses dígitos).' : 'Nenhuma OS com esse valor.'}${bv.combos.length ? ' <b>Somas que batem:</b> ' + bv.combos.map(c => c.map(o => 'OS ' + esc(o.numero)).join(' + ') + ' (' + esc(c[0].cliente) + ')').join(' · ') : ''}</div>` : ''}
+    <div style="padding:0 20px 30px;">${lista.length ? lista.map(cartao).join('') : '<div class="empty-state">Nenhuma OS nesta lista.</div>'}</div>`;
+  if(focoId){ const el = (document.getElementById(focoId) || box.querySelector(`[data-fin-valor="${focoId}"]`)); if(el){ el.focus(); try{ if(caret != null) el.setSelectionRange(caret, caret); }catch(e){} } }
+}
+function ligar(box){
+  if(box._finLigado) return; box._finLigado = true;
+  box.addEventListener('input', (e) => { const t = e.target; if(t.id === 'finBusca'){ filtro.busca = t.value; render(); } else if(t.id === 'finValor'){ filtro.valor = t.value; render(); } });
+  box.addEventListener('change', (e) => { const t = e.target; if(t.id === 'finStatus'){ filtro.status = t.value; render(); } else if(t.id === 'finDe'){ filtro.de = t.value; render(); } else if(t.id === 'finAte'){ filtro.ate = t.value; render(); } else if(t.dataset && t.dataset.finValor){ salvarValor(t.dataset.finValor, t.value); } });
+  box.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-fin]'); if(b){ const a = b.dataset.fin, id = b.dataset.id; if(a === 'cobrar') abrirCobrar(id); else if(a === 'receber') abrirReceber(id); else if(a === 'cancelar') cancelar(id); else if(a === 'reabrir') reabrir(id); else if(a === 'hist'){ aberto[id] = !aberto[id]; render(); } return; }
+    if(e.target.id === 'finCsv') exportarCsv();
+  });
+}
+function exportarCsv(){
+  const linhas = [['Numero', 'Cliente', 'Situacao', 'Valor', 'Enviada ao financeiro', 'Cobrada em', 'Vencimento', 'Recebida em', 'Forma', 'Documento', 'Linhas']];
+  cobradas().forEach(o => linhas.push([o.numero, o.cliente, st(o), valor(o) != null ? valor(o).toFixed(2).replace('.', ',') : '', fmtD(fin(o).enviadaAoFinanceiroEm), fmtD(fin(o).cobradaEm), fmtD(fin(o).vencimento), fmtD(fin(o).recebidaEm), fin(o).forma || '', fin(o).documento || '', OS_API.itensDe(o).map(l => (fmtD(l.data) || '') + ' ' + l.descricao).join(' | ')]));
+  const csv = '\uFEFF' + linhas.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'ordens-de-servico-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
+}
+async function abrir(){
+  const v = document.getElementById('finOsView'); if(!v) return;
+  const antigo = document.querySelector('#financeiroView > .tech-day-panel'); if(antigo) antigo.style.display = 'none';
+  v.style.display = ''; ligar(v);
+  v.innerHTML = '<div class="empty-state">Carregando…</div>';
+  await OS_API.garantirCarregado(); render();
+}
+window.FIN_API = { abrir, render, buscaValor, parseValor, contatos, mensagemCobranca };
+})();
+
+
+// =====================================================================================
+// PAINEL DE CONTROLE → RELATÓRIOS DE OS (01/10) — análise das ordens de serviço com filtros combináveis: cliente, decisão
+// (cobrar / não cobrar + motivo / aguardando), situação financeira, período, técnico e origem. Para cada OS: técnicos que foram,
+// quantos dias cada um foi, horas totais trabalhadas e o intervalo entre a primeira e a última atividade. Só leitura.
+// =====================================================================================
+(function(){
+'use strict';
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const fmtD = (iso) => OS_API.fmtD(iso);
+const brl = (v) => (v == null || v === '' || isNaN(Number(v))) ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+let f = { cliente: '', decisao: '', motivo: '', fin: '', de: '', ate: '', tecnico: '', origem: '' };
+function minutos(hm){ const m = /^(\d{1,2}):(\d{2})$/.exec(String(hm || '').trim()); return m ? Number(m[1]) * 60 + Number(m[2]) : null; }
+function horasFmt(min){ if(!min) return '0h'; const h = Math.floor(min / 60), m = min % 60; return h + 'h' + (m ? String(m).padStart(2, '0') : ''); }
+// Métricas de uma OS: por técnico (dias distintos e minutos), total de horas, intervalo entre a 1ª e a última data.
+function metricas(os){
+  const linhas = OS_API.itensDe(os); const porTec = {}; let totalMin = 0; const datas = linhas.map(l => l.data).filter(Boolean).sort();
+  linhas.forEach(l => {
+    const ini = minutos(l.inicio), fim = minutos(l.fim); const min = (ini != null && fim != null && fim > ini) ? fim - ini : 0;
+    const tecs = (l.tecnicos && l.tecnicos.length) ? l.tecnicos : ['(sem técnico)'];
+    tecs.forEach(t => { const p = porTec[t] = porTec[t] || { dias: new Set(), min: 0, linhas: 0 }; if(l.data) p.dias.add(l.data); p.min += min; p.linhas++; });
+    totalMin += min * (tecs.length || 1);         // 2 técnicos na mesma atividade = 2 × as horas (horas-homem)
+  });
+  const intervalo = datas.length ? Math.round((Date.parse(datas[datas.length - 1]) - Date.parse(datas[0])) / 86400000) + 1 : 0;
+  return { porTec: Object.keys(porTec).sort().map(t => ({ nome: t, dias: porTec[t].dias.size, min: porTec[t].min, linhas: porTec[t].linhas })), totalMin, diasDistintos: new Set(datas).size, intervalo, primeira: datas[0] || '', ultima: datas[datas.length - 1] || '', nLinhas: linhas.length };
+}
+function dataRef(os){ return String(os.decididoEm || os.criadoEm || '').slice(0, 10); }
+function filtrar(){
+  let lista = OS_API.todas();
+  const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  if(f.cliente) lista = lista.filter(o => fold(o.cliente).includes(fold(f.cliente)));
+  if(f.decisao) lista = lista.filter(o => o.status === f.decisao);
+  if(f.motivo) lista = lista.filter(o => o.status === 'nao_cobrar' && o.motivoNaoCobrar === f.motivo);
+  if(f.fin) lista = lista.filter(o => o.status === 'cobrar' && ((o.fin || {}).status || 'a_cobrar') === f.fin);
+  if(f.tecnico) lista = lista.filter(o => OS_API.itensDe(o).some(l => (l.tecnicos || []).includes(f.tecnico)));
+  if(f.origem) lista = lista.filter(o => OS_API.itensDe(o).some(l => l.origem === f.origem));
+  if(f.de || f.ate) lista = lista.filter(o => OS_API.itensDe(o).some(l => l.data && (!f.de || l.data >= f.de) && (!f.ate || l.data <= f.ate)));
+  return lista.sort((a, b) => dataRef(b).localeCompare(dataRef(a)));
+}
+const ROT_DEC = { decidir: 'A decidir', aguardando: 'Aguardando', cobrar: 'Cobrar', nao_cobrar: 'Não cobrar' };
+function render(){
+  const box = document.getElementById('painelOsRel'); if(!box || !document.getElementById('tabPainel') || document.getElementById('tabPainel').style.display === 'none') return;
+  const foco = document.activeElement; const focoId = (foco && box.contains(foco)) ? foco.id : null; const caret = focoId && foco.selectionStart;
+  const todas = OS_API.todas();
+  const tecnicos = [...new Set(todas.flatMap(o => OS_API.itensDe(o).flatMap(l => l.tecnicos || [])))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const lista = filtrar(); const mets = lista.map(o => ({ os: o, m: metricas(o) }));
+  const totMin = mets.reduce((n, x) => n + x.m.totalMin, 0), totLinhas = mets.reduce((n, x) => n + x.m.nLinhas, 0);
+  const valorTot = lista.reduce((n, o) => n + (Number((o.fin || {}).valor) || 0), 0);
+  const porMotivo = {}; lista.filter(o => o.status === 'nao_cobrar').forEach(o => { const k = (OS_API.MOTIVOS.find(m => m[0] === o.motivoNaoCobrar) || ['', 'sem motivo'])[1]; porMotivo[k] = (porMotivo[k] || 0) + 1; });
+  const porTecTot = {}; mets.forEach(x => x.m.porTec.forEach(t => { const p = porTecTot[t.nome] = porTecTot[t.nome] || { dias: 0, min: 0 }; p.dias += t.dias; p.min += t.min; }));
+  box.innerHTML = `<div class="tecnicos-head" style="margin-top:28px;"><div><div class="tecnicos-title">Relatórios de OS</div><div class="tecnicos-date mono">Combine os filtros; a lista e os totais se atualizam na hora.</div></div></div>
+    <div class="fin-filtros" style="padding:0 0 12px;">
+      <input type="search" id="relCliente" placeholder="Cliente" value="${esc(f.cliente)}">
+      <select id="relDecisao"><option value="">Qualquer decisão</option>${Object.keys(ROT_DEC).map(k => `<option value="${k}" ${f.decisao === k ? 'selected' : ''}>${ROT_DEC[k]}</option>`).join('')}</select>
+      <select id="relMotivo"><option value="">Qualquer motivo (não cobrar)</option>${OS_API.MOTIVOS.map(m => `<option value="${m[0]}" ${f.motivo === m[0] ? 'selected' : ''}>${esc(m[1])}</option>`).join('')}</select>
+      <select id="relFin"><option value="">Qualquer situação financeira</option><option value="a_cobrar" ${f.fin === 'a_cobrar' ? 'selected' : ''}>A cobrar</option><option value="cobrada" ${f.fin === 'cobrada' ? 'selected' : ''}>Cobrada</option><option value="recebida" ${f.fin === 'recebida' ? 'selected' : ''}>Recebida</option></select>
+      <select id="relTecnico"><option value="">Qualquer técnico</option>${tecnicos.map(t => `<option value="${esc(t)}" ${f.tecnico === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <select id="relOrigem"><option value="">Qualquer origem</option><option value="atividade" ${f.origem === 'atividade' ? 'selected' : ''}>Atividade da Agenda</option><option value="quadro" ${f.origem === 'quadro' ? 'selected' : ''}>Quadro de comando</option><option value="equipamento" ${f.origem === 'equipamento' ? 'selected' : ''}>Equipamento da Oficina</option></select>
+      <label>De <input type="date" id="relDe" value="${esc(f.de)}"></label><label>até <input type="date" id="relAte" value="${esc(f.ate)}"></label>
+      <button type="button" class="btn-ghost" id="relLimpar">Limpar</button><button type="button" class="btn-ghost" id="relCsv">⤓ CSV</button>
+    </div>
+    <div class="prv-kpi-grid">${PREV_API.kpiCards([
+      { tom: 'neutro', icone: 'total', numero: lista.length, rotulo: 'OS no filtro', sub: totLinhas + (totLinhas === 1 ? ' linha' : ' linhas') },
+      { tom: 'azul', icone: 'relogio', numero: Math.round(totMin / 60), rotulo: 'Horas trabalhadas', sub: 'horas-homem (início/fim das atividades)' },
+      { tom: 'verde', icone: 'ok', numero: lista.filter(o => o.status === 'cobrar').length, rotulo: 'Cobrar', sub: brl(valorTot) + ' em valores lançados' },
+      { tom: 'amarelo', icone: 'alerta', numero: lista.filter(o => o.status === 'nao_cobrar').length, rotulo: 'Não cobrar', sub: Object.keys(porMotivo).map(k => k + ' ' + porMotivo[k]).join(' · ') || '—' },
+    ])}</div>
+    ${Object.keys(porTecTot).length ? `<div class="prv-card"><div class="prv-nome">Por técnico (no filtro)</div><table class="os-linhas"><tbody>${Object.keys(porTecTot).sort().map(t => `<tr><td>${esc(t)}</td><td class="mono">${porTecTot[t].dias} dia(s)</td><td class="mono">${horasFmt(porTecTot[t].min)}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${mets.length ? mets.map(({ os, m }) => `<div class="os-row"><div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div>
+        <div class="os-meta">${esc(ROT_DEC[os.status] || os.status)}${os.status === 'nao_cobrar' ? ' · ' + esc((OS_API.MOTIVOS.find(x => x[0] === os.motivoNaoCobrar) || ['', ''])[1]) + (os.motivoTexto ? ' — ' + esc(os.motivoTexto) : '') : ''}${os.status === 'cobrar' ? ' · ' + esc(((os.fin || {}).status || 'a_cobrar').replace('_', ' ')) + ' · ' + esc(brl((os.fin || {}).valor)) : ''}</div></div>
+        <div style="text-align:right; font-size:12.5px;"><b>${m.nLinhas} ${m.nLinhas === 1 ? 'atividade' : 'atividades'}</b> · ${m.diasDistintos} dia(s) · ${horasFmt(m.totalMin)}${m.intervalo > 1 ? '<br>de ' + esc(fmtD(m.primeira)) + ' a ' + esc(fmtD(m.ultima)) + ' (' + m.intervalo + ' dias corridos)' : (m.primeira ? '<br>' + esc(fmtD(m.primeira)) : '')}</div></div>
+        <div class="os-meta" style="margin-top:6px;">${m.porTec.map(t => esc(t.nome) + ': ' + t.dias + ' dia(s), ' + horasFmt(t.min)).join(' · ')}</div></div>`).join('') : '<div class="empty-state">Nenhuma OS com esses filtros.</div>'}`;
+  if(focoId){ const el = document.getElementById(focoId); if(el){ el.focus(); try{ if(caret != null) el.setSelectionRange(caret, caret); }catch(e){} } }
+}
+function ligar(box){
+  if(box._relLigado) return; box._relLigado = true;
+  box.addEventListener('input', (e) => { if(e.target.id === 'relCliente'){ f.cliente = e.target.value; render(); } });
+  box.addEventListener('change', (e) => { const m = { relDecisao: 'decisao', relMotivo: 'motivo', relFin: 'fin', relTecnico: 'tecnico', relOrigem: 'origem', relDe: 'de', relAte: 'ate' }; if(m[e.target.id]){ f[m[e.target.id]] = e.target.value; render(); } });
+  box.addEventListener('click', (e) => { if(e.target.id === 'relLimpar'){ f = { cliente: '', decisao: '', motivo: '', fin: '', de: '', ate: '', tecnico: '', origem: '' }; render(); } else if(e.target.id === 'relCsv') csv(); });
+}
+function csv(){
+  const linhas = [['Numero', 'Cliente', 'Decisao', 'Motivo', 'Situacao financeira', 'Valor', 'Atividades', 'Dias', 'Horas', 'Primeira', 'Ultima', 'Tecnicos (dias/horas)']];
+  filtrar().forEach(o => { const m = metricas(o); linhas.push([o.numero, o.cliente, ROT_DEC[o.status] || o.status, o.status === 'nao_cobrar' ? ((OS_API.MOTIVOS.find(x => x[0] === o.motivoNaoCobrar) || ['', ''])[1] + (o.motivoTexto ? ' - ' + o.motivoTexto : '')) : '', o.status === 'cobrar' ? ((o.fin || {}).status || 'a_cobrar') : '', (o.fin || {}).valor != null ? Number((o.fin || {}).valor).toFixed(2).replace('.', ',') : '', m.nLinhas, m.diasDistintos, horasFmt(m.totalMin), fmtD(m.primeira), fmtD(m.ultima), m.porTec.map(t => t.nome + ' ' + t.dias + 'd/' + horasFmt(t.min)).join(' | ')]); });
+  const texto = '\uFEFF' + linhas.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const blob = new Blob([texto], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'relatorio-os.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
+}
+async function abrir(){ const box = document.getElementById('painelOsRel'); if(!box) return; ligar(box); await OS_API.garantirCarregado(); render(); }
+window.REL_API = { abrir, render, metricas, filtrar };
 })();
 
 init();
