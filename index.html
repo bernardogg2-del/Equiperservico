@@ -1766,6 +1766,7 @@
   .os-origem{ font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel-2); color:var(--text-dim); white-space:nowrap; }
   @media (max-width:600px){ .os-linhas td:nth-child(4){ display:none; } }
   .os-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .os-linhas-click tr{ cursor:pointer; } .os-linhas-click tr:hover td{ background:var(--panel-2); }
   /* ===== Financeiro → Ordens de serviço ===== */
   .fin-filtros{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:0 20px 12px; }
   .fin-filtros input[type=search]{ flex:1; min-width:180px; } .fin-filtros label{ font-size:12.5px; color:var(--text-dim); display:flex; align-items:center; gap:4px; }
@@ -21238,19 +21239,63 @@ function cartao(os){
   return `<div class="os-row" data-os="${esc(os.id)}">
     <div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div><div class="os-meta">${linhas.length} ${linhas.length === 1 ? 'linha' : 'linhas'}${os.complementoEm ? ' · ⚠ recebeu atividade depois de cobrada' : ''}</div>${quemDecidiu}</div>${chip}</div>
     ${acoes ? `<div class="os-acoes">${acoes}</div>` : ''}
-    <table class="os-linhas"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
+    <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
   </div>`;
 }
+let buscaDecisao = '';
 function renderAba(){
   const box = document.getElementById('prvOsDecisao'); if(!box) return;
-  const lista = todas(); const n = lista.filter(o => o.status === 'decidir' || o.status === 'aguardando').length;
+  const todasOs = todas(); const n = todasOs.filter(o => o.status === 'decidir' || o.status === 'aguardando').length;
+  const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const termo = fold(buscaDecisao);
+  const lista = termo ? todasOs.filter(o => fold(o.numero + ' ' + o.cliente + ' ' + itensDe(o).map(l => l.descricao + ' ' + (l.tecnicos || []).join(' ')).join(' ')).includes(termo)) : todasOs;
   const aba = document.getElementById('prvOsTabDecisao'); if(aba) aba.textContent = 'Cobrar / Não cobrar' + (n ? ' (' + n + ')' : '');
   if(box.style.display === 'none') return;
   const sec = (st, aberto) => { const l = lista.filter(o => o.status === st).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm))); if(!l.length) return ''; return `<details ${aberto ? 'open' : ''} class="os-secao"><summary>${esc(ROT_STATUS[st])} (${l.length})</summary>${l.map(cartao).join('')}</details>`; };
-  box.innerHTML = `<p class="prv-hint">Cada número de OS reúne todas as atividades, quadros e equipamentos que receberam esse número em Cadastros e OS. Decida por OS: <b>Cobrar</b> manda ao Financeiro; <b>Não cobrar</b> registra o motivo e fica guardada; <b>Aguardar</b> deixa aberta para mais atividades.</p>
+  const foco = document.activeElement; const focoBusca = foco && foco.id === 'osDecisaoBusca'; const caret = focoBusca ? foco.selectionStart : null;
+  box.innerHTML = `<p class="prv-hint">Cada número de OS reúne todas as atividades, quadros e equipamentos que receberam esse número em Cadastros e OS. Decida por OS: <b>Cobrar</b> manda ao Financeiro; <b>Não cobrar</b> registra o motivo e fica guardada; <b>Aguardar</b> deixa aberta para mais atividades. Toque numa linha para abrir os detalhes da atividade.</p>
+    <div class="prv-linha" style="margin:0 0 10px; align-items:center;"><div class="search-clear-wrap" style="flex:1; min-width:220px; max-width:460px;"><input type="search" id="osDecisaoBusca" placeholder="Buscar por cliente, número da OS, descrição ou técnico…" value="${esc(buscaDecisao)}" autocomplete="off"><button type="button" class="search-clear-btn" data-os-act="limpar-busca">✕</button></div>${termo ? `<span class="prv-hint" style="margin:0; font-size:12px;">${lista.length ? lista.length + (lista.length === 1 ? ' OS encontrada' : ' OS encontradas') : 'Nenhuma OS encontrada'}</span>` : ''}</div>
     <div class="prv-linha" style="margin:0 0 12px;"><button type="button" class="btn-ghost" data-os-act="migrar">⇪ Migrar as OS já cadastradas</button><span class="prv-hint" style="margin:0;">Prévia antes de gravar; não repete o que já foi migrado.</span></div>`
-    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? sec('decidir', true) + sec('aguardando', true) + sec('cobrar', false) + sec('nao_cobrar', false) : '<div class="empty-state">Nenhuma OS registrada ainda. Use "Migrar" para trazer as que já estão em Cadastros e OS, ou cadastre uma OS numa atividade.</div>'));
-  if(!box._osLigado){ box._osLigado = true; box.addEventListener('click', (e) => { const b = e.target.closest('[data-os-act]'); if(!b) return; const a = b.dataset.osAct; if(a === 'migrar') abrirMigracao(); else if(a === 'cobrar') decidir(b.dataset.id, 'cobrar'); else if(a === 'aguardar') decidir(b.dataset.id, 'aguardando'); else if(a === 'voltar') decidir(b.dataset.id, 'decidir'); else if(a === 'nao-cobrar') abrirNaoCobrar(b.dataset.id); }); }
+    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? sec('decidir', true) + sec('aguardando', true) + sec('cobrar', !!termo) + sec('nao_cobrar', !!termo) : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Use "Migrar" para trazer as que já estão em Cadastros e OS, ou cadastre uma OS numa atividade.</div>')));
+  if(focoBusca){ const b = document.getElementById('osDecisaoBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
+  if(!box._osLigado){ box._osLigado = true;
+    box.addEventListener('input', (e) => { if(e.target.id === 'osDecisaoBusca'){ buscaDecisao = e.target.value; renderAba(); } });
+    box.addEventListener('keydown', (e) => { if(e.target.id === 'osDecisaoBusca' && e.key === 'Escape'){ buscaDecisao = ''; renderAba(); } });
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-os-act]');
+      if(b){ const a = b.dataset.osAct; if(a === 'migrar') abrirMigracao(); else if(a === 'cobrar') decidir(b.dataset.id, 'cobrar'); else if(a === 'aguardar') decidir(b.dataset.id, 'aguardando'); else if(a === 'voltar') decidir(b.dataset.id, 'decidir'); else if(a === 'nao-cobrar') abrirNaoCobrar(b.dataset.id); else if(a === 'limpar-busca'){ buscaDecisao = ''; renderAba(); const i = document.getElementById('osDecisaoBusca'); if(i) i.focus(); } return; }
+      const tr = e.target.closest('[data-os-linha]'); if(tr) abrirLinha(tr.dataset.osLinha);
+    }); }
+}
+// ---------- detalhe de uma linha: abre a tela da origem (atividade da Agenda, equipamento da Oficina ou quadro) ----------
+function avisoOs(t){ try{ avisoNaoBloqueante(t, 5000); }catch(e){ alert(t); } }
+function abrirLinha(ref){
+  const i = String(ref).indexOf(':'); const origem = ref.slice(0, i), idTxt = ref.slice(i + 1); const idNum = isNaN(Number(idTxt)) ? idTxt : Number(idTxt);
+  try{
+    if(origem === 'atividade'){
+      const svc = (typeof services !== 'undefined' ? services : []).find(x => String(x.id) === String(idTxt));
+      if(!svc){ avisoOs('Esta atividade não está mais na Agenda (pode ter sido apagada).'); return; }
+      openServiceDetails(svc.id);
+    } else if(origem === 'equipamento'){
+      const eq = (typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []).find(x => String(x.id) === String(idTxt));
+      if(!eq){ avisoOs('Este equipamento não está mais na Oficina.'); return; }
+      openOficinaGestorDetalhe(eq.id);
+    } else if(origem === 'quadro'){
+      const q = (window.QUADROS_API && QUADROS_API.listaQuadros ? QUADROS_API.listaQuadros() : []).find(x => String(x.id) === String(idTxt));
+      if(!q){ avisoOs('Este quadro de comando não foi encontrado.'); return; }
+      abrirDetalheQuadro(q);
+    }
+  }catch(e){ console.error('os: falha ao abrir a linha', e); }
+}
+function abrirDetalheQuadro(q){
+  let ov = document.getElementById('osQuadroDetalheOverlay');
+  if(!ov){ ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'osQuadroDetalheOverlay'; ov.innerHTML = '<div class="modal" style="max-width:520px;"><h3 id="osQdTitulo"></h3><div id="osQdCorpo"></div><div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="osQdFechar">Fechar</button></div></div>'; document.body.appendChild(ov); ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'osQdFechar') ov.classList.remove('open'); }); }
+  const etapas = [['Criado', q.criadoEm, q.criadoPor], ['Montagem iniciada', q.iniciouMontagemEm, q.iniciouMontagemPor], ['Montado', q.montadoEm, q.montadoPor], ['Testes iniciados', q.iniciouTesteEm, q.iniciouTestePor], ['Testado', q.testadoEm, q.testadoPor]];
+  document.getElementById('osQdTitulo').textContent = 'Quadro de comando — ' + (q.tipoNome || '') + ' · ' + (q.cliente || '');
+  document.getElementById('osQdCorpo').innerHTML = `<table class="os-linhas"><tbody>${etapas.map(([r, em, por]) => `<tr><td>${esc(r)}</td><td class="mono">${em ? esc(fmtDH(em)) : '—'}</td><td>${esc(por || '—')}</td></tr>`).join('')}</tbody></table>
+    ${q.numeroOS ? `<div class="os-meta" style="margin-top:10px;">OS nº ${esc(q.numeroOS)}${q.processedForOSBy ? ' · registrada por ' + esc(q.processedForOSBy) + (q.processedForOSAt ? ' em ' + esc(fmtDH(q.processedForOSAt)) : '') : ''}</div>` : ''}
+    ${q.observacao ? `<div style="margin-top:10px;"><b>Observação:</b> ${esc(q.observacao)}</div>` : ''}`;
+  ov.classList.add('open');
 }
 // ---------- decisão do Gestor ----------
 async function decidir(id, status, motivo, texto){
