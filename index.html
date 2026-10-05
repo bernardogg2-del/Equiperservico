@@ -1718,6 +1718,11 @@
   #oficinaEquipList .oe-card-row .oe-badge{ flex:0 1 auto; margin-left:auto; white-space:normal; text-align:center; line-height:1.2; max-width:44%; }
   #oficinaEquipList .oe-card-row > div:first-child{ flex:1 1 56%; }
   @media (max-width:480px){ #oficinaEquipList .oe-card-row .oe-badge{ font-size:11.5px; padding:5px 9px; } }
+
+  /* ===== "Enviar relatório final" no fim da seção do técnico ===== */
+  .prv-final{ margin:16px 14px 14px; padding:14px; border:1.5px solid var(--line); border-radius:var(--radius-sm); background:var(--panel-2); text-align:center; }
+  .prv-final-btn{ width:100%; min-height:48px; font-size:15px; }
+  .prv-final-ok{ border-color:var(--success); background:var(--success-soft); text-align:left; }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -13942,6 +13947,7 @@ function renderTechView(){
       customConfirm('Finalizar esta atividade? O horário de conclusão será registrado.', () => executarConclusaoAtividade(id), 'Concluir atividade');
     });
   });
+  window.executarConclusaoAtividade = (id) => executarConclusaoAtividade(id);   // usado pelo botão "Enviar relatório final" do relatório preventivo
   async function executarConclusaoAtividade(id){
     { // mantém o mesmo corpo de sempre, só chamado depois da confirmação
       const svc = services.find(x => x.id === id);
@@ -18835,7 +18841,8 @@ function htmlSlot(svc, units, r){
         ${fotoIdsGerais.length ? `<div class="prv-fotos">${htmlMiniaturas(r, fotoIdsGerais, travado)}</div>` : ''}
         ${(!travado && fotoIds.length < MAX_FOTOS) ? `<div class="prv-foto-acoes"><button type="button" class="btn-ghost prv-foto-btn" data-prv-foto-add="geral">＋ Adicionar foto</button></div>` : ''}
         <div class="prv-fotos-n">${fotoIds.length} de ${MAX_FOTOS} fotos no relatório (as de cada equipamento contam aqui)</div>
-      </div>`;
+      </div>
+      ${htmlEnviarFinal(svc, units, r, travado)}`;
   }
   return `<div class="prv-sec">
     <button type="button" class="prv-head" data-prv-act="toggle-sec">
@@ -18940,6 +18947,7 @@ function ligarSlot(slot){
     }
     const b = e.target.closest('[data-prv-act],[data-prv-v]');
     if(!b) return;
+    if(b.dataset.prvAct === 'enviar-final'){ enviarRelatorioFinal(sid); return; }
     if(b.dataset.prvAct === 'dica-editar'){
       estado.editandoDica = sid + ':' + b.dataset.prvU; remontarSlots(sid);
       const ta = slot.querySelector('.prv-dica-txt'); if(ta){ ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
@@ -19145,13 +19153,35 @@ async function atualizarRelatorioPosConclusao(svc){
   }catch(e){ console.error('prev: falha ao atualizar o relatório depois de concluir (o que o técnico marcou continua salvo no rascunho)', e); }
 }
 
+// Bloco "Enviar relatório final" no fim da seção (05/10): conclui o serviço (é o que gera o relatório). Se faltar medição,
+// avisa "existem marcações pendentes" e deixa enviar mesmo assim ou voltar para completar.
+function htmlEnviarFinal(svc, units, r, travado){
+  if(travado) return '';
+  const pend = pendenciasRelatorio(svc, true);
+  if(svc.status === 'concluido'){
+    return `<div class="prv-final prv-final-ok"><div><b>✓ Relatório enviado</b>${svc.checkOut ? ' às ' + esc(svc.checkOut) : ''}.</div><div class="prv-hint" style="margin:4px 0 0;">${pend ? 'Ainda faltam ' + pend.total + (pend.total === 1 ? ' campo' : ' campos') + ' — você pode completar aqui; o relatório é atualizado sozinho até ser enviado ao cliente.' : 'Se esqueceu de algo, ainda dá para corrigir aqui até o envio ao cliente.'}</div></div>`;
+  }
+  const faltam = pend ? `<div class="prv-hint" style="margin:0 0 8px; color:var(--warning);">⚠ Existem marcações pendentes: ${pend.total}${pend.total === 1 ? ' campo' : ' campos'} em ${pend.porUnidade.length}${pend.porUnidade.length === 1 ? ' unidade' : ' unidades'}.</div>` : '<div class="prv-hint" style="margin:0 0 8px; color:var(--success-dark);">✓ Todas as medições preenchidas.</div>';
+  const semInicio = !svc.checkIn;
+  return `<div class="prv-final">${faltam}
+    <button type="button" class="btn-primary prv-final-btn" data-prv-act="enviar-final" ${semInicio ? 'disabled' : ''}>📨 Enviar relatório final</button>
+    <div class="prv-hint" style="margin:6px 0 0;">${semInicio ? 'Toque em <b>▶ Iniciar serviço</b> no cartão para poder enviar.' : 'Envia o relatório e conclui o serviço (registra o horário de conclusão).'}</div></div>`;
+}
+function enviarRelatorioFinal(sid){
+  const svc = services.find(s => String(s.id) === String(sid)); if(!svc || svc.status === 'concluido') return;
+  if(!svc.checkIn){ aviso('Toque em "▶ Iniciar serviço" antes de enviar o relatório.', 5000); return; }
+  const pend = pendenciasRelatorio(svc);
+  const concluir = () => { if(typeof window.executarConclusaoAtividade === 'function') window.executarConclusaoAtividade(svc.id); };
+  if(pend) avisarPendencias(svc, pend, concluir, { titulo: 'Existem marcações pendentes', continuar: 'Enviar mesmo assim', voltar: 'Voltar e completar' });
+  else customConfirm('Enviar o relatório final e concluir o serviço? O horário de conclusão será registrado.', concluir, 'Enviar relatório');
+}
 // ====================================================================================
 // AVISO DE PENDÊNCIAS ao tocar em "Concluir atividade": voltar para o relatório ou continuar com a conclusão.
 // pendenciasRelatorio devolve null quando não há o que avisar (atividade comum, cliente sem unidades configuradas,
 // relatório completo, já concluída, ou rascunho ainda não carregado — nesses casos nada muda no fluxo de sempre).
 // ====================================================================================
-function pendenciasRelatorio(svc){
-  if(!ehPreventiva(svc) || svc.status === 'concluido') return null;
+function pendenciasRelatorio(svc, mesmoConcluida){
+  if(!ehPreventiva(svc) || (svc.status === 'concluido' && !mesmoConcluida)) return null;
   const units = unidadesDoCliente(svc.client); if(!units.length) return null;
   const r = estado.rascunhos[svc.id]; if(!r || !r.carregado) return null;
   const porUnidade = []; let total = 0;
@@ -19170,14 +19200,18 @@ function garantirModalPendencias(){
   document.body.appendChild(ov);
   return ov;
 }
-function avisarPendencias(svc, pend, aoContinuar){
+function avisarPendencias(svc, pend, aoContinuar, rot){
+  rot = rot || {};
   const ov = garantirModalPendencias();
+  document.getElementById('prvPendTitulo').textContent = rot.titulo || 'Há pendências no relatório de manutenção';
+  document.getElementById('prvPendContinuar').textContent = rot.continuar || 'Continuar com a conclusão';
+  document.getElementById('prvPendVoltar').textContent = rot.voltar || 'Voltar ao relatório';
   const lista = pend.porUnidade.slice(0, 6).map(p => '<li><b>' + esc(p.nome) + '</b> — ' + p.faltam + (p.faltam === 1 ? ' campo' : ' campos') + '</li>').join('')
     + (pend.porUnidade.length > 6 ? '<li>…e mais ' + (pend.porUnidade.length - 6) + (pend.porUnidade.length - 6 === 1 ? ' unidade' : ' unidades') + '</li>' : '');
   document.getElementById('prvPendCorpo').innerHTML =
     (pend.nadaPreenchido ? '<p style="margin:0 0 8px;">O relatório de manutenção <b>ainda não foi preenchido</b>.</p>'
       : '<p style="margin:0 0 8px;">Ainda faltam <b>' + pend.total + (pend.total === 1 ? ' campo' : ' campos') + '</b> em <b>' + pend.porUnidade.length + (pend.porUnidade.length === 1 ? ' unidade' : ' unidades') + '</b>:</p><ul style="margin:0 0 8px; padding-left:20px;">' + lista + '</ul>')
-    + '<p style="margin:0; font-size:12.5px; color:var(--text-dim);">Se continuar, a atividade é concluída agora (o horário de conclusão será registrado). Você ainda poderá completar o relatório depois, até ele ser enviado ao cliente.</p>';
+    + '<p style="margin:0; font-size:12.5px; color:var(--text-dim);">' + (rot.titulo ? 'Quer enviar mesmo assim? O relatório sai com os campos que faltam como "não preenchido" e o serviço é concluído agora. Você ainda poderá completar depois, até ele ser enviado ao cliente.' : 'Se continuar, a atividade é concluída agora (o horário de conclusão será registrado). Você ainda poderá completar o relatório depois, até ele ser enviado ao cliente.') + '</p>';
   const fechar = () => ov.classList.remove('open');
   document.getElementById('prvPendVoltar').onclick = () => {
     fechar();
@@ -19339,7 +19373,7 @@ function gerarPdfRelatorio(rel, fotos){
     setF('sansB', 7.4, C.dim); txt(t[1], x + 4.2, y + 16);
   });
   y += 18.5 + 2.6;
-  if(res.vazios){ setF('sans', 8, C.dim); txt(res.vazios + ' campo(s) não preenchido(s) na visita.', M, y + 2); y += 5.5; } else y += 2;
+  y += 2;
 
   // ---------------- pontos que precisam de atenção (só vermelhos) ----------------
   if(res.atencao.length){
@@ -19379,8 +19413,8 @@ function gerarPdfRelatorio(rel, fotos){
   // ---------------- unidades ----------------
   const semAc = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   r.unidades.forEach(u => {
-    const grupos = u.grupos.map(g => ({ g, linhas: g.linhas.filter(l => !ehLinhaInterna(l, g, u)) })).filter(x => x.linhas.length);
-    if(u.grupos.length && !grupos.length && !u.observacao) return;
+    const grupos = u.grupos.map(g => ({ g, linhas: semVazias(g.linhas.filter(l => !ehLinhaInterna(l, g, u))) })).filter(x => x.linhas.length);   // não preenchido não vai para o cliente
+    if(!grupos.length && !u.observacao) return;
     const itens = [];
     itens.push({ h: 10.5, keep: true, draw: (yy) => {
       doc.setFillColor(C.cinzaBloco); doc.rect(M + 0.15, yy + 0.15, W - 0.3, 10.2, 'F'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.line(M, yy + 10.5, M + W, yy + 10.5);
@@ -19645,6 +19679,11 @@ function normalizarRelatorio(rel){
   });
 }
 // Linhas de um grupo: medições trifásicas (RS/ST/RT) saem numa linha só; textos livres saem em bloco.
+// Tira as linhas sem resposta. Um trio trifásico (RS/ST/RT) só sai inteiro se nenhuma fase tiver valor.
+function semVazias(linhas){
+  const grupoTemValor = {}; linhas.forEach(l => { if(l.tri && l.tri.g && l.texto != null) grupoTemValor[l.tri.g] = true; });
+  return linhas.filter(l => l.texto != null || (l.tri && l.tri.g && grupoTemValor[l.tri.g]));
+}
 function linhasDaTabela(linhas, pill, ehInterno, vazioTxt){
   let html = '';
   for(let i = 0; i < linhas.length; i++){
@@ -19687,8 +19726,10 @@ function htmlRelatorio(rel, fotos, opts){
     ? (ordenadas.length ? `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-fotos-grid">${ordenadas.map((f, i) => `<figure><img src="${esc(f.src)}" alt="Foto ${i + 1}"><figcaption><b>Foto ${i + 1}</b> · ${esc(legendaFoto(f))}</figcaption></figure>`).join('')}</div></div>` : '')
     : (num(r.nFotos) > 0 ? `<div class="rp-fotos"><h3>Fotos da visita</h3><div class="rp-nota">Carregando fotos…</div></div>` : ''));
   const unidadesHtml = r.unidades.map(u => {
-    const grupos = u.grupos.map(g => ({ g, linhas: pdf ? g.linhas.filter(l => !ehLinhaInterna(l, g, u)) : g.linhas })).filter(x => x.linhas.length);
-    if(pdf && u.grupos.length && !grupos.length && !u.observacao) return '';          // unidade que só tinha itens "só equipe" (e nada mais): não vai no PDF
+    // PDF do cliente: o que o técnico NÃO preencheu não aparece (nem o campo, nem o subitem, nem o equipamento, se nada foi marcado) —
+    // pode ser equipamento fora do local, em manutenção ou cadastrado a mais. Na tela do Gestor continua como "não preenchido".
+    const grupos = u.grupos.map(g => ({ g, linhas: pdf ? semVazias(g.linhas.filter(l => !ehLinhaInterna(l, g, u))) : g.linhas })).filter(x => x.linhas.length);
+    if(pdf && !grupos.length && !u.observacao) return '';          // nada preenchido (ou só itens "só equipe"): não vai no PDF
     return `<div class="rp-unit">
       <h3><span class="rp-unit-tipo">${esc(u.tipoNome)}</span>${semAcentoRp(u.local) !== semAcentoRp(u.tipoNome) ? `<span class="rp-unit-local">${esc(u.local)}</span>` : ''}</h3>
       <div class="rp-unit-corpo">${grupos.length ? grupos.map(x => `
@@ -19717,7 +19758,7 @@ function htmlRelatorio(rel, fotos, opts){
       <div class="rp-stat amber"><b>${res.amarelos}</b><span>atenção</span></div>
       <div class="rp-stat red"><b>${res.vermelhos}</b><span>precisam de ação</span></div>
     </div>
-    ${res.vazios ? `<div class="rp-nota">${res.vazios} campo(s) não preenchido(s) na visita.</div>` : '<div class="rp-nota"></div>'}
+    ${(res.vazios && !pdf) ? `<div class="rp-nota">${res.vazios} campo(s) não preenchido(s) na visita — não aparecem no PDF do cliente.</div>` : '<div class="rp-nota"></div>'}
     ${res.atencao.length ? `<div class="rp-atencao"><h4><span class="rp-ico">!</span>Pontos que precisam de atenção</h4><ul>${res.atencao.map(a =>
         `<li><b>${a.grupo ? esc(a.grupo) + ' — ' : ''}${esc(a.unidade)}</b> · ${esc(a.campo)}: <span class="rp-pill ${corSegura(a.cor)}">${esc(a.texto)}</span>${a.interno ? ' <span class="rp-tag-int" title="Só aparece para a equipe; não vai no PDF do cliente">só equipe</span>' : ''}</li>`).join('')}</ul></div>`
       : (avaliados ? '<div class="rp-ok">✓ Nenhum ponto crítico nesta visita.</div>' : '')}
