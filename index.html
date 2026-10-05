@@ -2622,7 +2622,6 @@
     <div class="tecnicos-head">
       <div>
         <div class="tecnicos-title">Clientes cadastrados</div>
-        <div class="tecnicos-date mono">Corrija nome ou endereço — o histórico é mantido, e as próximas atividades usam os dados atualizados</div>
       </div>
     </div>
     <div class="cliente-row" style="align-items:flex-end;">
@@ -2654,7 +2653,6 @@
     <div class="tecnicos-head">
       <div>
         <div class="tecnicos-title">Acessos</div>
-        <div class="tecnicos-date mono">Um cadastro por pessoa, com os perfis que ela pode usar</div>
       </div>
     </div>
     <div style="padding:0 20px 14px;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button></div>
@@ -10506,6 +10504,14 @@ function openOficinaGestorDetalhe(id){
       ${eq.manutencaoObservation ? `<div style="font-size:13px; margin-top:4px;">${escapeHtml(eq.manutencaoObservation)}</div>` : ''}
       ${photosBlock(eq.manutencaoPhotos, 'Fotos da manutenção')}
       ${audiosBlock(eq.manutencaoAudios, 'Áudios da manutenção')}`;
+  }
+  {
+    const pecas = Array.isArray(eq.partsUsed) ? eq.partsUsed : Object.values(eq.partsUsed || {});
+    if(pecas.length || eq.manutencaoStartedAt){
+      html += `<div class="painel-stat-row" style="margin-top:10px; border-top:1px solid var(--line); padding-top:8px;"><div class="painel-stat-label">Peças utilizadas</div><div class="painel-stat-value mono">${pecas.length ? pecas.length + (pecas.length === 1 ? ' item' : ' itens') : '—'}</div></div>`
+        + (pecas.length ? `<ul style="margin:4px 0 0; padding-left:18px; font-size:13px;">${pecas.map(p => `<li><b>${escapeHtml(String(p.quantity != null ? p.quantity : 1))}×</b> ${escapeHtml(p.name || '')}${p.observation ? ` <span style="color:var(--text-dim);">— ${escapeHtml(p.observation)}</span>` : ''}</li>`).join('')}</ul>`
+          : '<div style="font-size:12px; color:var(--text-dim);">Nenhuma peça registrada.</div>');
+    }
   }
   if(eq.testeStartedAt){
     html += `<div class="painel-stat-row" style="margin-top:10px; border-top:1px solid var(--line); padding-top:8px;"><div class="painel-stat-label">Teste final</div><div class="painel-stat-value mono">${escapeHtml(eq.testeStartedBy || '—')} → ${escapeHtml(eq.testeCompletedBy || '—')}</div></div>
@@ -20091,7 +20097,7 @@ function atualizarTelasRelatorios(){
 function corNome(c){ return c === 'green' ? 'verde' : c === 'amber' ? 'amarelo' : 'vermelho'; }
 function renderCatalogo(){
   const box = document.getElementById('prvManutCatalogo'); if(!box || box.style.display === 'none') return;
-  box.innerHTML = `<p class="prv-hint">Tipos de equipamento, campos e validações do relatório preventivo, como fechados na especificação. Somente leitura: alterar o catálogo exige uma nova versão do app.</p>` +
+  box.innerHTML = `` +
     CATALOGO.map(t => `<div class="prv-cat-tipo"><div class="prv-cat-head"><b>${esc(t.nome)}</b><span class="prv-chip ${t.exclusivoDe ? 'amber' : 'gray'}">${t.exclusivoDe ? 'Exclusivo: ' + esc(t.exclusivoDe.join(', ')) + ' · ' : ''}${t.itens.length} item(ns)</span></div>
       ${t.itens.map(it => `<div class="prv-cat-item"><div class="prv-cat-item-n">${esc(it.nome)}</div>
         ${it.campos.filter(c => c.status !== 'pendente').map(c => `<div class="prv-cat-campo"><span>${esc(c.label)}</span><span class="prv-cat-op">${
@@ -20138,8 +20144,7 @@ function renderConfig(){
   const units = clientes.length ? unidadesDoCliente(estado.cfgCliente) : [];       // busca sem resultado: não mostra equipamentos de outro cliente
   const f = estado.cfgForm;
   if(!f.tipo || !tipoPorId(f.tipo) || !tipoVisivelParaCliente(tipoPorId(f.tipo), estado.cfgCliente)){ f.tipo = CATALOGO.filter(t => tipoVisivelParaCliente(t, estado.cfgCliente))[0].tipo; f.comp = estadoInicialDoTipo(f.tipo); }
-  box.innerHTML = `<p class="prv-hint">Escolha o cliente e cadastre os equipamentos que ele realmente tem. Só o que estiver aqui aparece no relatório do técnico. Os clientes vêm dos contratos de manutenção.</p>
-    <div class="prv-linha" style="margin:0 0 14px;"><button type="button" class="btn-ghost" data-prv-g="importar">⇪ Importar equipamentos das planilhas</button><span class="prv-hint" style="margin:0;">Prévia antes de gravar; não altera clientes já configurados.</span></div>
+  box.innerHTML = `
     <div class="prv-linha" style="align-items:flex-end; margin:0 0 6px;">
       <div class="field" style="min-width:230px; flex:1; max-width:360px; margin:0;"><label for="prvCfgBusca">Localizar cliente</label>
         <input type="search" id="prvCfgBusca" value="${esc(estado.cfgBusca)}" placeholder="Digite o nome do cliente…" autocomplete="off"></div>
@@ -20429,6 +20434,7 @@ window.PREV_API = {
   flush,
   gerarPdfRelatorio,
   pendenciasRelatorio,
+  abrirImportacao,
   avisarPendencias,
   kpiCards,
   resumoManutencoes,
@@ -21204,6 +21210,8 @@ async function executarMigracao(){
   await store.save(true); renderAba();
   return { nOs, nLinhas };
 }
+// Só há o que migrar enquanto existir OS registrada no fluxo antigo (atividade/quadro/equipamento com número) sem registro próprio.
+function temOsParaMigrar(){ try{ const p = planoMigracao(); return p.criar.length > 0 || p.linhasNovasEmExistentes > 0; }catch(e){ return false; } }
 function abrirMigracao(){
   const plano = planoMigracao();
   let ov = document.getElementById('osMigraOverlay');
@@ -21253,10 +21261,9 @@ function renderAba(){
   if(box.style.display === 'none') return;
   const sec = (st, aberto) => { const l = lista.filter(o => o.status === st).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm))); if(!l.length) return ''; return `<details ${aberto ? 'open' : ''} class="os-secao"><summary>${esc(ROT_STATUS[st])} (${l.length})</summary>${l.map(cartao).join('')}</details>`; };
   const foco = document.activeElement; const focoBusca = foco && foco.id === 'osDecisaoBusca'; const caret = focoBusca ? foco.selectionStart : null;
-  box.innerHTML = `<p class="prv-hint">Cada número de OS reúne todas as atividades, quadros e equipamentos que receberam esse número em Cadastros e OS. Decida por OS: <b>Cobrar</b> manda ao Financeiro; <b>Não cobrar</b> registra o motivo e fica guardada; <b>Aguardar</b> deixa aberta para mais atividades. Toque numa linha para abrir os detalhes da atividade.</p>
-    <div class="prv-linha" style="margin:0 0 10px; align-items:center;"><div class="search-clear-wrap" style="flex:1; min-width:220px; max-width:460px;"><input type="search" id="osDecisaoBusca" placeholder="Buscar por cliente, número da OS, descrição ou técnico…" value="${esc(buscaDecisao)}" autocomplete="off"><button type="button" class="search-clear-btn" data-os-act="limpar-busca">✕</button></div>${termo ? `<span class="prv-hint" style="margin:0; font-size:12px;">${lista.length ? lista.length + (lista.length === 1 ? ' OS encontrada' : ' OS encontradas') : 'Nenhuma OS encontrada'}</span>` : ''}</div>
-    <div class="prv-linha" style="margin:0 0 12px;"><button type="button" class="btn-ghost" data-os-act="migrar">⇪ Migrar as OS já cadastradas</button><span class="prv-hint" style="margin:0;">Prévia antes de gravar; não repete o que já foi migrado.</span></div>`
-    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? sec('decidir', true) + sec('aguardando', true) + sec('cobrar', !!termo) + sec('nao_cobrar', !!termo) : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Use "Migrar" para trazer as que já estão em Cadastros e OS, ou cadastre uma OS numa atividade.</div>')));
+  box.innerHTML = `<div class="prv-linha" style="margin:0 0 10px; align-items:center;"><div class="search-clear-wrap" style="flex:1; min-width:220px; max-width:460px;"><input type="search" id="osDecisaoBusca" placeholder="Buscar por cliente, número da OS, descrição ou técnico…" value="${esc(buscaDecisao)}" autocomplete="off"><button type="button" class="search-clear-btn" data-os-act="limpar-busca">✕</button></div>${termo ? `<span class="prv-hint" style="margin:0; font-size:12px;">${lista.length ? lista.length + (lista.length === 1 ? ' OS encontrada' : ' OS encontradas') : 'Nenhuma OS encontrada'}</span>` : ''}</div>
+`
+    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? sec('decidir', true) + sec('aguardando', true) + sec('cobrar', !!termo) + sec('nao_cobrar', !!termo) : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Cadastre uma OS numa atividade e ela aparece aqui.</div>')));
   if(focoBusca){ const b = document.getElementById('osDecisaoBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
   if(!box._osLigado){ box._osLigado = true;
     box.addEventListener('input', (e) => { if(e.target.id === 'osDecisaoBusca'){ buscaDecisao = e.target.value; renderAba(); } });
@@ -21333,7 +21340,7 @@ function abrirNaoCobrar(id){
   ov.classList.add('open');
 }
 function iniciar(){ garantirCarregado().then(renderAba).catch(e => console.error('os: falha ao carregar', e)); }
-window.OS_API = { iniciar, renderAba, decidir, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
+window.OS_API = { iniciar, renderAba, decidir, abrirMigracao, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
 })();
 
 
