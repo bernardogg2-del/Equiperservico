@@ -1782,6 +1782,16 @@
   .fin-acoes{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
   .fin-valor-edit{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-dim); } .fin-valor-edit input{ width:120px; }
   .fin-hist{ margin-top:8px; font-size:12px; color:var(--text-dim); border-top:1px dashed var(--line); padding-top:6px; }
+  /* ===== editor do catálogo ===== */
+  .cat-ed input[type=text], .cat-ed select{ padding:6px 9px; font-size:13px; min-height:0; }
+  .cat-ed-nome-tipo{ font-weight:800; font-size:15px; min-width:220px; } .cat-ed-nome-item{ font-weight:700; min-width:200px; }
+  .cat-ed-campo{ padding:8px 10px; margin:6px 0; border:1px dashed var(--line); border-radius:8px; background:var(--panel); }
+  .cat-ed-ops{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; align-items:center; }
+  .cat-ed-op{ display:inline-flex; align-items:center; gap:4px; background:var(--panel-2); border-radius:999px; padding:3px 6px 3px 8px; }
+  .cat-ed-op input{ width:150px; } .cat-ed-op select{ width:auto; }
+  .cat-ed-x{ border:none; background:transparent; cursor:pointer; color:var(--text-dim); font-size:13px; padding:2px 4px; }
+  .cat-ed-danger{ color:var(--danger); }
+  .cat-ed-chk{ display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-dim); white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -16835,6 +16845,7 @@ async function garantirImportarEquipNomesExistentes(){
 }
 
 async function ensureRoleDataLoaded(role){
+  if(window.CAT_API && !window.__catalogoCarregado){ window.__catalogoCarregado = true; try{ await CAT_API.carregar(); }catch(e){ console.warn('catálogo: usando o padrão', e); } }
   perfMark('role_data_start', { role });
   if(role === 'manager'){
     // Etapa 1: services precisa terminar primeiro (importPreAgendados/runMediaCleanupOnce
@@ -18131,8 +18142,11 @@ const CATALOGO = [
       { nome:'Boias/eletrodos', campos:[ campoCategoria('boias', 'Condição', BOM_DEFEITO) ]},
   ]},
   { tipo:'filtro_agua', nome:'Filtro de água', itens:[
-      { nome:'Filtro', campos:[ campoCategoria('pressao', 'Pressão', [
-            {v:'baixa', label:'Baixa', cor:'green'}, {v:'media', label:'Média', cor:'amber'}, {v:'alta', label:'Alta', cor:'red'} ]) ]},
+      // 06/10: o filtro de água é de refil — o que se anota é a limpeza e o estado do refil (não pressão).
+      { nome:'Filtro', campos:[
+          campoCategoria('limpezarefil', 'Limpeza do refil', [ {v:'feita', label:'Limpeza feita', cor:'green'}, {v:'nverif', label:'Não verificado', cor:'amber'} ]),
+          campoCategoria('estadorefil', 'Estado do refil', [ {v:'ok', label:'Não precisa trocar', cor:'green'}, {v:'trocar', label:'Precisa trocar', cor:'red'} ]),
+      ]},
   ]},
   // Piscina e SPA separados (pedido em 30/09) — mesmos subitens/campos dos dois lados, cada um com
   // sua própria cópia (editar um não afeta o outro). itensPiscinaSpa() devolve uma cópia nova a
@@ -20143,7 +20157,8 @@ function atualizarTelasRelatorios(){
 function corNome(c){ return c === 'green' ? 'verde' : c === 'amber' ? 'amarelo' : 'vermelho'; }
 function renderCatalogo(){
   const box = document.getElementById('prvManutCatalogo'); if(!box || box.style.display === 'none') return;
-  box.innerHTML = `` +
+  if(window.CAT_API){ CAT_API.ligar(box); if(CAT_API.emEdicao()){ CAT_API.render(); return; } }
+  box.innerHTML = (window.CAT_API ? CAT_API.botaoEditar() : '') +
     CATALOGO.map(t => `<div class="prv-cat-tipo"><div class="prv-cat-head"><b>${esc(t.nome)}</b><span class="prv-chip ${t.exclusivoDe ? 'amber' : 'gray'}">${t.exclusivoDe ? 'Exclusivo: ' + esc(t.exclusivoDe.join(', ')) + ' · ' : ''}${t.itens.length} item(ns)</span></div>
       ${t.itens.map(it => `<div class="prv-cat-item"><div class="prv-cat-item-n">${esc(it.nome)}</div>
         ${it.campos.filter(c => c.status !== 'pendente').map(c => `<div class="prv-cat-campo"><span>${esc(c.label)}</span><span class="prv-cat-op">${
@@ -20556,6 +20571,165 @@ function resumoManutencoes(rows){
     { tom:'vermelho', icone:'alerta',  numero: c.overdue,   rotulo:'Atrasados',           sub:'passaram da data' + ag(c.overdueAg) },
   ]);
 }
+
+
+// =====================================================================================
+// CATÁLOGO EDITÁVEL (06/10) — o Gestor altera tipos, subitens, campos e opções do relatório preventivo pelo app.
+// O catálogo do código vira o PADRÃO; a versão em uso fica no Firebase em `catalogoEquip` e é carregada no início
+// (com cópia no aparelho para funcionar sem sinal). Os ids dos campos não mudam ao editar rótulos/opções, então as
+// marcações já feitas pelos técnicos continuam valendo; relatórios já gerados guardam seus próprios textos e não mudam.
+// =====================================================================================
+(function(){
+'use strict';
+const PADRAO = JSON.parse(JSON.stringify(CATALOGO));
+const NO = 'catalogoEquip', CACHE = 'catalogo_equip_v1';
+const CORES = [['green', 'verde'], ['amber', 'amarelo'], ['red', 'vermelho']];
+let versaoAtual = null, emEdicao = null;      // emEdicao = cópia sendo editada
+function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function slug(t){ return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24) || 'x'; }
+function novoIdCampo(camposExistentes, label){ const base = slug(label); let id = base, n = 2; const ids = new Set((camposExistentes || []).map(c => c.id)); while(ids.has(id)) id = base + n++; return id; }
+function novoIdTipo(nome){ const base = slug(nome); let id = base, n = 2; const ids = new Set(CATALOGO.map(t => t.tipo)); while(ids.has(id)) id = base + n++; return id; }
+
+// Normaliza o que vem do Firebase (listas podem voltar como objetos) e rejeita estruturas quebradas.
+function normalizar(bruto){
+  const arr = Array.isArray(bruto) ? bruto : Object.values(bruto || {});
+  const tipos = arr.filter(t => t && t.tipo && t.nome).map(t => ({
+    tipo: String(t.tipo), nome: String(t.nome), exclusivoDe: t.exclusivoDe ? (Array.isArray(t.exclusivoDe) ? t.exclusivoDe : Object.values(t.exclusivoDe)) : undefined,
+    itens: (Array.isArray(t.itens) ? t.itens : Object.values(t.itens || {})).filter(i => i && i.nome).map(i => ({ nome: String(i.nome),
+      campos: (Array.isArray(i.campos) ? i.campos : Object.values(i.campos || {})).filter(c => c && c.id && c.label).map(c => { const o = Object.assign({}, c); if(o.opcoes) o.opcoes = Array.isArray(o.opcoes) ? o.opcoes : Object.values(o.opcoes); if(!o.status) o.status = 'ok'; return o; }) })) }));
+  tipos.forEach(t => { if(!t.exclusivoDe) delete t.exclusivoDe; });
+  return tipos.length ? tipos : null;
+}
+function aplicar(tipos){ CATALOGO.length = 0; tipos.forEach(t => CATALOGO.push(t)); }
+async function carregar(){
+  let tipos = null;
+  try{
+    const snap = await Promise.race([rtdb.ref(NO).get(), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))]);
+    if(snap.exists()){ const v = snap.val(); tipos = normalizar(v.tipos); versaoAtual = v.versao || null; try{ localStorage.setItem(CACHE, JSON.stringify(v)); }catch(e){} }
+    else { try{ localStorage.removeItem(CACHE); }catch(e){} }
+  }catch(e){
+    try{ const c = JSON.parse(localStorage.getItem(CACHE) || 'null'); if(c){ tipos = normalizar(c.tipos); versaoAtual = c.versao || null; } }catch(e2){}
+  }
+  if(tipos) aplicar(tipos); else aplicar(JSON.parse(JSON.stringify(PADRAO)));
+  try{ rtdb.ref(NO).on('value', snap => { if(!snap.exists()){ aplicar(JSON.parse(JSON.stringify(PADRAO))); versaoAtual = null; } else { const v = snap.val(); const t = normalizar(v.tipos); if(t){ aplicar(t); versaoAtual = v.versao || null; try{ localStorage.setItem(CACHE, JSON.stringify(v)); }catch(e){} } } reRender(); }); }catch(e){}
+}
+function reRender(){ try{ if(!emEdicao && typeof PREV_API !== 'undefined'){ if(typeof renderCatalogo === 'function') renderCatalogo(); if(typeof renderConfig === 'function') renderConfig(); } if(typeof currentRole !== 'undefined' && currentRole === 'tech' && typeof renderTechView === 'function') renderTechView(); }catch(e){ console.error(e); } }
+async function salvar(tipos){
+  const limpo = normalizar(tipos); if(!limpo) throw new Error('catálogo vazio');
+  const v = { versao: (Number(versaoAtual) || 0) + 1, atualizadoEm: new Date().toISOString(), por: (typeof currentManagerName !== 'undefined' && currentManagerName) || null, tipos: limpo };
+  await rtdb.ref(NO).set(v);
+  aplicar(limpo); versaoAtual = v.versao; try{ localStorage.setItem(CACHE, JSON.stringify(v)); }catch(e){}
+}
+async function restaurarPadrao(){ await rtdb.ref(NO).remove(); aplicar(JSON.parse(JSON.stringify(PADRAO))); versaoAtual = null; try{ localStorage.removeItem(CACHE); }catch(e){} }
+
+// ---------- editor (aba Catálogo de equipamentos) ----------
+function validar(tipos){
+  const erros = [];
+  const nomes = new Set();
+  tipos.forEach((t, ti) => {
+    if(!String(t.nome || '').trim()) erros.push('Tipo ' + (ti + 1) + ': sem nome.');
+    const k = String(t.nome || '').trim().toLowerCase(); if(nomes.has(k)) erros.push('Tipo "' + t.nome + '" repetido.'); nomes.add(k);
+    if(!t.itens.length) erros.push('Tipo "' + t.nome + '": precisa ter pelo menos um subitem.');
+    t.itens.forEach(i => {
+      if(!String(i.nome || '').trim()) erros.push('Tipo "' + t.nome + '": subitem sem nome.');
+      if(!i.campos.length) erros.push('"' + t.nome + ' › ' + i.nome + '": precisa ter pelo menos um campo.');
+      i.campos.forEach(c => {
+        if(!String(c.label || '').trim()) erros.push('"' + t.nome + ' › ' + i.nome + '": campo sem nome.');
+        if(c.tipo === 'categoria'){ const ops = (c.opcoes || []).filter(o => String(o.label || '').trim()); if(ops.length < 2) erros.push('"' + t.nome + ' › ' + i.nome + ' › ' + c.label + '": precisa de pelo menos 2 opções com nome.'); }
+        if(c.tipo === 'numerico' && !String(c.unidade || '').trim()) erros.push('"' + t.nome + ' › ' + i.nome + ' › ' + c.label + '": informe a unidade.');
+      });
+    });
+  });
+  return erros;
+}
+function htmlEditor(){
+  const t = emEdicao;
+  const tipoSel = (c) => `<select data-cat-f="tipo" title="Como o técnico preenche">${[['categoria', 'Escolha'], ['numerico', 'Número'], ['texto', 'Texto (opcional)']].map(([v, l]) => `<option value="${v}" ${c.tipo === v ? 'selected' : ''}>${l}</option>`).join('')}${c.tipo === 'faixa' ? '<option value="faixa" selected>Faixa de isolamento</option>' : ''}</select>`;
+  return `<div class="cat-ed">
+    <div class="prv-linha" style="margin:0 0 12px; align-items:center;"><b>Editando o catálogo</b><span class="prv-hint" style="margin:0;">Mudanças valem para os próximos preenchimentos; o que já foi marcado e os relatórios já gerados não mudam.</span>
+      <span style="margin-left:auto; display:flex; gap:8px;"><button type="button" class="btn-ghost" data-cat-act="cancelar">Cancelar</button><button type="button" class="btn-primary" data-cat-act="salvar">Salvar catálogo</button></span></div>
+    <div class="field-error" id="catEdErros"></div>
+    ${t.map((tp, ti) => `<div class="prv-cat-tipo cat-ed-tipo" data-ti="${ti}">
+      <div class="prv-cat-head cat-ed-head"><input type="text" class="cat-ed-nome-tipo" data-cat-f="nomeTipo" value="${esc(tp.nome)}" placeholder="Nome do tipo de equipamento">
+        ${tp.exclusivoDe ? '<span class="prv-chip amber">Exclusivo: ' + esc(tp.exclusivoDe.join(', ')) + '</span>' : ''}
+        <span style="margin-left:auto; display:flex; gap:6px;"><button type="button" class="btn-ghost oe-mini" data-cat-act="add-item">+ Subitem</button><button type="button" class="btn-ghost oe-mini cat-ed-danger" data-cat-act="rm-tipo">✕ Tipo</button></span></div>
+      ${tp.itens.map((it, ii) => `<div class="prv-cat-item cat-ed-item" data-ii="${ii}">
+        <div class="prv-linha" style="align-items:center; margin:0 0 6px;"><input type="text" class="cat-ed-nome-item" data-cat-f="nomeItem" value="${esc(it.nome)}" placeholder="Nome do subitem"><span style="margin-left:auto; display:flex; gap:6px;"><button type="button" class="btn-ghost oe-mini" data-cat-act="add-campo">+ Campo</button><button type="button" class="btn-ghost oe-mini cat-ed-danger" data-cat-act="rm-item">✕ Subitem</button></span></div>
+        ${it.campos.map((c, ci) => `<div class="cat-ed-campo" data-ci="${ci}">
+          <div class="prv-linha" style="align-items:center;"><input type="text" data-cat-f="label" value="${esc(c.label)}" placeholder="Nome do campo" style="flex:1; min-width:160px;">${tipoSel(c)}
+            ${c.tipo === 'numerico' ? `<input type="text" data-cat-f="unidade" value="${esc(c.unidade || '')}" placeholder="unidade (A, MΩ…)" style="width:110px;">` : ''}
+            ${c.tipo === 'categoria' ? `<label class="cat-ed-chk"><input type="checkbox" data-cat-f="interno" ${c.interno ? 'checked' : ''}> só equipe</label>` : ''}
+            <button type="button" class="btn-ghost oe-mini cat-ed-danger" data-cat-act="rm-campo" title="Remover campo">✕</button></div>
+          ${c.tipo === 'categoria' ? `<div class="cat-ed-ops">${(c.opcoes || []).map((o, oi) => `<span class="cat-ed-op" data-oi="${oi}"><input type="text" data-cat-f="opLabel" value="${esc(o.label)}" placeholder="opção"><select data-cat-f="opCor">${CORES.map(([v, l]) => `<option value="${v}" ${o.cor === v ? 'selected' : ''}>${l}</option>`).join('')}</select><button type="button" class="cat-ed-x" data-cat-act="rm-op" title="Remover opção">✕</button></span>`).join('')}<button type="button" class="btn-ghost oe-mini" data-cat-act="add-op">+ opção</button></div>`
+            : c.tipo === 'faixa' ? `<div class="prv-hint" style="margin:4px 0 0;">Faixas de isolamento (fixas): ${(c.opcoes || []).map(o => esc(o.label)).join(', ')}</div>` : ''}
+        </div>`).join('')}
+      </div>`).join('')}
+    </div>`).join('')}
+    <div class="prv-linha" style="margin-top:12px;"><button type="button" class="btn-ghost" data-cat-act="add-tipo">+ Tipo de equipamento</button><button type="button" class="btn-ghost" data-cat-act="restaurar" style="margin-left:auto;">Restaurar o catálogo padrão</button></div>
+  </div>`;
+}
+function lerFormulario(){      // lê os campos digitados para dentro de emEdicao (sem recriar ids)
+  const box = document.getElementById('prvManutCatalogo'); if(!box) return;
+  box.querySelectorAll('.cat-ed-tipo').forEach(tEl => {
+    const tp = emEdicao[Number(tEl.dataset.ti)]; if(!tp) return;
+    tp.nome = tEl.querySelector('[data-cat-f="nomeTipo"]').value.trim();
+    tEl.querySelectorAll('.cat-ed-item').forEach(iEl => {
+      const it = tp.itens[Number(iEl.dataset.ii)]; if(!it) return;
+      it.nome = iEl.querySelector('[data-cat-f="nomeItem"]').value.trim();
+      iEl.querySelectorAll('.cat-ed-campo').forEach(cEl => {
+        const c = it.campos[Number(cEl.dataset.ci)]; if(!c) return;
+        c.label = cEl.querySelector('[data-cat-f="label"]').value.trim();
+        const u = cEl.querySelector('[data-cat-f="unidade"]'); if(u) c.unidade = u.value.trim();
+        const k = cEl.querySelector('[data-cat-f="interno"]'); if(k){ if(k.checked) c.interno = true; else delete c.interno; }
+        cEl.querySelectorAll('.cat-ed-op').forEach(oEl => { const o = (c.opcoes || [])[Number(oEl.dataset.oi)]; if(!o) return; o.label = oEl.querySelector('[data-cat-f="opLabel"]').value.trim(); o.cor = oEl.querySelector('[data-cat-f="opCor"]').value; o.v = o.v || slug(o.label); });
+      });
+    });
+  });
+}
+function mudarTipoCampo(c, novo){
+  if(c.tipo === novo) return;
+  const base = { id: c.id, label: c.label, status: 'ok' };
+  if(novo === 'categoria') Object.assign(c, { tipo: 'categoria', opcoes: [{ v: 'ok', label: 'Em ordem', cor: 'green' }, { v: 'ruim', label: 'Precisa de ação', cor: 'red' }] });
+  else if(novo === 'numerico') Object.assign(c, { tipo: 'numerico', unidade: c.unidade || '' });
+  else Object.assign(c, { tipo: 'texto', opcional: true });
+  Object.keys(c).forEach(k => { if(!['id', 'label', 'status', 'tipo', 'opcoes', 'unidade', 'opcional', 'interno'].includes(k)) delete c[k]; });
+  if(c.tipo !== 'categoria'){ delete c.opcoes; delete c.interno; } if(c.tipo !== 'numerico') delete c.unidade; if(c.tipo !== 'texto') delete c.opcional;
+  Object.assign(c, base, { tipo: c.tipo });
+}
+function render(){ const box = document.getElementById('prvManutCatalogo'); if(!box) return; box.innerHTML = htmlEditor(); }
+function ligar(box){
+  if(box._catLigado) return; box._catLigado = true;
+  box.addEventListener('change', (e) => { const sel = e.target.closest('[data-cat-f="tipo"]'); if(!sel || !emEdicao) return; lerFormulario(); const cEl = sel.closest('.cat-ed-campo'), iEl = cEl.closest('.cat-ed-item'), tEl = cEl.closest('.cat-ed-tipo'); const c = emEdicao[Number(tEl.dataset.ti)].itens[Number(iEl.dataset.ii)].campos[Number(cEl.dataset.ci)]; mudarTipoCampo(c, sel.value); render(); });
+  box.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-cat-act]'); if(!b) return; const a = b.dataset.catAct;
+    if(a === 'editar'){ emEdicao = JSON.parse(JSON.stringify(CATALOGO)); render(); return; }
+    if(!emEdicao) return;
+    lerFormulario();
+    const tEl = b.closest('.cat-ed-tipo'), iEl = b.closest('.cat-ed-item'), cEl = b.closest('.cat-ed-campo'), oEl = b.closest('.cat-ed-op');
+    const tp = tEl ? emEdicao[Number(tEl.dataset.ti)] : null, it = (tp && iEl) ? tp.itens[Number(iEl.dataset.ii)] : null, c = (it && cEl) ? it.campos[Number(cEl.dataset.ci)] : null;
+    if(a === 'cancelar'){ emEdicao = null; renderCatalogo(); return; }
+    if(a === 'add-tipo'){ emEdicao.push({ tipo: novoIdTipo('novo_tipo_' + (emEdicao.length + 1)), nome: 'Novo tipo', itens: [{ nome: 'Item', campos: [{ id: 'condicao', label: 'Condição', tipo: 'categoria', status: 'ok', opcoes: [{ v: 'ok', label: 'Em ordem', cor: 'green' }, { v: 'ruim', label: 'Precisa de ação', cor: 'red' }] }] }] }); render(); return; }
+    if(a === 'rm-tipo'){ customConfirm('Remover o tipo "' + tp.nome + '" do catálogo? Unidades já cadastradas com esse tipo deixam de aparecer no relatório.', () => { emEdicao.splice(Number(tEl.dataset.ti), 1); render(); }, 'Remover'); return; }
+    if(a === 'add-item'){ tp.itens.push({ nome: 'Novo subitem', campos: [{ id: 'condicao', label: 'Condição', tipo: 'categoria', status: 'ok', opcoes: [{ v: 'ok', label: 'Em ordem', cor: 'green' }, { v: 'ruim', label: 'Precisa de ação', cor: 'red' }] }] }); render(); return; }
+    if(a === 'rm-item'){ customConfirm('Remover o subitem "' + it.nome + '"?', () => { tp.itens.splice(Number(iEl.dataset.ii), 1); render(); }, 'Remover'); return; }
+    if(a === 'add-campo'){ it.campos.push({ id: novoIdCampo(it.campos, 'campo'), label: 'Novo campo', tipo: 'categoria', status: 'ok', opcoes: [{ v: 'ok', label: 'Em ordem', cor: 'green' }, { v: 'ruim', label: 'Precisa de ação', cor: 'red' }] }); render(); return; }
+    if(a === 'rm-campo'){ it.campos.splice(Number(cEl.dataset.ci), 1); render(); return; }
+    if(a === 'add-op'){ c.opcoes = c.opcoes || []; c.opcoes.push({ v: 'op' + (c.opcoes.length + 1), label: '', cor: 'green' }); render(); return; }
+    if(a === 'rm-op'){ c.opcoes.splice(Number(oEl.dataset.oi), 1); render(); return; }
+    if(a === 'restaurar'){ customConfirm('Voltar ao catálogo padrão do app? Todas as suas alterações no catálogo serão descartadas.', async () => { try{ await restaurarPadrao(); emEdicao = null; renderCatalogo(); try{ avisoNaoBloqueante('Catálogo padrão restaurado.', 5000); }catch(e){} }catch(err){ document.getElementById('catEdErros').textContent = 'Não foi possível salvar. Verifique sua internet.'; } }, 'Restaurar'); return; }
+    if(a === 'salvar'){
+      const erros = validar(emEdicao); const errEl = document.getElementById('catEdErros');
+      if(erros.length){ errEl.innerHTML = erros.slice(0, 6).map(esc).join('<br>'); return; }
+      b.disabled = true; b.textContent = 'Salvando…';
+      try{ await salvar(emEdicao); emEdicao = null; renderCatalogo(); if(typeof renderConfig === 'function') renderConfig(); try{ avisoNaoBloqueante('Catálogo salvo. Os técnicos já veem as mudanças nos próximos preenchimentos.', 6000); }catch(e){} }
+      catch(err){ console.error(err); b.disabled = false; b.textContent = 'Salvar catálogo'; errEl.textContent = 'Não foi possível salvar. Verifique sua internet e tente de novo.'; }
+      return;
+    }
+  });
+}
+function botaoEditar(){ return `<div class="prv-linha" style="margin:0 0 12px; align-items:center;"><button type="button" class="btn-primary" data-cat-act="editar">✎ Editar catálogo</button><span class="prv-hint" style="margin:0;">${versaoAtual ? 'Catálogo personalizado (versão ' + esc(versaoAtual) + ').' : 'Catálogo padrão do app.'} Dá para renomear, acrescentar ou remover tipos, subitens, campos e opções.</span></div>`; }
+window.CAT_API = { carregar, salvar, restaurarPadrao, render, ligar, botaoEditar, emEdicao: () => emEdicao, padrao: () => JSON.parse(JSON.stringify(PADRAO)), versao: () => versaoAtual, atual: () => CATALOGO };
+})();
 
 
 // ---------------- Inicialização e API mínima que o restante do app chama ----------------
