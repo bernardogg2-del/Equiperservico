@@ -4561,6 +4561,7 @@ async function openServiceDetails(id){
       if(!wasAlreadyDone){
         target.status = 'concluido'; target.completedAt = new Date().toISOString();
         await createRetornoIfNeeded(target);
+        if(window.PREV_API) PREV_API.gerarRelatorioGestor(target).catch(err => console.error('prev: relatório na conclusão pelo Gestor', err));
 
         if(target.pairId){
           const partner = services.find(x => x.pairId === target.pairId && x.id !== target.id);
@@ -5316,6 +5317,7 @@ function renderDayPanel(){
         svc.status = 'concluido'; svc.completedAt = new Date().toISOString();
 
         await createRetornoIfNeeded(svc);
+        if(window.PREV_API) PREV_API.gerarRelatorioGestor(svc).catch(err => console.error('prev: relatório na conclusão pelo Gestor', err));
 
         if(partner && partner.status !== 'concluido'){
           if(!partner.checkIn) partner.checkIn = time;
@@ -6075,6 +6077,7 @@ function renderPendingStyleList(containerId, pending){
       svc.status = 'concluido'; svc.completedAt = new Date().toISOString();
 
       await createRetornoIfNeeded(svc);
+      if(window.PREV_API) PREV_API.gerarRelatorioGestor(svc).catch(err => console.error('prev: relatório na conclusão pelo Gestor', err));
 
       if(svc.pairId){
         const partner = services.find(x => x.pairId === svc.pairId && x.id !== svc.id);
@@ -11104,8 +11107,8 @@ function sendWhatsapp(techName){
 }
 
 function openAddressConfirm(t){
-  const nwd = getNextWorkDay();
-  const tomorrow = nwd.date;
+  const diaEnvio = getSendAgendaDate();           // o dia que está selecionado em "Enviar agenda" (antes era sempre amanhã)
+  const tomorrow = diaEnvio.date;
   const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
     .sort((a,b) => {
       const ao = (typeof a.order === 'number') ? a.order : a.id;
@@ -11117,7 +11120,7 @@ function openAddressConfirm(t){
 
   const body = document.getElementById('addressConfirmBody');
   if(tasks.length === 0){
-    body.innerHTML = `<p class="sub">Nenhum serviço agendado para amanhã.</p>`;
+    body.innerHTML = `<p class="sub">Nenhum serviço agendado para ${sendAgendaMode === 'hoje' ? 'hoje' : 'amanhã'}.</p>`;
   } else {
     body.innerHTML = tasks.map(s => {
       const addr = s.address || findClientAddress(s.client) || '';
@@ -20097,6 +20100,7 @@ function cartaoRelatorio(rel, modo){
 function ligarCartoes(box){
   if(box._prvLigado) return; box._prvLigado = true;
   box.addEventListener('click', (e) => {
+    const p = e.target.closest('[data-prv-pre-act]'); if(p){ if(p.dataset.prvPreAct === 'ver') verPreenchimento(p.dataset.sid); else pedirGerar(p.dataset.sid); return; }
     const b = e.target.closest('[data-prv-c]'); if(!b || b.disabled) return;
     const id = b.dataset.id; const a = b.dataset.prvC;
     if(a === 'ver') abrirRelatorio(id); else if(a === 'baixar') baixarPdf(id); else if(a === 'whats') enviarWhatsapp(id);
@@ -20108,7 +20112,8 @@ function renderOsRelatorios(){
   const fila = listaRelatorios().filter(r => !r.removidoDeOSEm);
   const tab = document.getElementById('prvOsTabRel'); if(tab) tab.textContent = 'Relatórios de manutenção' + (fila.length ? ' (' + fila.length + ')' : '');
   if(box.style.display === 'none') return;
-  box.innerHTML = `<p class="prv-hint">Relatórios de manutenção preventiva concluídos pelos técnicos. Baixe o PDF, envie ao responsável e marque como enviado; depois disso dá para remover da lista — o relatório continua guardado em Manutenções → Histórico de relatórios.</p>` +
+  garantirRascunhosGestor();
+  box.innerHTML = htmlPreenchimentos() + `<p class="prv-hint">Relatórios de manutenção preventiva concluídos pelos técnicos. Baixe o PDF, envie ao responsável e marque como enviado; depois disso dá para remover da lista — o relatório continua guardado em Manutenções → Histórico de relatórios.</p>` +
     (!estado.relatoriosOk ? '<div class="empty-state">Carregando relatórios…</div>'
       : fila.length ? fila.map(r => cartaoRelatorio(r, 'os')).join('') : '<div class="empty-state">Nenhum relatório aguardando nesta lista.<br>Os removidos daqui continuam em Manutenções → Histórico de relatórios.</div>');
   ligarCartoes(box);
@@ -20403,6 +20408,95 @@ function abrirImportacao(){
 
 
 // ====================================================================================
+// PREENCHIMENTOS SEM RELATÓRIO (06/10): o que o técnico marcou fica no rascunho (preventivoRascunhos) mesmo que ele não
+// tenha concluído a atividade. Esta seção, em "Relatórios de manutenção", mostra esses preenchimentos para o Gestor ver e
+// GERAR o relatório (opcionalmente concluindo a atividade). Também usada quando o Gestor conclui uma atividade pela Agenda.
+// ====================================================================================
+let rascunhosGestorOk = false, rascunhosGestorListener = false;
+async function garantirRascunhosGestor(){
+  if(rascunhosGestorOk) return;
+  try{ const snap = await comTimeout(rtdb.ref(NOS.rascunhos).get(), 10000); estado.rascunhosGestor = snap.exists() ? snap.val() : {}; rascunhosGestorOk = true; }
+  catch(e){ console.warn('prev: não foi possível ler os preenchimentos agora', e); return; }
+  if(!rascunhosGestorListener && rtdb){ rascunhosGestorListener = true; try{ rtdb.ref(NOS.rascunhos).on('value', snap => { estado.rascunhosGestor = snap.exists() ? snap.val() : {}; renderOsRelatorios(); }); }catch(e){} }
+}
+function rascunhoBruto(sid){ const raw = (estado.rascunhosGestor || {})[sid]; return raw ? { respostas: raw.respostas || {}, obs: typeof raw.obs === 'string' ? raw.obs : '', fotos: {} } : null; }
+function contaRespostas(r){ return Object.keys(r.respostas || {}).reduce((n, u) => n + Object.keys(r.respostas[u] || {}).filter(k => k !== '__obs').length, 0); }
+// Atividades preventivas com preenchimento e ainda SEM relatório.
+function preenchimentosSemRelatorio(){
+  const out = [];
+  Object.keys(estado.rascunhosGestor || {}).forEach(sid => {
+    if(estado.relatorios['rel_' + sid]) return;
+    const svc = services.find(s => String(s.id) === String(sid)); if(!svc || !ehPreventiva(svc)) return;
+    const r = rascunhoBruto(sid); if(!r || !rascunhoTemConteudo(r)) return;
+    out.push({ sid, svc, r });
+  });
+  return out.sort((a, b) => String(b.svc.date || '').localeCompare(String(a.svc.date || '')));
+}
+function htmlPreenchimentos(){
+  const lista = preenchimentosSemRelatorio();
+  if(!lista.length) return '';
+  const st = (s) => s.status === 'concluido' ? 'concluída (sem relatório)' : s.status === 'em_andamento' ? 'em andamento' : 'não iniciada';
+  return `<div class="maint-section-title" style="margin-top:6px;">Preenchidos pelo técnico, ainda sem relatório (${lista.length})</div>
+    <p class="prv-hint">O técnico marcou medições mas a atividade não foi concluída pelo app (ou foi concluída pelo Gestor). Veja o que foi preenchido e gere o relatório.</p>
+    ${lista.map(({ sid, svc, r }) => `<div class="prv-card" data-prv-pre="${esc(sid)}">
+      <div class="prv-linha" style="justify-content:space-between; align-items:flex-start;">
+        <div><div class="prv-nome">${esc(stripPreventivaPrefix(svc.client || ''))}</div>
+          <div class="prv-sub">${esc(fmtData(svc.date) || svc.date || '')} · ${esc(getServiceTechnicians(svc).join(' e ') || 'sem técnico')} · atividade ${esc(st(svc))} · ${contaRespostas(r)} ${contaRespostas(r) === 1 ? 'campo preenchido' : 'campos preenchidos'}${r.obs ? ' · com observação' : ''}</div></div>
+        <div class="prv-linha" style="gap:6px;"><button type="button" class="btn-ghost" data-prv-pre-act="ver" data-sid="${esc(sid)}">Ver preenchimento</button><button type="button" class="btn-primary" data-prv-pre-act="gerar" data-sid="${esc(sid)}">Gerar relatório</button></div>
+      </div></div>`).join('')}`;
+}
+// Monta o relatório a partir do rascunho (lendo as fotos do servidor).
+async function relatorioDoRascunho(sid){
+  const svc = services.find(s => String(s.id) === String(sid)); if(!svc) return null;
+  const units = unidadesDoCliente(svc.client); if(!units.length) return null;
+  const r = await garantirRascunho(svc.id, { timeoutMs: 7000 });
+  if(!rascunhoTemConteudo(r)) return null;
+  const rel = construirRelatorio(svc, units, r);
+  rel.criadoEm = svc.completedAt || new Date().toISOString();
+  return rel;
+}
+async function verPreenchimento(sid){
+  aviso('Carregando o preenchimento…', 2500);
+  const rel = await relatorioDoRascunho(sid); if(!rel){ aviso('Não há preenchimento para mostrar.', 4000); return; }
+  garantirModal(); relAbertoId = null;
+  const m = document.getElementById('prvModal'); m.classList.add('prv-modo-previa');
+  document.getElementById('prvModalChips').innerHTML = '<span class="prv-chip amber">PREENCHIMENTO SEM RELATÓRIO</span> ' + esc(rel.cliente) + ' · ' + esc(fmtData(rel.dataVisita) || '');
+  document.getElementById('prvRevisao').innerHTML = '';
+  const fotos = await fotosDoRelatorio(rel).catch(() => []);
+  document.getElementById('prvModalCorpo').innerHTML = htmlRelatorio(rel, fotos, {});
+  document.getElementById('prvModalCorpo').scrollTop = 0; m.classList.add('open');
+}
+// Gera o relatório (e, se pedido, conclui a atividade). Idempotente: não gera se já existir.
+async function gerarRelatorioGestor(sidOuSvc, opts){
+  opts = opts || {};
+  const svc = typeof sidOuSvc === 'object' ? sidOuSvc : services.find(s => String(s.id) === String(sidOuSvc)); if(!svc || !ehPreventiva(svc)) return false;
+  const sid = svc.id; const id = 'rel_' + sid;
+  if(estado.relatorios[id]) return false;
+  const rel = await relatorioDoRascunho(sid); if(!rel) return false;
+  if(opts.concluir && svc.status !== 'concluido'){
+    const time = nowTime(); if(!svc.checkIn) svc.checkIn = time; if(!svc.checkOut) svc.checkOut = time;
+    svc.status = 'concluido'; svc.completedAt = new Date().toISOString(); svc.concluidoPeloGestor = true;
+    rel.inicio = svc.checkIn; rel.fim = svc.checkOut; rel.criadoEm = svc.completedAt;
+    try{ await saveServices(); }catch(e){ console.error('prev: falha ao concluir a atividade', e); }
+    try{ renderAll(); }catch(e){}
+  }
+  rel.geradoPeloGestorEm = new Date().toISOString(); rel.geradoPeloGestorPor = (typeof currentManagerName !== 'undefined' && currentManagerName) || null;
+  Object.keys(rel).forEach(campo => { const v = rel[campo]; escrever(NOS.relatorios + '/' + id + '/' + campo, v === undefined || v === '' ? null : v); });
+  estado.relatorios[id] = JSON.parse(JSON.stringify(rel));
+  atualizarTelasRelatorios();
+  return true;
+}
+function pedirGerar(sid){
+  const svc = services.find(s => String(s.id) === String(sid)); if(!svc) return;
+  if(svc.status === 'concluido'){
+    customConfirm('Gerar o relatório de "' + stripPreventivaPrefix(svc.client || '') + '" com o que o técnico preencheu?', async () => { const ok = await gerarRelatorioGestor(sid); aviso(ok ? 'Relatório gerado. Ele está na lista acima.' : 'Não foi possível gerar o relatório.', 5000); }, 'Gerar relatório');
+  } else {
+    customConfirm('A atividade de "' + stripPreventivaPrefix(svc.client || '') + '" ainda não está concluída. Gerar o relatório com o que foi preenchido e CONCLUIR a atividade agora (o horário de conclusão será registrado)?', async () => { const ok = await gerarRelatorioGestor(sid, { concluir: true }); aviso(ok ? 'Relatório gerado e atividade concluída.' : 'Não foi possível gerar o relatório.', 5000); }, 'Gerar e concluir');
+  }
+}
+
+
+// ====================================================================================
 // QUADROS DE RESUMO (30/09) — mesma aparência nova em Manutenções e na aba Oficina do Gestor.
 // kpiCards(itens): cada item = { tom, icone, numero, rotulo, sub? }. Tudo que vira texto passa por esc().
 // ====================================================================================
@@ -20475,6 +20569,11 @@ window.PREV_API = {
   flush,
   gerarPdfRelatorio,
   pendenciasRelatorio,
+  relatorioDoRascunho,
+  estruturaDaUnidade,
+  garantirRascunho,
+  gerarRelatorioGestor,
+  verPreenchimento,
   abrirImportacao,
   avisarPendencias,
   kpiCards,
