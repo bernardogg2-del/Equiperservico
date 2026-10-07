@@ -1885,6 +1885,24 @@
   #obrKpis .prv-kpi{ display:grid; grid-template-columns:auto 1fr; grid-template-areas:"icone num" "rotulo rotulo" "sub sub"; align-items:center; column-gap:9px; row-gap:6px; padding:12px 9px 12px 15px; }
   #obrKpis .prv-kpi-texto{ display:contents; } #obrKpis .prv-kpi-icone{ grid-area:icone; width:34px; height:34px; border-radius:10px; } #obrKpis .prv-kpi-icone svg{ width:17px; height:17px; }
   #obrKpis .prv-kpi-num{ grid-area:num; justify-self:start; font-size:19px; } #obrKpis .prv-kpi-rotulo{ grid-area:rotulo; margin-top:0; font-size:12px; } #obrKpis .prv-kpi-sub{ grid-area:sub; margin-top:-3px; }
+
+  /* ===== cartão compacto: uma linha por pedido, com as parcelas dele ===== */
+  .obr-card{ padding:10px 14px 9px; margin-bottom:8px; }
+  .obr-cli{ font-size:15px; gap:6px; align-items:center; margin-bottom:6px; } .obr-forma{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--text-dim); }
+  .obr-pedlin{ display:grid; grid-template-columns:minmax(150px, 230px) 1fr; gap:6px 12px; align-items:center; padding:6px 0; border-top:1px dashed var(--line); }
+  .obr-pedlin-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 7px; min-width:0; }
+  .obr-ped-num{ font-size:11.5px; padding:1px 7px; } .obr-ped-desc{ font-size:13.5px; font-weight:700; } .obr-ped-val{ font-size:11.5px; color:var(--text-dim); font-weight:600; width:100%; }
+  .obr-parcs-c{ display:grid; grid-template-columns:repeat(auto-fit, minmax(138px, 1fr)); gap:6px; min-width:0; }
+  .obr-pc{ border:1px solid var(--line); border-radius:8px; padding:5px 8px 6px; background:var(--panel-2); min-width:0; }
+  .obr-pc-atraso{ border-color:var(--danger); background:var(--danger-soft); }
+  .obr-pc-t{ display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  .obr-pc-n{ font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; font-weight:800; color:var(--text-dim); white-space:nowrap; }
+  .obr-pc .obr-st{ font-size:10.5px; padding:1px 7px; white-space:nowrap; }
+  .obr-pc-v{ font-size:14px; font-weight:800; letter-spacing:-.2px; margin-top:1px; }
+  .obr-card .obr-sem-parc{ margin:0; padding:5px 9px; font-size:12px; }
+  .obr-card .obr-tot{ margin-top:6px; padding-top:6px; border-top:1px solid var(--line); font-size:11.5px; } .obr-card .obr-tot b{ font-size:13px; }
+  .obr-card .obr-barra{ height:4px; margin-top:6px; }
+  @media (max-width:640px){ .obr-pedlin{ grid-template-columns:1fr; } .obr-ped-val{ width:auto; } }
 </style>
 </head>
 <body>
@@ -22309,32 +22327,27 @@ function kpis(todos){
     { tom: 'neutro', icone: 'caixa', texto: brlCurto(aRec), zero: !(aRec > 0), rotulo: 'A receber', sub: nSaldo + (nSaldo === 1 ? ' obra' : ' obras') + ' com saldo' + (nl > 0 ? ' · ' + brlCurto(nl) + ' não liberado' : '') },
   ]);
 }
-// Agrupa as parcelas do registro por tipo (Sinal, 2ª parcela… Saldo), somando os pedidos: uma COLUNA por parcela no cartão.
-const ordemTipo = (t) => { const x = String(t || ''); if(x === 'Sinal') return 0; const m = /^(\d+)ª parcela$/.exec(x); if(m) return Number(m[1]); return x === 'Parcela única' ? 50 : x === 'Saldo' ? 100 : 200; };
-function gruposParcelas(r){
-  const todos = pedidosDe(r); const canc = new Set(todos.filter(p => p.cancelado).map(p => String(p.numero))); const mapa = {};
-  parcelasDe(r).filter(p => stDe(p) === 'recebido' || !(p.pedido && canc.has(String(p.pedido)))).forEach(p => {
-    const k = p.tipo || 'Parcela'; const g = mapa[k] = mapa[k] || { tipo: k, valor: 0, pcts: new Set(), st: {}, n: 0, atras: false };
-    g.valor += Number(p.valor) || 0; if(p.pct != null) g.pcts.add(Number(p.pct)); g.st[stDe(p)] = (g.st[stDe(p)] || 0) + 1; g.n++; if(atrasada(p)) g.atras = true;
-  });
-  return Object.values(mapa).sort((a, b) => ordemTipo(a.tipo) - ordemTipo(b.tipo)).map(g => Object.assign(g, { valor: Math.round(g.valor * 100) / 100 }));
-}
-function colunaParcela(g){
-  const ks = STATUS_PARC.map(x => x[0]).filter(k => g.st[k]); const unico = ks.length === 1;
-  const chip = unico ? `<span class="obr-st obr-st-${ks[0]}">${esc(rotuloStatus(ks[0]))}</span>` : '<span class="obr-st obr-st-misto">Misto</span>';
-  const detalhe = !unico ? ks.map(k => g.st[k] + ' ' + rotuloStatus(k).toLowerCase()).join(' · ') : (g.n > 1 ? g.n + ' pedidos' : '');
-  return `<div class="obr-parc ${g.atras ? 'obr-parc-atraso' : ''}"><div class="obr-parc-t">${esc(g.tipo)}${g.pcts.size === 1 ? ` <span>${esc(fmtPct([...g.pcts][0]))}%</span>` : ''}</div><div class="obr-parc-v">${esc(brl(g.valor))}</div>${chip}${detalhe ? `<div class="obr-parc-s">${esc(detalhe)}</div>` : ''}${g.atras ? '<div class="obr-parc-s obr-verm">⚠ em atraso</div>' : ''}</div>`;
-}
 const rotuloStatus = (k) => (STATUS_PARC.find(x => x[0] === k) || ['', k])[1];
+// Cartão do cliente: uma linha COMPACTA por pedido (número + descrição + valor) com as parcelas dele lado a lado (nome/% · valor · situação).
+function celulaParcela(p){
+  const st = stDe(p); const atras = atrasada(p);
+  return `<div class="obr-pc ${atras ? 'obr-pc-atraso' : ''}" title="${esc((p.tipo || 'Parcela') + (atras ? ' — em atraso' : ''))}"><div class="obr-pc-t"><span class="obr-pc-n">${esc(p.tipo || 'Parcela')}${p.pct != null ? ' ' + esc(fmtPct(p.pct)) + '%' : ''}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div><div class="obr-pc-v">${esc(brl(p.valor))}${atras ? ' <span class="obr-verm" title="Em atraso">⚠</span>' : ''}</div></div>`;
+}
+function linhaPedido(p, parcelas){
+  return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span><span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
+    ${parcelas.length ? `<div class="obr-parcs-c">${parcelas.map(celulaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas neste pedido</div>'}</div>`;
+}
 function cartao(r){
-  const t = totais(r); const ped = pedidosDe(r).filter(p => !p.cancelado); const grupos = gruposParcelas(r);
+  const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
   const chips = [`<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : '', t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso · ${esc(brl(t.atrasado))}</span>` : ''].join('');
+  const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
+  const mostrar = ped.slice(0, 5);
   return `<div class="obr-card" data-obr="abrir" data-id="${esc(r.id)}" role="button" tabindex="0">
-    <div class="obr-cli">${esc(nomeCliente(r))} ${chips}</div>
-    ${ped.length ? `<div class="obr-peds">${ped.slice(0, 4).map(p => `<div class="obr-ped-item"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>`).join('')}${ped.length > 4 ? `<div class="obr-sub">+ ${ped.length - 4} ${ped.length - 4 === 1 ? 'pedido' : 'pedidos'}</div>` : ''}</div>` : '<div class="obr-sub">Nenhum pedido ativo</div>'}
-    ${r.formaPagamento ? `<div class="obr-sub" style="margin-top:-4px;">Pagamento: ${esc(r.formaPagamento)}</div>` : ''}
-    ${grupos.length ? `<div class="obr-parcs">${grupos.map(colunaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas ainda. Abra o registro para definir a condição de pagamento.</div>'}
+    <div class="obr-cli">${esc(nomeCliente(r))} ${chips}${r.formaPagamento ? `<span class="obr-forma">${esc(r.formaPagamento)}</span>` : ''}</div>
+    ${mostrar.length ? mostrar.map(p => linhaPedido(p, par.filter(x => String(x.pedido) === String(p.numero)))).join('') : '<div class="obr-sem-parc">Nenhum pedido ativo</div>'}
+    ${ped.length > 5 ? `<div class="obr-sub">+ ${ped.length - 5} ${ped.length - 5 === 1 ? 'pedido' : 'pedidos'} (abra para ver)</div>` : ''}
+    ${avulsas.length ? `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-desc">Parcelas avulsas</span></div><div class="obr-parcs-c">${avulsas.map(celulaParcela).join('')}</div></div>` : ''}
     <div class="obr-tot"><span>Contratado <b>${esc(brl(t.contratado))}</b></span><span>Recebido <b class="obr-verde">${esc(brl(t.recebido))}</b></span><span>Saldo <b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></span></div>
     <div class="obr-barra" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div>
   </div>`;
