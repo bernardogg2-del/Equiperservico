@@ -1807,6 +1807,39 @@
   .cat-ed-x{ border:none; background:transparent; cursor:pointer; color:var(--text-dim); font-size:13px; padding:2px 4px; }
   .cat-ed-danger{ color:var(--danger); }
   .cat-ed-chk{ display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-dim); white-space:nowrap; }
+  /* ===== Financeiro: menu lateral e Obras e Pedidos ===== */
+  #finTabs{ display:flex; gap:8px; padding:0 20px 8px; }
+  @media (min-width: 760px){ #finTabs, #finHeader{ display:none !important; } #finSidebar .sidebar-nav-btn{ font-size:14px; } }
+  #financeiroView .app-content{ min-width:0; }
+  .obr-tab-n{ opacity:.7; font-weight:600; font-size:12px; }
+  .obr-card{ display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 16px; margin-bottom:8px; cursor:pointer; box-shadow:var(--shadow-sm); }
+  .obr-card:hover{ background:var(--panel-2); }
+  .obr-card-main{ flex:1 1 280px; min-width:0; } .obr-cli{ font-weight:800; font-size:15px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .obr-sub{ font-size:12.5px; color:var(--text-dim); margin-top:3px; overflow-wrap:anywhere; }
+  .obr-barra{ height:6px; background:var(--panel-2); border-radius:999px; overflow:hidden; margin-top:8px; border:1px solid var(--line); } .obr-barra span{ display:block; height:100%; background:var(--success); border-radius:999px; }
+  .obr-barra-g{ height:10px; margin-top:6px; }
+  .obr-nums{ display:flex; gap:18px; flex-wrap:wrap; } .obr-nums > div{ min-width:104px; } .obr-nums label, .obr-resumo label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; } .obr-nums b{ font-size:14.5px; }
+  .obr-verde{ color:var(--success-dark); } .obr-ambar{ color:var(--warning); }
+  .obr-modal{ max-width:760px; max-height:92vh; overflow-y:auto; }
+  .obr-sec{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; } .obr-sec-t{ display:flex; align-items:center; gap:8px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); margin-bottom:8px; }
+  .obr-sec-n{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:0 8px; font-size:11.5px; } .obr-sec-tot{ margin-left:auto; text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink); }
+  .obr-grid2{ display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; } .obr-grid2 .obr-largo{ grid-column:1 / -1; } .obr-grid2 > .field:not(.obr-meio):only-child{ grid-column:1 / -1; }
+  #obrFormOverlay .obr-grid2 > .field:not(.obr-meio){ grid-column:1 / -1; }
+  @media (max-width:560px){ .obr-grid2{ grid-template-columns:1fr; } }
+  .obr-tab{ width:100%; border-collapse:collapse; font-size:13px; } .obr-tab th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); padding:4px 6px; border-bottom:1px solid var(--line); }
+  .obr-tab td{ padding:7px 6px; border-bottom:1px dashed var(--line); vertical-align:top; } .obr-d{ text-align:right; white-space:nowrap; } .obr-canc td{ color:var(--text-dim); text-decoration:line-through; } .obr-canc td:last-child{ text-decoration:none; }
+  .obr-acoes{ white-space:nowrap; text-align:right; } .obr-ic{ border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:3px 8px; cursor:pointer; font-size:12px; margin-left:3px; color:var(--ink); } .obr-ic:hover{ background:var(--panel-2); } .obr-ic-ok{ color:var(--success-dark); border-color:var(--success); font-weight:800; }
+  .obr-ped-tag{ font-size:10.5px; background:var(--panel-2); border-radius:999px; padding:1px 7px; color:var(--text-dim); margin-left:4px; } .obr-obs{ font-size:11.5px; color:var(--text-dim); }
+  .obr-resumo{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; } .obr-resumo b{ font-size:15px; } @media (max-width:560px){ .obr-resumo{ grid-template-columns:1fr 1fr; } }
+  .obr-rodape{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); margin-top:16px; padding-top:10px; }
+  .obr-ped-linha{ display:grid; grid-template-columns:90px 1fr 130px auto; gap:6px; margin-bottom:6px; align-items:center; } @media (max-width:560px){ .obr-ped-linha{ grid-template-columns:70px 1fr 100px auto; } }
+  .obr-nota{ border-radius:var(--radius-sm); padding:8px 12px; font-size:12.5px; margin:2px 0 8px; } .obr-nota-ok{ background:var(--success-soft); color:var(--success-dark); } .obr-nota-novo{ background:var(--warning-soft); border:1px dashed var(--warning-line); }
+  .prv-kpi-num.prv-kpi-txt{ font-size:21px; letter-spacing:-.3px; white-space:nowrap; }
+  .obr-ic{ display:inline-block; width:auto; min-height:0; line-height:1.2; }
+  .obr-acoes{ width:1%; }
+  .obr-tab td .prv-chip{ white-space:nowrap; }
+  @media (max-width: 1100px){ #obrKpis{ grid-template-columns:1fr 1fr !important; } }
+  #obrBarra{ align-items:center; } #obrBarra select{ width:auto; max-width:100%; }
 </style>
 </head>
 <body>
@@ -1922,7 +1955,18 @@
 </div>
 
 <div id="financeiroView" style="display:none;">
-  <div class="header">
+<div class="page"><div class="app-shell">
+  <aside class="app-sidebar" id="finSidebar">
+    <div class="sidebar-logo"><div class="sidebar-logo-text"><strong>Equiper</strong><span>Financeiro</span></div></div>
+    <nav class="sidebar-nav">
+      <button type="button" class="sidebar-nav-btn active" id="finNavOS"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Ordens de serviço</button>
+      <button type="button" class="sidebar-nav-btn" id="finNavObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Obras e Pedidos</button>
+      <button type="button" class="sidebar-nav-btn" id="finNavGaleria"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Galeria</button>
+    </nav>
+    <div class="sidebar-footer"><div class="sidebar-user" id="finSidebarUser"></div><button type="button" class="sidebar-logout-btn" id="finSidebarLogout">Sair</button></div>
+  </aside>
+  <div class="app-content" id="finContent" style="position:relative;">
+  <div class="header" id="finHeader">
     <div class="brand">
       <img class="brand-logo" src="data:image/png;base64,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" alt="Equiper">
       <div class="brand-text">
@@ -1932,7 +1976,9 @@
     <button class="btn-ghost" id="galeriaOpenBtnFinanceiro">Galeria</button>
     <button class="btn-ghost" id="financeiroLogoutBtn">Sair</button>
   </div>
-  <div class="tech-day-panel">
+  <div class="portal-tabs" id="finTabs"><button type="button" class="portal-tab active" id="finTabOS">Ordens de serviço</button><button type="button" class="portal-tab" id="finTabObras">Obras e Pedidos</button></div>
+  <div id="finPaneOS">
+  <div class="tech-day-panel" id="finOldPanel">
     <div class="tech-day-head">
       <div class="tech-day-title">Ordens de Serviço</div>
       <div class="tech-day-date mono" id="financeiroOSCount"></div>
@@ -1964,6 +2010,10 @@
     <div id="financeiroOSList" style="padding:0 20px 30px;"></div>
   </div>
   <div class="tech-day-panel" id="finOsView" style="display:none;"></div>
+  </div>
+  <div id="finObrasView" style="display:none;"></div>
+  </div>
+</div></div>
 </div>
 
 <div id="oficinaView" style="display:none;">
@@ -20574,10 +20624,11 @@ const ICONES_KPI = {
 const TONS_KPI = { red:'vermelho', yellow:'amarelo', green:'verde', blue:'azul', gray:'neutro', vermelho:'vermelho', amarelo:'amarelo', verde:'verde', azul:'azul', neutro:'neutro' };
 function kpiCards(itens){
   return itens.map(i => {
-    const n = num(i.numero);
-    return `<div class="prv-kpi tom-${TONS_KPI[i.tom] || 'neutro'}${n === 0 ? ' zero' : ''}">
+    const comTexto = i.texto != null;                       // valor já formatado (ex.: dinheiro): mostrado como veio, sem virar número
+    const n = comTexto ? null : num(i.numero);
+    return `<div class="prv-kpi tom-${TONS_KPI[i.tom] || 'neutro'}${(comTexto ? !!i.zero : n === 0) ? ' zero' : ''}">
       <div class="prv-kpi-icone">${ICONES_KPI[i.icone] || ''}</div>
-      <div class="prv-kpi-texto"><div class="prv-kpi-num">${n}</div><div class="prv-kpi-rotulo">${esc(i.rotulo)}</div>${i.sub ? `<div class="prv-kpi-sub">${esc(i.sub)}</div>` : ''}</div>
+      <div class="prv-kpi-texto"><div class="prv-kpi-num${comTexto ? ' prv-kpi-txt' : ''}">${comTexto ? esc(i.texto) : n}</div><div class="prv-kpi-rotulo">${esc(i.rotulo)}</div>${i.sub ? `<div class="prv-kpi-sub">${esc(i.sub)}</div>` : ''}</div>
     </div>`;
   }).join('');
 }
@@ -20874,7 +20925,7 @@ async function garantirCarregado(){
 function cartaoQuadro(q, modo){
   const et = etapaDe(q);
   return `<div class="qd-card qd-card-compacto tom-${et.tom}" data-qd="abrir" data-id="${esc(q.id)}" role="button" tabindex="0" title="Toque para abrir">
-    <div class="qd-card-main"><div class="qd-cli">${esc(q.cliente)}${q.obsGestor ? ' <span class="qd-ind" title="Tem observação do Gestor">💬</span>' : ''}${(q.fotos && Object.keys(q.fotos).length) ? ' <span class="qd-ind" title="Tem fotos">📷</span>' : ''}</div>
+    <div class="qd-card-main"><div class="qd-cli">${esc(q.cliente)}${q.obsGestor ? ' <span class="qd-ind" title="Tem observação do Gestor">💬</span>' : ''}${((q.fotos && Object.keys(q.fotos).length) || (q.fotosGestor && Object.keys(q.fotosGestor).length)) ? ' <span class="qd-ind" title="Tem fotos">📷</span>' : ''}</div>
       <div class="qd-linha"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span>${q.processedForOS ? `<span class="qd-chip tom-cinza">OS nº ${esc(q.numeroOS || '—')}</span>` : ''}</div></div>
     <div class="qd-acoes"><span class="qd-abrir">›</span></div>
   </div>`;
@@ -20887,7 +20938,7 @@ function garantirDetalhe(){
   ov.innerHTML = '<div class="modal" style="max-width:560px; max-height:90vh; overflow-y:auto;"><div id="qdDetalheCorpo"></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', (e) => { if(e.target === ov) fecharDetalhe(); const b = e.target.closest('[data-qdd]'); if(b) acaoDetalhe(b.dataset.qdd, b); });
-  ov.addEventListener('change', (e) => { if(e.target.id === 'qdFotoInput') adicionarFotos(e.target); });
+  ov.addEventListener('change', (e) => { if(e.target.id === 'qdFotoInput') adicionarFotos(e.target, 'fotos'); if(e.target.id === 'qdFotoGestorInput') adicionarFotos(e.target, 'fotosGestor'); });
   ov.addEventListener('focusout', (e) => { if(e.target.id === 'qdObsGestor') salvarObs('obsGestor', e.target.value); if(e.target.id === 'qdObsMontador') salvarObs('obsMontador', e.target.value); });
   return ov;
 }
@@ -20901,12 +20952,14 @@ function renderDetalhe(){
   const et = etapaDe(q); const gestor = detalheModo === 'gestor';
   const hist = [['Cadastrado', q.criadoEm, q.criadoPor], ['Montagem iniciada', q.iniciouMontagemEm, q.iniciouMontagemPor], ['Montagem concluída', q.montadoEm, q.montadoPor], ['Testes iniciados', q.iniciouTesteEm, q.iniciouTestePor], ['Testes finalizados', q.testadoEm, q.testadoPor], q.processedForOS ? ['OS nº ' + (q.numeroOS || '—') + ' registrada', q.processedForOSAt, q.processedForOSBy] : []]
     .filter(h => h.length && h[1]).map(h => `<div>${h[0]}: ${esc(fmtDataHora(h[1]))}${h[2] ? ' · ' + esc(h[2]) : ''}</div>`).join('');
-  const fotos = Object.keys(q.fotos || {}).sort();
+  const fotos = Object.keys(q.fotos || {}).sort(); const fotosG = Object.keys(q.fotosGestor || {}).sort();
   const foco = document.activeElement; const focoId = foco && box.contains(foco) ? foco.id : null; const caret = focoId ? foco.selectionStart : null;
   box.innerHTML = `
     <div class="qd-det-head"><div><h3 style="margin:0;">${esc(q.cliente)}</h3><div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span></div></div><button type="button" class="btn-ghost" data-qdd="fechar">Fechar</button></div>
     <div class="field" style="margin-top:12px;"><label for="qdObsGestor">Observação do Gestor ${gestor ? '<small style="font-weight:400;">(o montador vê)</small>' : ''}</label>
-      ${gestor ? `<textarea id="qdObsGestor" rows="3" maxlength="600" placeholder="Explique aqui o que o montador precisa saber sobre este quadro">${esc(q.obsGestor || '')}</textarea>` : `<div class="qd-obs-lida">${q.obsGestor ? esc(q.obsGestor) : '<span style="color:var(--text-dim);">Sem observação.</span>'}</div>`}</div>
+      ${gestor ? `<textarea id="qdObsGestor" rows="3" maxlength="600" placeholder="Explique aqui o que o montador precisa saber sobre este quadro">${esc(q.obsGestor || '')}</textarea>` : `<div class="qd-obs-lida">${q.obsGestor ? esc(q.obsGestor) : '<span style="color:var(--text-dim);">Sem observação.</span>'}</div>`}
+      ${(fotosG.length || gestor) ? `<div class="qd-fotos" style="margin-top:8px;">${fotosG.map(k => `<div class="qd-foto"><img src="${esc(q.fotosGestor[k])}" alt="Foto do Gestor">${gestor ? `<button type="button" data-qdd="rmfoto-gestor" data-k="${esc(k)}" aria-label="Remover foto">✕</button>` : ''}</div>`).join('')}</div>` : ''}
+      ${gestor ? (fotosG.length < MAX_FOTOS_QD ? `<div class="prv-foto-acoes"><button type="button" class="btn-ghost oe-mini" data-qdd="foto-gestor-cam">📷 Tirar foto</button><button type="button" class="btn-ghost oe-mini" data-qdd="foto-gestor-gal">🖼 Da galeria</button><span class="qd-hist" style="align-self:center;">Fotos da observação (${fotosG.length} de ${MAX_FOTOS_QD}) — o montador vê</span></div>` : '<div class="qd-hist">Limite de fotos da observação atingido.</div>') + '<input type="file" id="qdFotoGestorInput" accept="image/*" style="display:none;">' : ''}</div>
     <div class="qd-det-acoes">
       ${et.proxima ? `<button type="button" class="btn-primary" data-qdd="avancar">${esc(et.proxima.rotulo)}</button>` : '<span class="qd-chip tom-verde">Montado e testado ✓</span>'}
       ${gestor && et.voltar && !q.processedForOS ? `<button type="button" class="btn-ghost" data-qdd="voltar">↩ Voltar etapa</button>` : ''}
@@ -20934,14 +20987,15 @@ function acaoDetalhe(a, b){
   if(a === 'avancar') return avancar(q.id);
   if(a === 'voltar') return voltar(q.id);
   if(a === 'remover'){ customConfirm('Remover o quadro de "' + q.cliente + '" (' + nomeDoTipo(q) + ') da lista?', async () => { q.active = false; fecharDetalhe(); renderListas(); await quadrosStore.save(); }, 'Remover'); return; }
-  if(a === 'foto-cam' || a === 'foto-gal'){ const inp = document.getElementById('qdFotoInput'); if(!inp) return; if(a === 'foto-cam') inp.setAttribute('capture', 'environment'); else inp.removeAttribute('capture'); inp.value = ''; inp.click(); return; }
-  if(a === 'rmfoto'){ const k = b.dataset.k; customConfirm('Remover esta foto?', async () => { const qq = porId(quadrosStore, detalheId); if(!qq || !qq.fotos) return; delete qq.fotos[k]; qq.fotos = Object.assign({}, qq.fotos); renderDetalhe(); renderListas(); await quadrosStore.save(true); }, 'Remover'); return; }
+  if(a === 'foto-cam' || a === 'foto-gal' || a === 'foto-gestor-cam' || a === 'foto-gestor-gal'){ const inp = document.getElementById(a.startsWith('foto-gestor') ? 'qdFotoGestorInput' : 'qdFotoInput'); if(!inp) return; if(a.endsWith('cam')) inp.setAttribute('capture', 'environment'); else inp.removeAttribute('capture'); inp.value = ''; inp.click(); return; }
+  if(a === 'rmfoto' || a === 'rmfoto-gestor'){ const k = b.dataset.k, campo = a === 'rmfoto' ? 'fotos' : 'fotosGestor'; customConfirm('Remover esta foto?', async () => { const qq = porId(quadrosStore, detalheId); if(!qq || !qq[campo]) return; delete qq[campo][k]; qq[campo] = Object.assign({}, qq[campo]); renderDetalhe(); renderListas(); await quadrosStore.save(true); }, 'Remover'); return; }
 }
-async function adicionarFotos(inp){
+async function adicionarFotos(inp, campo){
+  campo = campo || 'fotos';
   const q = detalheId ? porId(quadrosStore, detalheId) : null; const arquivos = Array.from(inp.files || []); if(!q || !arquivos.length) return;
-  q.fotos = q.fotos || {};
-  for(const f of arquivos){ if(Object.keys(q.fotos).length >= MAX_FOTOS_QD) break; try{ const url = await compressImageFile(f); q.fotos['f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)] = url; }catch(e){ console.error('quadros: foto', e); } }
-  q.fotos = Object.assign({}, q.fotos); inp.value = ''; renderDetalhe(); renderListas(); await quadrosStore.save(true);
+  q[campo] = q[campo] || {};
+  for(const f of arquivos){ if(Object.keys(q[campo]).length >= MAX_FOTOS_QD) break; try{ const url = await compressImageFile(f); q[campo]['f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)] = url; }catch(e){ console.error('quadros: foto', e); } }
+  q[campo] = Object.assign({}, q[campo]); inp.value = ''; renderDetalhe(); renderListas(); await quadrosStore.save(true);
 }
 function htmlSecoes(modo){
   const todos = quadrosAtivos();
@@ -21541,7 +21595,7 @@ function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&
 function fmtD(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
 function fmtDH(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }catch(e){ return ''; } }
 function quem(){ return (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || ''; }
-const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['outro', 'Outro']];
+const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['preventiva', 'Cliente Preventiva'], ['visita_orcamento', 'Visita Orçamento'], ['outro', 'Outro']];
 const store = createEstoqueStore('ordensServico', '⚠️ Não foi possível salvar a ordem de serviço. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null;
 
@@ -21980,7 +22034,7 @@ function exportarCsv(){
 }
 async function abrir(){
   const v = document.getElementById('finOsView'); if(!v) return;
-  const antigo = document.querySelector('#financeiroView > .tech-day-panel'); if(antigo) antigo.style.display = 'none';
+  const antigo = document.getElementById('finOldPanel'); if(antigo) antigo.style.display = 'none';
   v.style.display = ''; ligar(v);
   v.innerHTML = '<div class="empty-state">Carregando…</div>';
   await OS_API.garantirCarregado(); render();
@@ -22076,6 +22130,392 @@ function csv(){
 }
 async function abrir(){ const box = document.getElementById('painelOsRel'); if(!box) return; ligar(box); await OS_API.garantirCarregado(); render(); }
 window.REL_API = { abrir, render, metricas, filtrar };
+})();
+
+
+// =====================================================================================
+// FINANCEIRO → OBRAS E PEDIDOS (08/10) — controle de pedidos por cliente, em duas abas (Equiper e Eqp), que substitui a planilha.
+// Cada REGISTRO é um cliente numa empresa e reúne: contato, forma de pagamento, VÁRIOS pedidos (nº, descrição, valor), as parcelas
+// (previstas e recebidas, com vencimento), as notas fiscais e a situação da obra. Contratado / recebido / saldo são calculados.
+// Nó novo: obrasPedidos/<id> (mesma fábrica de armazenamento das OS: diff por campo, tempo real, tentativa).
+//   { id, empresa:'equiper'|'eqp', cliente, clienteId, contato, fone, formaPagamento, condicoes, situacao, obs, active,
+//     pedidos:{id:{id,numero,descricao,valor,cancelado}}, parcelas:{id:{id,tipo,pedido,vencimento,valor,pago,pagoEm,forma,obs,ordem}},
+//     nfs:{id:{id,numero,data,valor}}, criadoEm, criadoPor, atualizadoEm, atualizadoPor }
+// Cliente novo é cadastrado em Clientes (nome + endereço, e contato/telefone); cliente existente é reaproveitado (por nome, sem acento).
+// =====================================================================================
+(function(){
+'use strict';
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const brl = (v) => (v == null || isNaN(Number(v))) ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const brlCurto = (v) => { v = Number(v) || 0; return Math.abs(v) >= 1e6 ? 'R$ ' + (v / 1e6).toFixed(2).replace('.', ',') + ' mi' : v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }); };
+const hojeStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const fmtData = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; };
+const diasEntre = (a, b) => Math.round((Date.UTC(+b.slice(0, 4), +b.slice(5, 7) - 1, +b.slice(8, 10)) - Date.UTC(+a.slice(0, 4), +a.slice(5, 7) - 1, +a.slice(8, 10))) / 86400000);
+function somaDias(iso, n){ const d = new Date(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10) + n)); return d.toISOString().slice(0, 10); }
+function parseValor(t){
+  let s = String(t == null ? '' : t).trim().replace(/[R$\s]/g, ''); if(!s) return null;
+  if(s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.'); else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');   // "1.250" = mil duzentos e cinquenta
+  const n = Number(s); return isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : NaN;
+}
+const campoValor = (v) => (v == null || v === '') ? '' : Number(v).toFixed(2).replace('.', ',');
+const lista = (o) => Object.values(o || {}).filter(Boolean);
+const soma = (a) => Math.round(a.reduce((n, x) => n + (Number(x) || 0), 0) * 100) / 100;
+const uid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const quem = () => (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
+const avisar = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 5000); }catch(e){ try{ alert(t); }catch(_){} } };
+
+const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
+const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
+const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
+const TIPOS_PARCELA = ['Sinal', '2ª parcela', '3ª parcela', '4ª parcela', 'Saldo', 'Parcela única', 'Outro'];
+const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
+const store = createEstoqueStore('obrasPedidos', '⚠️ Não foi possível salvar o registro de obra. Verifique sua internet e tente novamente.');
+let carregado = false, carregando = null;
+const ui = { empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, montado: false };
+
+// ---------- cálculo ----------
+const registros = () => store.items.filter(r => r && r.id && r.active !== false);
+const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
+const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => String(a.pago ? a.pagoEm : (a.vencimento || '9999-99-99')).localeCompare(String(b.pago ? b.pagoEm : (b.vencimento || '9999-99-99'))) || (a.ordem || 0) - (b.ordem || 0));
+const nfsDe = (r) => lista(r.nfs).sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')));
+function totais(r){
+  const ped = pedidosDe(r).filter(p => !p.cancelado), par = parcelasDe(r);
+  const contratado = soma(ped.map(p => p.valor)), recebido = soma(par.filter(p => p.pago).map(p => p.valor));
+  const pend = par.filter(p => !p.pago), previsto = soma(pend.map(p => p.valor)), hoje = hojeStr();
+  const atras = pend.filter(p => p.vencimento && p.vencimento < hoje); const saldo = Math.round((contratado - recebido) * 100) / 100;
+  const fin = contratado <= 0 ? 'sem_valor' : saldo <= 0.005 ? 'quitado' : recebido > 0 ? 'parcial' : 'a_receber';
+  return { contratado, recebido, previsto, saldo, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), atrasado: soma(atras.map(p => p.valor)), nAtrasadas: atras.length, pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ped.length, nfTotal: soma(nfsDe(r).map(n => n.valor)) };
+}
+function nomeCliente(r){ const c = r.clienteId != null ? (typeof clients !== 'undefined' ? clients : []).find(x => String(x.id) === String(r.clienteId)) : null; return c ? c.name : r.cliente; }
+const clientePorNome = (n) => { const k = fold(n); return k ? (typeof clients !== 'undefined' ? clients : []).find(c => fold(c.name) === k) : null; };
+const porId = (id) => store.items.find(r => r.id === id);
+function pedidoEmUso(numero, exceto){ const k = fold(numero); for(const r of registros()) for(const p of lista(r.pedidos)) if(fold(p.numero) === k && !(exceto && exceto.r === r.id && exceto.p === p.id)) return { r, p }; return null; }
+
+async function garantirCarregado(){
+  if(carregado) return;
+  if(!carregando) carregando = store.load().then(() => { store.attach(() => aoMudarRemoto()); carregado = true; });
+  await carregando;
+}
+function aoMudarRemoto(){ renderLista(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
+async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderLista(); await store.save(true); }
+
+// ---------- tela principal ----------
+function montar(){
+  const v = document.getElementById('finObrasView'); if(!v || ui.montado) return; ui.montado = true;
+  v.innerHTML = `<div class="tech-day-panel">
+    <div class="tech-day-head"><div class="tech-day-title">Obras e Pedidos</div><div class="tech-day-date mono" id="obrContagem"></div></div>
+    <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${EMPRESAS.map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
+    <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
+    <div class="fin-filtros" id="obrBarra">
+      <div class="search-clear-wrap" style="flex:1; min-width:220px;"><input type="search" id="obrBusca" placeholder="Buscar por cliente, contato ou nº do pedido…" autocomplete="off"></div>
+      <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="atrasado">Com parcela em atraso</option><option value="quitado">Quitados</option></select>
+      <select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
+      <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
+      <button type="button" class="btn-primary" data-obr="novo">+ Novo registro</button>
+    </div>
+    <div id="obrLista" style="padding:0 20px 30px;"></div>
+  </div>`;
+  const busca = document.getElementById('obrBusca');
+  if(window.SUG_API) SUG_API.ligar(busca, 'clientes');
+  busca.addEventListener('input', () => { ui.busca = busca.value; renderLista(); });
+  busca.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ busca.value = ''; ui.busca = ''; renderLista(); } });
+  document.getElementById('obrFiltroFin').addEventListener('change', (e) => { ui.fin = e.target.value; renderLista(); });
+  document.getElementById('obrFiltroSit').addEventListener('change', (e) => { ui.sit = e.target.value; renderLista(); });
+  v.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-obr]'); if(!b) return; const a = b.dataset.obr;
+    if(a === 'empresa'){ ui.empresa = b.dataset.emp; v.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); renderLista(); }
+    else if(a === 'novo') abrirNovo({ cliente: ui.busca.trim() });
+    else if(a === 'abrir') abrirDetalhe(b.dataset.id);
+    else if(a === 'criar-busca') abrirNovo({ cliente: b.dataset.nome });
+    else if(a === 'csv') exportarCsv();
+  });
+  v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
+}
+function kpis(todos){
+  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), saldo = soma(t.map(x => Math.max(0, x.saldo))), atras = soma(t.map(x => x.atrasado)), nAt = t.reduce((n, x) => n + x.nAtrasadas, 0);
+  return PREV_API.kpiCards([
+    { tom: 'neutro', icone: 'total', texto: brlCurto(contr), zero: !(contr > 0), rotulo: 'Contratado', sub: todos.length + (todos.length === 1 ? ' obra' : ' obras') + ' · ' + soma(t.map(x => x.nPedidos)) + ' pedidos' },
+    { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
+    { tom: 'amarelo', icone: 'relogio', texto: brlCurto(saldo), zero: !(saldo > 0), rotulo: 'A receber', sub: t.filter(x => x.saldo > 0.005).length + ' obras com saldo' },
+    { tom: 'vermelho', icone: 'alerta', texto: brlCurto(atras), zero: !(atras > 0), rotulo: 'Em atraso', sub: nAt + (nAt === 1 ? ' parcela vencida' : ' parcelas vencidas') },
+  ]);
+}
+function cartao(r){
+  const t = totais(r); const ped = pedidosDe(r).filter(p => !p.cancelado);
+  const chips = [`<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'cancelada' ? 'gray' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+    t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : t.fin === 'parcial' ? '<span class="prv-chip amber">Parcial</span>' : '',
+    t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso · ${esc(brl(t.atrasado))}</span>` : ''].join('');
+  return `<div class="obr-card" data-obr="abrir" data-id="${esc(r.id)}" role="button" tabindex="0">
+    <div class="obr-card-main"><div class="obr-cli">${esc(nomeCliente(r))} ${chips}</div>
+      <div class="obr-sub">${[r.contato, r.formaPagamento, ped.length + (ped.length === 1 ? ' pedido' : ' pedidos') + (ped.length ? ' (' + ped.slice(0, 4).map(p => esc(p.numero)).join(', ') + (ped.length > 4 ? '…' : '') + ')' : '')].filter(Boolean).join(' · ')}</div>
+      <div class="obr-barra" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div></div>
+    <div class="obr-nums"><div><label>Contratado</label><b>${esc(brl(t.contratado))}</b></div><div><label>Recebido</label><b class="obr-verde">${esc(brl(t.recebido))}</b></div><div><label>Saldo</label><b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></div></div>
+  </div>`;
+}
+function renderLista(){
+  const box = document.getElementById('obrLista'); if(!box) return;
+  const doEmp = (k) => registros().filter(r => r.empresa === k);
+  EMPRESAS.forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + doEmp(k).length + ')'; });
+  const todos = doEmp(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
+  const q = fold(ui.busca);
+  let l = todos.filter(r => !q || fold([nomeCliente(r), r.contato, r.fone, r.formaPagamento, pedidosDe(r).map(p => p.numero + ' ' + p.descricao).join(' ')].join(' ')).includes(q));
+  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'atrasado' && !t.nAtrasadas) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
+    .sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b))));
+  document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
+  if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
+  box.innerHTML = l.length ? l.map(cartao).join('')
+    : (todos.length === 0 ? `<div class="empty-state">Nenhum registro em ${esc(EMPRESAS.find(e => e[0] === ui.empresa)[1])} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`
+      : `<div class="empty-state">Nenhum registro encontrado${q ? ' para "' + esc(ui.busca.trim()) + '"' : ''}.${q ? `<br><br><button type="button" class="btn-primary" data-obr="criar-busca" data-nome="${esc(ui.busca.trim())}">+ Criar registro para "${esc(ui.busca.trim())}"</button>` : ''}</div>`);
+}
+
+// ---------- formulário rápido (pedido, parcela, nota fiscal, dividir) ----------
+function formRapido(cfg){
+  let ov = document.getElementById('obrFormOverlay'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrFormOverlay';
+  const campo = (c) => { const v = c.valor == null ? '' : c.valor; const id = 'obrF_' + c.id;
+    const ent = c.tipo === 'select' ? `<select id="${id}">${c.opcoes.map(o => { const val = Array.isArray(o) ? o[0] : o, rot = Array.isArray(o) ? o[1] : o; return `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(rot)}</option>`; }).join('')}</select>`
+      : c.tipo === 'data' ? `<input type="date" id="${id}" value="${esc(v)}">` : c.tipo === 'area' ? `<textarea id="${id}" rows="2">${esc(v)}</textarea>`
+      : `<input type="text" id="${id}" value="${esc(v)}" ${c.tipo === 'valor' ? 'inputmode="decimal"' : ''} placeholder="${esc(c.dica || '')}" autocomplete="off">`;
+    return `<div class="field ${c.meio ? 'obr-meio' : ''}"><label for="${id}">${esc(c.rotulo)}${c.obrig ? ' *' : ''}</label>${ent}</div>`; };
+  ov.innerHTML = `<div class="modal" style="max-width:520px; max-height:90vh; overflow-y:auto;"><h3>${esc(cfg.titulo)}</h3>${cfg.aviso ? `<p class="prv-hint" style="margin:0 0 8px;">${cfg.aviso}</p>` : ''}<div class="obr-grid2">${cfg.campos.map(campo).join('')}</div><div class="field-error" id="obrFormErr"></div>
+    <div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrFormCancel">Cancelar</button><button type="button" class="btn-primary" id="obrFormOk">${esc(cfg.ok || 'Salvar')}</button></div></div>`;
+  document.body.appendChild(ov);
+  const fechar = () => ov.remove();
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrFormCancel') fechar(); });
+  document.getElementById('obrFormOk').onclick = async () => {
+    const vals = {}; const err = (t) => { document.getElementById('obrFormErr').textContent = t; };
+    for(const c of cfg.campos){
+      const raw = document.getElementById('obrF_' + c.id).value; let v = c.tipo === 'valor' ? parseValor(raw) : (c.tipo === 'select' || c.tipo === 'data' ? raw : raw.trim());
+      if(c.tipo === 'valor' && Number.isNaN(v)) return err('Valor inválido em "' + c.rotulo + '".');
+      if(c.obrig && (v === '' || v == null)) return err('Preencha "' + c.rotulo + '".');
+      vals[c.id] = v;
+    }
+    const msg = await cfg.aoSalvar(vals); if(msg){ err(msg); return; } fechar();
+  };
+  const primeiro = ov.querySelector('input, select, textarea'); if(primeiro) setTimeout(() => primeiro.focus(), 30);
+}
+
+// ---------- detalhe do registro ----------
+function garantirDetalhe(){
+  let ov = document.getElementById('obrDetOverlay'); if(ov) return ov;
+  ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrDetOverlay';
+  ov.innerHTML = '<div class="modal obr-modal"><div id="obrDetCab"></div><div id="obrDetDados"></div><div id="obrDetPed"></div><div id="obrDetPag"></div><div id="obrDetNf"></div><div id="obrDetRodape"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', (e) => { if(e.target === ov){ fecharDetalhe(); return; } const b = e.target.closest('[data-obr-d]'); if(b) acaoDetalhe(b.dataset.obrD, b.dataset); });
+  ov.addEventListener('change', (e) => { const c = e.target.closest('[data-obr-campo]'); if(c) salvarCampo(c.dataset.obrCampo, c.value); });
+  return ov;
+}
+function abrirDetalhe(id){ const r = porId(id); if(!r) return; ui.abertoId = id; const ov = garantirDetalhe(); renderDetalheTudo(); ov.classList.add('open'); ov.querySelector('.modal').scrollTop = 0; }
+function fecharDetalhe(){ const ov = document.getElementById('obrDetOverlay'); if(ov) ov.classList.remove('open'); ui.abertoId = null; }
+const atual = () => ui.abertoId ? porId(ui.abertoId) : null;
+function renderDetalheTudo(){ renderCab(); renderDados(); renderDetalheSecoes(); }
+function renderDetalheSecoes(){ renderCab(); renderPed(); renderPag(); renderNf(); renderRodape(); }
+function renderCab(){
+  const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; const t = totais(r);
+  const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
+  el.innerHTML = `<div class="qd-det-head"><div><h3 style="margin:0;">${esc(nomeCliente(r))}</h3>
+      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span><span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}${t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso</span>` : ''}</div>
+      ${cli && cli.address ? `<div class="prv-hint" style="margin:6px 0 0;">📍 ${esc(cli.address)}</div>` : ''}</div>
+      <button type="button" class="btn-ghost" data-obr-d="fechar">Fechar</button></div>`;
+}
+function renderDados(){
+  const r = atual(); const el = document.getElementById('obrDetDados'); if(!r || !el) return;
+  const wa = r.fone && typeof phoneDigits === 'function' && phoneDigits(r.fone).length >= 10;
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Dados do registro</div><div class="obr-grid2">
+    <div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="field"><label>Pessoa de contato</label><input type="text" data-obr-campo="contato" value="${esc(r.contato || '')}" placeholder="Nome (cargo)"></div>
+    <div class="field"><label>WhatsApp / telefone ${wa ? '<a href="#" data-obr-d="whats" style="font-weight:600;">· abrir conversa</a>' : ''}</label><input type="text" data-obr-campo="fone" value="${esc(r.fone || '')}" placeholder="+55 24 90000-0000"></div>
+    <div class="field"><label>Forma de pagamento</label><select data-obr-campo="formaPagamento"><option value="">—</option>${FORMAS.map(f => `<option ${r.formaPagamento === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
+    <div class="field obr-largo"><label>Condições de pagamento</label><input type="text" data-obr-campo="condicoes" value="${esc(r.condicoes || '')}" placeholder="Ex.: 50% sinal · 40% na entrega · 10% no término"></div>
+    <div class="field obr-largo"><label>Observações</label><textarea data-obr-campo="obs" rows="2" placeholder="Anotações internas do financeiro">${esc(r.obs || '')}</textarea></div></div></div>`;
+}
+function renderPed(){
+  const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; const ped = pedidosDe(r); const t = totais(r);
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Pedidos <span class="obr-sec-n">${t.nPedidos}</span><span class="obr-sec-tot">Total ${esc(brl(t.contratado))}</span></div>
+    ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}</td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
+    <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">+ Adicionar pedido</button></div></div>`;
+}
+function statusParcela(p){
+  if(p.pago) return `<span class="prv-chip green">Pago${p.pagoEm ? ' em ' + esc(fmtData(p.pagoEm)) : ''}</span>`;
+  if(!p.vencimento) return '<span class="prv-chip gray">Sem data</span>';
+  const d = diasEntre(hojeStr(), p.vencimento); return d < 0 ? `<span class="prv-chip red">Atrasada ${-d} ${-d === 1 ? 'dia' : 'dias'}</span>` : d === 0 ? '<span class="prv-chip amber">Vence hoje</span>' : `<span class="prv-chip gray">Vence em ${d} ${d === 1 ? 'dia' : 'dias'}</span>`;
+}
+function renderPag(){
+  const r = atual(); const el = document.getElementById('obrDetPag'); if(!r || !el) return; const t = totais(r); const par = parcelasDe(r);
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Pagamentos</div>
+    <div class="obr-resumo"><div><label>Contratado</label><b>${esc(brl(t.contratado))}</b></div><div><label>Recebido</label><b class="obr-verde">${esc(brl(t.recebido))}</b></div><div><label>Previsto</label><b>${esc(brl(t.previsto))}</b></div><div><label>Saldo a receber</label><b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></div></div>
+    <div class="obr-barra obr-barra-g" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div>
+    <div class="prv-hint" style="margin:4px 0 8px;">${t.pct}% recebido${t.aProgramar > 0.005 ? ' · <b>' + esc(brl(t.aProgramar)) + '</b> do saldo ainda sem parcela prevista' : ''}${t.saldo < -0.005 ? ' · recebido <b>' + esc(brl(-t.saldo)) + '</b> acima do contratado' : ''}</div>
+    ${par.length ? `<table class="obr-tab"><thead><tr><th>Parcela</th><th>Vencimento</th><th class="obr-d">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${par.map(p => `<tr><td>${esc(p.tipo || 'Parcela')}${p.pedido ? ' <span class="obr-ped-tag">ped. ' + esc(p.pedido) + '</span>' : ''}${p.forma ? ' <span class="obr-ped-tag">' + esc(p.forma) + '</span>' : ''}${p.obs ? `<div class="obr-obs">${esc(p.obs)}</div>` : ''}</td><td class="mono">${esc(fmtData(p.vencimento) || '—')}</td><td class="obr-d">${esc(brl(p.valor))}</td><td>${statusParcela(p)}</td><td class="obr-acoes">${p.pago ? '' : `<button type="button" class="obr-ic obr-ic-ok" data-obr-d="par-receber" data-id="${esc(p.id)}" title="Registrar recebimento">✓</button>`}<button type="button" class="obr-ic" data-obr-d="par-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="par-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhuma parcela lançada. Divida o contratado em parcelas ou registre um pagamento já recebido.</div>'}
+    <div class="prv-linha" style="margin-top:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost oe-mini" data-obr-d="par-dividir">⚖ Dividir em parcelas</button><button type="button" class="btn-ghost oe-mini" data-obr-d="par-add">+ Parcela prevista</button><button type="button" class="btn-primary oe-mini" data-obr-d="par-pago">+ Pagamento recebido</button></div></div>`;
+}
+function renderNf(){
+  const r = atual(); const el = document.getElementById('obrDetNf'); if(!r || !el) return; const nfs = nfsDe(r);
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Notas fiscais <span class="obr-sec-n">${nfs.length}</span><span class="obr-sec-tot">Emitido ${esc(brl(soma(nfs.map(n => n.valor))))}</span></div>
+    ${nfs.length ? `<table class="obr-tab"><thead><tr><th>NF</th><th>Data</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${nfs.map(n => `<tr><td class="mono">${esc(n.numero)}</td><td class="mono">${esc(fmtData(n.data) || '—')}</td><td class="obr-d">${esc(brl(n.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="nf-edit" data-id="${esc(n.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="nf-rm" data-id="${esc(n.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhuma nota fiscal registrada.</div>'}
+    <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="nf-add">+ Nota fiscal</button></div></div>`;
+}
+function renderRodape(){
+  const r = atual(); const el = document.getElementById('obrDetRodape'); if(!r || !el) return;
+  el.innerHTML = `<div class="obr-rodape"><span class="prv-hint" style="margin:0;">Criado${r.criadoPor ? ' por ' + esc(r.criadoPor) : ''}${r.criadoEm ? ' em ' + esc(new Date(r.criadoEm).toLocaleDateString('pt-BR')) : ''}${r.atualizadoPor ? ' · última alteração por ' + esc(r.atualizadoPor) : ''}</span><button type="button" class="btn-ghost qd-remover" data-obr-d="excluir">Excluir registro</button></div>`;
+}
+async function salvarCampo(campo, valor){
+  const r = atual(); if(!r) return; const v = String(valor || '').trim(); if((r[campo] || '') === v) return;
+  r[campo] = v || null; await gravar(r); renderCab();
+}
+function nomeCampoPedidos(r){ return [['', 'Todos os pedidos']].concat(pedidosDe(r).filter(p => !p.cancelado).map(p => [p.numero, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '')])); }
+function acaoDetalhe(a, ds){
+  const r = atual(); if(!r && a !== 'fechar') return;
+  if(a === 'fechar') return fecharDetalhe();
+  if(a === 'whats'){ openWhatsapp(phoneDigits(r.fone), ''); return; }
+  if(a === 'ped-add' || a === 'ped-edit'){
+    const p = a === 'ped-edit' ? r.pedidos[ds.id] : null; if(a === 'ped-edit' && !p) return;
+    return formRapido({ titulo: p ? 'Editar pedido' : 'Novo pedido', campos: [
+      { id: 'numero', rotulo: 'Nº do pedido', valor: p ? p.numero : '', obrig: true, meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true },
+      { id: 'descricao', rotulo: 'Descrição do serviço', valor: p ? p.descricao : '', dica: 'Ex.: Aquecimento solar com apoio a gás' },
+      { id: 'cancelado', rotulo: 'Situação do pedido', tipo: 'select', opcoes: [['0', 'Ativo'], ['1', 'Cancelado (não entra no total)']], valor: p && p.cancelado ? '1' : '0' } ],
+      aoSalvar: async (v) => {
+        const emUso = pedidoEmUso(v.numero, p ? { r: r.id, p: p.id } : null);
+        if(emUso) return 'O pedido ' + v.numero + ' já está em "' + nomeCliente(emUso.r) + '" (' + (EMPRESAS.find(e => e[0] === emUso.r.empresa) || [0, ''])[1] + ').';
+        const id = p ? p.id : uid('p'); r.pedidos = Object.assign({}, r.pedidos, { [id]: { id, numero: v.numero, descricao: v.descricao, valor: v.valor, cancelado: v.cancelado === '1' || null } });
+        await gravar(r); renderDetalheSecoes(); return null; } });
+  }
+  if(a === 'ped-rm'){ const p = r.pedidos[ds.id]; if(!p) return; return customConfirm('Remover o pedido ' + p.numero + ' deste registro? Se ele foi cancelado, prefira marcar como "cancelado" em ✎ para manter o histórico.', async () => { const m = Object.assign({}, r.pedidos); delete m[ds.id]; r.pedidos = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
+  if(a === 'par-add' || a === 'par-pago' || a === 'par-edit' || a === 'par-receber'){
+    const p = (a === 'par-edit' || a === 'par-receber') ? r.parcelas[ds.id] : null; if((a === 'par-edit' || a === 'par-receber') && !p) return;
+    const pago0 = a === 'par-pago' || a === 'par-receber' || (p && p.pago);
+    return formRapido({ titulo: a === 'par-pago' ? 'Registrar pagamento recebido' : a === 'par-receber' ? 'Registrar recebimento' : p ? 'Editar parcela' : 'Nova parcela prevista', ok: pago0 && !p ? 'Registrar' : 'Salvar', campos: [
+      { id: 'tipo', rotulo: 'Parcela', tipo: 'select', opcoes: TIPOS_PARCELA, valor: p ? p.tipo : (a === 'par-pago' ? 'Sinal' : 'Parcela única'), meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true },
+      { id: 'situacao', rotulo: 'Situação', tipo: 'select', opcoes: [['0', 'Pendente'], ['1', 'Pago']], valor: pago0 ? '1' : '0', meio: true }, { id: 'pagoEm', rotulo: 'Data do pagamento', tipo: 'data', valor: p && p.pagoEm ? p.pagoEm : (pago0 ? hojeStr() : ''), meio: true },
+      { id: 'vencimento', rotulo: 'Vencimento', tipo: 'data', valor: p ? p.vencimento || '' : '', meio: true }, { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p ? p.forma || '' : (r.formaPagamento || ''), meio: true },
+      { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: p ? p.pedido || '' : '' }, { id: 'obs', rotulo: 'Observação', valor: p ? p.obs || '' : '', dica: 'Ex.: boleto, comprovante, NF…' } ],
+      aoSalvar: async (v) => {
+        if(!(v.valor > 0)) return 'Informe o valor da parcela.';
+        const pago = v.situacao === '1'; if(pago && !v.pagoEm) return 'Informe a data do pagamento.'; if(pago && v.pagoEm > hojeStr()) return 'A data do pagamento não pode ser futura.';
+        const id = p ? p.id : uid('c'); const ordem = p ? p.ordem : 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
+        r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: v.tipo, pedido: v.pedido || null, vencimento: v.vencimento || null, valor: v.valor, pago: pago || null, pagoEm: pago ? v.pagoEm : null, forma: v.forma || null, obs: v.obs || null, ordem } });
+        await gravar(r); renderDetalheSecoes(); return null; } });
+  }
+  if(a === 'par-rm'){ const p = r.parcelas[ds.id]; if(!p) return; return customConfirm('Remover a parcela "' + (p.tipo || 'Parcela') + '" de ' + brl(p.valor) + '?', async () => { const m = Object.assign({}, r.parcelas); delete m[ds.id]; r.parcelas = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
+  if(a === 'par-dividir'){
+    const t = totais(r); if(!(t.contratado > 0)) return avisar('Cadastre os pedidos com valor antes de dividir em parcelas.');
+    return formRapido({ titulo: 'Dividir em parcelas', aviso: 'Contratado: <b>' + esc(brl(t.contratado)) + '</b>. As parcelas são criadas como <b>previstas</b> (pendentes). Os nomes seguem a planilha: Sinal, 2ª parcela… Saldo.', campos: [
+      { id: 'pct', rotulo: 'Percentuais (somam 100)', valor: '50, 40, 10', obrig: true, dica: 'Ex.: 50, 40, 10' }, { id: 'primeiro', rotulo: 'Primeiro vencimento', tipo: 'data', valor: hojeStr(), meio: true }, { id: 'intervalo', rotulo: 'Intervalo (dias)', valor: '30', meio: true } ],
+      aoSalvar: async (v) => {
+        const pcts = v.pct.split(/[;,\s]+/).filter(Boolean).map(x => Number(x.replace('%', '').replace(',', '.'))); if(!pcts.length || pcts.some(x => !isFinite(x) || x <= 0)) return 'Percentuais inválidos. Use números separados por vírgula.';
+        const s = Math.round(pcts.reduce((n, x) => n + x, 0) * 100) / 100; if(Math.abs(s - 100) > 0.01) return 'Os percentuais somam ' + s + '%; precisam somar 100%.';
+        const dias = Number(String(v.intervalo).replace(',', '.')) || 30; const n = pcts.length; let acum = 0; const novas = {}; let ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
+        pcts.forEach((pc, i) => { const val = i === n - 1 ? Math.round((t.contratado - acum) * 100) / 100 : Math.round(t.contratado * pc) / 100; acum += val; const id = uid('c') + i;
+          novas[id] = { id, tipo: n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela', vencimento: v.primeiro ? somaDias(v.primeiro, i * dias) : null, valor: val, ordem: ordem++ }; });
+        r.parcelas = Object.assign({}, r.parcelas, novas); await gravar(r); renderDetalheSecoes(); return null; } });
+  }
+  if(a === 'nf-add' || a === 'nf-edit'){
+    const n = a === 'nf-edit' ? r.nfs[ds.id] : null; if(a === 'nf-edit' && !n) return;
+    return formRapido({ titulo: n ? 'Editar nota fiscal' : 'Nova nota fiscal', campos: [ { id: 'numero', rotulo: 'Nº da NF', valor: n ? n.numero : '', obrig: true, meio: true }, { id: 'data', rotulo: 'Data de emissão', tipo: 'data', valor: n ? n.data || '' : hojeStr(), meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: n ? campoValor(n.valor) : '', obrig: true } ],
+      aoSalvar: async (v) => { const id = n ? n.id : uid('n'); r.nfs = Object.assign({}, r.nfs, { [id]: { id, numero: v.numero, data: v.data || null, valor: v.valor } }); await gravar(r); renderDetalheSecoes(); return null; } });
+  }
+  if(a === 'nf-rm'){ const n = r.nfs[ds.id]; if(!n) return; return customConfirm('Remover a NF ' + n.numero + '?', async () => { const m = Object.assign({}, r.nfs); delete m[ds.id]; r.nfs = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
+  if(a === 'excluir') return customConfirm('Excluir o registro de "' + nomeCliente(r) + '" (' + (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1] + ')? Pedidos, parcelas e notas dele saem da lista.', async () => { r.active = false; fecharDetalhe(); await gravar(r); avisar('Registro excluído.'); }, 'Excluir');
+}
+
+// ---------- novo registro ----------
+function abrirNovo(pre){
+  pre = pre || {}; let ov = document.getElementById('obrNovoOverlay'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrNovoOverlay';
+  ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">Novo registro de obra</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, forma de pagamento e os pedidos (quantos forem, cada um com seu valor).</p>
+    <div class="obr-grid2">
+      <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || ui.empresa) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label>Cliente *</label><input type="text" id="obrNCli" value="${esc(pre.cliente || '')}" placeholder="Digite para buscar os clientes cadastrados" autocomplete="off"></div>
+    </div>
+    <div id="obrNCliInfo"></div>
+    <div class="obr-grid2">
+      <div class="field"><label>Pessoa de contato</label><input type="text" id="obrNContato" placeholder="Nome (cargo)"></div>
+      <div class="field"><label>WhatsApp / telefone</label><input type="text" id="obrNFone" placeholder="+55 24 90000-0000"></div>
+      <div class="field"><label>Forma de pagamento</label><select id="obrNForma"><option value="">—</option>${FORMAS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div>
+      <div class="field"><label>Situação da obra</label><select id="obrNSit">${SITUACOES.slice(0, 3).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div>
+      <div class="field obr-largo"><label>Condições de pagamento</label><input type="text" id="obrNCond" placeholder="Ex.: 50% sinal · 40% na entrega · 10% no término"></div>
+    </div>
+    <div class="obr-sec" style="margin-top:6px;"><div class="obr-sec-t">Pedidos <span class="obr-sec-tot" id="obrNTotal">Total R$ 0,00</span></div>
+      <div id="obrNPedidos"></div><div class="prv-linha" style="margin-top:6px;"><button type="button" class="btn-ghost oe-mini" id="obrNAddPed">+ Adicionar outro pedido</button></div></div>
+    <div class="field" style="margin-top:8px;"><label>Observações</label><textarea id="obrNObs" rows="2" placeholder="Anotações internas do financeiro"></textarea></div>
+    <div class="field-error" id="obrNErr"></div>
+    <div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrNCancel">Cancelar</button><button type="button" class="btn-primary" id="obrNOk">Criar registro</button></div></div>`;
+  document.body.appendChild(ov); ov.classList.add('open');
+  const $ = (id) => document.getElementById(id);
+  const linha = () => `<div class="obr-ped-linha"><input type="text" data-ped="numero" placeholder="Nº" inputmode="numeric"><input type="text" data-ped="descricao" placeholder="Descrição do serviço"><input type="text" data-ped="valor" inputmode="decimal" placeholder="Valor (R$)"><button type="button" class="obr-ic" data-ped-rm title="Remover pedido">✕</button></div>`;
+  $('obrNPedidos').insertAdjacentHTML('beforeend', linha());
+  const totalizar = () => { const t = soma([...ov.querySelectorAll('[data-ped="valor"]')].map(i => { const v = parseValor(i.value); return isNaN(v) ? 0 : v; })); $('obrNTotal').textContent = 'Total ' + brl(t); };
+  $('obrNAddPed').onclick = () => { $('obrNPedidos').insertAdjacentHTML('beforeend', linha()); const ins = ov.querySelectorAll('.obr-ped-linha'); ins[ins.length - 1].querySelector('input').focus(); };
+  ov.addEventListener('input', (e) => { if(e.target.dataset && e.target.dataset.ped === 'valor') totalizar(); });
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrNCancel'){ ov.remove(); return; } const rm = e.target.closest('[data-ped-rm]'); if(rm){ if(ov.querySelectorAll('.obr-ped-linha').length > 1) rm.closest('.obr-ped-linha').remove(); else rm.closest('.obr-ped-linha').querySelectorAll('input').forEach(i => { i.value = ''; }); totalizar(); } });
+  // cliente: existente (preenche dados) ou novo (pede o endereço e cadastra)
+  let estado = '';
+  const atualizarCliente = () => {
+    const nome = $('obrNCli').value.trim(); const ex = clientePorNome(nome); const novoEstado = !nome ? 'vazio' : ex ? 'ex:' + ex.id : 'novo';
+    if(novoEstado === estado) return; estado = novoEstado; const info = $('obrNCliInfo');
+    if(novoEstado === 'vazio'){ info.innerHTML = ''; }
+    else if(ex){ info.innerHTML = `<div class="obr-nota obr-nota-ok">✓ Cliente já cadastrado${ex.address ? ' · 📍 ' + esc(ex.address) : ' (sem endereço no cadastro)'}</div>`; if(!$('obrNContato').value && ex.contato) $('obrNContato').value = ex.contato; if(!$('obrNFone').value && ex.fone) $('obrNFone').value = ex.fone; }
+    else { info.innerHTML = `<div class="obr-nota obr-nota-novo"><b>Cliente novo.</b> Ele será cadastrado em <b>Clientes</b> junto com o endereço abaixo (e o contato/telefone informados).<div class="field" style="margin:8px 0 0;"><label>Endereço do cliente *</label><input type="text" id="obrNEnd" placeholder="Rua, número, bairro, cidade/UF" autocomplete="off"></div></div>`; }
+  };
+  const cli = $('obrNCli'); if(window.SUG_API) SUG_API.ligar(cli, 'clientes');
+  cli.addEventListener('input', atualizarCliente); cli.addEventListener('change', atualizarCliente); atualizarCliente();
+  $('obrNOk').onclick = () => criarRegistro(ov);
+  setTimeout(() => (pre.cliente ? ov.querySelector('[data-ped="numero"]') : cli).focus(), 40);
+}
+async function criarRegistro(ov){
+  const $ = (id) => document.getElementById(id); const err = (t) => { $('obrNErr').textContent = t; };
+  const nome = $('obrNCli').value.trim(); if(!nome) return err('Informe o cliente.');
+  const ex = clientePorNome(nome); const end = $('obrNEnd') ? $('obrNEnd').value.trim() : ''; if(!ex && !end) return err('Cliente novo: informe o endereço para cadastrá-lo em Clientes.');
+  const ped = []; const vistos = new Set();
+  for(const l of ov.querySelectorAll('.obr-ped-linha')){
+    const numero = l.querySelector('[data-ped="numero"]').value.trim(), desc = l.querySelector('[data-ped="descricao"]').value.trim(), vtxt = l.querySelector('[data-ped="valor"]').value.trim();
+    if(!numero && !desc && !vtxt) continue;
+    if(!numero) return err('Todo pedido precisa do número.'); const valor = parseValor(vtxt); if(valor == null || Number.isNaN(valor) || !(valor > 0)) return err('Informe um valor válido para o pedido ' + numero + '.');
+    if(vistos.has(fold(numero))) return err('O pedido ' + numero + ' aparece duas vezes neste registro.'); vistos.add(fold(numero));
+    const emUso = pedidoEmUso(numero); if(emUso) return err('O pedido ' + numero + ' já está em "' + nomeCliente(emUso.r) + '" (' + (EMPRESAS.find(e => e[0] === emUso.r.empresa) || [0, ''])[1] + ').');
+    ped.push({ numero, descricao: desc, valor });
+  }
+  if(!ped.length) return err('Adicione pelo menos um pedido (número e valor).');
+  const contato = $('obrNContato').value.trim(), fone = $('obrNFone').value.trim();
+  const btn = $('obrNOk'); btn.disabled = true; btn.textContent = 'Salvando…';
+  try{
+    let c = ex;
+    if(!c){ const ok = await createNewClient(nome, end); if(!ok){ btn.disabled = false; btn.textContent = 'Criar registro'; return; } c = clientePorNome(nome); }
+    if(c){ let mudou = false; if(contato && !c.contato){ c.contato = contato; mudou = true; } if(fone && !c.fone){ c.fone = fone; mudou = true; } if(mudou) await saveClients(); }     // não sobrescreve o que já estava no cadastro
+    const agora = new Date().toISOString(); const id = uid('ob_');
+    const rec = { id, empresa: $('obrNEmp').value, cliente: c ? c.name : nome, clienteId: c ? c.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, condicoes: $('obrNCond').value.trim() || null, situacao: $('obrNSit').value, obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {} };
+    ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor }; });
+    store.items.push(rec); ui.empresa = rec.empresa; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); ui.busca = ''; const bi = document.getElementById('obrBusca'); if(bi) bi.value = '';
+    ov.remove(); renderLista(); await store.save(true);
+    avisar(!ex ? 'Registro criado e cliente cadastrado em Clientes.' : 'Registro criado.'); abrirDetalhe(id);
+  }catch(e){ console.error(e); err('Não foi possível salvar agora. Verifique a conexão e tente de novo.'); btn.disabled = false; btn.textContent = 'Criar registro'; }
+}
+
+function exportarCsv(){
+  const linhas = [['Empresa', 'Cliente', 'Contato', 'Telefone', 'Forma de pagamento', 'Situacao da obra', 'Pedido', 'Descricao', 'Valor do pedido', 'Contratado (registro)', 'Recebido', 'Saldo', 'Em atraso']];
+  registros().filter(r => r.empresa === ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => { const t = totais(r); const ped = pedidosDe(r); (ped.length ? ped : [{}]).forEach((p, i) => linhas.push([(EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1], nomeCliente(r), r.contato || '', r.fone || '', r.formaPagamento || '', rotSit(r.situacao), p.numero || '', (p.descricao || '') + (p.cancelado ? ' (cancelado)' : ''), p.valor != null ? Number(p.valor).toFixed(2).replace('.', ',') : '', i === 0 ? t.contratado.toFixed(2).replace('.', ',') : '', i === 0 ? t.recebido.toFixed(2).replace('.', ',') : '', i === 0 ? t.saldo.toFixed(2).replace('.', ',') : '', i === 0 ? t.atrasado.toFixed(2).replace('.', ',') : ''])); });
+  const csv = '\uFEFF' + linhas.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + ui.empresa + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
+}
+
+// ---------- navegação do Financeiro (menu lateral / abas no celular) ----------
+let secao = 'os';
+function mostrarSecao(s){
+  secao = s; const os = document.getElementById('finPaneOS'), ob = document.getElementById('finObrasView'); if(!os || !ob) return;
+  os.style.display = s === 'os' ? '' : 'none'; ob.style.display = s === 'obras' ? '' : 'none';
+  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finTabOS', 'os'], ['finTabObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
+  if(s === 'obras'){ montar(); renderLista(); garantirCarregado().then(() => { renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
+  else if(window.FIN_API) FIN_API.render();
+}
+function ligarNavegacao(){
+  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finTabOS', 'os'], ['finTabObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
+  const gal = document.getElementById('finNavGaleria'); if(gal) gal.addEventListener('click', () => document.getElementById('galeriaOpenBtnFinanceiro').click());
+  const sair = document.getElementById('finSidebarLogout'); if(sair) sair.addEventListener('click', () => document.getElementById('financeiroLogoutBtn').click());
+  if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
+}
+ligarNavegacao();
+window.OBR_API = { abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 init();
