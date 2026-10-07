@@ -1723,6 +1723,7 @@
   .prv-final{ margin:16px 14px 14px; padding:14px; border:1.5px solid var(--line); border-radius:var(--radius-sm); background:var(--panel-2); text-align:center; }
   .prv-final-btn{ width:100%; min-height:48px; font-size:15px; }
   .prv-final-ok{ border-color:var(--success); background:var(--success-soft); text-align:left; }
+  .prv-step-nomes{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 10px 4px; } .prv-step-nomes input{ width:230px; max-width:100%; font-size:12.5px; padding:5px 8px; min-height:0; }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -2332,7 +2333,6 @@
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnPainel"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Painel de Controle</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnGaleria"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galeria</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnEstoque"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Estoque</span></button>
-      <button type="button" class="sidebar-nav-btn" id="sidebarBtnQuadros"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h16a1 1 0 0 1 1 1v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M7.5 7h9"/><circle cx="9" cy="12.5" r="1"/><circle cx="15" cy="12.5" r="1"/><path d="M8 17.5h8"/></svg><span>Quadros de comando</span></button>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user" id="sidebarUserLabel">Gestor</div>
@@ -2414,10 +2414,6 @@
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnEstoque">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
       <span>Estoque</span>
-    </button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnQuadros">
-      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h16a1 1 0 0 1 1 1v17a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-17a1 1 0 0 1 1-1z"/><path d="M7.5 7h9"/><circle cx="9" cy="12.5" r="1"/><circle cx="15" cy="12.5" r="1"/><path d="M8 17.5h8"/></svg>
-      <span>Quadros de comando</span>
     </button>
   </div>
 
@@ -2761,6 +2757,7 @@
         <button type="button" class="portal-tab" data-oficinagestortab="equipamentos">Equipamentos</button>
         <button type="button" class="portal-tab" data-oficinagestortab="pecas">Peças</button>
         <button type="button" class="portal-tab" data-oficinagestortab="listaequip">Lista equipamentos</button>
+        <button type="button" class="portal-tab" data-oficinagestortab="quadros">Quadros de comando</button>
       </div>
 
       <div id="oficinaGestorEquipamentosPane">
@@ -2821,6 +2818,7 @@
 
       <!-- Lista de nomes de equipamentos: cada equipamento cadastrado na Oficina (ou retirado numa
            atividade) tem o nome guardado aqui; nos campos "Equipamento" o nome vira sugestão. -->
+      <div id="oficinaGestorQuadrosPane" style="display:none;"><div id="tabQuadros"></div></div>
       <div id="oficinaGestorListaEquipPane" style="display:none;">
         <div class="tech-day-head">
           <div class="tech-day-title">Lista equipamentos</div>
@@ -2886,7 +2884,6 @@
        até ele (mesmo elemento, sem duplicar HTML/JS/IDs) — veja openEstoqueGestorTab(). Volta a
        viver no nível do body quando Técnico/Oficina abrem a própria tela cheia (openEstoque()). -->
   <div id="tabEstoque" style="display:none;"></div>
-  <div id="tabQuadros" style="display:none;"></div>
 
   <!-- Detalhes de um equipamento da Oficina (visão do Gestor) — só leitura nesta etapa. -->
   <div class="overlay" id="oficinaGestorDetalheOverlay">
@@ -10257,6 +10254,8 @@ function oficinaGestorSwitchSubTab(tab){
   document.getElementById('oficinaGestorEquipamentosPane').style.display = (tab === 'equipamentos') ? '' : 'none';
   document.getElementById('oficinaGestorPecasPane').style.display = (tab === 'pecas') ? '' : 'none';
   document.getElementById('oficinaGestorListaEquipPane').style.display = (tab === 'listaequip') ? '' : 'none';
+  document.getElementById('oficinaGestorQuadrosPane').style.display = (tab === 'quadros') ? '' : 'none';
+  if(tab === 'quadros' && window.QUADROS_API) QUADROS_API.abrir();
   document.querySelectorAll('#oficinaGestorSubnav [data-oficinagestortab]').forEach(b => b.classList.toggle('active', b.dataset.oficinagestortab === tab));
   if(tab === 'listaequip') renderOficinaEquipListaList();
   if(tab === 'pecas') renderOficinaPecasList(); // catálogo já carregado (mesmo listener de sempre); sem leitura nova
@@ -11535,6 +11534,7 @@ function renderOS(){
 let activeTab = 'agenda';
 
 function switchTab(tab){
+  if(tab === 'quadros'){ switchTab('oficinagestor'); oficinaGestorSwitchSubTab('quadros'); return; }
   // Etapa 4: proteção REAL de estado — Gestor comum não abre Acessos nem chamando switchTab
   // direto (não é só esconder o botão). Se recusado, fica na tela atual, sem erro.
   if(tab === 'acessos' && !isCurrentUserMaster()) tab = activeTab;
@@ -11554,7 +11554,6 @@ function switchTab(tab){
   document.getElementById('tabPainel').style.display = tab === 'painel' ? '' : 'none';
   document.getElementById('tabOficinaGestor').style.display = tab === 'oficinagestor' ? '' : 'none';
   document.getElementById('tabEstoque').style.display = tab === 'estoque' ? '' : 'none';
-  document.getElementById('tabQuadros').style.display = tab === 'quadros' ? '' : 'none';
   document.getElementById('tabBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('tabBtnTecnicos').classList.toggle('active', tab === 'tecnicos');
   document.getElementById('tabBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
@@ -11573,10 +11572,9 @@ function switchTab(tab){
   document.getElementById('sidebarBtnPainel').classList.toggle('active', tab === 'painel');
   document.getElementById('sidebarBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('sidebarBtnEstoque').classList.toggle('active', tab === 'estoque');
-  document.getElementById('sidebarBtnQuadros').classList.toggle('active', tab === 'quadros');
   // Navegação inferior (mobile): 4 destinos primários + "Mais" (fica ativo quando o destino
   // atual é um dos 3 que moram dentro da folha "Mais": Enviar agenda, Clientes, Acessos).
-  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque' || tab === 'quadros';
+  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque';
   document.getElementById('bottomNavBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('bottomNavBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
   document.getElementById('bottomNavBtnOS').classList.toggle('active', tab === 'os');
@@ -11587,14 +11585,12 @@ function switchTab(tab){
   document.getElementById('bottomNavBtnAcessos').classList.toggle('active', tab === 'acessos');
   document.getElementById('bottomNavBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('bottomNavBtnEstoque').classList.toggle('active', tab === 'estoque');
-  document.getElementById('bottomNavBtnQuadros').classList.toggle('active', tab === 'quadros');
   if(tab === 'clientes') renderClientes();
   if(tab === 'acessos') renderAcessosUsuariosList();
   if(tab === 'painel') renderPainelDeControle();
   if(tab === 'oficinagestor') renderOficinaGestorTab();
   if(tab === 'estoque') openEstoqueGestorTab();
   if(tab === 'painel' && window.REL_API) REL_API.abrir();   // Relatórios de OS
-  if(tab === 'quadros' && window.QUADROS_API) QUADROS_API.abrir();
 }
 document.getElementById('tabBtnAgenda').addEventListener('click', () => switchTab('agenda'));
 document.getElementById('tabBtnTecnicos').addEventListener('click', () => switchTab('tecnicos'));
@@ -11611,7 +11607,6 @@ document.getElementById('sidebarBtnOficinaGestor').addEventListener('click', () 
 document.getElementById('bottomNavBtnOficinaGestor').addEventListener('click', () => { switchTab('oficinagestor'); toggleBottomNavSheet(false); });
 document.getElementById('bottomNavBtnGaleria').addEventListener('click', () => { toggleBottomNavSheet(false); openGaleria('managerView'); });
 document.getElementById('bottomNavBtnEstoque').addEventListener('click', () => { toggleBottomNavSheet(false); switchTab('estoque'); });
-document.getElementById('bottomNavBtnQuadros').addEventListener('click', () => { toggleBottomNavSheet(false); switchTab('quadros'); });
 document.getElementById('sidebarBtnPainel').addEventListener('click', () => switchTab('painel'));
 document.getElementById('sidebarLogoutBtn').addEventListener('click', logout);
 // Navegação inferior (mobile) — mesmos destinos das abas originais, nenhuma lógica nova.
@@ -16652,7 +16647,6 @@ document.getElementById('estoqueOpenBtnOficina').addEventListener('click', () =>
 document.getElementById('quadrosOpenBtnOficina').addEventListener('click', () => { if(window.QUADROS_API) QUADROS_API.abrirOficina(); });
 document.getElementById('estoqueOpenBtnTech').addEventListener('click', () => openEstoque('techView'));
 document.getElementById('sidebarBtnEstoque').addEventListener('click', () => switchTab('estoque'));
-document.getElementById('sidebarBtnQuadros').addEventListener('click', () => switchTab('quadros'));
 
 
 // =====================================================================================
@@ -17162,8 +17156,7 @@ const ABAS_GESTOR = [
   { id: 'oficinagestor', label: 'Oficina',            botoes: ['sidebarBtnOficinaGestor', 'bottomNavBtnOficinaGestor'] },
   { id: 'painel',        label: 'Painel de Controle', botoes: ['tabBtnPainel', 'sidebarBtnPainel', 'bottomNavBtnPainel'] },
   { id: 'galeria',       label: 'Galeria',            botoes: ['sidebarBtnGaleria', 'bottomNavBtnGaleria'] },
-  { id: 'estoque',       label: 'Estoque',            botoes: ['sidebarBtnEstoque', 'bottomNavBtnEstoque'] },
-  { id: 'quadros',       label: 'Quadros de comando', botoes: ['sidebarBtnQuadros', 'bottomNavBtnQuadros'] }
+  { id: 'estoque',       label: 'Estoque',            botoes: ['sidebarBtnEstoque', 'bottomNavBtnEstoque'] }
 ];
 const ABAS_GESTOR_IDS = ABAS_GESTOR.map(a => a.id);
 
@@ -18241,17 +18234,20 @@ const REGRAS_COMPONENTES = {
   sitio_piscina:        { inicio: 1, minimo: {} },
   sitio_sauna:          { inicio: 1, minimo: { 'Sauna Vapor': 1 } },
 };
-function tipoTemComponentesConfiguraveis(tipoId){ return Object.prototype.hasOwnProperty.call(REGRAS_COMPONENTES, tipoId); }
-function minimosDoTipo(tipoId){ return (REGRAS_COMPONENTES[tipoId] && REGRAS_COMPONENTES[tipoId].minimo) || {}; }
+// Tipo criado pelo editor do catálogo (sem regra própria): quantidade configurável, começa com 1 de cada, mínimo 1 no 1º subitem.
+function regraDoTipo(tipoId){ if(Object.prototype.hasOwnProperty.call(REGRAS_COMPONENTES, tipoId)) return REGRAS_COMPONENTES[tipoId]; const t = tipoPorId(tipoId); return t ? { inicio: 1, minimo: t.itens.length ? { [t.itens[0].nome]: 1 } : {} } : null; }
+function tipoTemComponentesConfiguraveis(tipoId){ return !!regraDoTipo(tipoId); }
+function minimosDoTipo(tipoId){ const r = regraDoTipo(tipoId); return (r && r.minimo) || {}; }
 function estadoInicialDoTipo(tipoId){
-  const regra = REGRAS_COMPONENTES[tipoId]; const est = {};
+  const regra = regraDoTipo(tipoId) || { inicio: 1, minimo: {} }; const est = {};
   tipoPorId(tipoId).itens.forEach(it => {
     const ini = (regra.inicioPorItem && regra.inicioPorItem[it.nome] !== undefined) ? regra.inicioPorItem[it.nome] : regra.inicio;
     est[it.nome] = Math.max(ini, (regra.minimo||{})[it.nome] || 0);
   });
   return est;
 }
-function componentesDoEstado(estado){ return Object.entries(estado).filter(([,q])=>q>0).map(([itemNome,quantidade])=>({itemNome, quantidade})); }
+// nomes (opcional): { itemNome: ['Filtração', 'Reserva', ...] } — o que cada instância faz (bomba 1 = filtração…).
+function componentesDoEstado(estado, nomes){ return Object.entries(estado).filter(([,q])=>q>0).map(([itemNome,quantidade])=>{ const c = {itemNome, quantidade}; const ns = ((nomes||{})[itemNome]||[]).slice(0, quantidade).map(n => String(n||'').trim()); if(ns.some(Boolean)) c.nomes = ns; return c; }); }
 
 
 // Monta a lista achatada de campos que o técnico precisa preencher nesta unidade, cada um com uma
@@ -18272,7 +18268,8 @@ function estruturaDaUnidade(unit){
       const itemTpl = tipo.itens.find(it => it.nome === comp.itemNome);
       if(!itemTpl) return; // subitem removido do catálogo depois de configurado — ignora, não quebra
       for(let inst = 0; inst < comp.quantidade; inst++){
-        const itemLabel = comp.quantidade > 1 ? `${itemTpl.nome} ${inst+1}` : itemTpl.nome;
+        const nomeInst = (comp.nomes || [])[inst]; const base = comp.quantidade > 1 ? `${itemTpl.nome} ${inst+1}` : itemTpl.nome;
+        const itemLabel = nomeInst ? base + ' — ' + nomeInst : base;      // ex.: "Bomba de recirculação 1 — Filtração"
         itemTpl.campos.filter(c=>c.status!=='pendente').forEach(c => {
           out.push({ key: `${compIdx}:${inst}:${c.id}`, campo:c, itemLabel });
         });
@@ -18560,11 +18557,11 @@ function aplicarPendentes(raiz, prefixo){
 
 // ---------------- Unidades configuradas ----------------
 function normalizarUnidade(u){
-  let comps = paraLista(u.componentes).map(c => ({ itemNome: c.itemNome, quantidade: Number(c.quantidade) || 0 })).filter(c => c.quantidade > 0);
+  let comps = paraLista(u.componentes).map(c => { const o = { itemNome: c.itemNome, quantidade: Number(c.quantidade) || 0 }; const ns = paraLista(c.nomes).map(n => String(n || '').trim()); if(ns.some(Boolean)) o.nomes = ns.slice(0, o.quantidade); return o; }).filter(c => c.quantidade > 0);
   // Unidade cadastrada antes de o tipo ter subitens configuráveis (ex.: Aquecimento direto) não traz "componentes"
   // no banco (o Firebase também descarta listas vazias). Nos tipos que começam com 1 de cada, isso vale como o
   // padrão (1 de cada) — e não como "nenhum subitem", que esconderia o equipamento do técnico.
-  if(!comps.length && tipoTemComponentesConfiguraveis(u.tipo) && REGRAS_COMPONENTES[u.tipo].inicio >= 1) comps = componentesDoEstado(estadoInicialDoTipo(u.tipo));
+  if(!comps.length && tipoTemComponentesConfiguraveis(u.tipo) && (regraDoTipo(u.tipo) || {}).inicio >= 1) comps = componentesDoEstado(estadoInicialDoTipo(u.tipo));
   const out = { id: u.id, cliente: u.cliente || '', tipo: u.tipo, local: u.local || '', componentes: comps };
   if(typeof u.ordem === 'number' && isFinite(u.ordem)) out.ordem = u.ordem;      // posição escolhida pelo Gestor (1, 2, 3…)
   // Dica de onde encontrar o equipamento: escrita pelos próprios técnicos e guardada na unidade para o próximo a visitar.
@@ -20178,13 +20175,14 @@ function nomesDeClientes(){
 function resumoComp(u){
   if(!tipoTemComponentesConfiguraveis(u.tipo)) return null;
   const cs = u.componentes.filter(c => c.quantidade > 0);
-  return cs.length ? { texto: cs.map(c => c.quantidade + '× ' + c.itemNome).join(', '), vazio: false } : { texto: 'Nenhum subitem configurado ainda', vazio: true };
+  return cs.length ? { texto: cs.map(c => c.quantidade + '× ' + c.itemNome + ((c.nomes || []).some(Boolean) ? ' (' + c.nomes.map((n, i) => n || (i + 1)).join(', ') + ')' : '')).join(', '), vazio: false } : { texto: 'Nenhum subitem configurado ainda', vazio: true };
 }
-function htmlSteppers(tipoId, qtd, escopo){
-  const min = minimosDoTipo(tipoId);
+function htmlSteppers(tipoId, qtd, escopo, nomes){
+  const min = minimosDoTipo(tipoId); nomes = nomes || {};
   return tipoPorId(tipoId).itens.map(it => { const q = qtd[it.nome] || 0; const m = min[it.nome] || 0;
+    const nomesHtml = q > 0 ? `<div class="prv-step-nomes">${Array.from({ length: q }, (_, i) => `<input type="text" data-prv-nome="${escopo}" data-comp="${esc(it.nome)}" data-i="${i}" value="${esc((nomes[it.nome] || [])[i] || '')}" placeholder="${esc(it.nome)} ${i + 1} — o que faz (opcional)" maxlength="40">`).join('')}</div>` : '';
     return `<div class="prv-step-row"><span>${esc(it.nome)}${m > 0 ? ` <small>(mínimo ${m})</small>` : ''}</span>
-      <div class="prv-stepper"><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="-1" ${q <= m ? 'disabled' : ''}>−</button><span>${q}</span><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="1">+</button></div></div>`; }).join('');
+      <div class="prv-stepper"><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="-1" ${q <= m ? 'disabled' : ''}>−</button><span>${q}</span><button type="button" data-prv-g="step" data-esc="${escopo}" data-comp="${esc(it.nome)}" data-d="1">+</button></div></div>${nomesHtml}`; }).join('');
 }
 function tipoVisivelParaCliente(t, cliente){
   if(!t.exclusivoDe) return true;
@@ -20225,14 +20223,14 @@ function renderConfig(){
         ${u.dicaLocal ? `<div class="prv-comp-res">📍 ${esc(u.dicaLocal)}${u.dicaLocalPor ? ' — ' + esc(u.dicaLocalPor) : ''}</div>` : ''}</div>
         <div class="prv-linha" style="margin:0;">${tipoTemComponentesConfiguraveis(u.tipo) ? `<button type="button" class="btn-ghost" data-prv-g="editar" data-id="${esc(u.id)}">Editar subitens</button>` : ''}
         <button type="button" class="btn-ghost" style="color:var(--red);" data-prv-g="remover" data-id="${esc(u.id)}">Remover</button></div></div>
-        ${edit ? `<div class="prv-painel"><div class="prv-painel-t">Subitens de "${esc(u.local)}"</div>${htmlSteppers(u.tipo, estado.cfgEditando.comp, 'edit')}
+        ${edit ? `<div class="prv-painel"><div class="prv-painel-t">Subitens de "${esc(u.local)}"</div>${htmlSteppers(u.tipo, estado.cfgEditando.comp, 'edit', estado.cfgEditando.nomes)}
           <div class="prv-linha" style="justify-content:flex-end;"><button type="button" class="btn-ghost" data-prv-g="cancelar-edit">Cancelar</button><button type="button" class="btn-primary" data-prv-g="salvar-edit">Salvar subitens</button></div></div>` : ''}</div>`; }).join('')
       : (clientes.length ? '<div class="empty-state">Nenhuma unidade configurada para este cliente — a seção de relatório não aparece nas atividades dele.</div>' : '')}</div>
     ${clientes.length ? `<div class="prv-addbox"><div class="prv-addrow">
       <div class="field"><label for="prvCfgTipo">Tipo de equipamento</label><select id="prvCfgTipo">${CATALOGO.filter(t => tipoVisivelParaCliente(t, estado.cfgCliente)).map(t => `<option value="${esc(t.tipo)}" ${t.tipo === f.tipo ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select></div>
       <div class="field"><label for="prvCfgLocal">Identificação / local</label><input type="text" id="prvCfgLocal" value="${esc(f.local)}" placeholder='Ex.: "Social", "Hóspedes", "Casa de máquinas"' autocomplete="off"></div>
       <button type="button" class="btn-primary" data-prv-g="adicionar">+ Adicionar unidade</button></div>
-      ${tipoTemComponentesConfiguraveis(f.tipo) ? `<div class="prv-painel"><div class="prv-painel-t">Quais subitens esta unidade tem, e quantos de cada</div>${htmlSteppers(f.tipo, f.comp, 'add')}</div>` : ''}</div>` : ''}`;
+      ${tipoTemComponentesConfiguraveis(f.tipo) ? `<div class="prv-painel"><div class="prv-painel-t">Quais subitens esta unidade tem, e quantos de cada</div>${htmlSteppers(f.tipo, f.comp, 'add', f.nomes)}</div>` : ''}</div>` : ''}`;
   if(buscaFoco){ const bi = document.getElementById('prvCfgBusca'); if(bi){ bi.focus(); try{ bi.setSelectionRange(buscaFoco.pos, buscaFoco.pos); }catch(e){} } }
   // arrastar e soltar (mesma biblioteca da Agenda); no celular segura um instante para arrastar, a rolagem continua livre
   if(estado._sortCfg){ try{ estado._sortCfg.destroy(); }catch(e){} estado._sortCfg = null; }
@@ -20253,6 +20251,7 @@ function ligarConfig(){
   });
   box.addEventListener('input', (e) => {
     if(e.target.id === 'prvCfgLocal') estado.cfgForm.local = e.target.value;
+    else if(e.target.dataset && e.target.dataset.prvNome){ const alvo = e.target.dataset.prvNome === 'edit' ? estado.cfgEditando : estado.cfgForm; if(!alvo) return; alvo.nomes = alvo.nomes || {}; const arr = alvo.nomes[e.target.dataset.comp] = alvo.nomes[e.target.dataset.comp] || []; arr[Number(e.target.dataset.i)] = e.target.value; }
     else if(e.target.id === 'prvCfgBusca'){ estado.cfgBusca = e.target.value; estado.cfgEditando = null; renderConfig(); }
   });
   box.addEventListener('keydown', (e) => { if(e.target.id === 'prvCfgBusca' && e.key === 'Escape'){ estado.cfgBusca = ''; renderConfig(); } });
@@ -20286,11 +20285,11 @@ function ligarConfig(){
       if(!estado.cfgCliente){ aviso('Escolha o cliente'); return; }
       if(!local){ aviso('Informe a identificação/local da unidade'); return; }
       aplicarOrdem(estado.cfgCliente);          // fixa 1..n nas existentes (as antigas ainda não tinham ordem) para a nova entrar no FIM
-      const u = { id: novoId('u'), cliente: estado.cfgCliente, tipo: estado.cfgForm.tipo, local, componentes: tipoTemComponentesConfiguraveis(estado.cfgForm.tipo) ? componentesDoEstado(estado.cfgForm.comp) : [] };
+      const u = { id: novoId('u'), cliente: estado.cfgCliente, tipo: estado.cfgForm.tipo, local, componentes: tipoTemComponentesConfiguraveis(estado.cfgForm.tipo) ? componentesDoEstado(estado.cfgForm.comp, estado.cfgForm.nomes) : [] };
       u.ordem = unidadesDoCliente(estado.cfgCliente).length + 1;
       estado.unidades.push(u); estado.unidadesJSON = JSON.stringify(estado.unidades);
       escrever(NOS.unidades + '/' + u.id, { id: u.id, cliente: u.cliente, tipo: u.tipo, local: u.local, ordem: u.ordem, componentes: u.componentes.length ? u.componentes : null });
-      estado.cfgForm.local = ''; estado.cfgForm.comp = tipoTemComponentesConfiguraveis(u.tipo) ? estadoInicialDoTipo(u.tipo) : {};
+      estado.cfgForm.local = ''; estado.cfgForm.nomes = {}; estado.cfgForm.comp = tipoTemComponentesConfiguraveis(u.tipo) ? estadoInicialDoTipo(u.tipo) : {};
       renderConfig();
       aviso(tipoTemComponentesConfiguraveis(u.tipo) && !u.componentes.length ? 'Unidade adicionada, mas sem nenhum subitem escolhido — edite os subitens antes de usar' : 'Unidade adicionada — já aparece para o técnico neste cliente');
     } else if(a === 'remover'){
@@ -20303,13 +20302,13 @@ function ligarConfig(){
     } else if(a === 'editar'){
       const u = estado.unidades.find(x => String(x.id) === b.dataset.id); if(!u) return;
       if(estado.cfgEditando && estado.cfgEditando.id === u.id){ estado.cfgEditando = null; renderConfig(); return; }
-      const comp = {}; u.componentes.forEach(c => { comp[c.itemNome] = c.quantidade; });
+      const comp = {}, nomes = {}; u.componentes.forEach(c => { comp[c.itemNome] = c.quantidade; if(c.nomes) nomes[c.itemNome] = c.nomes.slice(); });
       const min = minimosDoTipo(u.tipo); tipoPorId(u.tipo).itens.forEach(it => { if((min[it.nome] || 0) > (comp[it.nome] || 0)) comp[it.nome] = min[it.nome]; });
-      estado.cfgEditando = { id: u.id, comp }; renderConfig();
+      estado.cfgEditando = { id: u.id, comp, nomes }; renderConfig();
     } else if(a === 'cancelar-edit'){ estado.cfgEditando = null; renderConfig(); }
     else if(a === 'salvar-edit'){
       const u = estado.unidades.find(x => x.id === (estado.cfgEditando || {}).id); if(!u) return;
-      u.componentes = componentesDoEstado(estado.cfgEditando.comp); estado.unidadesJSON = JSON.stringify(estado.unidades);
+      u.componentes = componentesDoEstado(estado.cfgEditando.comp, estado.cfgEditando.nomes); estado.unidadesJSON = JSON.stringify(estado.unidades);
       escrever(NOS.unidades + '/' + u.id + '/componentes', u.componentes.length ? u.componentes : null);
       estado.cfgEditando = null; renderConfig(); aviso('Subitens salvos — o técnico já vê a mudança');
     }
@@ -20636,7 +20635,7 @@ function validar(tipos){
       i.campos.forEach(c => {
         if(!String(c.label || '').trim()) erros.push('"' + t.nome + ' › ' + i.nome + '": campo sem nome.');
         if(c.tipo === 'categoria'){ const ops = (c.opcoes || []).filter(o => String(o.label || '').trim()); if(ops.length < 2) erros.push('"' + t.nome + ' › ' + i.nome + ' › ' + c.label + '": precisa de pelo menos 2 opções com nome.'); }
-        if(c.tipo === 'numerico' && !String(c.unidade || '').trim()) erros.push('"' + t.nome + ' › ' + i.nome + ' › ' + c.label + '": informe a unidade.');
+        if(c.tipo === 'numerico' && !String(c.unidade || '').trim()) erros.push('"' + t.nome + ' › ' + i.nome + ' › ' + (c.tri ? c.tri.grupo : c.label) + '": informe a unidade.');
       });
     });
   });
@@ -20644,7 +20643,9 @@ function validar(tipos){
 }
 function htmlEditor(){
   const t = emEdicao;
-  const tipoSel = (c) => `<select data-cat-f="tipo" title="Como o técnico preenche">${[['categoria', 'Escolha'], ['numerico', 'Número'], ['texto', 'Texto (opcional)']].map(([v, l]) => `<option value="${v}" ${c.tipo === v ? 'selected' : ''}>${l}</option>`).join('')}${c.tipo === 'faixa' ? '<option value="faixa" selected>Faixa de isolamento</option>' : ''}</select>`;
+  const tipoSel = (c) => { const atual = c.tri ? 'tri' : c.tipo; return `<select data-cat-f="tipo" title="Como o técnico preenche">${[['categoria', 'Escolha'], ['numerico', 'Número'], ['faixa', 'Faixa de isolamento (MΩ)'], ['tri', 'Medição trifásica (RS/ST/RT)'], ['texto', 'Texto (opcional)']].map(([v, l]) => `<option value="${v}" ${atual === v ? 'selected' : ''}>${l}</option>`).join('')}</select>`; };
+  // Um grupo trifásico são 3 campos no catálogo (RS, ST, RT); no editor aparece como UMA linha.
+  const linhasEditor = (campos) => { const out = []; const vistos = new Set(); campos.forEach((c, ci) => { if(c.tri){ if(vistos.has(c.tri.grupo)) return; vistos.add(c.tri.grupo); out.push({ ci, c: Object.assign({}, c, { label: c.tri.grupo }), tri: true }); } else out.push({ ci, c, tri: false }); }); return out; };
   return `<div class="cat-ed">
     <div class="prv-linha" style="margin:0 0 12px; align-items:center;"><b>Editando o catálogo</b><span class="prv-hint" style="margin:0;">Mudanças valem para os próximos preenchimentos; o que já foi marcado e os relatórios já gerados não mudam.</span>
       <span style="margin-left:auto; display:flex; gap:8px;"><button type="button" class="btn-ghost" data-cat-act="cancelar">Cancelar</button><button type="button" class="btn-primary" data-cat-act="salvar">Salvar catálogo</button></span></div>
@@ -20655,9 +20656,10 @@ function htmlEditor(){
         <span style="margin-left:auto; display:flex; gap:6px;"><button type="button" class="btn-ghost oe-mini" data-cat-act="add-item">+ Subitem</button><button type="button" class="btn-ghost oe-mini cat-ed-danger" data-cat-act="rm-tipo">✕ Tipo</button></span></div>
       ${tp.itens.map((it, ii) => `<div class="prv-cat-item cat-ed-item" data-ii="${ii}">
         <div class="prv-linha" style="align-items:center; margin:0 0 6px;"><input type="text" class="cat-ed-nome-item" data-cat-f="nomeItem" value="${esc(it.nome)}" placeholder="Nome do subitem"><span style="margin-left:auto; display:flex; gap:6px;"><button type="button" class="btn-ghost oe-mini" data-cat-act="add-campo">+ Campo</button><button type="button" class="btn-ghost oe-mini cat-ed-danger" data-cat-act="rm-item">✕ Subitem</button></span></div>
-        ${it.campos.map((c, ci) => `<div class="cat-ed-campo" data-ci="${ci}">
+        ${linhasEditor(it.campos).map(({ ci, c, tri }) => `<div class="cat-ed-campo" data-ci="${ci}" ${tri ? 'data-tri="1"' : ''}>
           <div class="prv-linha" style="align-items:center;"><input type="text" data-cat-f="label" value="${esc(c.label)}" placeholder="Nome do campo" style="flex:1; min-width:160px;">${tipoSel(c)}
-            ${c.tipo === 'numerico' ? `<input type="text" data-cat-f="unidade" value="${esc(c.unidade || '')}" placeholder="unidade (A, MΩ…)" style="width:110px;">` : ''}
+            ${(c.tipo === 'numerico') ? `<input type="text" data-cat-f="unidade" value="${esc(c.unidade || '')}" placeholder="unidade (A, MΩ…)" style="width:110px;">` : ''}
+            ${tri ? `<label class="cat-ed-chk" title="Se a diferença entre duas fases passar deste valor, o relatório marca em vermelho">equilíbrio máx. <input type="number" data-cat-f="equilibrio" value="${c.equilibrio ? esc(c.equilibrio.limite) : ''}" placeholder="—" min="0" step="0.1" style="width:70px;"></label>` : ''}
             ${c.tipo === 'categoria' ? `<label class="cat-ed-chk"><input type="checkbox" data-cat-f="interno" ${c.interno ? 'checked' : ''}> só equipe</label>` : ''}
             <button type="button" class="btn-ghost oe-mini cat-ed-danger" data-cat-act="rm-campo" title="Remover campo">✕</button></div>
           ${c.tipo === 'categoria' ? `<div class="cat-ed-ops">${(c.opcoes || []).map((o, oi) => `<span class="cat-ed-op" data-oi="${oi}"><input type="text" data-cat-f="opLabel" value="${esc(o.label)}" placeholder="opção"><select data-cat-f="opCor">${CORES.map(([v, l]) => `<option value="${v}" ${o.cor === v ? 'selected' : ''}>${l}</option>`).join('')}</select><button type="button" class="cat-ed-x" data-cat-act="rm-op" title="Remover opção">✕</button></span>`).join('')}<button type="button" class="btn-ghost oe-mini" data-cat-act="add-op">+ opção</button></div>`
@@ -20680,13 +20682,21 @@ function lerFormulario(){      // lê os campos digitados para dentro de emEdica
         const c = it.campos[Number(cEl.dataset.ci)]; if(!c) return;
         c.label = cEl.querySelector('[data-cat-f="label"]').value.trim();
         const u = cEl.querySelector('[data-cat-f="unidade"]'); if(u) c.unidade = u.value.trim();
+        if(c.tri){   // o grupo inteiro (3 fases) recebe o rótulo, a unidade e o limite de equilíbrio
+          const grupoAntigo = c.tri.grupo, novoRot = c.label; const eqEl = cEl.querySelector('[data-cat-f="equilibrio"]'); const lim = eqEl && eqEl.value !== '' ? Number(eqEl.value) : null;
+          it.campos.filter(x => x.tri && x.tri.grupo === grupoAntigo).forEach(x => { x.tri = Object.assign({}, x.tri, { grupo: novoRot }); x.label = novoRot + ' — ' + x.tri.fase; if(u) x.unidade = u.value.trim(); if(lim != null && lim > 0) x.equilibrio = { grupo: x.id.replace(/(RS|ST|RT)$/, ''), limite: lim, rotulo: 'Equilíbrio — ' + novoRot }; else delete x.equilibrio; });
+          c.label = novoRot + ' — ' + c.tri.fase;
+        }
         const k = cEl.querySelector('[data-cat-f="interno"]'); if(k){ if(k.checked) c.interno = true; else delete c.interno; }
         cEl.querySelectorAll('.cat-ed-op').forEach(oEl => { const o = (c.opcoes || [])[Number(oEl.dataset.oi)]; if(!o) return; o.label = oEl.querySelector('[data-cat-f="opLabel"]').value.trim(); o.cor = oEl.querySelector('[data-cat-f="opCor"]').value; o.v = o.v || slug(o.label); });
       });
     });
   });
 }
-function mudarTipoCampo(c, novo){
+function mudarTipoCampo(c, novo, it){
+  if(novo === 'tri'){ if(c.tri) return; const idBase = novoIdCampo(it.campos, c.label); const ci = it.campos.indexOf(c); it.campos.splice(ci, 1, ...camposTri(idBase, c.label, c.unidade || '')); return; }
+  if(c.tri){ const g = c.tri.grupo; const idx = it.campos.findIndex(x => x.tri && x.tri.grupo === g); const unidade = c.unidade; it.campos = it.campos.filter(x => !(x.tri && x.tri.grupo === g)); const base = { id: novoIdCampo(it.campos, g), label: g, status: 'ok', tipo: 'numerico', unidade }; it.campos.splice(idx, 0, base); c = base; if(novo === 'numerico') return; }
+  if(novo === 'faixa'){ Object.keys(c).forEach(k => { if(!['id', 'label', 'status'].includes(k)) delete c[k]; }); Object.assign(c, { tipo: 'faixa', opcoes: FAIXA_ISOLAMENTO }); return; }
   if(c.tipo === novo) return;
   const base = { id: c.id, label: c.label, status: 'ok' };
   if(novo === 'categoria') Object.assign(c, { tipo: 'categoria', opcoes: [{ v: 'ok', label: 'Em ordem', cor: 'green' }, { v: 'ruim', label: 'Precisa de ação', cor: 'red' }] });
@@ -20699,7 +20709,7 @@ function mudarTipoCampo(c, novo){
 function render(){ const box = document.getElementById('prvManutCatalogo'); if(!box) return; box.innerHTML = htmlEditor(); }
 function ligar(box){
   if(box._catLigado) return; box._catLigado = true;
-  box.addEventListener('change', (e) => { const sel = e.target.closest('[data-cat-f="tipo"]'); if(!sel || !emEdicao) return; lerFormulario(); const cEl = sel.closest('.cat-ed-campo'), iEl = cEl.closest('.cat-ed-item'), tEl = cEl.closest('.cat-ed-tipo'); const c = emEdicao[Number(tEl.dataset.ti)].itens[Number(iEl.dataset.ii)].campos[Number(cEl.dataset.ci)]; mudarTipoCampo(c, sel.value); render(); });
+  box.addEventListener('change', (e) => { const sel = e.target.closest('[data-cat-f="tipo"]'); if(!sel || !emEdicao) return; lerFormulario(); const cEl = sel.closest('.cat-ed-campo'), iEl = cEl.closest('.cat-ed-item'), tEl = cEl.closest('.cat-ed-tipo'); const it = emEdicao[Number(tEl.dataset.ti)].itens[Number(iEl.dataset.ii)]; const c = it.campos[Number(cEl.dataset.ci)]; mudarTipoCampo(c, sel.value, it); render(); });
   box.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-cat-act]'); if(!b) return; const a = b.dataset.catAct;
     if(a === 'editar'){ emEdicao = JSON.parse(JSON.stringify(CATALOGO)); render(); return; }
@@ -20713,7 +20723,7 @@ function ligar(box){
     if(a === 'add-item'){ tp.itens.push({ nome: 'Novo subitem', campos: [{ id: 'condicao', label: 'Condição', tipo: 'categoria', status: 'ok', opcoes: [{ v: 'ok', label: 'Em ordem', cor: 'green' }, { v: 'ruim', label: 'Precisa de ação', cor: 'red' }] }] }); render(); return; }
     if(a === 'rm-item'){ customConfirm('Remover o subitem "' + it.nome + '"?', () => { tp.itens.splice(Number(iEl.dataset.ii), 1); render(); }, 'Remover'); return; }
     if(a === 'add-campo'){ it.campos.push({ id: novoIdCampo(it.campos, 'campo'), label: 'Novo campo', tipo: 'categoria', status: 'ok', opcoes: [{ v: 'ok', label: 'Em ordem', cor: 'green' }, { v: 'ruim', label: 'Precisa de ação', cor: 'red' }] }); render(); return; }
-    if(a === 'rm-campo'){ it.campos.splice(Number(cEl.dataset.ci), 1); render(); return; }
+    if(a === 'rm-campo'){ if(c && c.tri){ const g = c.tri.grupo; it.campos = it.campos.filter(x => !(x.tri && x.tri.grupo === g)); } else it.campos.splice(Number(cEl.dataset.ci), 1); render(); return; }
     if(a === 'add-op'){ c.opcoes = c.opcoes || []; c.opcoes.push({ v: 'op' + (c.opcoes.length + 1), label: '', cor: 'green' }); render(); return; }
     if(a === 'rm-op'){ c.opcoes.splice(Number(oEl.dataset.oi), 1); render(); return; }
     if(a === 'restaurar'){ customConfirm('Voltar ao catálogo padrão do app? Todas as suas alterações no catálogo serão descartadas.', async () => { try{ await restaurarPadrao(); emEdicao = null; renderCatalogo(); try{ avisoNaoBloqueante('Catálogo padrão restaurado.', 5000); }catch(e){} }catch(err){ document.getElementById('catEdErros').textContent = 'Não foi possível salvar. Verifique sua internet.'; } }, 'Restaurar'); return; }
