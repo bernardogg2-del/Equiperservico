@@ -1838,7 +1838,6 @@
   .obr-ic{ display:inline-block; width:auto; min-height:0; line-height:1.2; }
   .obr-acoes{ width:1%; }
   .obr-tab td .prv-chip{ white-space:nowrap; }
-  @media (max-width: 1100px){ #obrKpis{ grid-template-columns:1fr 1fr !important; } }
   #obrBarra{ align-items:center; } #obrBarra select{ width:auto; max-width:100%; }
 
   /* ===== condição de pagamento, situação das parcelas e blocos por pedido ===== */
@@ -1859,6 +1858,22 @@
   .obr-cd-info{ font-size:12.5px; margin:4px 0 2px; } .obr-cd-ok{ color:var(--success-dark); font-weight:600; } .obr-cd-erro{ color:var(--danger); font-weight:600; } .obr-cd-neutro{ color:var(--text-dim); }
   .obr-modo{ margin:12px 0 4px; display:flex; flex-direction:column; gap:6px; } .obr-modo label{ display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; } .obr-modo input{ width:auto; margin-top:3px; }
   .obr-tab tfoot td{ border-top:1px solid var(--line); border-bottom:none; }
+
+  /* tela de Obras e Pedidos usa a largura toda (a dos portais é de 720px) e o quadro se reorganiza sozinho */
+  #finObrasView > .tech-day-panel{ max-width:1100px; padding-left:14px; padding-right:14px; }
+  #obrKpis{ grid-template-columns:repeat(auto-fit, minmax(215px, 1fr)) !important; }
+  /* cartão do cliente: título, contato, uma coluna por parcela (nome/% · valor · situação) e totais em uma linha */
+  .obr-card{ display:block; cursor:pointer; padding:14px 16px 12px; }
+  .obr-cli{ font-size:16px; } .obr-sub{ margin-bottom:10px; }
+  .obr-parcs{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin:2px 0 10px; }
+  .obr-parc{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 9px; background:var(--panel-2); display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; }
+  .obr-parc-atraso{ border-color:var(--danger); background:var(--danger-soft); }
+  .obr-parc-t{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); } .obr-parc-t span{ font-weight:700; letter-spacing:0; text-transform:none; margin-left:3px; }
+  .obr-parc-v{ font-size:16px; font-weight:800; letter-spacing:-.2px; overflow-wrap:anywhere; }
+  .obr-parc-s{ font-size:11px; color:var(--text-dim); }
+  .obr-st-misto{ background:var(--panel); color:var(--ink); border-style:dashed; }
+  .obr-sem-parc{ font-size:12.5px; color:var(--text-dim); background:var(--panel-2); border-radius:8px; padding:8px 10px; margin:2px 0 10px; }
+  .obr-tot{ display:flex; gap:6px 22px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); } .obr-tot b{ font-size:13.5px; color:var(--ink); margin-left:3px; } .obr-tot b.obr-verde{ color:var(--success-dark); } .obr-tot b.obr-ambar{ color:var(--warning); }
 </style>
 </head>
 <body>
@@ -22248,7 +22263,7 @@ function montar(){
     <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${EMPRESAS.map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
-      <div class="search-clear-wrap" style="flex:1; min-width:220px;"><input type="search" id="obrBusca" placeholder="Buscar por cliente, contato ou nº do pedido…" autocomplete="off"></div>
+      <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="atrasado">Com parcela em atraso</option><option value="quitado">Quitados</option></select>
       <select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
@@ -22282,17 +22297,33 @@ function kpis(todos){
     { tom: atras > 0 ? 'vermelho' : 'azul', icone: atras > 0 ? 'alerta' : 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando' + (nAt ? ' · ' + nAt + ' em atraso' : '') },
   ]);
 }
+// Agrupa as parcelas do registro por tipo (Sinal, 2ª parcela… Saldo), somando os pedidos: uma COLUNA por parcela no cartão.
+const ordemTipo = (t) => { const x = String(t || ''); if(x === 'Sinal') return 0; const m = /^(\d+)ª parcela$/.exec(x); if(m) return Number(m[1]); return x === 'Parcela única' ? 50 : x === 'Saldo' ? 100 : 200; };
+function gruposParcelas(r){
+  const todos = pedidosDe(r); const canc = new Set(todos.filter(p => p.cancelado).map(p => String(p.numero))); const mapa = {};
+  parcelasDe(r).filter(p => stDe(p) === 'recebido' || !(p.pedido && canc.has(String(p.pedido)))).forEach(p => {
+    const k = p.tipo || 'Parcela'; const g = mapa[k] = mapa[k] || { tipo: k, valor: 0, pcts: new Set(), st: {}, n: 0, atras: false };
+    g.valor += Number(p.valor) || 0; if(p.pct != null) g.pcts.add(Number(p.pct)); g.st[stDe(p)] = (g.st[stDe(p)] || 0) + 1; g.n++; if(atrasada(p)) g.atras = true;
+  });
+  return Object.values(mapa).sort((a, b) => ordemTipo(a.tipo) - ordemTipo(b.tipo)).map(g => Object.assign(g, { valor: Math.round(g.valor * 100) / 100 }));
+}
+function colunaParcela(g){
+  const ks = STATUS_PARC.map(x => x[0]).filter(k => g.st[k]); const unico = ks.length === 1;
+  const chip = unico ? `<span class="obr-st obr-st-${ks[0]}">${esc(rotuloStatus(ks[0]))}</span>` : '<span class="obr-st obr-st-misto">Misto</span>';
+  const detalhe = !unico ? ks.map(k => g.st[k] + ' ' + rotuloStatus(k).toLowerCase()).join(' · ') : (g.n > 1 ? g.n + ' pedidos' : '');
+  return `<div class="obr-parc ${g.atras ? 'obr-parc-atraso' : ''}"><div class="obr-parc-t">${esc(g.tipo)}${g.pcts.size === 1 ? ` <span>${esc(fmtPct([...g.pcts][0]))}%</span>` : ''}</div><div class="obr-parc-v">${esc(brl(g.valor))}</div>${chip}${detalhe ? `<div class="obr-parc-s">${esc(detalhe)}</div>` : ''}${g.atras ? '<div class="obr-parc-s obr-verm">⚠ em atraso</div>' : ''}</div>`;
+}
+const rotuloStatus = (k) => (STATUS_PARC.find(x => x[0] === k) || ['', k])[1];
 function cartao(r){
-  const t = totais(r); const ped = pedidosDe(r).filter(p => !p.cancelado);
-  const chips = [`<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'cancelada' ? 'gray' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
-    t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : t.fin === 'parcial' ? '<span class="prv-chip amber">Parcial</span>' : '',
-    t.cont.a_cobrar ? `<span class="prv-chip amber">A cobrar ${esc(brl(t.por.a_cobrar))}</span>` : '', t.cont.enviado ? `<span class="prv-chip gray">Enviado ${esc(brl(t.por.enviado))}</span>` : '',
-    t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso · ${esc(brl(t.atrasado))}</span>` : ''].join('');
+  const t = totais(r); const ped = pedidosDe(r).filter(p => !p.cancelado); const grupos = gruposParcelas(r);
+  const chips = [`<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+    t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : '', t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso · ${esc(brl(t.atrasado))}</span>` : ''].join('');
   return `<div class="obr-card" data-obr="abrir" data-id="${esc(r.id)}" role="button" tabindex="0">
-    <div class="obr-card-main"><div class="obr-cli">${esc(nomeCliente(r))} ${chips}</div>
-      <div class="obr-sub">${[r.contato, r.formaPagamento, ped.length + (ped.length === 1 ? ' pedido' : ' pedidos') + (ped.length ? ' (' + ped.slice(0, 4).map(p => esc(p.numero)).join(', ') + (ped.length > 4 ? '…' : '') + ')' : '')].filter(Boolean).join(' · ')}</div>
-      <div class="obr-barra" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div></div>
-    <div class="obr-nums"><div><label>Contratado</label><b>${esc(brl(t.contratado))}</b></div><div><label>Recebido</label><b class="obr-verde">${esc(brl(t.recebido))}</b></div><div><label>Saldo</label><b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></div></div>
+    <div class="obr-cli">${esc(nomeCliente(r))} ${chips}</div>
+    <div class="obr-sub">${[r.contato, r.formaPagamento, ped.length + (ped.length === 1 ? ' pedido' : ' pedidos') + (ped.length ? ' (' + ped.slice(0, 4).map(p => esc(p.numero)).join(', ') + (ped.length > 4 ? '…' : '') + ')' : '')].filter(Boolean).join(' · ')}</div>
+    ${grupos.length ? `<div class="obr-parcs">${grupos.map(colunaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas ainda. Abra o registro para definir a condição de pagamento.</div>'}
+    <div class="obr-tot"><span>Contratado <b>${esc(brl(t.contratado))}</b></span><span>Recebido <b class="obr-verde">${esc(brl(t.recebido))}</b></span><span>Saldo <b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></span></div>
+    <div class="obr-barra" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div>
   </div>`;
 }
 function renderLista(){
