@@ -22266,7 +22266,8 @@ function gerarParcelas(r, ped, pcts){      // cria as parcelas de UM pedido pela
   return out;
 }
 function recalcularPedido(r, ped){            // o valor do pedido mudou: reajusta as parcelas ainda não recebidas
-  const ps = lista(r.parcelas).filter(x => String(x.pedido) === String(ped.numero) && x.pct != null).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)); if(!ps.length) return;
+  const doPedido = lista(r.parcelas).filter(x => String(x.pedido) === String(ped.numero)); if(doPedido.some(x => x.valorPrevisto != null || x.restanteDe)) return;    // houve pagamento parcial: a divisão deixou de ser proporcional e fica a cargo do Financeiro
+  const ps = doPedido.filter(x => x.pct != null).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)); if(!ps.length) return;
   const pcts = ps.map(x => Number(x.pct)); if(Math.abs(soma(pcts) - 100) > 0.01) return; const vals = dividirValor(Number(ped.valor), pcts);
   ps.forEach((x, i) => { if(stDe(x) !== 'recebido') x.valor = vals[i]; });
 }
@@ -22444,7 +22445,7 @@ function infoStatus(p){
 }
 function linhaParcela(p){
   const st = stDe(p);
-  return `<tr><td>${esc(p.tipo || 'Parcela')}${p.pct != null ? ` <span class="obr-ped-tag">${esc(fmtPct(p.pct))}%</span>` : ''}${p.forma ? ` <span class="obr-ped-tag">${esc(p.forma)}</span>` : ''}${p.obs ? `<div class="obr-obs">${esc(p.obs)}</div>` : ''}${p.valorPrevisto != null ? `<div class="obr-obs">previsto ${esc(brl(p.valorPrevisto))}</div>` : ''}</td>
+  return `<tr><td>${esc(p.tipo || 'Parcela')}${p.pct != null ? ` <span class="obr-ped-tag">${esc(fmtPct(p.pct))}%</span>` : ''}${p.restanteDe ? ` <span class="obr-ped-tag">restante de ${esc(p.restanteDe)}</span>` : ''}${p.forma ? ` <span class="obr-ped-tag">${esc(p.forma)}</span>` : ''}${p.obs ? `<div class="obr-obs">${esc(p.obs)}</div>` : ''}${p.valorPrevisto != null ? `<div class="obr-obs">previsto ${esc(brl(p.valorPrevisto))}</div>` : ''}</td>
     <td class="mono">${esc(fmtData(p.vencimento) || '—')}</td><td class="obr-d">${esc(brl(p.valor))}</td>
     <td><select class="obr-st obr-st-${st}" data-obr-st="${esc(p.id)}" aria-label="Situação da parcela">${STATUS_PARC.map(([k, n]) => `<option value="${k}" ${k === st ? 'selected' : ''}>${n}</option>`).join('')}</select>${infoStatus(p)}</td>
     <td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="par-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="par-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`;
@@ -22489,15 +22490,45 @@ async function mudarStatus(id, novo){
   if(antigo === 'recebido'){ renderPag(); return customConfirm('Desfazer o recebimento de ' + brl(p.valor) + ' (' + (p.tipo || 'parcela') + ')? A data do recebimento será apagada.', aplicar, 'Desfazer'); }
   await aplicar();
 }
+function proximaPendente(r, p){ return lista(r.parcelas).filter(x => String(x.pedido || '') === String(p.pedido || '') && x.id !== p.id && stDe(x) !== 'recebido' && (x.ordem || 0) > (p.ordem || 0)).sort((a, b) => (a.ordem || 0) - (b.ordem || 0))[0] || null; }
+// Recebimento da parcela. Se entrar MENOS que o previsto, o restante pode virar uma nova parcela, ser somado à próxima ou ficar para depois.
 function abrirRecebimento(id){
   const r = atual(); const p = r && r.parcelas && r.parcelas[id]; if(!p) return;
-  formRapido({ titulo: 'Registrar recebimento — ' + (p.tipo || 'Parcela') + (p.pedido ? ' (pedido ' + p.pedido + ')' : ''), aviso: 'Valor previsto: <b>' + esc(brl(p.valor)) + '</b>. Se o cliente pagou outro valor, informe o que entrou; o saldo do pedido se ajusta.', ok: 'Confirmar recebimento', campos: [
-    { id: 'pagoEm', rotulo: 'Data do recebimento', tipo: 'data', valor: hojeStr(), obrig: true, meio: true }, { id: 'valor', rotulo: 'Valor recebido (R$)', tipo: 'valor', valor: campoValor(p.valor), obrig: true, meio: true },
-    { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p.forma || r.formaPagamento || '' }, { id: 'obs', rotulo: 'Observação', valor: p.obs || '', dica: 'Ex.: comprovante, NF…' } ],
-    aoSalvar: async (v) => {
-      if(!(v.valor > 0)) return 'Informe o valor recebido.'; if(v.pagoEm > hojeStr()) return 'A data do recebimento não pode ser futura.';
-      if(Math.abs(v.valor - Number(p.valor)) > 0.004){ if(p.valorPrevisto == null) p.valorPrevisto = p.valor; p.valor = v.valor; }
-      p.status = 'recebido'; p.pago = null; p.pagoEm = v.pagoEm; p.forma = v.forma || null; p.obs = v.obs || null; r.parcelas = Object.assign({}, r.parcelas); await gravar(r); renderDetalheSecoes(); return null; } });
+  let ov = document.getElementById('obrRecOverlay'); if(ov) ov.remove(); const prox = proximaPendente(r, p);
+  ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrRecOverlay';
+  ov.innerHTML = `<div class="modal" style="max-width:540px; max-height:90vh; overflow-y:auto;"><h3>Registrar recebimento — ${esc(p.tipo || 'Parcela')}${p.pedido ? ' (pedido ' + esc(p.pedido) + ')' : ''}</h3>
+    <p class="prv-hint" style="margin:0 0 8px;">Valor previsto: <b>${esc(brl(p.valor))}</b>. Se o cliente pagar menos, você escolhe o que fazer com o restante.</p>
+    <div class="obr-grid2"><div class="field obr-meio"><label for="obrRData">Data do recebimento *</label><input type="date" id="obrRData" value="${hojeStr()}" max="${hojeStr()}"></div><div class="field obr-meio"><label for="obrRValor">Valor recebido (R$) *</label><input type="text" id="obrRValor" inputmode="decimal" value="${esc(campoValor(p.valor))}" autocomplete="off"></div>
+      <div class="field obr-meio"><label for="obrRForma">Forma</label><select id="obrRForma"><option value="">—</option>${FORMAS.map(f => `<option ${f === (p.forma || r.formaPagamento || '') ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></div><div class="field obr-meio"><label for="obrRObs">Observação</label><input type="text" id="obrRObs" value="${esc(p.obs || '')}" placeholder="Ex.: comprovante…" autocomplete="off"></div></div>
+    <div id="obrRResto"></div><div class="field-error" id="obrRErr"></div>
+    <div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrRCancel">Cancelar</button><button type="button" class="btn-primary" id="obrROk">Confirmar recebimento</button></div></div>`;
+  document.body.appendChild(ov); const $ = (k) => document.getElementById(k); let parcial = false;
+  const falta = () => { const v = parseValor($('obrRValor').value); return (v != null && !Number.isNaN(v) && v > 0) ? Math.round((Number(p.valor) - v) * 100) / 100 : 0; };
+  const atualizar = () => {
+    const f = falta(); const box = $('obrRResto');
+    if(!(f > 0.004)){ box.innerHTML = ''; parcial = false; return; }
+    if(!parcial){ parcial = true; box.innerHTML = `<div class="obr-nota obr-nota-novo"><b>Pagamento parcial:</b> faltam <b id="obrRFalta"></b> desta parcela. O que fazer com o restante?
+      <div class="field" style="margin:8px 0 0;"><select id="obrRAcao"><option value="nova">Criar uma nova parcela com o restante</option>${prox ? `<option value="proxima">Somar na próxima parcela (${esc(prox.tipo || 'Parcela')})</option>` : ''}<option value="nada">Não criar parcela agora (o restante fica só no saldo)</option></select></div>
+      <div class="obr-grid2" id="obrRNova" style="margin-top:6px;"><div class="field obr-meio"><label for="obrRSt">Situação da nova parcela</label><select id="obrRSt"><option value="a_cobrar">A cobrar</option><option value="enviado">Enviado</option><option value="nao_liberado">Não liberado</option></select></div><div class="field obr-meio"><label for="obrRVenc">Vencimento da nova parcela</label><input type="date" id="obrRVenc"></div></div></div>`; }
+    $('obrRFalta').textContent = brl(f);
+  };
+  ov.addEventListener('input', (e) => { if(e.target.id === 'obrRValor') atualizar(); });
+  ov.addEventListener('change', (e) => { if(e.target.id === 'obrRAcao') $('obrRNova').style.display = e.target.value === 'nova' ? '' : 'none'; });
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrRCancel') ov.remove(); });
+  $('obrROk').onclick = async () => {
+    const err = (t) => { $('obrRErr').textContent = t; }; const v = parseValor($('obrRValor').value); const data = $('obrRData').value;
+    if(v == null || Number.isNaN(v) || !(v > 0)) return err('Informe o valor recebido.'); if(!data) return err('Informe a data do recebimento.'); if(data > hojeStr()) return err('A data do recebimento não pode ser futura.');
+    const f = Math.round((Number(p.valor) - v) * 100) / 100; const acao = f > 0.004 ? $('obrRAcao').value : null; let msg = 'Recebimento registrado.';
+    if(Math.abs(v - Number(p.valor)) > 0.004){ if(p.valorPrevisto == null) p.valorPrevisto = p.valor; p.valor = v; }
+    p.status = 'recebido'; p.pago = null; p.pagoEm = data; p.forma = $('obrRForma').value || null; p.obs = $('obrRObs').value.trim() || null; const novas = {};
+    if(acao === 'nova'){ const st = $('obrRSt').value; const nid = uid('c'); const venc = $('obrRVenc').value || null;
+      novas[nid] = { id: nid, tipo: 'Restante', restanteDe: p.tipo || 'Parcela', pedido: p.pedido || null, pct: null, vencimento: venc, valor: f, status: st, pago: null, pagoEm: null, enviadoEm: st === 'enviado' ? hojeStr() : null, liberadoEm: st === 'a_cobrar' ? hojeStr() : null, forma: null, obs: null, valorPrevisto: null, ordem: Math.round(((p.ordem || 0) + 0.01) * 1000) / 1000 };
+      msg = 'Recebimento registrado. Criada a parcela "Restante" de ' + brl(f) + ' (' + rotuloStatus(st) + ').'; }
+    else if(acao === 'proxima' && prox){ prox.valor = Math.round((Number(prox.valor) + f) * 100) / 100; prox.obs = [prox.obs, 'inclui ' + brl(f) + ' do restante de ' + (p.tipo || 'parcela')].filter(Boolean).join(' · '); msg = 'Recebimento registrado. ' + brl(f) + ' somados à parcela "' + (prox.tipo || 'seguinte') + '".'; }
+    else if(acao === 'nada') msg = 'Recebimento registrado. O restante de ' + brl(f) + ' continua só no saldo.';
+    r.parcelas = Object.assign({}, r.parcelas, novas); ov.remove(); await gravar(r); renderDetalheSecoes(); avisar(msg, 7000);
+  };
+  setTimeout(() => { const v = $('obrRValor'); v.focus(); v.select(); }, 40);
 }
 function acaoDetalhe(a, ds){
   const r = atual(); if(!r && a !== 'fechar') return;
