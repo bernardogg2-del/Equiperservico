@@ -1880,11 +1880,53 @@
   .obr-ped-num{ background:var(--ink); color:#fff; font-weight:800; font-size:12.5px; padding:2px 9px; border-radius:6px; white-space:nowrap; letter-spacing:.1px; }
   .obr-ped-desc{ font-weight:700; font-size:14.5px; color:var(--ink); overflow-wrap:anywhere; }
 
-  /* quadro com 5 cartões: sempre no formato compacto (ícone + valor em cima, rótulo e detalhe embaixo), 5 em linha quando cabe */
-  #obrKpis{ grid-template-columns:repeat(auto-fit, minmax(178px, 1fr)) !important; }
-  #obrKpis .prv-kpi{ display:grid; grid-template-columns:auto 1fr; grid-template-areas:"icone num" "rotulo rotulo" "sub sub"; align-items:center; column-gap:9px; row-gap:6px; padding:12px 9px 12px 15px; }
-  #obrKpis .prv-kpi-texto{ display:contents; } #obrKpis .prv-kpi-icone{ grid-area:icone; width:34px; height:34px; border-radius:10px; } #obrKpis .prv-kpi-icone svg{ width:17px; height:17px; }
-  #obrKpis .prv-kpi-num{ grid-area:num; justify-self:start; font-size:19px; } #obrKpis .prv-kpi-rotulo{ grid-area:rotulo; margin-top:0; font-size:12px; } #obrKpis .prv-kpi-sub{ grid-area:sub; margin-top:-3px; }
+  /* quadro com 5 cartões SEMPRE numa linha só: ícone pequeno no canto, valor com a largura toda; em tela bem estreita a linha rola para o lado */
+  #obrKpis{ grid-template-columns:repeat(5, minmax(158px, 1fr)) !important; gap:10px !important; overflow-x:auto; padding-bottom:3px; }
+  #obrKpis .prv-kpi{ position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:0; padding:10px 12px 10px 16px; min-width:0; }
+  #obrKpis .prv-kpi-texto{ display:flex; flex-direction:column; gap:1px; min-width:0; width:100%; }
+  #obrKpis .prv-kpi-icone{ position:absolute; top:9px; right:9px; width:26px; height:26px; border-radius:8px; }
+  #obrKpis .prv-kpi-icone svg{ width:14px; height:14px; }
+  #obrKpis .prv-kpi-num{ font-size:19px; line-height:1.15; white-space:nowrap; justify-self:auto; }
+  #obrKpis .prv-kpi-rotulo{ font-size:12px; margin-top:3px; } #obrKpis .prv-kpi-sub{ font-size:10.5px; margin-top:0; line-height:1.25; }
+  /* ===== condição de pagamento, situação das parcelas e blocos por pedido ===== */
+  .obr-st{ display:inline-block; width:auto; border-radius:999px; padding:3px 10px; font-weight:700; font-size:12px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); min-height:0; }
+  select.obr-st{ padding:3px 6px; cursor:pointer; max-width:150px; }
+  .obr-st-nao_liberado{ background:var(--panel-2); color:var(--text-dim); }
+  .obr-st-a_cobrar{ background:var(--warning-soft); color:var(--warning); border-color:var(--warning-line); }
+  .obr-st-enviado{ background:rgba(47,111,176,.12); color:#2F6FB0; border-color:rgba(47,111,176,.35); }
+  .obr-st-recebido{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
+  .obr-statusrow{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .obr-cond{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:var(--panel-2); border-radius:var(--radius-sm); padding:8px 12px; margin-bottom:10px; }
+  .obr-cond label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; } .obr-cond b{ font-size:13.5px; }
+  .obr-ped-bloco{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 10px; margin-bottom:10px; background:var(--panel); }
+  .obr-ped-bloco-h{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:baseline; margin-bottom:6px; }
+  .obr-canc-bloco{ opacity:.7; } .obr-sub-i{ font-size:12.5px; color:var(--text-dim); } .obr-verm{ color:var(--danger); }
+  .obr-resto-t{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin:6px 0 2px; }
+  .obr-resto{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:4px 12px; }
+  .obr-cd-info{ font-size:12.5px; margin:4px 0 2px; } .obr-cd-ok{ color:var(--success-dark); font-weight:600; } .obr-cd-erro{ color:var(--danger); font-weight:600; } .obr-cd-neutro{ color:var(--text-dim); }
+  .obr-modo{ margin:12px 0 4px; display:flex; flex-direction:column; gap:6px; } .obr-modo label{ display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; } .obr-modo input{ width:auto; margin-top:3px; }
+  .obr-tab tfoot td{ border-top:1px solid var(--line); border-bottom:none; }
+
+  /* tela de Obras e Pedidos usa a largura toda (a dos portais é de 720px) e o quadro se reorganiza sozinho */
+  #finObrasView > .tech-day-panel{ max-width:1100px; padding-left:14px; padding-right:14px; }
+  /* cartão do cliente: título, contato, uma coluna por parcela (nome/% · valor · situação) e totais em uma linha */
+  .obr-card{ display:block; cursor:pointer; padding:14px 16px 12px; }
+  .obr-cli{ font-size:16px; } .obr-sub{ margin-bottom:10px; }
+  .obr-parcs{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin:2px 0 10px; }
+  .obr-parc{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 9px; background:var(--panel-2); display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; }
+  .obr-parc-atraso{ border-color:var(--danger); background:var(--danger-soft); }
+  .obr-parc-t{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); } .obr-parc-t span{ font-weight:700; letter-spacing:0; text-transform:none; margin-left:3px; }
+  .obr-parc-v{ font-size:16px; font-weight:800; letter-spacing:-.2px; overflow-wrap:anywhere; }
+  .obr-parc-s{ font-size:11px; color:var(--text-dim); }
+  .obr-st-misto{ background:var(--panel); color:var(--ink); border-style:dashed; }
+  .obr-sem-parc{ font-size:12.5px; color:var(--text-dim); background:var(--panel-2); border-radius:8px; padding:8px 10px; margin:2px 0 10px; }
+  .obr-tot{ display:flex; gap:6px 22px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); } .obr-tot b{ font-size:13.5px; color:var(--ink); margin-left:3px; } .obr-tot b.obr-verde{ color:var(--success-dark); } .obr-tot b.obr-ambar{ color:var(--warning); }
+
+  /* pedidos em destaque no cartão (número em etiqueta escura + descrição em negrito) */
+  .obr-peds{ display:flex; flex-direction:column; gap:5px; margin:6px 0 10px; }
+  .obr-ped-item{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; }
+  .obr-ped-num{ background:var(--ink); color:#fff; font-weight:800; font-size:12.5px; padding:2px 9px; border-radius:6px; white-space:nowrap; letter-spacing:.1px; }
+  .obr-ped-desc{ font-weight:700; font-size:14.5px; color:var(--ink); overflow-wrap:anywhere; }
 
   /* ===== cartão compacto: uma linha por pedido, com as parcelas dele ===== */
   .obr-card{ padding:10px 14px 9px; margin-bottom:8px; }
@@ -1903,6 +1945,12 @@
   .obr-card .obr-tot{ margin-top:6px; padding-top:6px; border-top:1px solid var(--line); font-size:11.5px; } .obr-card .obr-tot b{ font-size:13px; }
   .obr-card .obr-barra{ height:4px; margin-top:6px; }
   @media (max-width:640px){ .obr-pedlin{ grid-template-columns:1fr; } .obr-ped-val{ width:auto; } }
+
+  /* a confirmação do app ("Excluir…?") precisa ficar POR CIMA das janelas criadas depois dela (detalhe, formulários) */
+  #confirmOverlay{ z-index:9500; }
+  #avisoNaoBloqueante{ z-index:9600; }
+  .obr-resumo{ grid-template-columns:repeat(3, 1fr); } @media (max-width:560px){ .obr-resumo{ grid-template-columns:1fr 1fr; } }
+  .obr-card .obr-pc-atraso{ border-color:var(--line); background:var(--panel-2); }
 </style>
 </head>
 <body>
@@ -22199,10 +22247,10 @@ window.REL_API = { abrir, render, metricas, filtrar };
 // =====================================================================================
 // FINANCEIRO → OBRAS E PEDIDOS (08/10) — controle de pedidos por cliente, em duas abas (Equiper e Eqp), que substitui a planilha.
 // Cada REGISTRO é um cliente numa empresa e reúne: contato, forma de pagamento, VÁRIOS pedidos (nº, descrição, valor), as parcelas
-// (previstas e recebidas, com vencimento), as notas fiscais e a situação da obra. Contratado / recebido / saldo são calculados.
+// (cada uma com sua situação: Não liberado / A cobrar / Enviado / Recebido; não há vencimento, os pagamentos dependem do andamento da obra) e a situação da obra. Contratado / recebido / saldo são calculados.
 // Nó novo: obrasPedidos/<id> (mesma fábrica de armazenamento das OS: diff por campo, tempo real, tentativa).
 //   { id, empresa:'equiper'|'eqp', cliente, clienteId, contato, fone, formaPagamento, condicoes, situacao, obs, active,
-//     pedidos:{id:{id,numero,descricao,valor,cancelado}}, parcelas:{id:{id,tipo,pedido,vencimento,valor,pago,pagoEm,forma,obs,ordem}},
+//     pedidos:{id:{id,numero,descricao,valor,cancelado}}, parcelas:{id:{id,tipo,pedido,pct,valor,status,pagoEm,enviadoEm,liberadoEm,forma,obs,valorPrevisto,restanteDe,ordem}},   // as parcelas de um pedido sempre somam o valor dele; o Saldo absorve as mudanças
 //     nfs:{id:{id,numero,data,valor}}, criadoEm, criadoPor, atualizadoEm, atualizadoPor }
 // Cliente novo é cadastrado em Clientes (nome + endereço, e contato/telefone); cliente existente é reaproveitado (por nome, sem acento).
 // =====================================================================================
@@ -22231,7 +22279,7 @@ const avisar = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 5000); }catch(e){ t
 const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
-const TIPOS_PARCELA = ['Sinal', '2ª parcela', '3ª parcela', '4ª parcela', '5ª parcela', 'Saldo', 'Parcela única', 'Outro'];
+const TIPOS_PARCELA = ['Sinal'].concat(Array.from({ length: 11 }, (_, i) => (i + 2) + 'ª parcela'), ['Saldo', 'Parcela única', 'Restante', 'Outro']);
 // Situação de cada parcela: Não liberado (ainda não é hora de cobrar) → A cobrar (liberada) → Enviado (cobrança enviada ao cliente) → Recebido.
 const STATUS_PARC = [['nao_liberado', 'Não liberado'], ['a_cobrar', 'A cobrar'], ['enviado', 'Enviado'], ['recebido', 'Recebido']];
 const stDe = (p) => p.status || (p.pago ? 'recebido' : 'a_cobrar');          // registros da 1ª versão tinham só "pago"
@@ -22248,23 +22296,30 @@ const ui = { empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, mo
 // ---------- cálculo ----------
 const registros = () => store.items.filter(r => r && r.id && r.active !== false);
 const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
-const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0) || String(a.vencimento || a.pagoEm || '9999').localeCompare(String(b.vencimento || b.pagoEm || '9999')));
-const atrasada = (p) => (stDe(p) === 'a_cobrar' || stDe(p) === 'enviado') && !!p.vencimento && p.vencimento < hojeStr();
+const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 function totais(r){
   const todosPed = pedidosDe(r), ativos = todosPed.filter(p => !p.cancelado); const canc = new Set(todosPed.filter(p => p.cancelado).map(p => String(p.numero)));
   const par = parcelasDe(r).filter(p => stDe(p) === 'recebido' || !(p.pedido && canc.has(String(p.pedido))));      // parcela de pedido cancelado só conta se já foi recebida
   const por = { nao_liberado: 0, a_cobrar: 0, enviado: 0, recebido: 0 }, cont = { nao_liberado: 0, a_cobrar: 0, enviado: 0, recebido: 0 };
   par.forEach(p => { const k = stDe(p); por[k] += Number(p.valor) || 0; cont[k]++; }); Object.keys(por).forEach(k => { por[k] = Math.round(por[k] * 100) / 100; });
   const contratado = soma(ativos.map(p => p.valor)), recebido = por.recebido, previsto = Math.round((por.nao_liberado + por.a_cobrar + por.enviado) * 100) / 100;
-  const atras = par.filter(atrasada); const saldo = Math.round((contratado - recebido) * 100) / 100;
+  const saldo = Math.round((contratado - recebido) * 100) / 100;
   const fin = contratado <= 0 ? 'sem_valor' : saldo <= 0.005 ? 'quitado' : recebido > 0 ? 'parcial' : 'a_receber';
-  return { contratado, recebido, previsto, saldo, por, cont, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), atrasado: soma(atras.map(p => p.valor)), nAtrasadas: atras.length, pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ativos.length };
+  return { contratado, recebido, previsto, saldo, por, cont, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ativos.length };
 }
 function gerarParcelas(r, ped, pcts){      // cria as parcelas de UM pedido pela condição (Sinal já "A cobrar"; as demais "Não liberado")
   const vals = dividirValor(Number(ped.valor), pcts); const out = {}; let ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
-  pcts.forEach((pc, i) => { const id = uid('c') + i; out[id] = { id, tipo: rotuloParcela(i, pcts.length), pedido: ped.numero, pct: pc, valor: vals[i], status: i === 0 ? 'a_cobrar' : 'nao_liberado', vencimento: null, ordem: ordem++ }; });
+  pcts.forEach((pc, i) => { const id = uid('c') + i; out[id] = { id, tipo: rotuloParcela(i, pcts.length), pedido: ped.numero, pct: pc, valor: vals[i], status: i === 0 ? 'a_cobrar' : 'nao_liberado', ordem: ordem++ }; });
   return out;
 }
+// ----- Saldo do pedido: as parcelas de um pedido sempre somam o valor dele. Parcela nova sai do Saldo; excluir devolve ao Saldo. -----
+const arred2 = (x) => Math.round(x * 100) / 100;
+const parcelasDoPedido = (r, numero) => parcelasDe(r).filter(x => String(x.pedido) === String(numero));
+function alvoSaldo(r, numero, excetoId){      // a parcela "Saldo" ainda não recebida (ou, se não houver, a última em aberto)
+  const ps = parcelasDoPedido(r, numero).filter(x => stDe(x) !== 'recebido' && x.id !== excetoId); if(!ps.length) return null;
+  return ps.slice().reverse().find(x => x.tipo === 'Saldo') || ps[ps.length - 1];
+}
+const parteDoPedido = (valor, ped) => Number(ped.valor) > 0 ? Math.round(Number(valor) / Number(ped.valor) * 10000) / 100 : null;
 function recalcularPedido(r, ped){            // o valor do pedido mudou: reajusta as parcelas ainda não recebidas
   const doPedido = lista(r.parcelas).filter(x => String(x.pedido) === String(ped.numero)); if(doPedido.some(x => x.valorPrevisto != null || x.restanteDe)) return;    // houve pagamento parcial: a divisão deixou de ser proporcional e fica a cargo do Financeiro
   const ps = doPedido.filter(x => x.pct != null).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)); if(!ps.length) return;
@@ -22293,7 +22348,7 @@ function montar(){
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
-      <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="atrasado">Com parcela em atraso</option><option value="quitado">Quitados</option></select>
+      <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="quitado">Quitados</option></select>
       <select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
       <button type="button" class="btn-primary" data-obr="novo">+ Novo registro</button>
@@ -22318,12 +22373,12 @@ function montar(){
 }
 function kpis(todos){
   // Ordem do fluxo: Contratado → A cobrar → Enviado → Recebido → A receber (o que ainda falta entrar, incluindo o que não foi liberado).
-  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado)), nl = soma(t.map(x => x.por.nao_liberado)), atras = soma(t.map(x => x.atrasado));
-  const aRec = soma(t.map(x => Math.max(0, x.saldo))); const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado, 0), nAt = t.reduce((n, x) => n + x.nAtrasadas, 0), nSaldo = t.filter(x => x.saldo > 0.005).length;
+  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado)), nl = soma(t.map(x => x.por.nao_liberado));
+  const aRec = soma(t.map(x => Math.max(0, x.saldo))); const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado, 0), nSaldo = t.filter(x => x.saldo > 0.005).length;
   return PREV_API.kpiCards([
     { tom: 'neutro', icone: 'total', texto: brlCurto(contr), zero: !(contr > 0), rotulo: 'Contratado', sub: todos.length + (todos.length === 1 ? ' obra' : ' obras') + ' · ' + soma(t.map(x => x.nPedidos)) + (soma(t.map(x => x.nPedidos)) === 1 ? ' pedido' : ' pedidos') },
     { tom: 'amarelo', icone: 'relogio', texto: brlCurto(ac), zero: !(ac > 0), rotulo: 'A cobrar', sub: nAc + (nAc === 1 ? ' parcela liberada' : ' parcelas liberadas') },
-    { tom: atras > 0 ? 'vermelho' : 'azul', icone: atras > 0 ? 'alerta' : 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando' + (nAt ? ' · ' + nAt + ' em atraso' : '') },
+    { tom: 'azul', icone: 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando pagamento' },
     { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
     { tom: 'neutro', icone: 'caixa', texto: brlCurto(aRec), zero: !(aRec > 0), rotulo: 'A receber', sub: nSaldo + (nSaldo === 1 ? ' obra' : ' obras') + ' com saldo' + (nl > 0 ? ' · ' + brlCurto(nl) + ' não liberado' : '') },
   ]);
@@ -22331,8 +22386,8 @@ function kpis(todos){
 const rotuloStatus = (k) => (STATUS_PARC.find(x => x[0] === k) || ['', k])[1];
 // Cartão do cliente: uma linha COMPACTA por pedido (número + descrição + valor) com as parcelas dele lado a lado (nome/% · valor · situação).
 function celulaParcela(p){
-  const st = stDe(p); const atras = atrasada(p);
-  return `<div class="obr-pc ${atras ? 'obr-pc-atraso' : ''}" title="${esc((p.tipo || 'Parcela') + (atras ? ' — em atraso' : ''))}"><div class="obr-pc-t"><span class="obr-pc-n">${esc(p.tipo || 'Parcela')}${p.pct != null ? ' ' + esc(fmtPct(p.pct)) + '%' : ''}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div><div class="obr-pc-v">${esc(brl(p.valor))}${atras ? ' <span class="obr-verm" title="Em atraso">⚠</span>' : ''}</div></div>`;
+  const st = stDe(p);
+  return `<div class="obr-pc" title="${esc(p.tipo || 'Parcela')}"><div class="obr-pc-t"><span class="obr-pc-n">${esc(p.tipo || 'Parcela')}${p.pct != null ? ' ' + esc(fmtPct(p.pct)) + '%' : ''}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div><div class="obr-pc-v">${esc(brl(p.valor))}</div></div>`;
 }
 function linhaPedido(p, parcelas){
   return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span><span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
@@ -22341,7 +22396,7 @@ function linhaPedido(p, parcelas){
 function cartao(r){
   const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
   const chips = [`<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
-    t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : '', t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso · ${esc(brl(t.atrasado))}</span>` : ''].join('');
+    t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''].join('');
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   const mostrar = ped.slice(0, 5);
   return `<div class="obr-card" data-obr="abrir" data-id="${esc(r.id)}" role="button" tabindex="0">
@@ -22360,7 +22415,7 @@ function renderLista(){
   const todos = doEmp(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
   const q = fold(ui.busca);
   let l = todos.filter(r => !q || fold([nomeCliente(r), r.contato, r.fone, r.formaPagamento, pedidosDe(r).map(p => p.numero + ' ' + p.descricao).join(' ')].join(' ')).includes(q));
-  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'atrasado' && !t.nAtrasadas) return false; if(ui.fin === 'acobrar' && !t.cont.a_cobrar) return false; if(ui.fin === 'enviado' && !t.cont.enviado) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
+  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'acobrar' && !t.cont.a_cobrar) return false; if(ui.fin === 'enviado' && !t.cont.enviado) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
     .sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b))));
   document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
@@ -22374,9 +22429,10 @@ function formRapido(cfg){
   let ov = document.getElementById('obrFormOverlay'); if(ov) ov.remove();
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrFormOverlay';
   const campo = (c) => { const v = c.valor == null ? '' : c.valor; const id = 'obrF_' + c.id;
-    const ent = c.tipo === 'select' ? `<select id="${id}">${c.opcoes.map(o => { const val = Array.isArray(o) ? o[0] : o, rot = Array.isArray(o) ? o[1] : o; return `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(rot)}</option>`; }).join('')}</select>`
-      : c.tipo === 'data' ? `<input type="date" id="${id}" value="${esc(v)}">` : c.tipo === 'area' ? `<textarea id="${id}" rows="2">${esc(v)}</textarea>`
-      : `<input type="text" id="${id}" value="${esc(v)}" ${c.tipo === 'valor' ? 'inputmode="decimal"' : ''} placeholder="${esc(c.dica || '')}" autocomplete="off">`;
+    const bl = c.bloqueado ? 'disabled' : '';
+    const ent = c.tipo === 'select' ? `<select id="${id}" ${bl}>${c.opcoes.map(o => { const val = Array.isArray(o) ? o[0] : o, rot = Array.isArray(o) ? o[1] : o; return `<option value="${esc(val)}" ${String(val) === String(v) ? 'selected' : ''}>${esc(rot)}</option>`; }).join('')}</select>`
+      : c.tipo === 'data' ? `<input type="date" id="${id}" value="${esc(v)}" ${bl}>` : c.tipo === 'area' ? `<textarea id="${id}" rows="2" ${bl}>${esc(v)}</textarea>`
+      : `<input type="text" id="${id}" value="${esc(v)}" ${c.tipo === 'valor' ? 'inputmode="decimal"' : ''} placeholder="${esc(c.dica || '')}" autocomplete="off" ${bl}>`;
     return `<div class="field ${c.meio ? 'obr-meio' : ''}"><label for="${id}">${esc(c.rotulo)}${c.obrig ? ' *' : ''}</label>${ent}</div>`; };
   ov.innerHTML = `<div class="modal" style="max-width:520px; max-height:90vh; overflow-y:auto;"><h3>${esc(cfg.titulo)}</h3>${cfg.aviso ? `<p class="prv-hint" style="margin:0 0 8px;">${cfg.aviso}</p>` : ''}<div class="obr-grid2">${cfg.campos.map(campo).join('')}</div><div class="field-error" id="obrFormErr"></div>
     <div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrFormCancel">Cancelar</button><button type="button" class="btn-primary" id="obrFormOk">${esc(cfg.ok || 'Salvar')}</button></div></div>`;
@@ -22415,7 +22471,7 @@ function renderCab(){
   const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; const t = totais(r);
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
   el.innerHTML = `<div class="qd-det-head"><div><h3 style="margin:0;">${esc(nomeCliente(r))}</h3>
-      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span><span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}${t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso</span>` : ''}</div>
+      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span><span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
       ${cli && cli.address ? `<div class="prv-hint" style="margin:6px 0 0;">📍 ${esc(cli.address)}</div>` : ''}</div>
       <button type="button" class="btn-ghost" data-obr-d="fechar">Fechar</button></div>`;
 }
@@ -22437,20 +22493,18 @@ function renderPed(){
     <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">+ Adicionar pedido</button></div></div>`;
 }
 function infoStatus(p){
-  const st = stDe(p); const d = hojeStr(); let partes = [];
-  if(st === 'recebido' && p.pagoEm) partes.push('recebido em ' + fmtData(p.pagoEm)); else if(st === 'enviado' && p.enviadoEm) partes.push('enviado em ' + fmtData(p.enviadoEm)); else if(st === 'a_cobrar' && p.liberadoEm) partes.push('liberado em ' + fmtData(p.liberadoEm));
-  let chip = ''; if(atrasada(p)){ const n = diasEntre(p.vencimento, d); chip = `<span class="prv-chip red">Atrasada ${n} ${n === 1 ? 'dia' : 'dias'}</span>`; }
-  else if((st === 'a_cobrar' || st === 'enviado') && p.vencimento){ const n = diasEntre(d, p.vencimento); chip = n === 0 ? '<span class="prv-chip amber">Vence hoje</span>' : `<span class="obr-ped-tag">vence em ${n} ${n === 1 ? 'dia' : 'dias'}</span>`; }
-  return (partes.length ? `<div class="obr-obs">${esc(partes.join(' · '))}</div>` : '') + chip;
+  const st = stDe(p); let t = '';
+  if(st === 'recebido' && p.pagoEm) t = 'recebido em ' + fmtData(p.pagoEm); else if(st === 'enviado' && p.enviadoEm) t = 'enviado em ' + fmtData(p.enviadoEm); else if(st === 'a_cobrar' && p.liberadoEm) t = 'liberado em ' + fmtData(p.liberadoEm);
+  return t ? `<div class="obr-obs">${esc(t)}</div>` : '';
 }
 function linhaParcela(p){
   const st = stDe(p);
   return `<tr><td>${esc(p.tipo || 'Parcela')}${p.pct != null ? ` <span class="obr-ped-tag">${esc(fmtPct(p.pct))}%</span>` : ''}${p.restanteDe ? ` <span class="obr-ped-tag">restante de ${esc(p.restanteDe)}</span>` : ''}${p.forma ? ` <span class="obr-ped-tag">${esc(p.forma)}</span>` : ''}${p.obs ? `<div class="obr-obs">${esc(p.obs)}</div>` : ''}${p.valorPrevisto != null ? `<div class="obr-obs">previsto ${esc(brl(p.valorPrevisto))}</div>` : ''}</td>
-    <td class="mono">${esc(fmtData(p.vencimento) || '—')}</td><td class="obr-d">${esc(brl(p.valor))}</td>
+    <td class="obr-d">${esc(brl(p.valor))}</td>
     <td><select class="obr-st obr-st-${st}" data-obr-st="${esc(p.id)}" aria-label="Situação da parcela">${STATUS_PARC.map(([k, n]) => `<option value="${k}" ${k === st ? 'selected' : ''}>${n}</option>`).join('')}</select>${infoStatus(p)}</td>
     <td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="par-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="par-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`;
 }
-function tabelaParcelas(l){ return `<table class="obr-tab"><thead><tr><th>Parcela</th><th>Vencimento</th><th class="obr-d">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${l.map(linhaParcela).join('')}</tbody></table>`; }
+function tabelaParcelas(l){ return `<table class="obr-tab"><thead><tr><th>Parcela</th><th class="obr-d">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${l.map(linhaParcela).join('')}</tbody></table>`; }
 function renderPag(){
   const r = atual(); const el = document.getElementById('obrDetPag'); if(!r || !el) return; const t = totais(r); const par = parcelasDe(r); const ped = pedidosDe(r); const pcts = pctsDe(r);
   const numeros = new Set(ped.map(p => String(p.numero)));
@@ -22464,7 +22518,7 @@ function renderPag(){
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Pagamentos</div>
     <div class="obr-cond"><div><label>Condição de pagamento</label><b>${esc(condTxt)}</b></div><button type="button" class="btn-ghost oe-mini" data-obr-d="cond">${pcts.length ? '✎ Alterar condição' : 'Definir condição'}</button></div>
-    <div class="obr-resumo"><div><label>Contratado</label><b>${esc(brl(t.contratado))}</b></div><div><label>Recebido</label><b class="obr-verde">${esc(brl(t.recebido))}</b></div><div><label>Saldo a receber</label><b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></div><div><label>Em atraso</label><b class="${t.nAtrasadas ? 'obr-verm' : ''}">${esc(brl(t.atrasado))}</b></div></div>
+    <div class="obr-resumo"><div><label>Contratado</label><b>${esc(brl(t.contratado))}</b></div><div><label>Recebido</label><b class="obr-verde">${esc(brl(t.recebido))}</b></div><div><label>Saldo a receber</label><b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></div></div>
     <div class="obr-barra obr-barra-g" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div>
     <div class="obr-statusrow"><span class="obr-st obr-st-nao_liberado">Não liberado ${esc(brl(t.por.nao_liberado))}</span><span class="obr-st obr-st-a_cobrar">A cobrar ${esc(brl(t.por.a_cobrar))}</span><span class="obr-st obr-st-enviado">Enviado ${esc(brl(t.por.enviado))}</span><span class="obr-st obr-st-recebido">Recebido ${esc(brl(t.por.recebido))}</span></div>
     <div class="prv-hint" style="margin:4px 0 8px;">${t.pct}% recebido${t.aProgramar > 0.005 ? ' · <b>' + esc(brl(t.aProgramar)) + '</b> do contratado ainda sem parcela' : ''}${t.saldo < -0.005 ? ' · recebido <b>' + esc(brl(-t.saldo)) + '</b> acima do contratado' : ''}</div>
@@ -22480,7 +22534,7 @@ async function salvarCampo(campo, valor){
   const r = atual(); if(!r) return; const v = String(valor || '').trim(); if((r[campo] || '') === v) return;
   r[campo] = v || null; await gravar(r); renderCab();
 }
-function nomeCampoPedidos(r){ return [['', 'Todos os pedidos']].concat(pedidosDe(r).filter(p => !p.cancelado).map(p => [p.numero, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '')])); }
+function nomeCampoPedidos(r){ return [['', 'Nenhum (parcela avulsa)']].concat(pedidosDe(r).filter(p => !p.cancelado).map(p => [p.numero, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '')])); }
 async function mudarStatus(id, novo){
   const r = atual(); if(!r || !r.parcelas || !r.parcelas[id]) return; const p = r.parcelas[id]; const antigo = stDe(p); if(novo === antigo) return;
   if(novo === 'recebido'){ renderPag(); abrirRecebimento(id); return; }          // o seletor volta ao que era; o recebimento é confirmado no formulário
@@ -22509,7 +22563,7 @@ function abrirRecebimento(id){
     if(!(f > 0.004)){ box.innerHTML = ''; parcial = false; return; }
     if(!parcial){ parcial = true; box.innerHTML = `<div class="obr-nota obr-nota-novo"><b>Pagamento parcial:</b> faltam <b id="obrRFalta"></b> desta parcela. O que fazer com o restante?
       <div class="field" style="margin:8px 0 0;"><select id="obrRAcao"><option value="nova">Criar uma nova parcela com o restante</option>${prox ? `<option value="proxima">Somar na próxima parcela (${esc(prox.tipo || 'Parcela')})</option>` : ''}<option value="nada">Não criar parcela agora (o restante fica só no saldo)</option></select></div>
-      <div class="obr-grid2" id="obrRNova" style="margin-top:6px;"><div class="field obr-meio"><label for="obrRSt">Situação da nova parcela</label><select id="obrRSt"><option value="a_cobrar">A cobrar</option><option value="enviado">Enviado</option><option value="nao_liberado">Não liberado</option></select></div><div class="field obr-meio"><label for="obrRVenc">Vencimento da nova parcela</label><input type="date" id="obrRVenc"></div></div></div>`; }
+      <div id="obrRNova" style="margin-top:6px;"><div class="field"><label for="obrRSt">Situação da nova parcela</label><select id="obrRSt"><option value="a_cobrar">A cobrar</option><option value="enviado">Enviado</option><option value="nao_liberado">Não liberado</option></select></div></div></div>`; }
     $('obrRFalta').textContent = brl(f);
   };
   ov.addEventListener('input', (e) => { if(e.target.id === 'obrRValor') atualizar(); });
@@ -22521,8 +22575,8 @@ function abrirRecebimento(id){
     const f = Math.round((Number(p.valor) - v) * 100) / 100; const acao = f > 0.004 ? $('obrRAcao').value : null; let msg = 'Recebimento registrado.';
     if(Math.abs(v - Number(p.valor)) > 0.004){ if(p.valorPrevisto == null) p.valorPrevisto = p.valor; p.valor = v; }
     p.status = 'recebido'; p.pago = null; p.pagoEm = data; p.forma = $('obrRForma').value || null; p.obs = $('obrRObs').value.trim() || null; const novas = {};
-    if(acao === 'nova'){ const st = $('obrRSt').value; const nid = uid('c'); const venc = $('obrRVenc').value || null;
-      novas[nid] = { id: nid, tipo: 'Restante', restanteDe: p.tipo || 'Parcela', pedido: p.pedido || null, pct: null, vencimento: venc, valor: f, status: st, pago: null, pagoEm: null, enviadoEm: st === 'enviado' ? hojeStr() : null, liberadoEm: st === 'a_cobrar' ? hojeStr() : null, forma: null, obs: null, valorPrevisto: null, ordem: Math.round(((p.ordem || 0) + 0.01) * 1000) / 1000 };
+    if(acao === 'nova'){ const st = $('obrRSt').value; const nid = uid('c');
+      novas[nid] = { id: nid, tipo: 'Restante', restanteDe: p.tipo || 'Parcela', pedido: p.pedido || null, pct: null, valor: f, status: st, pago: null, pagoEm: null, enviadoEm: st === 'enviado' ? hojeStr() : null, liberadoEm: st === 'a_cobrar' ? hojeStr() : null, forma: null, obs: null, valorPrevisto: null, ordem: Math.round(((p.ordem || 0) + 0.01) * 1000) / 1000 };
       msg = 'Recebimento registrado. Criada a parcela "Restante" de ' + brl(f) + ' (' + rotuloStatus(st) + ').'; }
     else if(acao === 'proxima' && prox){ prox.valor = Math.round((Number(prox.valor) + f) * 100) / 100; prox.obs = [prox.obs, 'inclui ' + brl(f) + ' do restante de ' + (p.tipo || 'parcela')].filter(Boolean).join(' · '); msg = 'Recebimento registrado. ' + brl(f) + ' somados à parcela "' + (prox.tipo || 'seguinte') + '".'; }
     else if(acao === 'nada') msg = 'Recebimento registrado. O restante de ' + brl(f) + ' continua só no saldo.';
@@ -22559,21 +22613,66 @@ function acaoDetalhe(a, ds){
   if(a === 'par-add' || a === 'par-pago' || a === 'par-edit' || a === 'par-receber'){
     if(a === 'par-receber') return abrirRecebimento(ds.id);
     const p = a === 'par-edit' ? r.parcelas[ds.id] : null; if(a === 'par-edit' && !p) return;
+    const numPed = p ? (p.pedido || '') : (ds.ped || ''); const alvoAtual = p && p.pedido ? alvoSaldo(r, p.pedido, null) : null; const ehSaldo = !!(alvoAtual && alvoAtual.id === p.id);
     const st0 = p ? stDe(p) : (a === 'par-pago' ? 'recebido' : 'nao_liberado');
-    return formRapido({ titulo: a === 'par-pago' ? 'Registrar pagamento recebido' : p ? 'Editar parcela' : 'Nova parcela', ok: 'Salvar', campos: [
-      { id: 'tipo', rotulo: 'Parcela', tipo: 'select', opcoes: TIPOS_PARCELA, valor: p ? p.tipo : (a === 'par-pago' ? 'Sinal' : 'Parcela única'), meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true },
+    const nExist = numPed ? parcelasDoPedido(r, numPed).filter(x => x.tipo !== 'Saldo' && x.tipo !== 'Restante').length : 0;
+    const tipo0 = p ? p.tipo : (numPed ? (nExist === 0 ? 'Sinal' : (nExist + 1) + 'ª parcela') : (a === 'par-pago' ? 'Sinal' : 'Parcela única'));
+    const alvoNovo = !p && numPed ? alvoSaldo(r, numPed, null) : null;
+    return formRapido({ titulo: a === 'par-pago' ? 'Registrar pagamento recebido' : p ? 'Editar parcela' : 'Nova parcela', ok: 'Salvar',
+      aviso: ehSaldo ? 'O Saldo é o que sobra do pedido: o valor dele se ajusta sozinho quando você cria, edita ou exclui as outras parcelas.' : (!p && numPed ? (alvoNovo ? 'A nova parcela entra <b>antes do Saldo</b> e o valor sai dele (Saldo atual: <b>' + esc(brl(alvoNovo.valor)) + '</b>). O total do pedido não muda.' : 'Parcela ligada a um pedido sai do Saldo dele, e o total do pedido não muda.') : 'Parcelas ligadas a um pedido saem do Saldo dele, e o total do pedido não muda.'), campos: [
+      { id: 'tipo', rotulo: 'Parcela', tipo: 'select', opcoes: TIPOS_PARCELA, valor: tipo0, meio: true, bloqueado: ehSaldo }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true, bloqueado: ehSaldo },
       { id: 'status', rotulo: 'Situação', tipo: 'select', opcoes: STATUS_PARC, valor: st0, meio: true }, { id: 'pagoEm', rotulo: 'Data do recebimento', tipo: 'data', valor: p && p.pagoEm ? p.pagoEm : (st0 === 'recebido' ? hojeStr() : ''), meio: true },
-      { id: 'vencimento', rotulo: 'Vencimento', tipo: 'data', valor: p ? p.vencimento || '' : '', meio: true }, { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p ? p.forma || '' : (r.formaPagamento || ''), meio: true },
-      { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: p ? p.pedido || '' : (ds.ped || '') }, { id: 'obs', rotulo: 'Observação', valor: p ? p.obs || '' : '', dica: 'Ex.: boleto, comprovante, NF…' } ],
+      { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p ? p.forma || '' : (r.formaPagamento || ''), meio: true }, { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: numPed, meio: true, bloqueado: !!p },
+      { id: 'obs', rotulo: 'Observação', valor: p ? p.obs || '' : '', dica: 'Ex.: comprovante…' } ],
       aoSalvar: async (v) => {
         if(!(v.valor > 0)) return 'Informe o valor da parcela.';
         const rec = v.status === 'recebido'; if(rec && !v.pagoEm) return 'Informe a data do recebimento.'; if(rec && v.pagoEm > hojeStr()) return 'A data do recebimento não pode ser futura.';
-        const id = p ? p.id : uid('c'); const ordem = p ? p.ordem : 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0)); const h = hojeStr();
-        r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: v.tipo, pedido: v.pedido || null, pct: p ? (p.pct != null ? p.pct : null) : null, vencimento: v.vencimento || null, valor: v.valor, status: v.status, pago: null, pagoEm: rec ? v.pagoEm : null,
-          enviadoEm: v.status === 'enviado' ? ((p && p.enviadoEm) || h) : null, liberadoEm: v.status === 'a_cobrar' ? ((p && p.liberadoEm) || h) : (p && v.status !== 'nao_liberado' ? p.liberadoEm || null : null), forma: v.forma || null, obs: v.obs || null, valorPrevisto: p && p.valorPrevisto != null ? p.valorPrevisto : null, ordem } });
-        await gravar(r); renderDetalheSecoes(); return null; } });
+        const numero = p ? (p.pedido || null) : (v.pedido || null); const ped = numero ? pedidosDe(r).find(x => String(x.numero) === String(numero)) : null;
+        const mapa = Object.assign({}, r.parcelas); const id = p ? p.id : uid('c'); const h = hojeStr(); let ordem = p ? p.ordem : 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0)); let pct = p ? (p.pct != null ? p.pct : null) : null; let aviso = '';
+        if(ped && !p){
+          const alvo = alvoSaldo(r, numero, null); const existentes = parcelasDoPedido(r, numero);
+          if(alvo){
+            if(v.valor > alvo.valor + 0.004) return 'O valor não pode ser maior que o Saldo do pedido (' + brl(alvo.valor) + ').';
+            const antes = existentes.filter(x => (x.ordem || 0) < (alvo.ordem || 0)).map(x => x.ordem || 0); const prev = antes.length ? Math.max(...antes) : (alvo.ordem || 1) - 1;
+            ordem = Math.round(((prev + (alvo.ordem || 0)) / 2) * 10000) / 10000;                  // logo ANTES do Saldo
+            alvo.valor = arred2(alvo.valor - v.valor);
+            if(alvo.valor <= 0.004){ delete mapa[alvo.id]; aviso = 'O Saldo foi todo usado nesta parcela.'; } else { alvo.pct = parteDoPedido(alvo.valor, ped); aviso = 'Saldo do pedido ajustado para ' + brl(alvo.valor) + '.'; }
+          } else if(!existentes.length){
+            if(v.valor > Number(ped.valor) + 0.004) return 'O valor não pode ser maior que o valor do pedido (' + brl(ped.valor) + ').';
+            const resto = arred2(Number(ped.valor) - v.valor);
+            if(resto > 0.004){ const sid = uid('c'); mapa[sid] = { id: sid, tipo: 'Saldo', pedido: numero, pct: parteDoPedido(resto, ped), valor: resto, status: 'nao_liberado', ordem: ordem + 1 }; aviso = 'Criado o Saldo do pedido com ' + brl(resto) + '.'; }
+          } else return 'Este pedido não tem mais Saldo a receber (todas as parcelas já foram recebidas): não há valor para dividir.';
+          pct = parteDoPedido(v.valor, ped);
+        } else if(ped && p && !ehSaldo){
+          const delta = arred2(v.valor - Number(p.valor));
+          if(Math.abs(delta) > 0.004){
+            const alvo = alvoSaldo(r, numero, p.id);
+            if(alvo){
+              if(delta > alvo.valor + 0.004) return 'O valor não pode passar de ' + brl(arred2(Number(p.valor) + alvo.valor)) + ' (o que o Saldo comporta).';
+              alvo.valor = arred2(alvo.valor - delta); if(alvo.valor <= 0.004) delete mapa[alvo.id]; else alvo.pct = parteDoPedido(alvo.valor, ped); aviso = 'Saldo do pedido ajustado para ' + brl(Math.max(0, alvo.valor)) + '.';
+            } else if(delta < 0){ const sid = uid('c'); mapa[sid] = { id: sid, tipo: 'Saldo', pedido: numero, pct: parteDoPedido(-delta, ped), valor: -delta, status: 'nao_liberado', ordem: 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0)) }; aviso = 'Criado o Saldo do pedido com ' + brl(-delta) + '.'; }
+            else return 'Este pedido não tem Saldo para absorver o aumento.';
+            pct = parteDoPedido(v.valor, ped);
+          }
+        }
+        mapa[id] = { id, tipo: v.tipo, pedido: numero, pct, valor: v.valor, status: v.status, pago: null, pagoEm: rec ? v.pagoEm : null,
+          enviadoEm: v.status === 'enviado' ? ((p && p.enviadoEm) || h) : null, liberadoEm: v.status === 'a_cobrar' ? ((p && p.liberadoEm) || h) : (p && v.status !== 'nao_liberado' ? p.liberadoEm || null : null), forma: v.forma || null, obs: v.obs || null,
+          valorPrevisto: p && p.valorPrevisto != null ? p.valorPrevisto : null, restanteDe: p && p.restanteDe ? p.restanteDe : null, ordem };
+        r.parcelas = mapa; await gravar(r); renderDetalheSecoes(); if(aviso) avisar(aviso, 6000); return null; } });
   }
-  if(a === 'par-rm'){ const p = r.parcelas[ds.id]; if(!p) return; return customConfirm('Remover a parcela "' + (p.tipo || 'Parcela') + '" de ' + brl(p.valor) + '?', async () => { const m = Object.assign({}, r.parcelas); delete m[ds.id]; r.parcelas = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
+  if(a === 'par-rm'){
+    const p = r.parcelas[ds.id]; if(!p) return;
+    if(stDe(p) === 'recebido') return avisar('Esta parcela já foi recebida. Para excluir, mude a situação dela para outra (o recebimento é desfeito) e tente de novo.', 8000);
+    const alvo = p.pedido ? alvoSaldo(r, p.pedido, null) : null;
+    if(alvo && alvo.id === p.id) return avisar('Esta parcela é o Saldo, a parte que sobra do pedido, e não pode ser excluída. Para redistribuir o valor, edite ou exclua as outras parcelas: o valor volta para o Saldo.', 9000);
+    const ped = p.pedido ? pedidosDe(r).find(x => String(x.numero) === String(p.pedido)) : null;
+    const texto = 'Excluir a parcela "' + (p.tipo || 'Parcela') + '" de ' + brl(p.valor) + '?' + (alvo ? ' O valor volta para o Saldo do pedido (de ' + brl(alvo.valor) + ' para ' + brl(arred2(alvo.valor + Number(p.valor))) + '), e o total do pedido não muda.' : '');
+    return customConfirm(texto, async () => {
+      const m = Object.assign({}, r.parcelas); delete m[ds.id];
+      if(alvo){ const a2 = m[alvo.id] || alvo; a2.valor = arred2(Number(a2.valor) + Number(p.valor)); if(ped) a2.pct = parteDoPedido(a2.valor, ped); m[a2.id] = a2; }
+      r.parcelas = m; await gravar(r); renderDetalheSecoes(); if(alvo) avisar('Saldo do pedido ajustado para ' + brl(m[alvo.id].valor) + '.', 5000);
+    }, 'Excluir');
+  }
   if(a === 'excluir') return customConfirm('Excluir o registro de "' + nomeCliente(r) + '" (' + (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1] + ')? Pedidos, parcelas e notas dele saem da lista.', async () => { r.active = false; fecharDetalhe(); await gravar(r); avisar('Registro excluído.'); }, 'Excluir');
 }
 
@@ -22713,12 +22812,12 @@ async function criarRegistro(ov, cond){
 }
 
 function exportarCsv(){
-  const linhas = [['Empresa', 'Cliente', 'Contato', 'Telefone', 'Forma de pagamento', 'Condicao', 'Situacao da obra', 'Pedido', 'Descricao', 'Valor do pedido', 'Contratado (registro)', 'Recebido', 'Saldo', 'Nao liberado', 'A cobrar', 'Enviado', 'Em atraso']];
+  const linhas = [['Empresa', 'Cliente', 'Contato', 'Telefone', 'Forma de pagamento', 'Condicao', 'Situacao da obra', 'Pedido', 'Descricao', 'Valor do pedido', 'Contratado (registro)', 'Recebido', 'Saldo', 'Nao liberado', 'A cobrar', 'Enviado']];
   const dec = (v) => Number(v || 0).toFixed(2).replace('.', ',');
   registros().filter(r => r.empresa === ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => {
     const t = totais(r); const ped = pedidosDe(r); const pc = pctsDe(r); const cond = pc.length ? (pc.length === 1 ? 'A vista' : pc.length + 'x: ' + pc.map((x, i) => rotuloParcela(i, pc.length) + ' ' + fmtPct(x) + '%').join(' / ')) : '';
     (ped.length ? ped : [{}]).forEach((p, i) => linhas.push([(EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1], nomeCliente(r), r.contato || '', r.fone || '', r.formaPagamento || '', cond, rotSit(r.situacao), p.numero || '', (p.descricao || '') + (p.cancelado ? ' (cancelado)' : ''), p.valor != null ? dec(p.valor) : '',
-      i === 0 ? dec(t.contratado) : '', i === 0 ? dec(t.recebido) : '', i === 0 ? dec(t.saldo) : '', i === 0 ? dec(t.por.nao_liberado) : '', i === 0 ? dec(t.por.a_cobrar) : '', i === 0 ? dec(t.por.enviado) : '', i === 0 ? dec(t.atrasado) : '']));
+      i === 0 ? dec(t.contratado) : '', i === 0 ? dec(t.recebido) : '', i === 0 ? dec(t.saldo) : '', i === 0 ? dec(t.por.nao_liberado) : '', i === 0 ? dec(t.por.a_cobrar) : '', i === 0 ? dec(t.por.enviado) : '']));
   });
   const csv = '\uFEFF' + linhas.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + ui.empresa + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
