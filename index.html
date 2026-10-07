@@ -1724,6 +1724,9 @@
   .prv-final-btn{ width:100%; min-height:48px; font-size:15px; }
   .prv-final-ok{ border-color:var(--success); background:var(--success-soft); text-align:left; }
   .prv-step-nomes{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 10px 4px; } .prv-step-nomes input{ width:230px; max-width:100%; font-size:12.5px; padding:5px 8px; min-height:0; }
+  /* telas embutidas nos portais (Galeria/Estoque/Quadros abaixo da barra de abas) */
+  #techEmbedPane > div > .header, #oficinaEmbedPane > div > .header{ display:none !important; }
+  #techEmbedPane, #oficinaEmbedPane{ padding:0; }
   /* ===== Quadros de comando (Gestor) ===== */
   .qd-form{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; background:var(--panel); border:1.5px solid #CDD0D4; border-radius:var(--radius); padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:14px; }
   .qd-form .field{ margin-bottom:0; min-width:180px; }
@@ -1759,6 +1762,17 @@
   .qd-acao{ min-height:44px; padding-left:18px; padding-right:18px; }
 
   .os-quadro-tag{ display:inline-flex; align-items:center; font-size:11px; font-weight:700; letter-spacing:.3px; padding:4px 11px; border-radius:999px; background:var(--ink); color:#fff; white-space:nowrap; }
+
+  /* ===== cartão compacto + detalhe do quadro ===== */
+  .qd-card-compacto{ cursor:pointer; padding:10px 14px; } .qd-card-compacto:hover{ background:var(--panel-2); }
+  .qd-card-compacto .qd-acoes{ align-items:center; } .qd-abrir{ font-size:22px; color:var(--text-dim); padding:0 4px; }
+  .qd-ind{ font-size:13px; margin-left:4px; }
+  .qd-det-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .qd-det-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .qd-obs-lida{ white-space:pre-wrap; background:var(--panel-2); border-radius:8px; padding:10px 12px; font-size:13.5px; }
+  .qd-fotos{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0; }
+  .qd-foto{ position:relative; width:92px; height:92px; } .qd-foto img{ width:100%; height:100%; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+  .qd-foto button{ position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; border:none; background:var(--danger); color:#fff; font-size:12px; cursor:pointer; }
   /* ===== lista de sugestões própria (cliente / equipamento) ===== */
   .app-sug{ position:absolute; left:0; right:0; top:100%; z-index:50; margin-top:4px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); max-height:240px; overflow:auto; }
   .app-sug-item{ padding:10px 12px; font-size:14px; cursor:pointer; border-bottom:1px solid var(--line); }
@@ -1894,7 +1908,8 @@
       <button type="button" class="portal-tab" id="estoqueOpenBtnTech" data-techportaltab="estoque">Estoque</button>
     </div>
   </div>
-  <div class="tech-day-panel" style="padding-top:0;">
+  <div id="techEmbedPane" style="display:none;"></div>
+  <div class="tech-day-panel" id="techAgendaPane" style="padding-top:0;">
     <div class="tech-day-head">
       <div class="tech-day-title">Agenda de hoje</div>
       <div class="tech-day-date mono" id="techDayDate"></div>
@@ -1970,7 +1985,8 @@
       <button type="button" class="portal-tab" id="galeriaOpenBtnOficina" data-oficinaportaltab="galeria">Galeria</button>
     </div>
   </div>
-  <div class="tech-day-panel" style="padding-top:0;">
+  <div id="oficinaEmbedPane" style="display:none;"></div>
+  <div class="tech-day-panel" id="oficinaEquipPane" style="padding-top:0;">
     <!-- Alerta de equipamento parado (etapa 8): configuração some/vira texto pra quem não é gestor. -->
     <div class="painel-block" id="oficinaStaleBlock" style="margin: 0 20px 16px;">
       <div class="painel-block-title-row">
@@ -15466,9 +15482,11 @@ document.getElementById('galeriaAddPhotoInput').addEventListener('change', async
   }
 });
 
-document.getElementById('galeriaOpenBtnTech').addEventListener('click', () => openGaleria('techView'));
+document.getElementById('galeriaOpenBtnTech').addEventListener('click', () => portalMostrarAba('tech', 'galeria'));
 document.getElementById('galeriaOpenBtnFinanceiro').addEventListener('click', () => openGaleria('financeiroView'));
-document.getElementById('galeriaOpenBtnOficina').addEventListener('click', () => openGaleria('oficinaView'));
+document.getElementById('galeriaOpenBtnOficina').addEventListener('click', () => portalMostrarAba('oficina', 'galeria'));
+document.getElementById('oficinaTabEquip').addEventListener('click', () => portalMostrarAba('oficina', 'equipamentos'));
+document.getElementById('techTabAgenda').addEventListener('click', () => portalMostrarAba('tech', 'agenda'));
 document.getElementById('sidebarBtnGaleria').addEventListener('click', () => openGaleria('managerView'));
 
 // ===== Estoque — interface reorganizada (Gestor / Técnico / Oficina) =====
@@ -16643,9 +16661,36 @@ document.getElementById('estoqueRetiradaConfirmBtn').addEventListener('click', (
 });
 
 // Pontos de entrada
-document.getElementById('estoqueOpenBtnOficina').addEventListener('click', () => openEstoque('oficinaView'));
-document.getElementById('quadrosOpenBtnOficina').addEventListener('click', () => { if(window.QUADROS_API) QUADROS_API.abrirOficina(); });
-document.getElementById('estoqueOpenBtnTech').addEventListener('click', () => openEstoque('techView'));
+document.getElementById('estoqueOpenBtnOficina').addEventListener('click', () => portalMostrarAba('oficina', 'estoque'));
+document.getElementById('quadrosOpenBtnOficina').addEventListener('click', () => portalMostrarAba('oficina', 'quadros'));
+// Portais do Técnico e da Oficina (07/10): as abas Galeria, Estoque e Quadros abrem EMBUTIDAS abaixo da barra principal, que
+// continua visível (antes cada uma virava uma tela própria com "Fechar"). As sub-abas de cada uma (ex.: Estoque / Registrar
+// devolução / Registrar retirada) aparecem logo abaixo. É sempre o MESMO elemento de cada tela, só muda de lugar.
+const PORTAIS = { tech: { view: 'techView', embed: 'techEmbedPane', principal: 'techAgendaPane', sel: '[data-techportaltab]', inicial: 'agenda' }, oficina: { view: 'oficinaView', embed: 'oficinaEmbedPane', principal: 'oficinaEquipPane', sel: '[data-oficinaportaltab]', inicial: 'equipamentos' } };
+function portalMostrarAba(portal, tab){
+  const P = PORTAIS[portal]; const embed = document.getElementById(P.embed), principal = document.getElementById(P.principal);
+  document.querySelectorAll('#' + P.view + ' ' + P.sel).forEach(b => b.classList.toggle('active', (b.dataset.techportaltab || b.dataset.oficinaportaltab) === tab));
+  [...embed.children].forEach(v => { v.style.display = 'none'; });
+  if(tab === P.inicial){ embed.style.display = 'none'; principal.style.display = ''; return; }
+  principal.style.display = 'none'; embed.style.display = '';
+  if(tab === 'estoque'){ if(!canViewEstoque()) return; const ev = document.getElementById('estoqueView'); if(ev.parentElement !== embed) embed.appendChild(ev); ev.style.display = ''; document.getElementById('estoqueOwnHeader').style.display = 'none'; document.getElementById('estoqueGestorHeadBlock').style.display = 'none'; estoqueReturnViewId = null; estoqueSearch = ''; estoqueCategoriaFiltro = ''; document.getElementById('estoqueSearchInput').value = ''; estoqueAtualizarVisibilidadeAbas(); estoqueSwitchTab('materiais'); }
+  else if(tab === 'galeria'){ galeriaAbrirEmbutida(embed); }
+  else if(tab === 'quadros'){ if(window.QUADROS_API) QUADROS_API.abrirOficina(embed); }
+}
+async function galeriaAbrirEmbutida(mount){
+  const g = document.getElementById('galeriaView');
+  if(!galeriaOrigem.pai){ galeriaOrigem.pai = g.parentNode; galeriaOrigem.prox = g.nextSibling; }
+  if(g.parentNode !== mount) mount.appendChild(g);
+  g.classList.remove('galeria-no-gestor'); g.classList.add('galeria-embutida');
+  galeriaReturnViewId = null; galeriaNoGestor = false; g.style.display = '';
+  galeriaSelectedClient = null; galeriaClientSearch = ''; document.getElementById('galeriaClientSearchInput').value = '';
+  const box = document.getElementById('galeriaClientList');
+  if(!nodeLoaded.galleryPhotos && box) box.innerHTML = '<div class="empty-state">Carregando fotos da galeria...</div>';
+  try{ await ensureGalleryPhotosLoaded(); }catch(e){ console.error('Falha ao carregar galleryPhotos:', e); }
+  if(g.style.display === 'none') return;
+  showGaleriaClientListScreen();
+}
+document.getElementById('estoqueOpenBtnTech').addEventListener('click', () => portalMostrarAba('tech', 'estoque'));
 document.getElementById('sidebarBtnEstoque').addEventListener('click', () => switchTab('estoque'));
 
 
@@ -20828,23 +20873,75 @@ async function garantirCarregado(){
 // ---------------- Cartões e seções (os mesmos nas duas telas; muda só o que cada perfil pode fazer) ----------------
 function cartaoQuadro(q, modo){
   const et = etapaDe(q);
-  const hist = [
-    ['Cadastrado', q.criadoEm, q.criadoPor], ['Montagem iniciada', q.iniciouMontagemEm, q.iniciouMontagemPor], ['Montagem concluída', q.montadoEm, q.montadoPor],
-    ['Testes iniciados', q.iniciouTesteEm, q.iniciouTestePor], ['Testes finalizados', q.testadoEm, q.testadoPor],
-    q.processedForOS ? ['OS nº ' + (q.numeroOS || '—') + ' registrada', q.processedForOSAt, q.processedForOSBy] : [],
-  ].filter(h => h.length).filter(h => h[1]).map(h => `<div>${h[0]}: ${esc(fmtDataHora(h[1]))}${h[2] ? ' · ' + esc(h[2]) : ''}</div>`).join('');
-  return `<div class="qd-card tom-${et.tom}">
-    <div class="qd-card-main">
-      <div class="qd-cli">${esc(q.cliente)}</div>
-      <div class="qd-linha"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span></div>
-      <div class="qd-hist">${hist}</div>
-    </div>
-    <div class="qd-acoes">
-      ${et.proxima ? `<button type="button" class="btn-primary qd-acao" data-qd="avancar" data-id="${esc(q.id)}">${esc(et.proxima.rotulo)}</button>` : ''}
-      ${modo === 'gestor' && et.voltar && !q.processedForOS ? `<button type="button" class="btn-ghost" data-qd="voltar" data-id="${esc(q.id)}">↩ Voltar etapa</button>` : ''}
-      ${modo === 'gestor' ? `<button type="button" class="btn-ghost qd-remover" data-qd="remover-quadro" data-id="${esc(q.id)}">Remover</button>` : ''}
-    </div>
+  return `<div class="qd-card qd-card-compacto tom-${et.tom}" data-qd="abrir" data-id="${esc(q.id)}" role="button" tabindex="0" title="Toque para abrir">
+    <div class="qd-card-main"><div class="qd-cli">${esc(q.cliente)}${q.obsGestor ? ' <span class="qd-ind" title="Tem observação do Gestor">💬</span>' : ''}${(q.fotos && Object.keys(q.fotos).length) ? ' <span class="qd-ind" title="Tem fotos">📷</span>' : ''}</div>
+      <div class="qd-linha"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span>${q.processedForOS ? `<span class="qd-chip tom-cinza">OS nº ${esc(q.numeroOS || '—')}</span>` : ''}</div></div>
+    <div class="qd-acoes"><span class="qd-abrir">›</span></div>
   </div>`;
+}
+// ---------- detalhe do quadro (07/10): observação do Gestor no topo, ações de etapa, observação do montador e fotos ----------
+const MAX_FOTOS_QD = 6; let detalheId = null, detalheModo = 'gestor';
+function garantirDetalhe(){
+  let ov = document.getElementById('qdDetalheOverlay'); if(ov) return ov;
+  ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'qdDetalheOverlay';
+  ov.innerHTML = '<div class="modal" style="max-width:560px; max-height:90vh; overflow-y:auto;"><div id="qdDetalheCorpo"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', (e) => { if(e.target === ov) fecharDetalhe(); const b = e.target.closest('[data-qdd]'); if(b) acaoDetalhe(b.dataset.qdd, b); });
+  ov.addEventListener('change', (e) => { if(e.target.id === 'qdFotoInput') adicionarFotos(e.target); });
+  ov.addEventListener('focusout', (e) => { if(e.target.id === 'qdObsGestor') salvarObs('obsGestor', e.target.value); if(e.target.id === 'qdObsMontador') salvarObs('obsMontador', e.target.value); });
+  return ov;
+}
+function fecharDetalhe(){ const ov = document.getElementById('qdDetalheOverlay'); if(ov) ov.classList.remove('open'); detalheId = null; }
+function abrirDetalhe(id, modo){
+  const q = porId(quadrosStore, id); if(!q) return;
+  detalheId = id; detalheModo = modo; garantirDetalhe(); renderDetalhe(); document.getElementById('qdDetalheOverlay').classList.add('open');
+}
+function renderDetalhe(){
+  const q = detalheId ? porId(quadrosStore, detalheId) : null; const box = document.getElementById('qdDetalheCorpo'); if(!q || !box) return;
+  const et = etapaDe(q); const gestor = detalheModo === 'gestor';
+  const hist = [['Cadastrado', q.criadoEm, q.criadoPor], ['Montagem iniciada', q.iniciouMontagemEm, q.iniciouMontagemPor], ['Montagem concluída', q.montadoEm, q.montadoPor], ['Testes iniciados', q.iniciouTesteEm, q.iniciouTestePor], ['Testes finalizados', q.testadoEm, q.testadoPor], q.processedForOS ? ['OS nº ' + (q.numeroOS || '—') + ' registrada', q.processedForOSAt, q.processedForOSBy] : []]
+    .filter(h => h.length && h[1]).map(h => `<div>${h[0]}: ${esc(fmtDataHora(h[1]))}${h[2] ? ' · ' + esc(h[2]) : ''}</div>`).join('');
+  const fotos = Object.keys(q.fotos || {}).sort();
+  const foco = document.activeElement; const focoId = foco && box.contains(foco) ? foco.id : null; const caret = focoId ? foco.selectionStart : null;
+  box.innerHTML = `
+    <div class="qd-det-head"><div><h3 style="margin:0;">${esc(q.cliente)}</h3><div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span></div></div><button type="button" class="btn-ghost" data-qdd="fechar">Fechar</button></div>
+    <div class="field" style="margin-top:12px;"><label for="qdObsGestor">Observação do Gestor ${gestor ? '<small style="font-weight:400;">(o montador vê)</small>' : ''}</label>
+      ${gestor ? `<textarea id="qdObsGestor" rows="3" maxlength="600" placeholder="Explique aqui o que o montador precisa saber sobre este quadro">${esc(q.obsGestor || '')}</textarea>` : `<div class="qd-obs-lida">${q.obsGestor ? esc(q.obsGestor) : '<span style="color:var(--text-dim);">Sem observação.</span>'}</div>`}</div>
+    <div class="qd-det-acoes">
+      ${et.proxima ? `<button type="button" class="btn-primary" data-qdd="avancar">${esc(et.proxima.rotulo)}</button>` : '<span class="qd-chip tom-verde">Montado e testado ✓</span>'}
+      ${gestor && et.voltar && !q.processedForOS ? `<button type="button" class="btn-ghost" data-qdd="voltar">↩ Voltar etapa</button>` : ''}
+      ${gestor ? `<button type="button" class="btn-ghost qd-remover" data-qdd="remover">Remover</button>` : ''}
+    </div>
+    <div class="qd-hist" style="margin:8px 0 0;">${hist}</div>
+    <div class="field" style="margin-top:14px;"><label for="qdObsMontador">Observação do montador</label>
+      <textarea id="qdObsMontador" rows="3" maxlength="600" placeholder="Anote aqui o que foi feito, pendências, peças…">${esc(q.obsMontador || '')}</textarea>${q.obsMontadorPor ? `<div class="qd-hist">${esc(q.obsMontadorPor)}${q.obsMontadorEm ? ' · ' + esc(fmtDataHora(q.obsMontadorEm)) : ''}</div>` : ''}</div>
+    <div class="field" style="margin-top:10px;"><label>Fotos (${fotos.length} de ${MAX_FOTOS_QD})</label>
+      <div class="qd-fotos">${fotos.map(k => `<div class="qd-foto"><img src="${esc(q.fotos[k])}" alt="Foto"><button type="button" data-qdd="rmfoto" data-k="${esc(k)}" aria-label="Remover foto">✕</button></div>`).join('')}</div>
+      ${fotos.length < MAX_FOTOS_QD ? `<div class="prv-foto-acoes"><button type="button" class="btn-ghost oe-mini" data-qdd="foto-cam">📷 Tirar foto</button><button type="button" class="btn-ghost oe-mini" data-qdd="foto-gal">🖼 Da galeria</button></div>` : '<div class="qd-hist">Limite de fotos atingido.</div>'}
+      <input type="file" id="qdFotoInput" accept="image/*" style="display:none;"></div>`;
+  if(focoId){ const el = document.getElementById(focoId); if(el){ el.focus(); try{ el.setSelectionRange(caret, caret); }catch(e){} } }
+}
+async function salvarObs(campo, texto){
+  const q = detalheId ? porId(quadrosStore, detalheId) : null; if(!q) return;
+  const v = String(texto || '').trim(); if((q[campo] || '') === v) return;
+  q[campo] = v || null;
+  if(campo === 'obsMontador'){ q.obsMontadorPor = currentActingName() || null; q.obsMontadorEm = new Date().toISOString(); }
+  renderListas(); await quadrosStore.save(true);
+}
+function acaoDetalhe(a, b){
+  const q = detalheId ? porId(quadrosStore, detalheId) : null; if(!q && a !== 'fechar') return;
+  if(a === 'fechar') return fecharDetalhe();
+  if(a === 'avancar') return avancar(q.id);
+  if(a === 'voltar') return voltar(q.id);
+  if(a === 'remover'){ customConfirm('Remover o quadro de "' + q.cliente + '" (' + nomeDoTipo(q) + ') da lista?', async () => { q.active = false; fecharDetalhe(); renderListas(); await quadrosStore.save(); }, 'Remover'); return; }
+  if(a === 'foto-cam' || a === 'foto-gal'){ const inp = document.getElementById('qdFotoInput'); if(!inp) return; if(a === 'foto-cam') inp.setAttribute('capture', 'environment'); else inp.removeAttribute('capture'); inp.value = ''; inp.click(); return; }
+  if(a === 'rmfoto'){ const k = b.dataset.k; customConfirm('Remover esta foto?', async () => { const qq = porId(quadrosStore, detalheId); if(!qq || !qq.fotos) return; delete qq.fotos[k]; qq.fotos = Object.assign({}, qq.fotos); renderDetalhe(); renderListas(); await quadrosStore.save(true); }, 'Remover'); return; }
+}
+async function adicionarFotos(inp){
+  const q = detalheId ? porId(quadrosStore, detalheId) : null; const arquivos = Array.from(inp.files || []); if(!q || !arquivos.length) return;
+  q.fotos = q.fotos || {};
+  for(const f of arquivos){ if(Object.keys(q.fotos).length >= MAX_FOTOS_QD) break; try{ const url = await compressImageFile(f); q.fotos['f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5)] = url; }catch(e){ console.error('quadros: foto', e); } }
+  q.fotos = Object.assign({}, q.fotos); inp.value = ''; renderDetalhe(); renderListas(); await quadrosStore.save(true);
 }
 function htmlSecoes(modo){
   const todos = quadrosAtivos();
@@ -20864,6 +20961,7 @@ function htmlSecoes(modo){
   return html;
 }
 function renderListas(){
+  if(detalheId && document.getElementById('qdDetalheOverlay') && document.getElementById('qdDetalheOverlay').classList.contains('open')) renderDetalhe();
   document.querySelectorAll('.qd-secoes').forEach(el => { el.innerHTML = htmlSecoes(el.dataset.qdSecoes); });
   refrescarOS();
   const box = document.getElementById('tabQuadros'); if(!box || !box._qdMontado) return;
@@ -20937,6 +21035,7 @@ function aoClicar(e){
   const a = b.dataset.qd; const id = b.dataset.id;
   if(a === 'add') return adicionarQuadro();
   if(a === 'add-tipo') return adicionarTipo();
+  if(a === 'abrir'){ const sec = b.closest('[data-qd-secoes]'); return abrirDetalhe(id, sec && sec.dataset.qdSecoes === 'oficina' ? 'oficina' : 'gestor'); }
   if(a === 'avancar') return avancar(id);
   if(a === 'voltar') return voltar(id);
   if(a === 'remover-quadro'){
@@ -21004,8 +21103,9 @@ async function abrir(){
 }
 
 // ---------------- Tela da Oficina (aba "Quadros": tela própria com "Fechar", como Estoque e Galeria) ----------------
-async function abrirOficina(){
+async function abrirOficina(mount){
   const v = document.getElementById('quadrosOficinaView'); if(!v) return;
+  if(!v._qdPai) v._qdPai = v.parentNode;
   if(!v._qdMontado){
     v.innerHTML = `
       <div class="header">
@@ -21021,7 +21121,9 @@ async function abrirOficina(){
     document.getElementById('quadrosOficinaCloseBtn').addEventListener('click', fecharOficina);
     v._qdMontado = true;
   }
-  document.getElementById('oficinaView').style.display = 'none';
+  const cab = v.querySelector('.header');
+  if(mount){ if(v.parentNode !== mount) mount.appendChild(v); if(cab) cab.style.display = 'none'; }          // embutido no portal da Oficina
+  else { if(v._qdPai && v.parentNode !== v._qdPai) v._qdPai.appendChild(v); if(cab) cab.style.display = ''; document.getElementById('oficinaView').style.display = 'none'; }
   v.style.display = '';
   if(!carregado){ v.querySelector('.qd-secoes').innerHTML = '<div class="empty-state">Carregando…</div>'; await garantirCarregado(); }
   renderListas();
