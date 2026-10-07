@@ -1840,6 +1840,25 @@
   .obr-tab td .prv-chip{ white-space:nowrap; }
   @media (max-width: 1100px){ #obrKpis{ grid-template-columns:1fr 1fr !important; } }
   #obrBarra{ align-items:center; } #obrBarra select{ width:auto; max-width:100%; }
+
+  /* ===== condição de pagamento, situação das parcelas e blocos por pedido ===== */
+  .obr-st{ display:inline-block; width:auto; border-radius:999px; padding:3px 10px; font-weight:700; font-size:12px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); min-height:0; }
+  select.obr-st{ padding:3px 6px; cursor:pointer; max-width:150px; }
+  .obr-st-nao_liberado{ background:var(--panel-2); color:var(--text-dim); }
+  .obr-st-a_cobrar{ background:var(--warning-soft); color:var(--warning); border-color:var(--warning-line); }
+  .obr-st-enviado{ background:rgba(47,111,176,.12); color:#2F6FB0; border-color:rgba(47,111,176,.35); }
+  .obr-st-recebido{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
+  .obr-statusrow{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
+  .obr-cond{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:var(--panel-2); border-radius:var(--radius-sm); padding:8px 12px; margin-bottom:10px; }
+  .obr-cond label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; } .obr-cond b{ font-size:13.5px; }
+  .obr-ped-bloco{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 10px; margin-bottom:10px; background:var(--panel); }
+  .obr-ped-bloco-h{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:baseline; margin-bottom:6px; }
+  .obr-canc-bloco{ opacity:.7; } .obr-sub-i{ font-size:12.5px; color:var(--text-dim); } .obr-verm{ color:var(--danger); }
+  .obr-resto-t{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin:6px 0 2px; }
+  .obr-resto{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:4px 12px; }
+  .obr-cd-info{ font-size:12.5px; margin:4px 0 2px; } .obr-cd-ok{ color:var(--success-dark); font-weight:600; } .obr-cd-erro{ color:var(--danger); font-weight:600; } .obr-cd-neutro{ color:var(--text-dim); }
+  .obr-modo{ margin:12px 0 4px; display:flex; flex-direction:column; gap:6px; } .obr-modo label{ display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; } .obr-modo input{ width:auto; margin-top:3px; }
+  .obr-tab tfoot td{ border-top:1px solid var(--line); border-bottom:none; }
 </style>
 </head>
 <body>
@@ -22168,8 +22187,16 @@ const avisar = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 5000); }catch(e){ t
 const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
-const TIPOS_PARCELA = ['Sinal', '2ª parcela', '3ª parcela', '4ª parcela', 'Saldo', 'Parcela única', 'Outro'];
+const TIPOS_PARCELA = ['Sinal', '2ª parcela', '3ª parcela', '4ª parcela', '5ª parcela', 'Saldo', 'Parcela única', 'Outro'];
+// Situação de cada parcela: Não liberado (ainda não é hora de cobrar) → A cobrar (liberada) → Enviado (cobrança enviada ao cliente) → Recebido.
+const STATUS_PARC = [['nao_liberado', 'Não liberado'], ['a_cobrar', 'A cobrar'], ['enviado', 'Enviado'], ['recebido', 'Recebido']];
+const stDe = (p) => p.status || (p.pago ? 'recebido' : 'a_cobrar');          // registros da 1ª versão tinham só "pago"
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
+const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
+const fmtPct = (x) => String(Math.round(Number(x) * 100) / 100).replace('.', ',');
+// Divide o valor de um pedido pelos percentuais; a última parcela absorve o arredondamento (soma exata).
+function dividirValor(V, pcts){ let acum = 0; return pcts.map((pc, i) => { const v = i === pcts.length - 1 ? Math.round((V - acum) * 100) / 100 : Math.round(V * pc) / 100; acum += v; return v; }); }
+const pctsDe = (r) => { const c = r && r.cond; if(!c) return []; const a = Array.isArray(c.pcts) ? c.pcts : Object.values(c.pcts || {}); return a.map(Number).filter(x => isFinite(x)); };
 const store = createEstoqueStore('obrasPedidos', '⚠️ Não foi possível salvar o registro de obra. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null;
 const ui = { empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, montado: false };
@@ -22177,15 +22204,28 @@ const ui = { empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, mo
 // ---------- cálculo ----------
 const registros = () => store.items.filter(r => r && r.id && r.active !== false);
 const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
-const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => String(a.pago ? a.pagoEm : (a.vencimento || '9999-99-99')).localeCompare(String(b.pago ? b.pagoEm : (b.vencimento || '9999-99-99'))) || (a.ordem || 0) - (b.ordem || 0));
+const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0) || String(a.vencimento || a.pagoEm || '9999').localeCompare(String(b.vencimento || b.pagoEm || '9999')));
 const nfsDe = (r) => lista(r.nfs).sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')));
+const atrasada = (p) => (stDe(p) === 'a_cobrar' || stDe(p) === 'enviado') && !!p.vencimento && p.vencimento < hojeStr();
 function totais(r){
-  const ped = pedidosDe(r).filter(p => !p.cancelado), par = parcelasDe(r);
-  const contratado = soma(ped.map(p => p.valor)), recebido = soma(par.filter(p => p.pago).map(p => p.valor));
-  const pend = par.filter(p => !p.pago), previsto = soma(pend.map(p => p.valor)), hoje = hojeStr();
-  const atras = pend.filter(p => p.vencimento && p.vencimento < hoje); const saldo = Math.round((contratado - recebido) * 100) / 100;
+  const todosPed = pedidosDe(r), ativos = todosPed.filter(p => !p.cancelado); const canc = new Set(todosPed.filter(p => p.cancelado).map(p => String(p.numero)));
+  const par = parcelasDe(r).filter(p => stDe(p) === 'recebido' || !(p.pedido && canc.has(String(p.pedido))));      // parcela de pedido cancelado só conta se já foi recebida
+  const por = { nao_liberado: 0, a_cobrar: 0, enviado: 0, recebido: 0 }, cont = { nao_liberado: 0, a_cobrar: 0, enviado: 0, recebido: 0 };
+  par.forEach(p => { const k = stDe(p); por[k] += Number(p.valor) || 0; cont[k]++; }); Object.keys(por).forEach(k => { por[k] = Math.round(por[k] * 100) / 100; });
+  const contratado = soma(ativos.map(p => p.valor)), recebido = por.recebido, previsto = Math.round((por.nao_liberado + por.a_cobrar + por.enviado) * 100) / 100;
+  const atras = par.filter(atrasada); const saldo = Math.round((contratado - recebido) * 100) / 100;
   const fin = contratado <= 0 ? 'sem_valor' : saldo <= 0.005 ? 'quitado' : recebido > 0 ? 'parcial' : 'a_receber';
-  return { contratado, recebido, previsto, saldo, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), atrasado: soma(atras.map(p => p.valor)), nAtrasadas: atras.length, pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ped.length, nfTotal: soma(nfsDe(r).map(n => n.valor)) };
+  return { contratado, recebido, previsto, saldo, por, cont, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), atrasado: soma(atras.map(p => p.valor)), nAtrasadas: atras.length, pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ativos.length, nfTotal: soma(nfsDe(r).map(n => n.valor)) };
+}
+function gerarParcelas(r, ped, pcts){      // cria as parcelas de UM pedido pela condição (Sinal já "A cobrar"; as demais "Não liberado")
+  const vals = dividirValor(Number(ped.valor), pcts); const out = {}; let ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
+  pcts.forEach((pc, i) => { const id = uid('c') + i; out[id] = { id, tipo: rotuloParcela(i, pcts.length), pedido: ped.numero, pct: pc, valor: vals[i], status: i === 0 ? 'a_cobrar' : 'nao_liberado', vencimento: null, ordem: ordem++ }; });
+  return out;
+}
+function recalcularPedido(r, ped){            // o valor do pedido mudou: reajusta as parcelas ainda não recebidas
+  const ps = lista(r.parcelas).filter(x => String(x.pedido) === String(ped.numero) && x.pct != null).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)); if(!ps.length) return;
+  const pcts = ps.map(x => Number(x.pct)); if(Math.abs(soma(pcts) - 100) > 0.01) return; const vals = dividirValor(Number(ped.valor), pcts);
+  ps.forEach((x, i) => { if(stDe(x) !== 'recebido') x.valor = vals[i]; });
 }
 function nomeCliente(r){ const c = r.clienteId != null ? (typeof clients !== 'undefined' ? clients : []).find(x => String(x.id) === String(r.clienteId)) : null; return c ? c.name : r.cliente; }
 const clientePorNome = (n) => { const k = fold(n); return k ? (typeof clients !== 'undefined' ? clients : []).find(c => fold(c.name) === k) : null; };
@@ -22209,7 +22249,7 @@ function montar(){
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
       <div class="search-clear-wrap" style="flex:1; min-width:220px;"><input type="search" id="obrBusca" placeholder="Buscar por cliente, contato ou nº do pedido…" autocomplete="off"></div>
-      <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="atrasado">Com parcela em atraso</option><option value="quitado">Quitados</option></select>
+      <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="atrasado">Com parcela em atraso</option><option value="quitado">Quitados</option></select>
       <select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
       <button type="button" class="btn-primary" data-obr="novo">+ Novo registro</button>
@@ -22233,18 +22273,20 @@ function montar(){
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
 }
 function kpis(todos){
-  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), saldo = soma(t.map(x => Math.max(0, x.saldo))), atras = soma(t.map(x => x.atrasado)), nAt = t.reduce((n, x) => n + x.nAtrasadas, 0);
+  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado)), atras = soma(t.map(x => x.atrasado));
+  const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado, 0), nAt = t.reduce((n, x) => n + x.nAtrasadas, 0);
   return PREV_API.kpiCards([
     { tom: 'neutro', icone: 'total', texto: brlCurto(contr), zero: !(contr > 0), rotulo: 'Contratado', sub: todos.length + (todos.length === 1 ? ' obra' : ' obras') + ' · ' + soma(t.map(x => x.nPedidos)) + ' pedidos' },
     { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
-    { tom: 'amarelo', icone: 'relogio', texto: brlCurto(saldo), zero: !(saldo > 0), rotulo: 'A receber', sub: t.filter(x => x.saldo > 0.005).length + ' obras com saldo' },
-    { tom: 'vermelho', icone: 'alerta', texto: brlCurto(atras), zero: !(atras > 0), rotulo: 'Em atraso', sub: nAt + (nAt === 1 ? ' parcela vencida' : ' parcelas vencidas') },
+    { tom: 'amarelo', icone: 'relogio', texto: brlCurto(ac), zero: !(ac > 0), rotulo: 'A cobrar', sub: nAc + (nAc === 1 ? ' parcela liberada' : ' parcelas liberadas') },
+    { tom: atras > 0 ? 'vermelho' : 'azul', icone: atras > 0 ? 'alerta' : 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando' + (nAt ? ' · ' + nAt + ' em atraso' : '') },
   ]);
 }
 function cartao(r){
   const t = totais(r); const ped = pedidosDe(r).filter(p => !p.cancelado);
   const chips = [`<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'cancelada' ? 'gray' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : t.fin === 'parcial' ? '<span class="prv-chip amber">Parcial</span>' : '',
+    t.cont.a_cobrar ? `<span class="prv-chip amber">A cobrar ${esc(brl(t.por.a_cobrar))}</span>` : '', t.cont.enviado ? `<span class="prv-chip gray">Enviado ${esc(brl(t.por.enviado))}</span>` : '',
     t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso · ${esc(brl(t.atrasado))}</span>` : ''].join('');
   return `<div class="obr-card" data-obr="abrir" data-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="obr-card-main"><div class="obr-cli">${esc(nomeCliente(r))} ${chips}</div>
@@ -22260,7 +22302,7 @@ function renderLista(){
   const todos = doEmp(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
   const q = fold(ui.busca);
   let l = todos.filter(r => !q || fold([nomeCliente(r), r.contato, r.fone, r.formaPagamento, pedidosDe(r).map(p => p.numero + ' ' + p.descricao).join(' ')].join(' ')).includes(q));
-  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'atrasado' && !t.nAtrasadas) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
+  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'atrasado' && !t.nAtrasadas) return false; if(ui.fin === 'acobrar' && !t.cont.a_cobrar) return false; if(ui.fin === 'enviado' && !t.cont.enviado) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
     .sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b))));
   document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
@@ -22303,7 +22345,7 @@ function garantirDetalhe(){
   ov.innerHTML = '<div class="modal obr-modal"><div id="obrDetCab"></div><div id="obrDetDados"></div><div id="obrDetPed"></div><div id="obrDetPag"></div><div id="obrDetNf"></div><div id="obrDetRodape"></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', (e) => { if(e.target === ov){ fecharDetalhe(); return; } const b = e.target.closest('[data-obr-d]'); if(b) acaoDetalhe(b.dataset.obrD, b.dataset); });
-  ov.addEventListener('change', (e) => { const c = e.target.closest('[data-obr-campo]'); if(c) salvarCampo(c.dataset.obrCampo, c.value); });
+  ov.addEventListener('change', (e) => { const c = e.target.closest('[data-obr-campo]'); if(c){ salvarCampo(c.dataset.obrCampo, c.value); return; } const st = e.target.closest('[data-obr-st]'); if(st) mudarStatus(st.dataset.obrSt, st.value); });
   return ov;
 }
 function abrirDetalhe(id){ const r = porId(id); if(!r) return; ui.abertoId = id; const ov = garantirDetalhe(); renderDetalheTudo(); ov.classList.add('open'); ov.querySelector('.modal').scrollTop = 0; }
@@ -22327,7 +22369,7 @@ function renderDados(){
     <div class="field"><label>Pessoa de contato</label><input type="text" data-obr-campo="contato" value="${esc(r.contato || '')}" placeholder="Nome (cargo)"></div>
     <div class="field"><label>WhatsApp / telefone ${wa ? '<a href="#" data-obr-d="whats" style="font-weight:600;">· abrir conversa</a>' : ''}</label><input type="text" data-obr-campo="fone" value="${esc(r.fone || '')}" placeholder="+55 24 90000-0000"></div>
     <div class="field"><label>Forma de pagamento</label><select data-obr-campo="formaPagamento"><option value="">—</option>${FORMAS.map(f => `<option ${r.formaPagamento === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
-    <div class="field obr-largo"><label>Condições de pagamento</label><input type="text" data-obr-campo="condicoes" value="${esc(r.condicoes || '')}" placeholder="Ex.: 50% sinal · 40% na entrega · 10% no término"></div>
+    <div class="field obr-largo"><label>Anotação sobre o pagamento (opcional)</label><input type="text" data-obr-campo="condicoes" value="${esc(r.condicoes || '')}" placeholder="Ex.: cliente pediu boletos; combinado por e-mail em 12/08"></div>
     <div class="field obr-largo"><label>Observações</label><textarea data-obr-campo="obs" rows="2" placeholder="Anotações internas do financeiro">${esc(r.obs || '')}</textarea></div></div></div>`;
 }
 function renderPed(){
@@ -22336,19 +22378,41 @@ function renderPed(){
     ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}</td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
     <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">+ Adicionar pedido</button></div></div>`;
 }
-function statusParcela(p){
-  if(p.pago) return `<span class="prv-chip green">Pago${p.pagoEm ? ' em ' + esc(fmtData(p.pagoEm)) : ''}</span>`;
-  if(!p.vencimento) return '<span class="prv-chip gray">Sem data</span>';
-  const d = diasEntre(hojeStr(), p.vencimento); return d < 0 ? `<span class="prv-chip red">Atrasada ${-d} ${-d === 1 ? 'dia' : 'dias'}</span>` : d === 0 ? '<span class="prv-chip amber">Vence hoje</span>' : `<span class="prv-chip gray">Vence em ${d} ${d === 1 ? 'dia' : 'dias'}</span>`;
+function infoStatus(p){
+  const st = stDe(p); const d = hojeStr(); let partes = [];
+  if(st === 'recebido' && p.pagoEm) partes.push('recebido em ' + fmtData(p.pagoEm)); else if(st === 'enviado' && p.enviadoEm) partes.push('enviado em ' + fmtData(p.enviadoEm)); else if(st === 'a_cobrar' && p.liberadoEm) partes.push('liberado em ' + fmtData(p.liberadoEm));
+  let chip = ''; if(atrasada(p)){ const n = diasEntre(p.vencimento, d); chip = `<span class="prv-chip red">Atrasada ${n} ${n === 1 ? 'dia' : 'dias'}</span>`; }
+  else if((st === 'a_cobrar' || st === 'enviado') && p.vencimento){ const n = diasEntre(d, p.vencimento); chip = n === 0 ? '<span class="prv-chip amber">Vence hoje</span>' : `<span class="obr-ped-tag">vence em ${n} ${n === 1 ? 'dia' : 'dias'}</span>`; }
+  return (partes.length ? `<div class="obr-obs">${esc(partes.join(' · '))}</div>` : '') + chip;
 }
+function linhaParcela(p){
+  const st = stDe(p);
+  return `<tr><td>${esc(p.tipo || 'Parcela')}${p.pct != null ? ` <span class="obr-ped-tag">${esc(fmtPct(p.pct))}%</span>` : ''}${p.forma ? ` <span class="obr-ped-tag">${esc(p.forma)}</span>` : ''}${p.obs ? `<div class="obr-obs">${esc(p.obs)}</div>` : ''}${p.valorPrevisto != null ? `<div class="obr-obs">previsto ${esc(brl(p.valorPrevisto))}</div>` : ''}</td>
+    <td class="mono">${esc(fmtData(p.vencimento) || '—')}</td><td class="obr-d">${esc(brl(p.valor))}</td>
+    <td><select class="obr-st obr-st-${st}" data-obr-st="${esc(p.id)}" aria-label="Situação da parcela">${STATUS_PARC.map(([k, n]) => `<option value="${k}" ${k === st ? 'selected' : ''}>${n}</option>`).join('')}</select>${infoStatus(p)}</td>
+    <td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="par-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="par-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`;
+}
+function tabelaParcelas(l){ return `<table class="obr-tab"><thead><tr><th>Parcela</th><th>Vencimento</th><th class="obr-d">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${l.map(linhaParcela).join('')}</tbody></table>`; }
 function renderPag(){
-  const r = atual(); const el = document.getElementById('obrDetPag'); if(!r || !el) return; const t = totais(r); const par = parcelasDe(r);
+  const r = atual(); const el = document.getElementById('obrDetPag'); if(!r || !el) return; const t = totais(r); const par = parcelasDe(r); const ped = pedidosDe(r); const pcts = pctsDe(r);
+  const numeros = new Set(ped.map(p => String(p.numero)));
+  const condTxt = pcts.length ? (pcts.length === 1 ? 'À vista (1 vez)' : pcts.length + ' vezes') + ': ' + pcts.map((pc, i) => rotuloParcela(i, pcts.length) + ' ' + fmtPct(pc) + '%').join(' · ') : 'Nenhuma condição definida';
+  const blocos = ped.map(p => {
+    const dele = par.filter(x => String(x.pedido) === String(p.numero)); const rec = soma(dele.filter(x => stDe(x) === 'recebido').map(x => x.valor)); const pc = Number(p.valor) > 0 ? Math.min(100, Math.round(rec / Number(p.valor) * 100)) : 0;
+    return `<div class="obr-ped-bloco ${p.cancelado ? 'obr-canc-bloco' : ''}"><div class="obr-ped-bloco-h"><div><b class="mono">Pedido ${esc(p.numero)}</b> <span class="obr-sub-i">${esc(p.descricao || '')}</span>${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}</div><div class="obr-sub-i"><b>${esc(brl(p.valor))}</b> · recebido ${esc(brl(rec))} (${pc}%)</div></div>
+      ${dele.length ? tabelaParcelas(dele) : `<div class="prv-hint" style="margin:4px 0;">Sem parcelas neste pedido.</div>`}
+      <div class="prv-linha" style="margin-top:6px; flex-wrap:wrap;">${!dele.length && pcts.length ? `<button type="button" class="btn-primary oe-mini" data-obr-d="ped-gerar" data-id="${esc(p.id)}">Gerar parcelas pela condição</button>` : ''}<button type="button" class="btn-ghost oe-mini" data-obr-d="par-add" data-ped="${esc(p.numero)}">+ Parcela deste pedido</button></div></div>`;
+  }).join('');
+  const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Pagamentos</div>
-    <div class="obr-resumo"><div><label>Contratado</label><b>${esc(brl(t.contratado))}</b></div><div><label>Recebido</label><b class="obr-verde">${esc(brl(t.recebido))}</b></div><div><label>Previsto</label><b>${esc(brl(t.previsto))}</b></div><div><label>Saldo a receber</label><b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></div></div>
+    <div class="obr-cond"><div><label>Condição de pagamento</label><b>${esc(condTxt)}</b></div><button type="button" class="btn-ghost oe-mini" data-obr-d="cond">${pcts.length ? '✎ Alterar condição' : 'Definir condição'}</button></div>
+    <div class="obr-resumo"><div><label>Contratado</label><b>${esc(brl(t.contratado))}</b></div><div><label>Recebido</label><b class="obr-verde">${esc(brl(t.recebido))}</b></div><div><label>Saldo a receber</label><b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></div><div><label>Em atraso</label><b class="${t.nAtrasadas ? 'obr-verm' : ''}">${esc(brl(t.atrasado))}</b></div></div>
     <div class="obr-barra obr-barra-g" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div>
-    <div class="prv-hint" style="margin:4px 0 8px;">${t.pct}% recebido${t.aProgramar > 0.005 ? ' · <b>' + esc(brl(t.aProgramar)) + '</b> do saldo ainda sem parcela prevista' : ''}${t.saldo < -0.005 ? ' · recebido <b>' + esc(brl(-t.saldo)) + '</b> acima do contratado' : ''}</div>
-    ${par.length ? `<table class="obr-tab"><thead><tr><th>Parcela</th><th>Vencimento</th><th class="obr-d">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${par.map(p => `<tr><td>${esc(p.tipo || 'Parcela')}${p.pedido ? ' <span class="obr-ped-tag">ped. ' + esc(p.pedido) + '</span>' : ''}${p.forma ? ' <span class="obr-ped-tag">' + esc(p.forma) + '</span>' : ''}${p.obs ? `<div class="obr-obs">${esc(p.obs)}</div>` : ''}</td><td class="mono">${esc(fmtData(p.vencimento) || '—')}</td><td class="obr-d">${esc(brl(p.valor))}</td><td>${statusParcela(p)}</td><td class="obr-acoes">${p.pago ? '' : `<button type="button" class="obr-ic obr-ic-ok" data-obr-d="par-receber" data-id="${esc(p.id)}" title="Registrar recebimento">✓</button>`}<button type="button" class="obr-ic" data-obr-d="par-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="par-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhuma parcela lançada. Divida o contratado em parcelas ou registre um pagamento já recebido.</div>'}
-    <div class="prv-linha" style="margin-top:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost oe-mini" data-obr-d="par-dividir">⚖ Dividir em parcelas</button><button type="button" class="btn-ghost oe-mini" data-obr-d="par-add">+ Parcela prevista</button><button type="button" class="btn-primary oe-mini" data-obr-d="par-pago">+ Pagamento recebido</button></div></div>`;
+    <div class="obr-statusrow"><span class="obr-st obr-st-nao_liberado">Não liberado ${esc(brl(t.por.nao_liberado))}</span><span class="obr-st obr-st-a_cobrar">A cobrar ${esc(brl(t.por.a_cobrar))}</span><span class="obr-st obr-st-enviado">Enviado ${esc(brl(t.por.enviado))}</span><span class="obr-st obr-st-recebido">Recebido ${esc(brl(t.por.recebido))}</span></div>
+    <div class="prv-hint" style="margin:4px 0 8px;">${t.pct}% recebido${t.aProgramar > 0.005 ? ' · <b>' + esc(brl(t.aProgramar)) + '</b> do contratado ainda sem parcela' : ''}${t.saldo < -0.005 ? ' · recebido <b>' + esc(brl(-t.saldo)) + '</b> acima do contratado' : ''}</div>
+    ${blocos || '<div class="prv-hint">Cadastre os pedidos para lançar as parcelas.</div>'}
+    ${avulsas.length ? `<div class="obr-ped-bloco"><div class="obr-ped-bloco-h"><div><b>Parcelas avulsas</b> <span class="obr-sub-i">(sem pedido específico)</span></div></div>${tabelaParcelas(avulsas)}</div>` : ''}
+    <div class="prv-linha" style="margin-top:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost oe-mini" data-obr-d="par-add">+ Parcela avulsa</button><button type="button" class="btn-primary oe-mini" data-obr-d="par-pago">+ Pagamento recebido</button></div></div>`;
 }
 function renderNf(){
   const r = atual(); const el = document.getElementById('obrDetNf'); if(!r || !el) return; const nfs = nfsDe(r);
@@ -22365,51 +22429,69 @@ async function salvarCampo(campo, valor){
   r[campo] = v || null; await gravar(r); renderCab();
 }
 function nomeCampoPedidos(r){ return [['', 'Todos os pedidos']].concat(pedidosDe(r).filter(p => !p.cancelado).map(p => [p.numero, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '')])); }
+async function mudarStatus(id, novo){
+  const r = atual(); if(!r || !r.parcelas || !r.parcelas[id]) return; const p = r.parcelas[id]; const antigo = stDe(p); if(novo === antigo) return;
+  if(novo === 'recebido'){ renderPag(); abrirRecebimento(id); return; }          // o seletor volta ao que era; o recebimento é confirmado no formulário
+  const aplicar = async () => { const h = hojeStr(); p.status = novo; p.pago = null; if(antigo === 'recebido') p.pagoEm = null;
+    if(novo === 'enviado') p.enviadoEm = p.enviadoEm || h; else p.enviadoEm = null; if(novo === 'a_cobrar') p.liberadoEm = p.liberadoEm || h; else if(novo === 'nao_liberado') p.liberadoEm = null;
+    r.parcelas = Object.assign({}, r.parcelas); await gravar(r); renderDetalheSecoes(); };
+  if(antigo === 'recebido'){ renderPag(); return customConfirm('Desfazer o recebimento de ' + brl(p.valor) + ' (' + (p.tipo || 'parcela') + ')? A data do recebimento será apagada.', aplicar, 'Desfazer'); }
+  await aplicar();
+}
+function abrirRecebimento(id){
+  const r = atual(); const p = r && r.parcelas && r.parcelas[id]; if(!p) return;
+  formRapido({ titulo: 'Registrar recebimento — ' + (p.tipo || 'Parcela') + (p.pedido ? ' (pedido ' + p.pedido + ')' : ''), aviso: 'Valor previsto: <b>' + esc(brl(p.valor)) + '</b>. Se o cliente pagou outro valor, informe o que entrou; o saldo do pedido se ajusta.', ok: 'Confirmar recebimento', campos: [
+    { id: 'pagoEm', rotulo: 'Data do recebimento', tipo: 'data', valor: hojeStr(), obrig: true, meio: true }, { id: 'valor', rotulo: 'Valor recebido (R$)', tipo: 'valor', valor: campoValor(p.valor), obrig: true, meio: true },
+    { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p.forma || r.formaPagamento || '' }, { id: 'obs', rotulo: 'Observação', valor: p.obs || '', dica: 'Ex.: comprovante, NF…' } ],
+    aoSalvar: async (v) => {
+      if(!(v.valor > 0)) return 'Informe o valor recebido.'; if(v.pagoEm > hojeStr()) return 'A data do recebimento não pode ser futura.';
+      if(Math.abs(v.valor - Number(p.valor)) > 0.004){ if(p.valorPrevisto == null) p.valorPrevisto = p.valor; p.valor = v.valor; }
+      p.status = 'recebido'; p.pago = null; p.pagoEm = v.pagoEm; p.forma = v.forma || null; p.obs = v.obs || null; r.parcelas = Object.assign({}, r.parcelas); await gravar(r); renderDetalheSecoes(); return null; } });
+}
 function acaoDetalhe(a, ds){
   const r = atual(); if(!r && a !== 'fechar') return;
   if(a === 'fechar') return fecharDetalhe();
   if(a === 'whats'){ openWhatsapp(phoneDigits(r.fone), ''); return; }
+  if(a === 'cond') return abrirCondicao();
+  if(a === 'ped-gerar'){ const p = r.pedidos[ds.id]; const pcts = pctsDe(r); if(!p || !pcts.length) return; r.parcelas = Object.assign({}, r.parcelas, gerarParcelas(r, p, pcts)); gravar(r).then(() => { renderDetalheSecoes(); avisar('Parcelas do pedido ' + p.numero + ' geradas pela condição.'); }); return; }
   if(a === 'ped-add' || a === 'ped-edit'){
     const p = a === 'ped-edit' ? r.pedidos[ds.id] : null; if(a === 'ped-edit' && !p) return;
-    return formRapido({ titulo: p ? 'Editar pedido' : 'Novo pedido', campos: [
+    return formRapido({ titulo: p ? 'Editar pedido' : 'Novo pedido', aviso: !p && pctsDe(r).length ? 'As parcelas deste pedido serão geradas pela condição do registro.' : '', campos: [
       { id: 'numero', rotulo: 'Nº do pedido', valor: p ? p.numero : '', obrig: true, meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true },
       { id: 'descricao', rotulo: 'Descrição do serviço', valor: p ? p.descricao : '', dica: 'Ex.: Aquecimento solar com apoio a gás' },
       { id: 'cancelado', rotulo: 'Situação do pedido', tipo: 'select', opcoes: [['0', 'Ativo'], ['1', 'Cancelado (não entra no total)']], valor: p && p.cancelado ? '1' : '0' } ],
       aoSalvar: async (v) => {
         const emUso = pedidoEmUso(v.numero, p ? { r: r.id, p: p.id } : null);
         if(emUso) return 'O pedido ' + v.numero + ' já está em "' + nomeCliente(emUso.r) + '" (' + (EMPRESAS.find(e => e[0] === emUso.r.empresa) || [0, ''])[1] + ').';
-        const id = p ? p.id : uid('p'); r.pedidos = Object.assign({}, r.pedidos, { [id]: { id, numero: v.numero, descricao: v.descricao, valor: v.valor, cancelado: v.cancelado === '1' || null } });
-        await gravar(r); renderDetalheSecoes(); return null; } });
+        const id = p ? p.id : uid('p'); const velho = p ? String(p.numero) : null; const novo = { id, numero: v.numero, descricao: v.descricao, valor: v.valor, cancelado: v.cancelado === '1' || null };
+        r.pedidos = Object.assign({}, r.pedidos, { [id]: novo }); let gerou = false;
+        if(p){ if(velho !== String(v.numero)) lista(r.parcelas).forEach(x => { if(String(x.pedido) === velho) x.pedido = v.numero; }); recalcularPedido(r, novo); r.parcelas = Object.assign({}, r.parcelas); }
+        else if(pctsDe(r).length && !novo.cancelado){ r.parcelas = Object.assign({}, r.parcelas, gerarParcelas(r, novo, pctsDe(r))); gerou = true; }
+        await gravar(r); renderDetalheSecoes(); if(gerou) avisar('Parcelas do pedido ' + v.numero + ' geradas pela condição.'); return null; } });
   }
-  if(a === 'ped-rm'){ const p = r.pedidos[ds.id]; if(!p) return; return customConfirm('Remover o pedido ' + p.numero + ' deste registro? Se ele foi cancelado, prefira marcar como "cancelado" em ✎ para manter o histórico.', async () => { const m = Object.assign({}, r.pedidos); delete m[ds.id]; r.pedidos = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
+  if(a === 'ped-rm'){
+    const p = r.pedidos[ds.id]; if(!p) return; const dele = lista(r.parcelas).filter(x => String(x.pedido) === String(p.numero));
+    if(dele.some(x => stDe(x) === 'recebido')) return avisar('O pedido ' + p.numero + ' já tem parcelas recebidas. Marque como "cancelado" em ✎ em vez de remover, para manter o histórico.', 8000);
+    return customConfirm('Remover o pedido ' + p.numero + (dele.length ? ' e as ' + dele.length + ' parcelas dele' : '') + ' deste registro?', async () => { const m = Object.assign({}, r.pedidos); delete m[ds.id]; r.pedidos = m; const mp = Object.assign({}, r.parcelas); dele.forEach(x => { delete mp[x.id]; }); r.parcelas = mp; await gravar(r); renderDetalheSecoes(); }, 'Remover');
+  }
   if(a === 'par-add' || a === 'par-pago' || a === 'par-edit' || a === 'par-receber'){
-    const p = (a === 'par-edit' || a === 'par-receber') ? r.parcelas[ds.id] : null; if((a === 'par-edit' || a === 'par-receber') && !p) return;
-    const pago0 = a === 'par-pago' || a === 'par-receber' || (p && p.pago);
-    return formRapido({ titulo: a === 'par-pago' ? 'Registrar pagamento recebido' : a === 'par-receber' ? 'Registrar recebimento' : p ? 'Editar parcela' : 'Nova parcela prevista', ok: pago0 && !p ? 'Registrar' : 'Salvar', campos: [
+    if(a === 'par-receber') return abrirRecebimento(ds.id);
+    const p = a === 'par-edit' ? r.parcelas[ds.id] : null; if(a === 'par-edit' && !p) return;
+    const st0 = p ? stDe(p) : (a === 'par-pago' ? 'recebido' : 'nao_liberado');
+    return formRapido({ titulo: a === 'par-pago' ? 'Registrar pagamento recebido' : p ? 'Editar parcela' : 'Nova parcela', ok: 'Salvar', campos: [
       { id: 'tipo', rotulo: 'Parcela', tipo: 'select', opcoes: TIPOS_PARCELA, valor: p ? p.tipo : (a === 'par-pago' ? 'Sinal' : 'Parcela única'), meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true },
-      { id: 'situacao', rotulo: 'Situação', tipo: 'select', opcoes: [['0', 'Pendente'], ['1', 'Pago']], valor: pago0 ? '1' : '0', meio: true }, { id: 'pagoEm', rotulo: 'Data do pagamento', tipo: 'data', valor: p && p.pagoEm ? p.pagoEm : (pago0 ? hojeStr() : ''), meio: true },
+      { id: 'status', rotulo: 'Situação', tipo: 'select', opcoes: STATUS_PARC, valor: st0, meio: true }, { id: 'pagoEm', rotulo: 'Data do recebimento', tipo: 'data', valor: p && p.pagoEm ? p.pagoEm : (st0 === 'recebido' ? hojeStr() : ''), meio: true },
       { id: 'vencimento', rotulo: 'Vencimento', tipo: 'data', valor: p ? p.vencimento || '' : '', meio: true }, { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p ? p.forma || '' : (r.formaPagamento || ''), meio: true },
-      { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: p ? p.pedido || '' : '' }, { id: 'obs', rotulo: 'Observação', valor: p ? p.obs || '' : '', dica: 'Ex.: boleto, comprovante, NF…' } ],
+      { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: p ? p.pedido || '' : (ds.ped || '') }, { id: 'obs', rotulo: 'Observação', valor: p ? p.obs || '' : '', dica: 'Ex.: boleto, comprovante, NF…' } ],
       aoSalvar: async (v) => {
         if(!(v.valor > 0)) return 'Informe o valor da parcela.';
-        const pago = v.situacao === '1'; if(pago && !v.pagoEm) return 'Informe a data do pagamento.'; if(pago && v.pagoEm > hojeStr()) return 'A data do pagamento não pode ser futura.';
-        const id = p ? p.id : uid('c'); const ordem = p ? p.ordem : 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
-        r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: v.tipo, pedido: v.pedido || null, vencimento: v.vencimento || null, valor: v.valor, pago: pago || null, pagoEm: pago ? v.pagoEm : null, forma: v.forma || null, obs: v.obs || null, ordem } });
+        const rec = v.status === 'recebido'; if(rec && !v.pagoEm) return 'Informe a data do recebimento.'; if(rec && v.pagoEm > hojeStr()) return 'A data do recebimento não pode ser futura.';
+        const id = p ? p.id : uid('c'); const ordem = p ? p.ordem : 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0)); const h = hojeStr();
+        r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: v.tipo, pedido: v.pedido || null, pct: p ? (p.pct != null ? p.pct : null) : null, vencimento: v.vencimento || null, valor: v.valor, status: v.status, pago: null, pagoEm: rec ? v.pagoEm : null,
+          enviadoEm: v.status === 'enviado' ? ((p && p.enviadoEm) || h) : null, liberadoEm: v.status === 'a_cobrar' ? ((p && p.liberadoEm) || h) : (p && v.status !== 'nao_liberado' ? p.liberadoEm || null : null), forma: v.forma || null, obs: v.obs || null, valorPrevisto: p && p.valorPrevisto != null ? p.valorPrevisto : null, ordem } });
         await gravar(r); renderDetalheSecoes(); return null; } });
   }
   if(a === 'par-rm'){ const p = r.parcelas[ds.id]; if(!p) return; return customConfirm('Remover a parcela "' + (p.tipo || 'Parcela') + '" de ' + brl(p.valor) + '?', async () => { const m = Object.assign({}, r.parcelas); delete m[ds.id]; r.parcelas = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
-  if(a === 'par-dividir'){
-    const t = totais(r); if(!(t.contratado > 0)) return avisar('Cadastre os pedidos com valor antes de dividir em parcelas.');
-    return formRapido({ titulo: 'Dividir em parcelas', aviso: 'Contratado: <b>' + esc(brl(t.contratado)) + '</b>. As parcelas são criadas como <b>previstas</b> (pendentes). Os nomes seguem a planilha: Sinal, 2ª parcela… Saldo.', campos: [
-      { id: 'pct', rotulo: 'Percentuais (somam 100)', valor: '50, 40, 10', obrig: true, dica: 'Ex.: 50, 40, 10' }, { id: 'primeiro', rotulo: 'Primeiro vencimento', tipo: 'data', valor: hojeStr(), meio: true }, { id: 'intervalo', rotulo: 'Intervalo (dias)', valor: '30', meio: true } ],
-      aoSalvar: async (v) => {
-        const pcts = v.pct.split(/[;,\s]+/).filter(Boolean).map(x => Number(x.replace('%', '').replace(',', '.'))); if(!pcts.length || pcts.some(x => !isFinite(x) || x <= 0)) return 'Percentuais inválidos. Use números separados por vírgula.';
-        const s = Math.round(pcts.reduce((n, x) => n + x, 0) * 100) / 100; if(Math.abs(s - 100) > 0.01) return 'Os percentuais somam ' + s + '%; precisam somar 100%.';
-        const dias = Number(String(v.intervalo).replace(',', '.')) || 30; const n = pcts.length; let acum = 0; const novas = {}; let ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
-        pcts.forEach((pc, i) => { const val = i === n - 1 ? Math.round((t.contratado - acum) * 100) / 100 : Math.round(t.contratado * pc) / 100; acum += val; const id = uid('c') + i;
-          novas[id] = { id, tipo: n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela', vencimento: v.primeiro ? somaDias(v.primeiro, i * dias) : null, valor: val, ordem: ordem++ }; });
-        r.parcelas = Object.assign({}, r.parcelas, novas); await gravar(r); renderDetalheSecoes(); return null; } });
-  }
   if(a === 'nf-add' || a === 'nf-edit'){
     const n = a === 'nf-edit' ? r.nfs[ds.id] : null; if(a === 'nf-edit' && !n) return;
     return formRapido({ titulo: n ? 'Editar nota fiscal' : 'Nova nota fiscal', campos: [ { id: 'numero', rotulo: 'Nº da NF', valor: n ? n.numero : '', obrig: true, meio: true }, { id: 'data', rotulo: 'Data de emissão', tipo: 'data', valor: n ? n.data || '' : hojeStr(), meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: n ? campoValor(n.valor) : '', obrig: true } ],
@@ -22419,11 +22501,63 @@ function acaoDetalhe(a, ds){
   if(a === 'excluir') return customConfirm('Excluir o registro de "' + nomeCliente(r) + '" (' + (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1] + ')? Pedidos, parcelas e notas dele saem da lista.', async () => { r.active = false; fecharDetalhe(); await gravar(r); avisar('Registro excluído.'); }, 'Excluir');
 }
 
+// ---------- condição de pagamento: quantas vezes → % do sinal → % das demais ----------
+// Componente usado no novo registro e na janela "Alterar condição". ler() devolve { n, pcts, ok, msg }.
+function construirCondicao(box, iniciais, aoMudar){
+  let n = iniciais.length, sinal = n > 1 ? iniciais[0] : 50, resto = n > 1 ? iniciais.slice(1) : [];
+  box.innerHTML = `<div class="obr-grid2"><div class="field"><label>1) Dividir cada pedido em quantas vezes?</label><select data-cd="qtd"><option value="0">Definir depois (sem parcelas)</option>${Array.from({ length: 12 }, (_, i) => i + 1).map(k => `<option value="${k}">${k === 1 ? '1 vez (à vista)' : k + ' vezes'}</option>`).join('')}</select></div>
+    <div class="field" data-cd="sinalBox"><label>2) Sinal (%)</label><input type="text" inputmode="decimal" data-cd="sinal" autocomplete="off"></div></div>
+    <div data-cd="resto"></div><div class="obr-cd-info" data-cd="info"></div>`;
+  const $ = (k) => box.querySelector(`[data-cd="${k}"]`); const num = (t) => { const x = Number(String(t).replace('%', '').replace(',', '.').trim()); return String(t).trim() === '' ? NaN : x; };
+  const igual = (total, k) => { if(k <= 0) return []; const base = Math.round(total / k * 100) / 100; const a = Array(k).fill(base); a[k - 1] = Math.round((total - base * (k - 1)) * 100) / 100; return a; };
+  const todos = () => n === 0 ? [] : n === 1 ? [100] : [sinal].concat(resto);
+  function pintarResto(){ $('resto').innerHTML = n > 1 ? `<div class="obr-resto-t">3) Distribuição das demais parcelas</div><div class="obr-resto">${resto.map((v, i) => `<div class="field"><label>${esc(rotuloParcela(i + 1, n))} (%)</label><input type="text" inputmode="decimal" data-cd="r" data-i="${i}" value="${esc(fmtPct(v))}" autocomplete="off"></div>`).join('')}</div>` : ''; $('sinalBox').style.display = n > 1 ? '' : 'none'; }
+  function info(){ const a = todos(); const el = $('info'); if(n === 0){ el.innerHTML = '<span class="obr-cd-neutro">As parcelas poderão ser definidas depois, dentro do registro.</span>'; return; }
+    if(a.some(x => !isFinite(x) || x <= 0)){ el.innerHTML = '<span class="obr-cd-erro">Preencha percentuais maiores que zero.</span>'; return; }
+    const sm = Math.round(a.reduce((q, x) => q + x, 0) * 100) / 100; el.innerHTML = Math.abs(sm - 100) < 0.01 ? `<span class="obr-cd-ok">✓ Soma 100% — ${esc(a.map((x, i) => rotuloParcela(i, n) + ' ' + fmtPct(x) + '%').join(' · '))}</span>` : `<span class="obr-cd-erro">Soma ${esc(fmtPct(sm))}% — ${sm < 100 ? 'faltam ' + esc(fmtPct(100 - sm)) : 'passou ' + esc(fmtPct(sm - 100))}% para fechar 100%.</span>`; }
+  const avisa = () => { info(); if(aoMudar) aoMudar(); };
+  box.addEventListener('change', (e) => { if(e.target.dataset.cd !== 'qtd') return; n = Number(e.target.value); if(n > 1){ if(!(sinal > 0 && sinal < 100)) sinal = 50; resto = igual(Math.round((100 - sinal) * 100) / 100, n - 1); $('sinal').value = fmtPct(sinal); } pintarResto(); avisa(); });
+  box.addEventListener('input', (e) => { const k = e.target.dataset.cd; if(k === 'sinal'){ sinal = num(e.target.value); if(sinal > 0 && sinal < 100 && n > 1){ resto = igual(Math.round((100 - sinal) * 100) / 100, n - 1); pintarResto(); } avisa(); } else if(k === 'r'){ resto[Number(e.target.dataset.i)] = num(e.target.value); avisa(); } });
+  $('qtd').value = String(n); $('sinal').value = fmtPct(sinal); pintarResto(); info();
+  return { ler(){ const a = todos(); const ok = n === 0 || (a.every(x => isFinite(x) && x > 0) && Math.abs(a.reduce((q, x) => q + x, 0) - 100) < 0.01); return { n, pcts: a.map(x => Math.round(x * 100) / 100), ok, msg: ok ? '' : 'Ajuste os percentuais da condição de pagamento: precisam somar 100%.' }; } };
+}
+function abrirCondicao(){
+  const r = atual(); if(!r) return; let ov = document.getElementById('obrCondOverlay'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrCondOverlay';
+  const ped = pedidosDe(r).filter(p => !p.cancelado); const semParc = ped.filter(p => !lista(r.parcelas).some(x => String(x.pedido) === String(p.numero)));
+  ov.innerHTML = `<div class="modal" style="max-width:600px; max-height:90vh; overflow-y:auto;"><h3>Condição de pagamento</h3><p class="prv-hint" style="margin:0 0 8px;">Cada pedido é dividido proporcionalmente aos percentuais. O sinal já nasce <b>A cobrar</b>; as demais parcelas, <b>Não liberadas</b>.</p>
+    <div id="obrCCond"></div><div class="obr-modo"><div class="obr-resto-t">O que fazer com as parcelas?</div>
+      <label><input type="radio" name="obrCModo" value="novos" ${semParc.length ? 'checked' : ''}> Aplicar só aos pedidos que ainda não têm parcelas (${semParc.length})</label>
+      <label><input type="radio" name="obrCModo" value="refazer" ${semParc.length ? '' : 'checked'}> Refazer as parcelas de todos os pedidos <small>(substitui as não recebidas; pedido com recebimento fica como está)</small></label>
+      <label><input type="radio" name="obrCModo" value="guardar"> Só guardar a condição, sem mexer nas parcelas</label></div>
+    <div class="field-error" id="obrCErr"></div><div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrCCancel">Cancelar</button><button type="button" class="btn-primary" id="obrCOk">Salvar condição</button></div></div>`;
+  document.body.appendChild(ov); const ctl = construirCondicao(document.getElementById('obrCCond'), pctsDe(r), null);
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrCCancel') ov.remove(); });
+  document.getElementById('obrCOk').onclick = async () => {
+    const c = ctl.ler(); if(!c.ok){ document.getElementById('obrCErr').textContent = c.msg; return; }
+    const modo = (ov.querySelector('input[name="obrCModo"]:checked') || {}).value || 'guardar'; ov.remove();
+    const res = await aplicarCondicao(r, c, modo);
+    avisar('Condição salva.' + (res.feitos ? ' Parcelas geradas em ' + res.feitos + (res.feitos === 1 ? ' pedido.' : ' pedidos.') : '') + (res.pulados.length ? ' Mantidos como estão (já têm recebimento): ' + res.pulados.join(', ') + '.' : ''), 8000);
+  };
+}
+async function aplicarCondicao(r, c, modo){
+  r.cond = c.n ? { pcts: c.pcts } : null; let feitos = 0; const pulados = [];
+  if(modo !== 'guardar' && c.n){
+    pedidosDe(r).filter(p => !p.cancelado).forEach(p => {
+      const dele = lista(r.parcelas).filter(x => String(x.pedido) === String(p.numero)); if(modo === 'novos' && dele.length) return;
+      if(dele.some(x => stDe(x) === 'recebido')){ pulados.push(p.numero); return; }
+      const m = Object.assign({}, r.parcelas); dele.forEach(x => { delete m[x.id]; }); r.parcelas = m;
+      r.parcelas = Object.assign({}, r.parcelas, gerarParcelas(r, p, c.pcts)); feitos++;
+    });
+  }
+  await gravar(r); renderDetalheSecoes(); return { feitos, pulados };
+}
+
 // ---------- novo registro ----------
 function abrirNovo(pre){
   pre = pre || {}; let ov = document.getElementById('obrNovoOverlay'); if(ov) ov.remove();
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrNovoOverlay';
-  ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">Novo registro de obra</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, forma de pagamento e os pedidos (quantos forem, cada um com seu valor).</p>
+  ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">Novo registro de obra</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, pedidos (quantos forem, cada um com seu valor) e a condição de pagamento: o valor de cada pedido é dividido nas parcelas.</p>
     <div class="obr-grid2">
       <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || ui.empresa) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="field"><label>Cliente *</label><input type="text" id="obrNCli" value="${esc(pre.cliente || '')}" placeholder="Digite para buscar os clientes cadastrados" autocomplete="off"></div>
@@ -22434,21 +22568,29 @@ function abrirNovo(pre){
       <div class="field"><label>WhatsApp / telefone</label><input type="text" id="obrNFone" placeholder="+55 24 90000-0000"></div>
       <div class="field"><label>Forma de pagamento</label><select id="obrNForma"><option value="">—</option>${FORMAS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div>
       <div class="field"><label>Situação da obra</label><select id="obrNSit">${SITUACOES.slice(0, 3).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div>
-      <div class="field obr-largo"><label>Condições de pagamento</label><input type="text" id="obrNCond" placeholder="Ex.: 50% sinal · 40% na entrega · 10% no término"></div>
     </div>
     <div class="obr-sec" style="margin-top:6px;"><div class="obr-sec-t">Pedidos <span class="obr-sec-tot" id="obrNTotal">Total R$ 0,00</span></div>
       <div id="obrNPedidos"></div><div class="prv-linha" style="margin-top:6px;"><button type="button" class="btn-ghost oe-mini" id="obrNAddPed">+ Adicionar outro pedido</button></div></div>
+    <div class="obr-sec"><div class="obr-sec-t">Condição de pagamento</div><div id="obrNCond"></div><div id="obrNPrevia"></div></div>
     <div class="field" style="margin-top:8px;"><label>Observações</label><textarea id="obrNObs" rows="2" placeholder="Anotações internas do financeiro"></textarea></div>
     <div class="field-error" id="obrNErr"></div>
     <div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrNCancel">Cancelar</button><button type="button" class="btn-primary" id="obrNOk">Criar registro</button></div></div>`;
   document.body.appendChild(ov); ov.classList.add('open');
   const $ = (id) => document.getElementById(id);
   const linha = () => `<div class="obr-ped-linha"><input type="text" data-ped="numero" placeholder="Nº" inputmode="numeric"><input type="text" data-ped="descricao" placeholder="Descrição do serviço"><input type="text" data-ped="valor" inputmode="decimal" placeholder="Valor (R$)"><button type="button" class="obr-ic" data-ped-rm title="Remover pedido">✕</button></div>`;
+  const valoresPedidos = () => [...ov.querySelectorAll('[data-ped="valor"]')].map(i => parseValor(i.value)).filter(v => v != null && !Number.isNaN(v) && v > 0);
+  let cond = null;
+  const previa = () => {
+    const box = $('obrNPrevia'); if(!cond) return; const c = cond.ler(); const vals = valoresPedidos(); const total = soma(vals); $('obrNTotal').textContent = 'Total ' + brl(total);
+    if(!c.ok || c.n === 0 || !vals.length){ box.innerHTML = c.n === 0 ? '' : '<div class="prv-hint" style="margin:6px 0 0;">' + (!vals.length ? 'Informe o valor dos pedidos para ver as parcelas.' : 'Feche os 100% para ver as parcelas.') + '</div>'; return; }
+    const porPedido = vals.map(v => dividirValor(v, c.pcts)); const linhas = c.pcts.map((pc, i) => ({ nome: rotuloParcela(i, c.n), pct: pc, valor: soma(porPedido.map(x => x[i])) }));
+    box.innerHTML = `<table class="obr-tab" style="margin-top:8px;"><thead><tr><th>Parcela</th><th class="obr-d">%</th><th class="obr-d">Valor (todos os pedidos)</th><th>Situação inicial</th></tr></thead><tbody>${linhas.map((l, i) => `<tr><td>${esc(l.nome)}</td><td class="obr-d">${esc(fmtPct(l.pct))}%</td><td class="obr-d">${esc(brl(l.valor))}</td><td><span class="obr-st obr-st-${i === 0 ? 'a_cobrar' : 'nao_liberado'}">${i === 0 ? 'A cobrar' : 'Não liberado'}</span></td></tr>`).join('')}</tbody><tfoot><tr><td><b>Total</b></td><td class="obr-d"><b>100%</b></td><td class="obr-d"><b>${esc(brl(total))}</b></td><td></td></tr></tfoot></table><div class="prv-hint" style="margin:4px 0 0;">Cada pedido é dividido separadamente, com a mesma proporção.</div>`;
+  };
+  cond = construirCondicao($('obrNCond'), [50, 40, 10], previa);
   $('obrNPedidos').insertAdjacentHTML('beforeend', linha());
-  const totalizar = () => { const t = soma([...ov.querySelectorAll('[data-ped="valor"]')].map(i => { const v = parseValor(i.value); return isNaN(v) ? 0 : v; })); $('obrNTotal').textContent = 'Total ' + brl(t); };
   $('obrNAddPed').onclick = () => { $('obrNPedidos').insertAdjacentHTML('beforeend', linha()); const ins = ov.querySelectorAll('.obr-ped-linha'); ins[ins.length - 1].querySelector('input').focus(); };
-  ov.addEventListener('input', (e) => { if(e.target.dataset && e.target.dataset.ped === 'valor') totalizar(); });
-  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrNCancel'){ ov.remove(); return; } const rm = e.target.closest('[data-ped-rm]'); if(rm){ if(ov.querySelectorAll('.obr-ped-linha').length > 1) rm.closest('.obr-ped-linha').remove(); else rm.closest('.obr-ped-linha').querySelectorAll('input').forEach(i => { i.value = ''; }); totalizar(); } });
+  ov.addEventListener('input', (e) => { if(e.target.dataset && e.target.dataset.ped === 'valor') previa(); });
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrNCancel'){ ov.remove(); return; } const rm = e.target.closest('[data-ped-rm]'); if(rm){ if(ov.querySelectorAll('.obr-ped-linha').length > 1) rm.closest('.obr-ped-linha').remove(); else rm.closest('.obr-ped-linha').querySelectorAll('input').forEach(i => { i.value = ''; }); previa(); } });
   // cliente: existente (preenche dados) ou novo (pede o endereço e cadastra)
   let estado = '';
   const atualizarCliente = () => {
@@ -22460,10 +22602,10 @@ function abrirNovo(pre){
   };
   const cli = $('obrNCli'); if(window.SUG_API) SUG_API.ligar(cli, 'clientes');
   cli.addEventListener('input', atualizarCliente); cli.addEventListener('change', atualizarCliente); atualizarCliente();
-  $('obrNOk').onclick = () => criarRegistro(ov);
+  $('obrNOk').onclick = () => criarRegistro(ov, cond);
   setTimeout(() => (pre.cliente ? ov.querySelector('[data-ped="numero"]') : cli).focus(), 40);
 }
-async function criarRegistro(ov){
+async function criarRegistro(ov, cond){
   const $ = (id) => document.getElementById(id); const err = (t) => { $('obrNErr').textContent = t; };
   const nome = $('obrNCli').value.trim(); if(!nome) return err('Informe o cliente.');
   const ex = clientePorNome(nome); const end = $('obrNEnd') ? $('obrNEnd').value.trim() : ''; if(!ex && !end) return err('Cliente novo: informe o endereço para cadastrá-lo em Clientes.');
@@ -22477,24 +22619,31 @@ async function criarRegistro(ov){
     ped.push({ numero, descricao: desc, valor });
   }
   if(!ped.length) return err('Adicione pelo menos um pedido (número e valor).');
+  const c = cond.ler(); if(!c.ok) return err(c.msg);
   const contato = $('obrNContato').value.trim(), fone = $('obrNFone').value.trim();
   const btn = $('obrNOk'); btn.disabled = true; btn.textContent = 'Salvando…';
   try{
-    let c = ex;
-    if(!c){ const ok = await createNewClient(nome, end); if(!ok){ btn.disabled = false; btn.textContent = 'Criar registro'; return; } c = clientePorNome(nome); }
-    if(c){ let mudou = false; if(contato && !c.contato){ c.contato = contato; mudou = true; } if(fone && !c.fone){ c.fone = fone; mudou = true; } if(mudou) await saveClients(); }     // não sobrescreve o que já estava no cadastro
+    let cl = ex;
+    if(!cl){ const ok = await createNewClient(nome, end); if(!ok){ btn.disabled = false; btn.textContent = 'Criar registro'; return; } cl = clientePorNome(nome); }
+    if(cl){ let mudou = false; if(contato && !cl.contato){ cl.contato = contato; mudou = true; } if(fone && !cl.fone){ cl.fone = fone; mudou = true; } if(mudou) await saveClients(); }     // não sobrescreve o que já estava no cadastro
     const agora = new Date().toISOString(); const id = uid('ob_');
-    const rec = { id, empresa: $('obrNEmp').value, cliente: c ? c.name : nome, clienteId: c ? c.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, condicoes: $('obrNCond').value.trim() || null, situacao: $('obrNSit').value, obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {} };
+    const rec = { id, empresa: $('obrNEmp').value, cliente: cl ? cl.name : nome, clienteId: cl ? cl.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, cond: c.n ? { pcts: c.pcts } : null, situacao: $('obrNSit').value, obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {}, parcelas: {} };
     ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor }; });
+    if(c.n) Object.values(rec.pedidos).forEach(p => { rec.parcelas = Object.assign({}, rec.parcelas, gerarParcelas(rec, p, c.pcts)); });
     store.items.push(rec); ui.empresa = rec.empresa; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); ui.busca = ''; const bi = document.getElementById('obrBusca'); if(bi) bi.value = '';
     ov.remove(); renderLista(); await store.save(true);
-    avisar(!ex ? 'Registro criado e cliente cadastrado em Clientes.' : 'Registro criado.'); abrirDetalhe(id);
+    avisar(!ex ? 'Registro criado e cliente cadastrado em Clientes.' : 'Registro criado' + (c.n ? ' com ' + (ped.length * c.n) + ' parcelas.' : '.')); abrirDetalhe(id);
   }catch(e){ console.error(e); err('Não foi possível salvar agora. Verifique a conexão e tente de novo.'); btn.disabled = false; btn.textContent = 'Criar registro'; }
 }
 
 function exportarCsv(){
-  const linhas = [['Empresa', 'Cliente', 'Contato', 'Telefone', 'Forma de pagamento', 'Situacao da obra', 'Pedido', 'Descricao', 'Valor do pedido', 'Contratado (registro)', 'Recebido', 'Saldo', 'Em atraso']];
-  registros().filter(r => r.empresa === ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => { const t = totais(r); const ped = pedidosDe(r); (ped.length ? ped : [{}]).forEach((p, i) => linhas.push([(EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1], nomeCliente(r), r.contato || '', r.fone || '', r.formaPagamento || '', rotSit(r.situacao), p.numero || '', (p.descricao || '') + (p.cancelado ? ' (cancelado)' : ''), p.valor != null ? Number(p.valor).toFixed(2).replace('.', ',') : '', i === 0 ? t.contratado.toFixed(2).replace('.', ',') : '', i === 0 ? t.recebido.toFixed(2).replace('.', ',') : '', i === 0 ? t.saldo.toFixed(2).replace('.', ',') : '', i === 0 ? t.atrasado.toFixed(2).replace('.', ',') : ''])); });
+  const linhas = [['Empresa', 'Cliente', 'Contato', 'Telefone', 'Forma de pagamento', 'Condicao', 'Situacao da obra', 'Pedido', 'Descricao', 'Valor do pedido', 'Contratado (registro)', 'Recebido', 'Saldo', 'Nao liberado', 'A cobrar', 'Enviado', 'Em atraso']];
+  const dec = (v) => Number(v || 0).toFixed(2).replace('.', ',');
+  registros().filter(r => r.empresa === ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => {
+    const t = totais(r); const ped = pedidosDe(r); const pc = pctsDe(r); const cond = pc.length ? (pc.length === 1 ? 'A vista' : pc.length + 'x: ' + pc.map((x, i) => rotuloParcela(i, pc.length) + ' ' + fmtPct(x) + '%').join(' / ')) : '';
+    (ped.length ? ped : [{}]).forEach((p, i) => linhas.push([(EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1], nomeCliente(r), r.contato || '', r.fone || '', r.formaPagamento || '', cond, rotSit(r.situacao), p.numero || '', (p.descricao || '') + (p.cancelado ? ' (cancelado)' : ''), p.valor != null ? dec(p.valor) : '',
+      i === 0 ? dec(t.contratado) : '', i === 0 ? dec(t.recebido) : '', i === 0 ? dec(t.saldo) : '', i === 0 ? dec(t.por.nao_liberado) : '', i === 0 ? dec(t.por.a_cobrar) : '', i === 0 ? dec(t.por.enviado) : '', i === 0 ? dec(t.atrasado) : '']));
+  });
   const csv = '\uFEFF' + linhas.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + ui.empresa + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
 }
@@ -22515,7 +22664,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 init();
