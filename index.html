@@ -1861,7 +1861,6 @@
 
   /* tela de Obras e Pedidos usa a largura toda (a dos portais é de 720px) e o quadro se reorganiza sozinho */
   #finObrasView > .tech-day-panel{ max-width:1100px; padding-left:14px; padding-right:14px; }
-  #obrKpis{ grid-template-columns:repeat(auto-fit, minmax(215px, 1fr)) !important; }
   /* cartão do cliente: título, contato, uma coluna por parcela (nome/% · valor · situação) e totais em uma linha */
   .obr-card{ display:block; cursor:pointer; padding:14px 16px 12px; }
   .obr-cli{ font-size:16px; } .obr-sub{ margin-bottom:10px; }
@@ -1874,6 +1873,18 @@
   .obr-st-misto{ background:var(--panel); color:var(--ink); border-style:dashed; }
   .obr-sem-parc{ font-size:12.5px; color:var(--text-dim); background:var(--panel-2); border-radius:8px; padding:8px 10px; margin:2px 0 10px; }
   .obr-tot{ display:flex; gap:6px 22px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); } .obr-tot b{ font-size:13.5px; color:var(--ink); margin-left:3px; } .obr-tot b.obr-verde{ color:var(--success-dark); } .obr-tot b.obr-ambar{ color:var(--warning); }
+
+  /* pedidos em destaque no cartão (número em etiqueta escura + descrição em negrito) */
+  .obr-peds{ display:flex; flex-direction:column; gap:5px; margin:6px 0 10px; }
+  .obr-ped-item{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; }
+  .obr-ped-num{ background:var(--ink); color:#fff; font-weight:800; font-size:12.5px; padding:2px 9px; border-radius:6px; white-space:nowrap; letter-spacing:.1px; }
+  .obr-ped-desc{ font-weight:700; font-size:14.5px; color:var(--ink); overflow-wrap:anywhere; }
+
+  /* quadro com 5 cartões: sempre no formato compacto (ícone + valor em cima, rótulo e detalhe embaixo), 5 em linha quando cabe */
+  #obrKpis{ grid-template-columns:repeat(auto-fit, minmax(178px, 1fr)) !important; }
+  #obrKpis .prv-kpi{ display:grid; grid-template-columns:auto 1fr; grid-template-areas:"icone num" "rotulo rotulo" "sub sub"; align-items:center; column-gap:9px; row-gap:6px; padding:12px 9px 12px 15px; }
+  #obrKpis .prv-kpi-texto{ display:contents; } #obrKpis .prv-kpi-icone{ grid-area:icone; width:34px; height:34px; border-radius:10px; } #obrKpis .prv-kpi-icone svg{ width:17px; height:17px; }
+  #obrKpis .prv-kpi-num{ grid-area:num; justify-self:start; font-size:19px; } #obrKpis .prv-kpi-rotulo{ grid-area:rotulo; margin-top:0; font-size:12px; } #obrKpis .prv-kpi-sub{ grid-area:sub; margin-top:-3px; }
 </style>
 </head>
 <body>
@@ -22220,7 +22231,6 @@ const ui = { empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, mo
 const registros = () => store.items.filter(r => r && r.id && r.active !== false);
 const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
 const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0) || String(a.vencimento || a.pagoEm || '9999').localeCompare(String(b.vencimento || b.pagoEm || '9999')));
-const nfsDe = (r) => lista(r.nfs).sort((a, b) => String(a.data || '').localeCompare(String(b.data || '')));
 const atrasada = (p) => (stDe(p) === 'a_cobrar' || stDe(p) === 'enviado') && !!p.vencimento && p.vencimento < hojeStr();
 function totais(r){
   const todosPed = pedidosDe(r), ativos = todosPed.filter(p => !p.cancelado); const canc = new Set(todosPed.filter(p => p.cancelado).map(p => String(p.numero)));
@@ -22230,7 +22240,7 @@ function totais(r){
   const contratado = soma(ativos.map(p => p.valor)), recebido = por.recebido, previsto = Math.round((por.nao_liberado + por.a_cobrar + por.enviado) * 100) / 100;
   const atras = par.filter(atrasada); const saldo = Math.round((contratado - recebido) * 100) / 100;
   const fin = contratado <= 0 ? 'sem_valor' : saldo <= 0.005 ? 'quitado' : recebido > 0 ? 'parcial' : 'a_receber';
-  return { contratado, recebido, previsto, saldo, por, cont, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), atrasado: soma(atras.map(p => p.valor)), nAtrasadas: atras.length, pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ativos.length, nfTotal: soma(nfsDe(r).map(n => n.valor)) };
+  return { contratado, recebido, previsto, saldo, por, cont, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), atrasado: soma(atras.map(p => p.valor)), nAtrasadas: atras.length, pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ativos.length };
 }
 function gerarParcelas(r, ped, pcts){      // cria as parcelas de UM pedido pela condição (Sinal já "A cobrar"; as demais "Não liberado")
   const vals = dividirValor(Number(ped.valor), pcts); const out = {}; let ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
@@ -22288,13 +22298,15 @@ function montar(){
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
 }
 function kpis(todos){
-  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado)), atras = soma(t.map(x => x.atrasado));
-  const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado, 0), nAt = t.reduce((n, x) => n + x.nAtrasadas, 0);
+  // Ordem do fluxo: Contratado → A cobrar → Enviado → Recebido → A receber (o que ainda falta entrar, incluindo o que não foi liberado).
+  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado)), nl = soma(t.map(x => x.por.nao_liberado)), atras = soma(t.map(x => x.atrasado));
+  const aRec = soma(t.map(x => Math.max(0, x.saldo))); const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado, 0), nAt = t.reduce((n, x) => n + x.nAtrasadas, 0), nSaldo = t.filter(x => x.saldo > 0.005).length;
   return PREV_API.kpiCards([
-    { tom: 'neutro', icone: 'total', texto: brlCurto(contr), zero: !(contr > 0), rotulo: 'Contratado', sub: todos.length + (todos.length === 1 ? ' obra' : ' obras') + ' · ' + soma(t.map(x => x.nPedidos)) + ' pedidos' },
-    { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
+    { tom: 'neutro', icone: 'total', texto: brlCurto(contr), zero: !(contr > 0), rotulo: 'Contratado', sub: todos.length + (todos.length === 1 ? ' obra' : ' obras') + ' · ' + soma(t.map(x => x.nPedidos)) + (soma(t.map(x => x.nPedidos)) === 1 ? ' pedido' : ' pedidos') },
     { tom: 'amarelo', icone: 'relogio', texto: brlCurto(ac), zero: !(ac > 0), rotulo: 'A cobrar', sub: nAc + (nAc === 1 ? ' parcela liberada' : ' parcelas liberadas') },
     { tom: atras > 0 ? 'vermelho' : 'azul', icone: atras > 0 ? 'alerta' : 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando' + (nAt ? ' · ' + nAt + ' em atraso' : '') },
+    { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
+    { tom: 'neutro', icone: 'caixa', texto: brlCurto(aRec), zero: !(aRec > 0), rotulo: 'A receber', sub: nSaldo + (nSaldo === 1 ? ' obra' : ' obras') + ' com saldo' + (nl > 0 ? ' · ' + brlCurto(nl) + ' não liberado' : '') },
   ]);
 }
 // Agrupa as parcelas do registro por tipo (Sinal, 2ª parcela… Saldo), somando os pedidos: uma COLUNA por parcela no cartão.
@@ -22320,7 +22332,8 @@ function cartao(r){
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : '', t.nAtrasadas ? `<span class="prv-chip red">⚠ ${t.nAtrasadas} em atraso · ${esc(brl(t.atrasado))}</span>` : ''].join('');
   return `<div class="obr-card" data-obr="abrir" data-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="obr-cli">${esc(nomeCliente(r))} ${chips}</div>
-    <div class="obr-sub">${[r.contato, r.formaPagamento, ped.length + (ped.length === 1 ? ' pedido' : ' pedidos') + (ped.length ? ' (' + ped.slice(0, 4).map(p => esc(p.numero)).join(', ') + (ped.length > 4 ? '…' : '') + ')' : '')].filter(Boolean).join(' · ')}</div>
+    ${ped.length ? `<div class="obr-peds">${ped.slice(0, 4).map(p => `<div class="obr-ped-item"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>`).join('')}${ped.length > 4 ? `<div class="obr-sub">+ ${ped.length - 4} ${ped.length - 4 === 1 ? 'pedido' : 'pedidos'}</div>` : ''}</div>` : '<div class="obr-sub">Nenhum pedido ativo</div>'}
+    ${r.formaPagamento ? `<div class="obr-sub" style="margin-top:-4px;">Pagamento: ${esc(r.formaPagamento)}</div>` : ''}
     ${grupos.length ? `<div class="obr-parcs">${grupos.map(colunaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas ainda. Abra o registro para definir a condição de pagamento.</div>'}
     <div class="obr-tot"><span>Contratado <b>${esc(brl(t.contratado))}</b></span><span>Recebido <b class="obr-verde">${esc(brl(t.recebido))}</b></span><span>Saldo <b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></span></div>
     <div class="obr-barra" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div>
@@ -22353,7 +22366,7 @@ function formRapido(cfg){
     return `<div class="field ${c.meio ? 'obr-meio' : ''}"><label for="${id}">${esc(c.rotulo)}${c.obrig ? ' *' : ''}</label>${ent}</div>`; };
   ov.innerHTML = `<div class="modal" style="max-width:520px; max-height:90vh; overflow-y:auto;"><h3>${esc(cfg.titulo)}</h3>${cfg.aviso ? `<p class="prv-hint" style="margin:0 0 8px;">${cfg.aviso}</p>` : ''}<div class="obr-grid2">${cfg.campos.map(campo).join('')}</div><div class="field-error" id="obrFormErr"></div>
     <div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrFormCancel">Cancelar</button><button type="button" class="btn-primary" id="obrFormOk">${esc(cfg.ok || 'Salvar')}</button></div></div>`;
-  document.body.appendChild(ov);
+  document.body.appendChild(ov); ov.classList.add('open');          // sem a marca "open" a janela existe, mas fica escondida
   const fechar = () => ov.remove();
   ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrFormCancel') fechar(); });
   document.getElementById('obrFormOk').onclick = async () => {
@@ -22373,7 +22386,7 @@ function formRapido(cfg){
 function garantirDetalhe(){
   let ov = document.getElementById('obrDetOverlay'); if(ov) return ov;
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrDetOverlay';
-  ov.innerHTML = '<div class="modal obr-modal"><div id="obrDetCab"></div><div id="obrDetDados"></div><div id="obrDetPed"></div><div id="obrDetPag"></div><div id="obrDetNf"></div><div id="obrDetRodape"></div></div>';
+  ov.innerHTML = '<div class="modal obr-modal"><div id="obrDetCab"></div><div id="obrDetDados"></div><div id="obrDetPed"></div><div id="obrDetPag"></div><div id="obrDetRodape"></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', (e) => { if(e.target === ov){ fecharDetalhe(); return; } const b = e.target.closest('[data-obr-d]'); if(b) acaoDetalhe(b.dataset.obrD, b.dataset); });
   ov.addEventListener('change', (e) => { const c = e.target.closest('[data-obr-campo]'); if(c){ salvarCampo(c.dataset.obrCampo, c.value); return; } const st = e.target.closest('[data-obr-st]'); if(st) mudarStatus(st.dataset.obrSt, st.value); });
@@ -22383,7 +22396,7 @@ function abrirDetalhe(id){ const r = porId(id); if(!r) return; ui.abertoId = id;
 function fecharDetalhe(){ const ov = document.getElementById('obrDetOverlay'); if(ov) ov.classList.remove('open'); ui.abertoId = null; }
 const atual = () => ui.abertoId ? porId(ui.abertoId) : null;
 function renderDetalheTudo(){ renderCab(); renderDados(); renderDetalheSecoes(); }
-function renderDetalheSecoes(){ renderCab(); renderPed(); renderPag(); renderNf(); renderRodape(); }
+function renderDetalheSecoes(){ renderCab(); renderPed(); renderPag(); renderRodape(); }
 function renderCab(){
   const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; const t = totais(r);
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
@@ -22444,12 +22457,6 @@ function renderPag(){
     ${blocos || '<div class="prv-hint">Cadastre os pedidos para lançar as parcelas.</div>'}
     ${avulsas.length ? `<div class="obr-ped-bloco"><div class="obr-ped-bloco-h"><div><b>Parcelas avulsas</b> <span class="obr-sub-i">(sem pedido específico)</span></div></div>${tabelaParcelas(avulsas)}</div>` : ''}
     <div class="prv-linha" style="margin-top:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost oe-mini" data-obr-d="par-add">+ Parcela avulsa</button><button type="button" class="btn-primary oe-mini" data-obr-d="par-pago">+ Pagamento recebido</button></div></div>`;
-}
-function renderNf(){
-  const r = atual(); const el = document.getElementById('obrDetNf'); if(!r || !el) return; const nfs = nfsDe(r);
-  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Notas fiscais <span class="obr-sec-n">${nfs.length}</span><span class="obr-sec-tot">Emitido ${esc(brl(soma(nfs.map(n => n.valor))))}</span></div>
-    ${nfs.length ? `<table class="obr-tab"><thead><tr><th>NF</th><th>Data</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${nfs.map(n => `<tr><td class="mono">${esc(n.numero)}</td><td class="mono">${esc(fmtData(n.data) || '—')}</td><td class="obr-d">${esc(brl(n.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="nf-edit" data-id="${esc(n.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="nf-rm" data-id="${esc(n.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhuma nota fiscal registrada.</div>'}
-    <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="nf-add">+ Nota fiscal</button></div></div>`;
 }
 function renderRodape(){
   const r = atual(); const el = document.getElementById('obrDetRodape'); if(!r || !el) return;
@@ -22523,12 +22530,6 @@ function acaoDetalhe(a, ds){
         await gravar(r); renderDetalheSecoes(); return null; } });
   }
   if(a === 'par-rm'){ const p = r.parcelas[ds.id]; if(!p) return; return customConfirm('Remover a parcela "' + (p.tipo || 'Parcela') + '" de ' + brl(p.valor) + '?', async () => { const m = Object.assign({}, r.parcelas); delete m[ds.id]; r.parcelas = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
-  if(a === 'nf-add' || a === 'nf-edit'){
-    const n = a === 'nf-edit' ? r.nfs[ds.id] : null; if(a === 'nf-edit' && !n) return;
-    return formRapido({ titulo: n ? 'Editar nota fiscal' : 'Nova nota fiscal', campos: [ { id: 'numero', rotulo: 'Nº da NF', valor: n ? n.numero : '', obrig: true, meio: true }, { id: 'data', rotulo: 'Data de emissão', tipo: 'data', valor: n ? n.data || '' : hojeStr(), meio: true }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: n ? campoValor(n.valor) : '', obrig: true } ],
-      aoSalvar: async (v) => { const id = n ? n.id : uid('n'); r.nfs = Object.assign({}, r.nfs, { [id]: { id, numero: v.numero, data: v.data || null, valor: v.valor } }); await gravar(r); renderDetalheSecoes(); return null; } });
-  }
-  if(a === 'nf-rm'){ const n = r.nfs[ds.id]; if(!n) return; return customConfirm('Remover a NF ' + n.numero + '?', async () => { const m = Object.assign({}, r.nfs); delete m[ds.id]; r.nfs = m; await gravar(r); renderDetalheSecoes(); }, 'Remover'); }
   if(a === 'excluir') return customConfirm('Excluir o registro de "' + nomeCliente(r) + '" (' + (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1] + ')? Pedidos, parcelas e notas dele saem da lista.', async () => { r.active = false; fecharDetalhe(); await gravar(r); avisar('Registro excluído.'); }, 'Excluir');
 }
 
