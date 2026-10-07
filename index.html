@@ -1808,8 +1808,7 @@
   .cat-ed-danger{ color:var(--danger); }
   .cat-ed-chk{ display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-dim); white-space:nowrap; }
   /* ===== Financeiro: menu lateral e Obras e Pedidos ===== */
-  #finTabs{ display:flex; gap:8px; padding:0 20px 8px; }
-  @media (min-width: 760px){ #finTabs, #finHeader{ display:none !important; } #finSidebar .sidebar-nav-btn{ font-size:14px; } }
+  @media (min-width: 760px){ #finHeader{ display:none !important; } #finSidebar .sidebar-nav-btn{ font-size:14px; } }
   #financeiroView .app-content{ min-width:0; }
   .obr-tab-n{ opacity:.7; font-weight:600; font-size:12px; }
   .obr-card{ display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 16px; margin-bottom:8px; cursor:pointer; box-shadow:var(--shadow-sm); }
@@ -1951,6 +1950,46 @@
   #avisoNaoBloqueante{ z-index:9600; }
   .obr-resumo{ grid-template-columns:repeat(3, 1fr); } @media (max-width:560px){ .obr-resumo{ grid-template-columns:1fr 1fr; } }
   .obr-card .obr-pc-atraso{ border-color:var(--line); background:var(--panel-2); }
+
+  /* caixinha da parcela: rótulo em cima (com reticências), valor + situação embaixo (a situação desce se não couber) — nunca vaza */
+  .obr-pedlin{ grid-template-columns:minmax(150px, 230px) minmax(0, 1fr); }
+  .obr-parcs-c{ grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); }
+  .obr-pc{ overflow:hidden; display:block; }
+  .obr-pc-n{ font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; font-weight:800; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .obr-pc-b{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:3px 6px; margin-top:2px; }
+  .obr-pc-v{ font-size:14px; font-weight:800; letter-spacing:-.2px; white-space:nowrap; }
+  .obr-pc .obr-st{ font-size:10.5px; padding:1px 7px; white-space:nowrap; }
+  @media (max-width:640px){ .obr-pedlin{ grid-template-columns:minmax(0, 1fr); } }
+
+  /* Financeiro no celular/tablet: a mesma barra de navegação inferior do Gestor (ícone em cima, nome embaixo, ativo em vermelho) */
+  #finBottomNav{ display:none; }
+  @media (max-width: 759px){
+    #finBottomNav{ display:flex; position:fixed; left:0; right:0; bottom:0; z-index:95; background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -2px 12px rgba(20,20,22,0.06); padding:6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); }
+    #finBottomNav .bottom-nav-btn{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:transparent; border:none; color:var(--text-dim); font-family:var(--sans); font-size:10.5px; padding:6px 2px; cursor:pointer; border-radius:var(--radius-sm); position:relative; transition:color .15s; }
+    #finBottomNav .bottom-nav-btn .bottom-nav-icon{ width:21px; height:21px; color:inherit; }
+    #finBottomNav .bottom-nav-btn.active{ color:var(--accent); font-weight:600; }
+    #financeiroView .page{ padding-bottom:84px; }
+  }
+
+  /* ===== andamento do pedido (cores) ===== */
+  .obr-sp{ display:inline-block; width:auto; border-radius:999px; padding:2px 9px; font-weight:700; font-size:11px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); min-height:0; white-space:nowrap; }
+  .obr-sp-aguardando_compra{ background:var(--warning-soft); color:var(--warning); border-color:var(--warning-line); }
+  .obr-sp-liberado_entrega{ background:rgba(47,111,176,.10); color:#2F6FB0; border-color:rgba(47,111,176,.30); }
+  .obr-sp-entregue{ background:rgba(47,111,176,.20); color:#1F4F86; border-color:rgba(47,111,176,.45); }
+  .obr-sp-aguardando_inicio{ background:var(--panel-2); color:var(--ink); border-color:var(--ink); border-style:dashed; }
+  .obr-sp-iniciado{ background:rgba(46,125,79,.12); color:var(--success-dark); border-color:rgba(46,125,79,.35); }
+  .obr-sp-aguardando_testes{ background:rgba(135,92,31,.22); color:#6B4515; border-color:var(--warning-line); }
+  .obr-sp-finalizado{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
+  select.obr-sp{ padding:4px 8px; font-size:12px; cursor:pointer; max-width:100%; }
+  /* ===== aba Obras e Pedidos do Gestor ===== */
+  .obrg-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
+  .obrg-chip{ cursor:pointer; font-family:inherit; } .obrg-chip b{ margin-left:4px; } .obrg-chip-on{ box-shadow:0 0 0 2px var(--ink); }
+  .obrg-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 6px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
+  .obrg-cli{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; margin-bottom:4px; } .obrg-prog{ margin-left:auto; font-size:11.5px; color:var(--text-dim); font-weight:600; }
+  .obrg-ped{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; padding:8px 0; border-top:1px dashed var(--line); }
+  .obrg-ped-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 9px; min-width:0; flex:1 1 260px; } .obrg-ped-a{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; flex:0 1 auto; }
+  .obrg-quando{ flex:1 1 100%; margin:-2px 0 0; }
+  @media (max-width:640px){ .obrg-ped-a{ justify-content:flex-start; flex:1 1 100%; } }
 </style>
 </head>
 <body>
@@ -2072,7 +2111,6 @@
     <nav class="sidebar-nav">
       <button type="button" class="sidebar-nav-btn active" id="finNavOS"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Ordens de serviço</button>
       <button type="button" class="sidebar-nav-btn" id="finNavObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Obras e Pedidos</button>
-      <button type="button" class="sidebar-nav-btn" id="finNavGaleria"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Galeria</button>
     </nav>
     <div class="sidebar-footer"><div class="sidebar-user" id="finSidebarUser"></div><button type="button" class="sidebar-logout-btn" id="finSidebarLogout">Sair</button></div>
   </aside>
@@ -2084,10 +2122,8 @@
         <h1>Financeiro</h1>
       </div>
     </div>
-    <button class="btn-ghost" id="galeriaOpenBtnFinanceiro">Galeria</button>
     <button class="btn-ghost" id="financeiroLogoutBtn">Sair</button>
   </div>
-  <div class="portal-tabs" id="finTabs"><button type="button" class="portal-tab active" id="finTabOS">Ordens de serviço</button><button type="button" class="portal-tab" id="finTabObras">Obras e Pedidos</button></div>
   <div id="finPaneOS">
   <div class="tech-day-panel" id="finOldPanel">
     <div class="tech-day-head">
@@ -2125,6 +2161,10 @@
   <div id="finObrasView" style="display:none;"></div>
   </div>
 </div></div>
+  <nav class="bottom-nav" id="finBottomNav">
+    <button type="button" class="bottom-nav-btn active" id="finBnOS"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span>Ordens de serviço</span></button>
+    <button type="button" class="bottom-nav-btn" id="finBnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
+  </nav>
 </div>
 
 <div id="oficinaView" style="display:none;">
@@ -2507,6 +2547,7 @@
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnClientes"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnAcessos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M20 3h-4M20 3v4"/></svg><span>Acessos</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnOficinaGestor"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg><span>Oficina</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnPainel"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Painel de Controle</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnGaleria"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galeria</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnEstoque"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Estoque</span></button>
@@ -2583,6 +2624,9 @@
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOficinaGestor">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg>
       <span>Oficina</span>
+    </button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
+      <span>Obras e Pedidos</span>
     </button>
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnGaleria">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
@@ -3061,6 +3105,7 @@
        até ele (mesmo elemento, sem duplicar HTML/JS/IDs) — veja openEstoqueGestorTab(). Volta a
        viver no nível do body quando Técnico/Oficina abrem a própria tela cheia (openEstoque()). -->
   <div id="tabEstoque" style="display:none;"></div>
+  <div id="tabObras" style="display:none;"></div>
 
   <!-- Detalhes de um equipamento da Oficina (visão do Gestor) — só leitura nesta etapa. -->
   <div class="overlay" id="oficinaGestorDetalheOverlay">
@@ -11731,6 +11776,7 @@ function switchTab(tab){
   document.getElementById('tabPainel').style.display = tab === 'painel' ? '' : 'none';
   document.getElementById('tabOficinaGestor').style.display = tab === 'oficinagestor' ? '' : 'none';
   document.getElementById('tabEstoque').style.display = tab === 'estoque' ? '' : 'none';
+  document.getElementById('tabObras').style.display = tab === 'obras' ? '' : 'none';
   document.getElementById('tabBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('tabBtnTecnicos').classList.toggle('active', tab === 'tecnicos');
   document.getElementById('tabBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
@@ -11749,9 +11795,10 @@ function switchTab(tab){
   document.getElementById('sidebarBtnPainel').classList.toggle('active', tab === 'painel');
   document.getElementById('sidebarBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('sidebarBtnEstoque').classList.toggle('active', tab === 'estoque');
+  document.getElementById('sidebarBtnObras').classList.toggle('active', tab === 'obras');
   // Navegação inferior (mobile): 4 destinos primários + "Mais" (fica ativo quando o destino
   // atual é um dos 3 que moram dentro da folha "Mais": Enviar agenda, Clientes, Acessos).
-  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque';
+  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque' || tab === 'obras';
   document.getElementById('bottomNavBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('bottomNavBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
   document.getElementById('bottomNavBtnOS').classList.toggle('active', tab === 'os');
@@ -11762,11 +11809,13 @@ function switchTab(tab){
   document.getElementById('bottomNavBtnAcessos').classList.toggle('active', tab === 'acessos');
   document.getElementById('bottomNavBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('bottomNavBtnEstoque').classList.toggle('active', tab === 'estoque');
+  document.getElementById('bottomNavBtnObras').classList.toggle('active', tab === 'obras');
   if(tab === 'clientes') renderClientes();
   if(tab === 'acessos') renderAcessosUsuariosList();
   if(tab === 'painel') renderPainelDeControle();
   if(tab === 'oficinagestor') renderOficinaGestorTab();
   if(tab === 'estoque') openEstoqueGestorTab();
+  if(tab === 'obras' && window.OBR_API) OBR_API.abrirGestor();
   if(tab === 'painel' && window.REL_API) REL_API.abrir();   // Relatórios de OS
 }
 document.getElementById('tabBtnAgenda').addEventListener('click', () => switchTab('agenda'));
@@ -11781,6 +11830,8 @@ document.getElementById('sidebarBtnOS').addEventListener('click', () => switchTa
 document.getElementById('sidebarBtnClientes').addEventListener('click', () => switchTab('clientes'));
 document.getElementById('sidebarBtnAcessos').addEventListener('click', () => switchTab('acessos'));
 document.getElementById('sidebarBtnOficinaGestor').addEventListener('click', () => switchTab('oficinagestor'));
+document.getElementById('sidebarBtnObras').addEventListener('click', () => switchTab('obras'));
+document.getElementById('bottomNavBtnObras').addEventListener('click', () => { switchTab('obras'); toggleBottomNavSheet(false); });
 document.getElementById('bottomNavBtnOficinaGestor').addEventListener('click', () => { switchTab('oficinagestor'); toggleBottomNavSheet(false); });
 document.getElementById('bottomNavBtnGaleria').addEventListener('click', () => { toggleBottomNavSheet(false); openGaleria('managerView'); });
 document.getElementById('bottomNavBtnEstoque').addEventListener('click', () => { toggleBottomNavSheet(false); switchTab('estoque'); });
@@ -15644,7 +15695,6 @@ document.getElementById('galeriaAddPhotoInput').addEventListener('change', async
 });
 
 document.getElementById('galeriaOpenBtnTech').addEventListener('click', () => portalMostrarAba('tech', 'galeria'));
-document.getElementById('galeriaOpenBtnFinanceiro').addEventListener('click', () => openGaleria('financeiroView'));
 document.getElementById('galeriaOpenBtnOficina').addEventListener('click', () => portalMostrarAba('oficina', 'galeria'));
 document.getElementById('oficinaTabEquip').addEventListener('click', () => portalMostrarAba('oficina', 'equipamentos'));
 document.getElementById('techTabAgenda').addEventListener('click', () => portalMostrarAba('tech', 'agenda'));
@@ -17360,6 +17410,7 @@ const ABAS_GESTOR = [
   { id: 'os',            label: 'Cadastros e OS',     botoes: ['tabBtnOS', 'sidebarBtnOS', 'bottomNavBtnOS'] },
   { id: 'clientes',      label: 'Clientes',           botoes: ['tabBtnClientes', 'sidebarBtnClientes', 'bottomNavBtnClientes'] },
   { id: 'oficinagestor', label: 'Oficina',            botoes: ['sidebarBtnOficinaGestor', 'bottomNavBtnOficinaGestor'] },
+  { id: 'obras',         label: 'Obras e Pedidos',    botoes: ['sidebarBtnObras', 'bottomNavBtnObras'] },
   { id: 'painel',        label: 'Painel de Controle', botoes: ['tabBtnPainel', 'sidebarBtnPainel', 'bottomNavBtnPainel'] },
   { id: 'galeria',       label: 'Galeria',            botoes: ['sidebarBtnGaleria', 'bottomNavBtnGaleria'] },
   { id: 'estoque',       label: 'Estoque',            botoes: ['sidebarBtnEstoque', 'bottomNavBtnEstoque'] }
@@ -22273,7 +22324,7 @@ const campoValor = (v) => (v == null || v === '') ? '' : Number(v).toFixed(2).re
 const lista = (o) => Object.values(o || {}).filter(Boolean);
 const soma = (a) => Math.round(a.reduce((n, x) => n + (Number(x) || 0), 0) * 100) / 100;
 const uid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const quem = () => (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
+const quem = () => (typeof currentRole !== 'undefined' && currentRole === 'manager' && typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
 const avisar = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 5000); }catch(e){ try{ alert(t); }catch(_){} } };
 
 const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
@@ -22283,6 +22334,12 @@ const TIPOS_PARCELA = ['Sinal'].concat(Array.from({ length: 11 }, (_, i) => (i +
 // Situação de cada parcela: Não liberado (ainda não é hora de cobrar) → A cobrar (liberada) → Enviado (cobrança enviada ao cliente) → Recebido.
 const STATUS_PARC = [['nao_liberado', 'Não liberado'], ['a_cobrar', 'A cobrar'], ['enviado', 'Enviado'], ['recebido', 'Recebido']];
 const stDe = (p) => p.status || (p.pago ? 'recebido' : 'a_cobrar');          // registros da 1ª versão tinham só "pago"
+// Andamento de cada PEDIDO (quem muda é o Gestor, na aba "Obras e Pedidos" dele; o Financeiro só vê). Fica em `statusPedidos`, um campo à parte do registro,
+// para o Gestor nunca regravar pedidos/parcelas do Financeiro (e vice-versa).
+const STATUS_OBRA = [['aguardando_compra', 'Aguardando compra de equipamentos'], ['liberado_entrega', 'Liberado para entrega'], ['entregue', 'Entregue'], ['aguardando_inicio', 'Aguardando liberação para início'], ['iniciado', 'Iniciado'], ['aguardando_testes', 'Aguardando testes finais'], ['finalizado', 'Finalizado']];
+const rotObra = (k) => (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];
+const statusObraDe = (r, pid) => { const e = (r.statusPedidos || {})[pid]; return e && e.s ? e.s : 'aguardando_compra'; };
+const chipObra = (r, p) => { const k = statusObraDe(r, p.id); return `<span class="obr-sp obr-sp-${k}" title="Andamento definido pelo Gestor">${esc(rotObra(k))}</span>`; };
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
 const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
 const fmtPct = (x) => String(Math.round(Number(x) * 100) / 100).replace('.', ',');
@@ -22336,7 +22393,7 @@ async function garantirCarregado(){
   if(!carregando) carregando = store.load().then(() => { store.attach(() => aoMudarRemoto()); carregado = true; });
   await carregando;
 }
-function aoMudarRemoto(){ renderLista(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
+function aoMudarRemoto(){ renderLista(); renderGestor(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
 async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderLista(); await store.save(true); }
 
 // ---------- tela principal ----------
@@ -22386,11 +22443,11 @@ function kpis(todos){
 const rotuloStatus = (k) => (STATUS_PARC.find(x => x[0] === k) || ['', k])[1];
 // Cartão do cliente: uma linha COMPACTA por pedido (número + descrição + valor) com as parcelas dele lado a lado (nome/% · valor · situação).
 function celulaParcela(p){
-  const st = stDe(p);
-  return `<div class="obr-pc" title="${esc(p.tipo || 'Parcela')}"><div class="obr-pc-t"><span class="obr-pc-n">${esc(p.tipo || 'Parcela')}${p.pct != null ? ' ' + esc(fmtPct(p.pct)) + '%' : ''}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div><div class="obr-pc-v">${esc(brl(p.valor))}</div></div>`;
+  const st = stDe(p); const nome = (p.tipo || 'Parcela') + (p.pct != null ? ' ' + fmtPct(p.pct) + '%' : '');
+  return `<div class="obr-pc" title="${esc(nome)}"><div class="obr-pc-n">${esc(nome)}</div><div class="obr-pc-b"><span class="obr-pc-v">${esc(brl(p.valor))}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div></div>`;
 }
-function linhaPedido(p, parcelas){
-  return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span><span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
+function linhaPedido(r, p, parcelas){
+  return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span>${chipObra(r, p)}<span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
     ${parcelas.length ? `<div class="obr-parcs-c">${parcelas.map(celulaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas neste pedido</div>'}</div>`;
 }
 function cartao(r){
@@ -22401,7 +22458,7 @@ function cartao(r){
   const mostrar = ped.slice(0, 5);
   return `<div class="obr-card" data-obr="abrir" data-id="${esc(r.id)}" role="button" tabindex="0">
     <div class="obr-cli">${esc(nomeCliente(r))} ${chips}${r.formaPagamento ? `<span class="obr-forma">${esc(r.formaPagamento)}</span>` : ''}</div>
-    ${mostrar.length ? mostrar.map(p => linhaPedido(p, par.filter(x => String(x.pedido) === String(p.numero)))).join('') : '<div class="obr-sem-parc">Nenhum pedido ativo</div>'}
+    ${mostrar.length ? mostrar.map(p => linhaPedido(r, p, par.filter(x => String(x.pedido) === String(p.numero)))).join('') : '<div class="obr-sem-parc">Nenhum pedido ativo</div>'}
     ${ped.length > 5 ? `<div class="obr-sub">+ ${ped.length - 5} ${ped.length - 5 === 1 ? 'pedido' : 'pedidos'} (abra para ver)</div>` : ''}
     ${avulsas.length ? `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-desc">Parcelas avulsas</span></div><div class="obr-parcs-c">${avulsas.map(celulaParcela).join('')}</div></div>` : ''}
     <div class="obr-tot"><span>Contratado <b>${esc(brl(t.contratado))}</b></span><span>Recebido <b class="obr-verde">${esc(brl(t.recebido))}</b></span><span>Saldo <b class="${t.saldo > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(Math.max(0, t.saldo)))}</b></span></div>
@@ -22489,7 +22546,7 @@ function renderDados(){
 function renderPed(){
   const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; const ped = pedidosDe(r); const t = totais(r);
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Pedidos <span class="obr-sec-n">${t.nPedidos}</span><span class="obr-sec-tot">Total ${esc(brl(t.contratado))}</span></div>
-    ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}</td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
+    ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}<div style="margin-top:3px;">${chipObra(r, p)}</div></td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
     <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">+ Adicionar pedido</button></div></div>`;
 }
 function infoStatus(p){
@@ -22823,23 +22880,93 @@ function exportarCsv(){
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + ui.empresa + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
 }
 
+// =====================================================================================
+// GESTOR → OBRAS E PEDIDOS (08/10): o Gestor acompanha o ANDAMENTO de cada pedido (sem valores) e, de cada pedido, cria a atividade na Agenda.
+// O que ele muda aqui aparece no Financeiro: o andamento de cada pedido e a "situação da obra" do registro (derivada dos pedidos).
+// Usa o MESMO armazenamento do Financeiro (nó obrasPedidos); grava só `statusPedidos` e `situacao` — nunca pedidos/parcelas.
+// =====================================================================================
+const uiG = { busca: '', empresa: '', status: '', montado: false };
+function situacaoDerivada(r){
+  const ativos = pedidosDe(r).filter(p => !p.cancelado); if(!ativos.length) return null; const ss = ativos.map(p => statusObraDe(r, p.id));
+  if(ss.every(x => x === 'finalizado')) return 'finalizada';
+  if(ss.some(x => x === 'iniciado' || x === 'aguardando_testes' || x === 'finalizado')) return 'em_andamento';
+  return 'nao_comecou';
+}
+function montarGestor(){
+  const v = document.getElementById('tabObras'); if(!v || uiG.montado) return; uiG.montado = true;
+  v.innerHTML = `<div class="tecnicos-head"><div><div class="tecnicos-title">Obras e Pedidos</div><div class="tecnicos-date mono" id="obrgContagem"></div></div></div>
+    <div class="obrg-chips" id="obrgChips"></div>
+    <div class="fin-filtros" style="padding:0 0 12px;">
+      <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrgBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
+      <select id="obrgEmpresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
+      <select id="obrgStatus"><option value="">Qualquer andamento</option>${STATUS_OBRA.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
+    </div>
+    <div id="obrgLista"></div>`;
+  const busca = document.getElementById('obrgBusca'); if(window.SUG_API) SUG_API.ligar(busca, 'clientes');
+  busca.addEventListener('input', () => { uiG.busca = busca.value; renderGestor(); });
+  busca.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ busca.value = ''; uiG.busca = ''; renderGestor(); } });
+  document.getElementById('obrgEmpresa').addEventListener('change', (e) => { uiG.empresa = e.target.value; renderGestor(); });
+  document.getElementById('obrgStatus').addEventListener('change', (e) => { uiG.status = e.target.value; renderGestor(); });
+  v.addEventListener('change', (e) => { const sel = e.target.closest('[data-obrg-st]'); if(sel){ const [rid, pid] = sel.dataset.obrgSt.split('|'); mudarAndamento(rid, pid, sel.value); } });
+  v.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-obrg-chip]'); if(c){ uiG.status = uiG.status === c.dataset.obrgChip ? '' : c.dataset.obrgChip; document.getElementById('obrgStatus').value = uiG.status; renderGestor(); return; }
+    const a = e.target.closest('[data-obrg-ativ]'); if(a){ const [rid, pid] = a.dataset.obrgAtiv.split('|'); criarAtividade(rid, pid); }
+  });
+}
+function renderGestor(){
+  const v = document.getElementById('tabObras'); if(!v || !uiG.montado || v.style.display === 'none') return;
+  const q = fold(uiG.busca);
+  // pedidos ativos de cada registro (cancelado fica de fora)
+  const base = registros().filter(r => (!uiG.empresa || r.empresa === uiG.empresa)).map(r => ({ r, peds: pedidosDe(r).filter(p => !p.cancelado) })).filter(x => x.peds.length)
+    .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
+  const cont = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; }); base.forEach(x => x.peds.forEach(p => { cont[statusObraDe(x.r, p.id)]++; }));
+  document.getElementById('obrgChips').innerHTML = STATUS_OBRA.map(([k, n]) => `<button type="button" class="obrg-chip obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''}" data-obrg-chip="${k}">${esc(n)} <b>${cont[k]}</b></button>`).join('');
+  const lista = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length).sort((a, b) => fold(nomeCliente(a.r)).localeCompare(fold(nomeCliente(b.r))));
+  const nPed = lista.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
+  const box = document.getElementById('obrgLista');
+  if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
+  box.innerHTML = lista.length ? lista.map(({ r, peds }) => {
+    const todos = pedidosDe(r).filter(p => !p.cancelado); const fin = todos.filter(p => statusObraDe(r, p.id) === 'finalizado').length;
+    return `<div class="obrg-card"><div class="obrg-cli"><b>${esc(nomeCliente(r))}</b><span class="prv-chip gray">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1])}</span><span class="obrg-prog">${fin} de ${todos.length} ${todos.length === 1 ? 'finalizado' : 'finalizados'}</span></div>
+      ${peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id];
+        return `<div class="obrg-ped"><div class="obrg-ped-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
+          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${STATUS_OBRA.map(([kk, n]) => `<option value="${kk}" ${kk === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(r.id)}|${esc(p.id)}">+ Atividade</button></div>
+          ${e && e.em ? `<div class="obr-obs obrg-quando">alterado${e.por ? ' por ' + esc(e.por) : ''} em ${esc(new Date(e.em).toLocaleDateString('pt-BR'))}</div>` : ''}</div>`; }).join('')}
+    </div>`; }).join('')
+    : `<div class="empty-state">${registros().length ? 'Nenhum pedido com esses filtros.' : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
+}
+async function mudarAndamento(rid, pid, novo){
+  const r = porId(rid); if(!r || !STATUS_OBRA.some(x => x[0] === novo)) return; if(statusObraDe(r, pid) === novo) return;
+  r.statusPedidos = Object.assign({}, r.statusPedidos, { [pid]: { s: novo, em: new Date().toISOString(), por: quem() } });
+  const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit;          // o Financeiro vê a situação da obra acompanhar os pedidos
+  r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderGestor(); renderLista(); await store.save(true);
+}
+function criarAtividade(rid, pid){
+  const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return; const nome = nomeCliente(r);
+  if(typeof openModal !== 'function'){ avisar('Não foi possível abrir o agendamento agora.'); return; }
+  openModal();                                                                          // o mesmo "+ Agendar serviço" da Agenda, já preenchido
+  document.getElementById('f-client').value = nome; document.getElementById('f-desc').value = 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '');
+  const end = typeof findClientAddress === 'function' ? findClientAddress(nome) : ''; if(end) document.getElementById('f-addr').value = end;
+  setTimeout(() => { const d = document.getElementById('f-desc'); if(d) d.focus(); }, 60);
+}
+async function abrirGestor(){ montarGestor(); renderGestor(); try{ await garantirCarregado(); }catch(e){ console.error('obras: falha ao carregar', e); } renderGestor(); }
+
 // ---------- navegação do Financeiro (menu lateral / abas no celular) ----------
 let secao = 'os';
 function mostrarSecao(s){
   secao = s; const os = document.getElementById('finPaneOS'), ob = document.getElementById('finObrasView'); if(!os || !ob) return;
   os.style.display = s === 'os' ? '' : 'none'; ob.style.display = s === 'obras' ? '' : 'none';
-  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finTabOS', 'os'], ['finTabObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
+  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finBnOS', 'os'], ['finBnObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
   if(s === 'obras'){ montar(); renderLista(); garantirCarregado().then(() => { renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
   else if(window.FIN_API) FIN_API.render();
 }
 function ligarNavegacao(){
-  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finTabOS', 'os'], ['finTabObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
-  const gal = document.getElementById('finNavGaleria'); if(gal) gal.addEventListener('click', () => document.getElementById('galeriaOpenBtnFinanceiro').click());
+  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finBnOS', 'os'], ['finBnObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
   const sair = document.getElementById('finSidebarLogout'); if(sair) sair.addEventListener('click', () => document.getElementById('financeiroLogoutBtn').click());
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 init();
