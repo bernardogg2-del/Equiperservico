@@ -2107,6 +2107,36 @@
   .cal-cell[data-pgag-dia]{ cursor:pointer; }
 
   #pgagMes{ text-transform:none; }
+
+  /* ===== Gestor → Pedidos: painel de andamentos + linha compacta por cliente (cartão completo ao clicar) ===== */
+  .obrg-painel{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin:0 0 14px; }
+  .obrg-pc{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:auto; border-radius:12px; padding:10px 12px 9px; text-align:left; cursor:pointer; font-family:inherit; border-width:1.5px; white-space:normal; }
+  .obrg-pc .obrg-pc-n{ font-size:26px; line-height:1; font-weight:800; letter-spacing:-.5px; } .obrg-pc .obrg-pc-r{ font-size:12px; font-weight:800; line-height:1.2; } .obrg-pc small{ font-size:11px; font-weight:600; opacity:.8; }
+  .obrg-pc-zero{ opacity:.5; } .obrg-pc.obrg-chip-on{ opacity:1; box-shadow:0 0 0 3px var(--ink); }
+  .obrg-exp{ display:flex; gap:6px; }
+  .obrg-cliente{ padding:0; overflow:hidden; } .obrg-resumo{ display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer; min-height:50px; flex-wrap:wrap; } .obrg-resumo:hover{ background:var(--panel-2); } .obrg-resumo:focus-visible{ outline:3px solid #2F6FB0; outline-offset:-3px; }
+  .obrg-seta{ width:14px; color:var(--text-dim); font-size:12px; flex:none; } .obrg-nome{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1 1 200px; min-width:0; } .obrg-nome b{ font-size:15px; overflow-wrap:anywhere; }
+  .obrg-princ{ display:flex; align-items:center; gap:6px; flex:0 1 auto; } .obrg-princ .obr-sp{ font-size:11.5px; } .obrg-outros{ font-size:11px; font-weight:800; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:1px 7px; }
+  .obrg-pontos{ display:flex; align-items:center; gap:3px; flex-wrap:wrap; max-width:150px; } .obrg-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.18); } .obrg-mais{ font-size:10px; color:var(--text-dim); font-weight:700; }
+  .obrg-dot-aguardando_compra{ background:#E0B04A; } .obrg-dot-liberado_entrega{ background:#7FA9D6; } .obrg-dot-entregue{ background:#2F6FB0; } .obrg-dot-aguardando_inicio{ background:#fff; border-color:#17181A; } .obrg-dot-iniciado{ background:#6BB886; } .obrg-dot-aguardando_testes{ background:#A06A1F; } .obrg-dot-finalizado{ background:#1F7A44; }
+  .obrg-resumo .obrg-prog{ margin-left:0; font-weight:800; color:var(--ink); min-width:34px; text-align:right; }
+  .obrg-detalhe{ border-top:1px solid var(--line); padding:6px 14px 8px; background:var(--panel); } .obrg-detalhe .obrg-cli{ margin-bottom:2px; }
+  @media (max-width:640px){ .obrg-painel{ grid-template-columns:repeat(2, 1fr); } .obrg-pontos{ max-width:none; } .obrg-resumo{ gap:6px 8px; } .obrg-princ{ flex:1 1 100%; padding-left:24px; } }
+
+  .obrg-pc{ box-sizing:border-box; } .obrg-pc:focus-visible{ outline:3px solid #2F6FB0; outline-offset:2px; }
+
+  /* ===== técnico: nome + selo na mesma linha, e cada etapa numa linha com as duas respostas (Não finalizado | Finalizado) ===== */
+  .obi-tec .obi-eq-info{ flex-direction:row; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+  .obi-etl{ display:flex; flex-direction:column; gap:8px; margin:2px 0 4px; }
+  .obi-etl-row{ display:flex; align-items:center; justify-content:space-between; gap:8px 12px; flex-wrap:wrap; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; }
+  .obi-etl-feita{ border-color:#7FBF98; background:#F2FAF5; }
+  .obi-etl-nome{ font-size:17px; font-weight:800; color:var(--ink); flex:1 1 110px; min-width:0; }
+  .obi-seg{ display:inline-flex; border:2px solid var(--ink); border-radius:10px; overflow:hidden; flex:0 0 auto; }
+  .obi-seg-b{ width:auto; min-height:46px; padding:8px 14px; border:none; background:var(--panel); color:var(--text-dim); font-size:14.5px; font-weight:800; cursor:pointer; font-family:inherit; border-radius:0; }
+  .obi-seg-b + .obi-seg-b{ border-left:2px solid var(--ink); }
+  .obi-seg-nao.obi-seg-on{ background:#E8E9EB; color:var(--ink); } .obi-seg-sim.obi-seg-on{ background:#1F7A44; color:#fff; }
+  .obi-seg-b[aria-disabled="true"]{ opacity:.45; cursor:not-allowed; }
+  @media (max-width:380px){ .obi-seg{ width:100%; } .obi-seg-b{ flex:1; padding:8px 6px; } }
 </style>
 </head>
 <body>
@@ -2665,7 +2695,7 @@
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnAcessos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M20 3h-4M20 3v4"/></svg><span>Acessos</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnOficinaGestor"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg><span>Oficina</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
-      <button type="button" class="sidebar-nav-btn" id="sidebarBtnPainel"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Painel de Controle</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnPainel"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Estatísticas</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnGaleria"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galeria</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnEstoque"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Estoque</span></button>
     </nav>
@@ -2693,7 +2723,7 @@
     <button class="tab-btn" id="tabBtnOS">Cadastros e OS<span class="os-badge" id="osBadge" style="display:none;"></span></button>
     <button class="tab-btn" id="tabBtnClientes">Clientes</button>
     <button class="tab-btn" id="tabBtnAcessos">Acessos</button>
-    <button class="tab-btn" id="tabBtnPainel">Painel de Controle</button>
+    <button class="tab-btn" id="tabBtnPainel">Estatísticas</button>
   </div>
 
   <!-- Navegação inferior (mobile) — mesmos 7 destinos das abas acima, só apresentados de outro
@@ -2714,7 +2744,7 @@
     </button>
     <button type="button" class="bottom-nav-btn" id="bottomNavBtnPainel">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
-      <span>Painel</span>
+      <span>Estatísticas</span>
     </button>
     <button type="button" class="bottom-nav-btn" id="bottomNavBtnMais">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
@@ -3237,7 +3267,7 @@
   <div id="tabPainel" style="display:none;">
     <div class="tecnicos-head">
       <div>
-        <div class="tecnicos-title">Painel de Controle</div>
+        <div class="tecnicos-title">Estatísticas</div>
         <div class="tecnicos-date mono" id="painelRangeLabel"></div>
       </div>
     </div>
@@ -17544,7 +17574,7 @@ const ABAS_GESTOR = [
   { id: 'clientes',      label: 'Clientes',           botoes: ['tabBtnClientes', 'sidebarBtnClientes', 'bottomNavBtnClientes'] },
   { id: 'oficinagestor', label: 'Oficina',            botoes: ['sidebarBtnOficinaGestor', 'bottomNavBtnOficinaGestor'] },
   { id: 'obras',         label: 'Obras e Pedidos',    botoes: ['sidebarBtnObras', 'bottomNavBtnObras'] },
-  { id: 'painel',        label: 'Painel de Controle', botoes: ['tabBtnPainel', 'sidebarBtnPainel', 'bottomNavBtnPainel'] },
+  { id: 'painel',        label: 'Estatísticas', botoes: ['tabBtnPainel', 'sidebarBtnPainel', 'bottomNavBtnPainel'] },
   { id: 'galeria',       label: 'Galeria',            botoes: ['sidebarBtnGaleria', 'bottomNavBtnGaleria'] },
   { id: 'estoque',       label: 'Estoque',            botoes: ['sidebarBtnEstoque', 'bottomNavBtnEstoque'] }
 ];
@@ -23108,7 +23138,7 @@ function exportarCsv(){
 // O que ele muda aqui aparece no Financeiro: o andamento de cada pedido e a "situação da obra" do registro (derivada dos pedidos).
 // Usa o MESMO armazenamento do Financeiro (nó obrasPedidos); grava só `statusPedidos` e `situacao` — nunca pedidos/parcelas.
 // =====================================================================================
-const uiG = { busca: '', empresa: '', status: '', montado: false, aba: 'pedidos', sisBusca: '', abertos: new Set() };
+const uiG = { busca: '', empresa: '', status: '', montado: false, aba: 'pedidos', sisBusca: '', abertos: new Set(), clientes: new Set(), chaves: [] };      // clientes = linhas abertas (cartão completo); chaves = clientes listados agora
 function situacaoDerivada(r){
   const ativos = pedidosDe(r).filter(p => !p.cancelado); if(!ativos.length) return null; const ss = ativos.map(p => statusObraDe(r, p.id));
   if(ss.every(x => x === 'finalizado')) return 'finalizada';
@@ -23120,11 +23150,12 @@ function montarGestor(){
   v.innerHTML = `<div class="tecnicos-head"><div><div class="tecnicos-title">Obras e Pedidos</div><div class="tecnicos-date mono" id="obrgContagem"></div></div></div>
     <div class="portal-tabs" id="obrgAbas" style="padding:0 0 12px;"><button type="button" class="portal-tab active" data-obrg-aba="pedidos">Pedidos</button><button type="button" class="portal-tab" data-obrg-aba="sistemas">Sistemas<span class="obr-tab-n" id="obrgSisN"></span></button></div>
     <div id="obrgPanePedidos">
-    <div class="obrg-chips" id="obrgChips"></div>
+    <div class="obrg-painel" id="obrgChips"></div>
     <div class="fin-filtros" style="padding:0 0 12px;">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrgBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrgEmpresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
       <select id="obrgStatus"><option value="">Qualquer andamento</option>${STATUS_OBRA.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
+      <span class="obrg-exp"><button type="button" class="btn-ghost oe-mini" data-obrg-exp="todos">Expandir tudo</button><button type="button" class="btn-ghost oe-mini" data-obrg-exp="nenhum">Recolher tudo</button></span>
     </div>
     <div id="obrgLista"></div>
     </div>
@@ -23144,6 +23175,8 @@ function montarGestor(){
   document.getElementById('obrgStatus').addEventListener('change', (e) => { uiG.status = e.target.value; renderGestor(); });
   v.addEventListener('change', (e) => { const sel = e.target.closest('[data-obrg-st]'); if(sel){ const [rid, pid] = sel.dataset.obrgSt.split('|'); mudarAndamento(rid, pid, sel.value); } });
   v.addEventListener('click', (e) => {
+    const ex = e.target.closest('[data-obrg-exp]'); if(ex){ uiG.clientes = ex.dataset.obrgExp === 'todos' ? new Set(uiG.chaves) : new Set(); renderGestor(); return; }
+    const cl = e.target.closest('[data-obrg-cli]'); if(cl){ const k = cl.dataset.obrgCli; if(uiG.clientes.has(k)) uiG.clientes.delete(k); else uiG.clientes.add(k); renderGestor(); return; }
     const c = e.target.closest('[data-obrg-chip]'); if(c){ uiG.status = uiG.status === c.dataset.obrgChip ? '' : c.dataset.obrgChip; document.getElementById('obrgStatus').value = uiG.status; renderGestor(); return; }
     const a = e.target.closest('[data-obrg-ativ]'); if(a){ const [rid, pid] = a.dataset.obrgAtiv.split('|'); criarAtividade(rid, pid); return; }
     const ab = e.target.closest('[data-obrg-aba]'); if(ab){ mostrarAbaGestor(ab.dataset.obrgAba); return; }
@@ -23151,40 +23184,55 @@ function montarGestor(){
   });
   v.addEventListener('click', cliqueEquip);
   const sb = document.getElementById('obrgSisBusca'); sb.addEventListener('input', () => { uiG.sisBusca = sb.value; renderSistemas(); }); sb.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ sb.value = ''; uiG.sisBusca = ''; renderSistemas(); } });
-  v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-sis')){ e.preventDefault(); abrirSistema(e.target.dataset.id); } });
+  v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-sis')){ e.preventDefault(); abrirSistema(e.target.dataset.id); } else if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-resumo, .obrg-pc')){ e.preventDefault(); e.target.click(); } });
 }
 function mostrarAbaGestor(aba){
   uiG.aba = aba; document.querySelectorAll('#obrgAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgAba === aba));
   document.getElementById('obrgPanePedidos').style.display = aba === 'pedidos' ? '' : 'none'; document.getElementById('obrgPaneSistemas').style.display = aba === 'sistemas' ? '' : 'none';
   if(aba === 'sistemas'){ renderSistemas(); garantirSistemas().then(renderSistemas).catch(e => console.error('sistemas: falha ao carregar', e)); } else renderGestor();
 }
+// Andamento principal do cliente = o GARGALO: o menos avançado entre os pedidos que ainda não terminaram (é ele que segura a obra); se todos terminaram, "Finalizado".
+function andamentoPrincipal(pares){
+  const ordem = (k) => STATUS_OBRA.findIndex(x => x[0] === k); const ks = pares.map(x => statusObraDe(x.r, x.p.id)); const abertos = ks.filter(k => k !== 'finalizado');
+  return (abertos.length ? abertos : ks).sort((a, b) => ordem(a) - ordem(b))[0];
+}
 function renderGestor(){
   const v = document.getElementById('tabObras'); if(!v || !uiG.montado || v.style.display === 'none') return;
   const q = fold(uiG.busca);
   const base = registros().filter(r => (!uiG.empresa || r.empresa === uiG.empresa)).map(r => ({ r, peds: pedidosDe(r).filter(p => !p.cancelado) })).filter(x => x.peds.length)
     .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
-  const cont = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; }); base.forEach(x => x.peds.forEach(p => { cont[statusObraDe(x.r, p.id)]++; }));
-  document.getElementById('obrgChips').innerHTML = STATUS_OBRA.map(([k, n]) => `<button type="button" class="obrg-chip obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''}" data-obrg-chip="${k}">${esc(n)} <b>${cont[k]}</b></button>`).join('');
+  // painel de cima: um cartão por andamento (pedidos e clientes); tocar filtra
+  const cont = {}, cli = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; cli[k] = new Set(); }); base.forEach(x => x.peds.forEach(p => { const k = statusObraDe(x.r, p.id); cont[k]++; cli[k].add(fold(nomeCliente(x.r))); }));
+  document.getElementById('obrgChips').innerHTML = STATUS_OBRA.map(([k, n]) => `<div class="obrg-chip obrg-pc obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''} ${cont[k] ? '' : 'obrg-pc-zero'}" role="button" tabindex="0" data-obrg-chip="${k}" aria-pressed="${uiG.status === k}"><b class="obrg-pc-n">${cont[k]}</b><span class="obrg-pc-r">${esc(n)}</span><small>${cli[k].size} ${cli[k].size === 1 ? 'cliente' : 'clientes'}</small></div>`).join('');
   const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length);
   // UM cartão por cliente: os pedidos do mesmo cliente nas duas empresas (Equiper e Eqp) ficam juntos
-  const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
-  const lista_ = [...grupos.values()].map(g => ({ nome: g.nome, itens: g.itens.sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.r.empresa) - EMPRESAS.findIndex(e => e[0] === b.r.empresa)) })).sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { chave: k, nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
+  const lista_ = [...grupos.values()].map(g => ({ chave: g.chave, nome: g.nome, itens: g.itens.sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.r.empresa) - EMPRESAS.findIndex(e => e[0] === b.r.empresa)) })).sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  uiG.chaves = lista_.map(g => g.chave);
   const nPed = filtrados.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista_.length + (lista_.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  box.innerHTML = lista_.length ? lista_.map(({ nome, itens }) => {
-    const regs = itens.map(x => x.r); const varias = regs.length > 1;                          // o cliente tem registros nas duas empresas
+  box.innerHTML = lista_.length ? lista_.map(({ chave, nome, itens }) => {
+    const regs = itens.map(x => x.r); const varias = regs.length > 1; const aberto = uiG.clientes.has(chave);        // o cliente tem registros nas duas empresas
+    const pares = itens.flatMap(({ r, peds }) => peds.map(p => ({ r, p })));
     const todosPeds = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const fin = todosPeds.filter(x => statusObraDe(x.r, x.p.id) === 'finalizado').length;
+    const prin = andamentoPrincipal(pares); const outros = pares.filter(x => statusObraDe(x.r, x.p.id) !== prin);
+    const rotOutros = [...new Set(outros.map(x => rotObra(statusObraDe(x.r, x.p.id))))].join(', ');
+    const pontos = pares.slice(0, 14).map(x => `<i class="obrg-dot obrg-dot-${statusObraDe(x.r, x.p.id)}" title="Pedido ${esc(x.p.numero)} · ${esc(rotObra(statusObraDe(x.r, x.p.id)))}"></i>`).join('') + (pares.length > 14 ? `<small class="obrg-mais">+${pares.length - 14}</small>` : '');
     const acoes = `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
-    return `<div class="obrg-card"><div class="obrg-cli"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}<span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span>
-        <span class="obrg-cli-a">${acoes}</span></div>
-      ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const aberto = uiG.abertos.has(key);
+    return `<div class="obrg-card obrg-cliente${aberto ? ' obrg-aberto' : ''}">
+      <div class="obrg-resumo" role="button" tabindex="0" aria-expanded="${aberto}" data-obrg-cli="${esc(chave)}" title="${aberto ? 'Recolher' : 'Abrir o cartão completo'}"><span class="obrg-seta">${aberto ? '▾' : '▸'}</span>
+        <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}</span>
+        <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.length ? `<span class="obrg-outros" title="${outros.length} ${outros.length === 1 ? 'pedido em outro andamento' : 'pedidos em outros andamentos'}: ${esc(rotOutros)}">+${outros.length}</span>` : ''}</span>
+        <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-prog" title="${fin} de ${todosPeds.length} finalizados">${fin}/${todosPeds.length}</span></div>
+      ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
+      ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
         return `<div class="obrg-ped"><div class="obrg-ped-h">${varias ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotEmp(r))}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
-          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${STATUS_OBRA.map(([kk, n]) => `<option value="${kk}" ${kk === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${aberto ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}">Equipamentos${res.total ? ' · ' + res.finalizados + '/' + res.total : ''} ${aberto ? '▴' : '▾'}</button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
+          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${STATUS_OBRA.map(([kk, n]) => `<option value="${kk}" ${kk === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}">Equipamentos${res.total ? ' · ' + res.finalizados + '/' + res.total : ''} ${ab ? '▴' : '▾'}</button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${e && e.em ? `<div class="obr-obs obrg-quando">alterado${e.por ? ' por ' + esc(e.por) : ''} em ${esc(new Date(e.em).toLocaleDateString('pt-BR'))}</div>` : ''}
-          ${aberto ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}
+          ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
     </div>`; }).join('')
     : `<div class="empty-state">${registros().length ? 'Nenhum pedido com esses filtros.' : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
 }
@@ -23387,6 +23435,7 @@ function alternarEtapa(rid, subId, etId){
   return depois;
 }
 const subsDoPedidoTodos = (d) => Object.keys((d && d.pedidos) || {}).flatMap(pid => subsDoPedido(d, pid));
+function definirEtapa(rid, subId, etId, feito){ const d = inst[rid] || {}; const atual = !!((d.prog || {})[subId] || {})[etId]; if(atual === !!feito) return; alternarEtapa(rid, subId, etId); }
 function alternarLib(rid, subId){ const d = inst[rid] || {}; const lib = (d.lib || {})[subId]; escreverInst({ ['obraInstalacao/' + rid + '/lib/' + subId]: lib ? null : { em: new Date().toISOString(), por: quem() || null } }); }
 function liberarTodos(rid, pid){ const d = inst[rid] || {}; const up = {}; subsDoPedido(d, pid).filter(x => estadoSub(d, x) === 'nao_liberado').forEach(x => { up['obraInstalacao/' + rid + '/lib/' + x.id] = { em: new Date().toISOString(), por: quem() || null }; }); if(Object.keys(up).length){ escreverInst(up); avisar('Equipamentos liberados para iniciar.'); } }
 function cliqueEquip(e){
@@ -23457,7 +23506,8 @@ function htmlEquipTec(d, rid, sub, lido){
   return `<div class="obi-eqt obi-eqt-${st}"><div class="obi-eq-row" role="button" tabindex="0" data-obi-eq="${esc(sub.id)}" aria-expanded="${aberto}"><span class="obi-seta">${aberto ? '▾' : '▸'}</span><span class="obi-eq-info"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span></span><span class="obi-prog">${feitas}/${ets.length}</span></div>
     ${aberto ? `<div class="obi-eq-corpo">
       ${st === 'nao_liberado' && !lido ? `<div class="obi-aviso-lib">Ainda não foi liberado. Quando puder começar, toque em liberar.</div><button type="button" class="btn-primary obi-lib" data-obi-lib="${esc(rid)}|${esc(sub.id)}">Liberar para iniciar</button>` : ''}
-      <div class="obi-ets">${ets.map(e => { const f = prog[e.id]; return `<button type="button" class="obi-et ${f ? 'obi-et-on' : ''}" data-obi-et="${esc(rid)}|${esc(sub.id)}|${esc(e.id)}" ${travado ? 'disabled' : ''} title="${f ? esc('Marcado' + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : 'Marcar como feito'}">${f ? '✓ ' : ''}${esc(e.nome)}</button>`; }).join('')}</div>
+      <div class="obi-etl" role="group" aria-label="Etapas de ${esc(sub.nome)}">${ets.map(e => { const f = prog[e.id]; const k = esc(rid) + '|' + esc(sub.id) + '|' + esc(e.id); const quando = f ? esc('Finalizado' + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : '';
+        return `<div class="obi-etl-row ${f ? 'obi-etl-feita' : ''}"><span class="obi-etl-nome">${esc(e.nome)}</span><span class="obi-seg"><button type="button" class="obi-seg-b obi-seg-nao ${f ? '' : 'obi-seg-on'}" data-obi-set="${k}|0" aria-pressed="${!f}" ${travado ? 'aria-disabled="true"' : ''}>Não finalizado</button><button type="button" class="obi-seg-b obi-seg-sim ${f ? 'obi-seg-on' : ''}" data-obi-set="${k}|1" aria-pressed="${!!f}" ${travado ? 'aria-disabled="true"' : ''} ${quando ? `title="${quando}"` : ''}>Finalizado</button></span></div>`; }).join('')}</div>
       ${st === 'iniciado' ? `<div class="obi-falta">Falta marcar: <b>${esc(falta.join(', '))}</b></div>` : ''}${st === 'finalizado' ? `<div class="obi-falta">Instalação finalizada. Falta marcar o <b>${esc(falta.join(', '))}</b> para ficar finalizado e testado.</div>` : ''}${st === 'testado' ? '<div class="obi-ok">Todas as etapas feitas, inclusive o teste. Finalizado e testado.</div>' : ''}</div>` : ''}</div>`;
 }
 function renderSlotTec(slot, svc){
@@ -23468,7 +23518,7 @@ function renderSlotTec(slot, svc){
   const fin = subs.filter(x => instalado(estadoSub(x.d, x.sub))).length; const nTest = subs.filter(x => estadoSub(x.d, x.sub) === 'testado').length; const lido = svc.status === 'concluido'; const duas = new Set(blocos.map(b => b.empresa).filter(Boolean)).size > 1;
   const nomeObra = (blocos[0].d.cliente) || svc.client || '';
   slot.innerHTML = `<div class="obi-tec"><button type="button" class="obi-tec-h" data-obi-tog>🏗 Instalação — ${esc(nomeObra)}<span class="obi-tec-n">${fin} de ${subs.length} ${subs.length === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}${nTest ? ' · ' + nTest + (nTest === 1 ? ' testado' : ' testados') : ''}</span><span>${aberto ? '▴' : '▾'}</span></button>
-    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${blocos.map(b => { const res = resumoPedido(b.d, b.pid); return `<div class="obi-ped"><div class="obi-ped-t">${duas && b.empresa ? `<span class="obr-emp obr-emp-${esc(b.empresa)}">${esc((EMPRESAS.find(e => e[0] === b.empresa) || [0, ''])[1])}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(b.numero)}</span><span class="obr-ped-desc">${esc(b.descricao || '')}</span><span class="obi-ped-n">${res.finalizados}/${res.total}</span></div>${lista(((b.d.pedidos || {})[b.pid] || {}).sistemas).sort(ord).map(sis => { const sk = b.rid + '|' + sis.id; const eqs = lista(sis.subitens).sort(ord); const abertoS = uiT.sis[sk] !== false; const finS = eqs.filter(x => instalado(estadoSub(b.d, x))).length;
+    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${blocos.map(b => { const res = resumoPedido(b.d, b.pid); return `<div class="obi-ped"><div class="obi-ped-t"><span class="obr-ped-num">Pedido ${esc(b.numero)}</span><span class="obr-ped-desc">${esc(b.descricao || '')}</span><span class="obi-ped-n">${res.finalizados}/${res.total}</span></div>${lista(((b.d.pedidos || {})[b.pid] || {}).sistemas).sort(ord).map(sis => { const sk = b.rid + '|' + sis.id; const eqs = lista(sis.subitens).sort(ord); const abertoS = uiT.sis[sk] !== false; const finS = eqs.filter(x => instalado(estadoSub(b.d, x))).length;
           return `<div class="obi-sis"><button type="button" class="obi-sis-t obi-sis-btn" data-obi-sis="${esc(sk)}" aria-expanded="${abertoS}"><span class="obi-seta">${abertoS ? '▾' : '▸'}</span><span class="obi-sis-nome">${esc(sis.nome)}</span><span class="obi-prog">${finS}/${eqs.length}</span></button>${abertoS ? eqs.map(sub => htmlEquipTec(b.d, b.rid, sub, lido)).join('') : ''}</div>`; }).join('')}</div>`; }).join('')}</div>` : ''}</div>`;
 }
 function renderSlotsTec(){ document.querySelectorAll('[data-obraslot]').forEach(slot => { const svc = services.find(x => String(x.id) === slot.dataset.obraslot); if(svc) renderSlotTec(slot, svc); }); }
@@ -23480,8 +23530,9 @@ function montarSlotTecnico(card, svc){
       const sisB = e.target.closest('[data-obi-sis]'); if(sisB){ const k = sisB.dataset.obiSis; uiT.sis[k] = !(uiT.sis[k] !== false); renderSlotTec(slot, svc); return; }          // recolher/expandir o sistema
       const eq = e.target.closest('[data-obi-eq]'); if(eq){ const k = eq.dataset.obiEq; uiT.eq[k] = !uiT.eq[k]; renderSlotTec(slot, svc); return; }
       const lib = e.target.closest('[data-obi-lib]'); if(lib){ if(svc.status === 'concluido') return; const [rid, sub] = lib.dataset.obiLib.split('|'); const d = inst[rid] || {}; if(!((d.lib || {})[sub])) alternarLib(rid, sub); return; }       // o técnico libera (não liberado → liberado para iniciar)
-      const b = e.target.closest('[data-obi-et]'); if(!b) return; if(b.disabled){ if(svc.status !== 'concluido') avisar('Libere o equipamento para iniciar antes de marcar as etapas.', 4000); return; }
-      const [rid, sub, et] = b.dataset.obiEt.split('|'); alternarEtapa(rid, sub, et);
+      const r = e.target.closest('[data-obi-set]'); if(!r) return;
+      if(r.getAttribute('aria-disabled') === 'true'){ if(svc.status !== 'concluido') avisar('Libere o equipamento para iniciar antes de marcar as etapas.', 4000); return; }
+      const [rid, sub, et, v] = r.dataset.obiSet.split('|'); definirEtapa(rid, sub, et, v === '1');          // só grava quando a resposta MUDA (tocar de novo na que já está marcada não faz nada)
     });
     slot.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obi-eq-row')){ e.preventDefault(); e.target.click(); } });
     renderSlotTec(slot, svc); carregarInstTodos().then(() => renderSlotTec(slot, svc)).catch(e => console.error('obras: falha ao carregar a instalação', e));
@@ -23650,7 +23701,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 init();
