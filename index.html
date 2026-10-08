@@ -2021,6 +2021,10 @@
   .obi-slot{ margin:0 14px 14px; } .obi-tec{ border:1.5px solid var(--line); border-radius:12px; background:var(--panel); overflow:hidden; }
   .obi-tec-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; text-align:left; padding:11px 13px; background:var(--panel-2); border:none; font-size:14px; font-weight:800; color:var(--ink); cursor:pointer; font-family:inherit; } .obi-tec-n{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--text-dim); }
   .obi-tec-c{ padding:10px 13px 6px; } .obi-ped{ margin-bottom:10px; } .obi-ped-t{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:4px; } .obi-sis-t{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); margin:8px 0 0; }
+
+  /* empresa marcada no cartão (aba Geral) e nas linhas dos pedidos do Gestor */
+  .obr-emp{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; padding:2px 8px; border-radius:6px; border:1px solid var(--ink); color:var(--ink); background:var(--panel); }
+  .obr-emp-eqp{ border-color:#2F6FB0; color:#2F6FB0; background:rgba(47,111,176,.08); }
 </style>
 </head>
 <body>
@@ -22442,6 +22446,8 @@ const quem = () => (typeof currentRole !== 'undefined' && currentRole === 'tech'
 const avisar = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 5000); }catch(e){ try{ alert(t); }catch(_){} } };
 
 const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
+const ABAS_OBR = EMPRESAS.concat([['geral', 'Geral']]);                 // a aba Geral mostra os registros das duas empresas juntos
+const rotAba = (k) => (ABAS_OBR.find(e => e[0] === k) || ['', k])[1];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
 const TIPOS_PARCELA = ['Sinal'].concat(Array.from({ length: 11 }, (_, i) => (i + 2) + 'ª parcela'), ['Saldo', 'Parcela única', 'Restante', 'Outro']);
@@ -22515,7 +22521,7 @@ function montar(){
   const v = document.getElementById('finObrasView'); if(!v || ui.montado) return; ui.montado = true;
   v.innerHTML = `<div class="tech-day-panel">
     <div class="tech-day-head"><div class="tech-day-title">Obras e Pedidos</div><div class="tech-day-date mono" id="obrContagem"></div></div>
-    <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${EMPRESAS.map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
+    <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${ABAS_OBR.map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
@@ -22566,7 +22572,7 @@ function linhaPedido(r, p, parcelas){
 }
 function cartao(r){
   const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
-  const chips = [`<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+  const chips = [ui.empresa === 'geral' ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotAba(r.empresa))}</span>` : '', `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''].join('');
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   const mostrar = ped.slice(0, 5);
@@ -22581,8 +22587,8 @@ function cartao(r){
 }
 function renderLista(){
   const box = document.getElementById('obrLista'); if(!box) return;
-  const doEmp = (k) => registros().filter(r => r.empresa === k);
-  EMPRESAS.forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + doEmp(k).length + ')'; });
+  const doEmp = (k) => k === 'geral' ? registros() : registros().filter(r => r.empresa === k);
+  ABAS_OBR.forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + doEmp(k).length + ')'; });
   const todos = doEmp(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
   const q = fold(ui.busca);
   let l = todos.filter(r => !q || fold([nomeCliente(r), r.contato, r.fone, r.formaPagamento, pedidosDe(r).map(p => p.numero + ' ' + p.descricao).join(' ')].join(' ')).includes(q));
@@ -22591,7 +22597,7 @@ function renderLista(){
   document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   box.innerHTML = l.length ? l.map(cartao).join('')
-    : (todos.length === 0 ? `<div class="empty-state">Nenhum registro em ${esc(EMPRESAS.find(e => e[0] === ui.empresa)[1])} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`
+    : (todos.length === 0 ? `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'cadastrado' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`
       : `<div class="empty-state">Nenhum registro encontrado${q ? ' para "' + esc(ui.busca.trim()) + '"' : ''}.${q ? `<br><br><button type="button" class="btn-primary" data-obr="criar-busca" data-nome="${esc(ui.busca.trim())}">+ Criar registro para "${esc(ui.busca.trim())}"</button>` : ''}</div>`);
 }
 
@@ -22905,7 +22911,7 @@ function abrirNovo(pre){
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrNovoOverlay';
   ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">Novo registro de obra</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, pedidos (quantos forem, cada um com seu valor) e a condição de pagamento: o valor de cada pedido é dividido nas parcelas.</p>
     <div class="obr-grid2">
-      <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || ui.empresa) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || (ui.empresa === 'geral' ? 'equiper' : ui.empresa)) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="field"><label>Cliente *</label><input type="text" id="obrNCli" value="${esc(pre.cliente || '')}" placeholder="Digite para buscar os clientes cadastrados" autocomplete="off"></div>
     </div>
     <div id="obrNCliInfo"></div>
@@ -22976,7 +22982,7 @@ async function criarRegistro(ov, cond){
     const rec = { id, empresa: $('obrNEmp').value, cliente: cl ? cl.name : nome, clienteId: cl ? cl.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, cond: c.n ? { pcts: c.pcts } : null, situacao: $('obrNSit').value, obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {}, parcelas: {} };
     ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor }; });
     if(c.n) Object.values(rec.pedidos).forEach(p => { rec.parcelas = Object.assign({}, rec.parcelas, gerarParcelas(rec, p, c.pcts)); });
-    store.items.push(rec); ui.empresa = rec.empresa; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); ui.busca = ''; const bi = document.getElementById('obrBusca'); if(bi) bi.value = '';
+    store.items.push(rec); if(ui.empresa !== 'geral') ui.empresa = rec.empresa; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); ui.busca = ''; const bi = document.getElementById('obrBusca'); if(bi) bi.value = '';
     ov.remove(); renderLista(); await store.save(true);
     avisar(!ex ? 'Registro criado e cliente cadastrado em Clientes.' : 'Registro criado' + (c.n ? ' com ' + (ped.length * c.n) + ' parcelas.' : '.')); abrirDetalhe(id);
   }catch(e){ console.error(e); err('Não foi possível salvar agora. Verifique a conexão e tente de novo.'); btn.disabled = false; btn.textContent = 'Criar registro'; }
@@ -22985,13 +22991,13 @@ async function criarRegistro(ov, cond){
 function exportarCsv(){
   const linhas = [['Empresa', 'Cliente', 'Contato', 'Telefone', 'Forma de pagamento', 'Condicao', 'Situacao da obra', 'Pedido', 'Descricao', 'Valor do pedido', 'Contratado (registro)', 'Recebido', 'Saldo', 'Nao liberado', 'A cobrar', 'Enviado']];
   const dec = (v) => Number(v || 0).toFixed(2).replace('.', ',');
-  registros().filter(r => r.empresa === ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => {
+  registros().filter(r => ui.empresa === 'geral' || r.empresa === ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => {
     const t = totais(r); const ped = pedidosDe(r); const pc = pctsDe(r); const cond = pc.length ? (pc.length === 1 ? 'A vista' : pc.length + 'x: ' + pc.map((x, i) => rotuloParcela(i, pc.length) + ' ' + fmtPct(x) + '%').join(' / ')) : '';
     (ped.length ? ped : [{}]).forEach((p, i) => linhas.push([(EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1], nomeCliente(r), r.contato || '', r.fone || '', r.formaPagamento || '', cond, rotSit(r.situacao), p.numero || '', (p.descricao || '') + (p.cancelado ? ' (cancelado)' : ''), p.valor != null ? dec(p.valor) : '',
       i === 0 ? dec(t.contratado) : '', i === 0 ? dec(t.recebido) : '', i === 0 ? dec(t.saldo) : '', i === 0 ? dec(t.por.nao_liberado) : '', i === 0 ? dec(t.por.a_cobrar) : '', i === 0 ? dec(t.por.enviado) : '']));
   });
   const csv = '\uFEFF' + linhas.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + ui.empresa + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + (ui.empresa === 'geral' ? 'geral' : ui.empresa) + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
 }
 
 // =====================================================================================
@@ -23056,19 +23062,27 @@ function renderGestor(){
     .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
   const cont = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; }); base.forEach(x => x.peds.forEach(p => { cont[statusObraDe(x.r, p.id)]++; }));
   document.getElementById('obrgChips').innerHTML = STATUS_OBRA.map(([k, n]) => `<button type="button" class="obrg-chip obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''}" data-obrg-chip="${k}">${esc(n)} <b>${cont[k]}</b></button>`).join('');
-  const lista_ = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length).sort((a, b) => fold(nomeCliente(a.r)).localeCompare(fold(nomeCliente(b.r))));
-  const nPed = lista_.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista_.length + (lista_.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
+  const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length);
+  // UM cartão por cliente: os pedidos do mesmo cliente nas duas empresas (Equiper e Eqp) ficam juntos
+  const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
+  const lista_ = [...grupos.values()].map(g => ({ nome: g.nome, itens: g.itens.sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.r.empresa) - EMPRESAS.findIndex(e => e[0] === b.r.empresa)) })).sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  const nPed = filtrados.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista_.length + (lista_.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
-  box.innerHTML = lista_.length ? lista_.map(({ r, peds }) => {
-    const todos = pedidosDe(r).filter(p => !p.cancelado); const fin = todos.filter(p => statusObraDe(r, p.id) === 'finalizado').length; const d = inst[r.id] || {};
-    return `<div class="obrg-card"><div class="obrg-cli"><b>${esc(nomeCliente(r))}</b><span class="prv-chip gray">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1])}</span><span class="obrg-prog">${fin} de ${todos.length} ${todos.length === 1 ? 'finalizado' : 'finalizados'}</span>
-        <span class="obrg-cli-a"><button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(r.id)}">+ Atividade da obra</button><button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(r.id)}|">⤓ Relatório PDF</button></span></div>
-      ${peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const aberto = uiG.abertos.has(key);
-        return `<div class="obrg-ped"><div class="obrg-ped-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
+  const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
+  box.innerHTML = lista_.length ? lista_.map(({ nome, itens }) => {
+    const regs = itens.map(x => x.r); const varias = regs.length > 1;                          // o cliente tem registros nas duas empresas
+    const todosPeds = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
+    const fin = todosPeds.filter(x => statusObraDe(x.r, x.p.id) === 'finalizado').length;
+    const acoes = varias ? regs.map(r => `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(r.id)}">+ Atividade da obra · ${esc(rotEmp(r))}</button>`).join('') + `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>`
+      : `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button><button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`;
+    return `<div class="obrg-card"><div class="obrg-cli"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}<span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span>
+        <span class="obrg-cli-a">${acoes}</span></div>
+      ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const aberto = uiG.abertos.has(key);
+        return `<div class="obrg-ped"><div class="obrg-ped-h">${varias ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotEmp(r))}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
           <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${STATUS_OBRA.map(([kk, n]) => `<option value="${kk}" ${kk === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${aberto ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}">Equipamentos${res.total ? ' · ' + res.finalizados + '/' + res.total : ''} ${aberto ? '▴' : '▾'}</button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${e && e.em ? `<div class="obr-obs obrg-quando">alterado${e.por ? ' por ' + esc(e.por) : ''} em ${esc(new Date(e.em).toLocaleDateString('pt-BR'))}</div>` : ''}
-          ${aberto ? painelEquip(r, p, d) : ''}</div>`; }).join('')}
+          ${aberto ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}
     </div>`; }).join('')
     : `<div class="empty-state">${registros().length ? 'Nenhum pedido com esses filtros.' : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
 }
@@ -23276,6 +23290,7 @@ function cliqueEquip(e){
   if((b = g('data-obrg-libtodos'))){ const [rid, pid] = b.dataset.obrgLibtodos.split('|'); liberarTodos(rid, pid); return; }
   if((b = g('data-obi-et'))){ if(b.disabled) return; const [rid, sub, et] = b.dataset.obiEt.split('|'); alternarEtapa(rid, sub, et); return; }
   if((b = g('data-obrg-pdf'))){ const [rid, pid] = b.dataset.obrgPdf.split('|'); baixarRelatorioObra(rid, pid || null); return; }
+  if((b = g('data-obrg-pdfcli'))){ baixarRelatorioCliente(b.dataset.obrgPdfcli.split(',')); return; }
   if((b = g('data-obrg-ativobra'))){ criarAtividadeObra(b.dataset.obrgAtivobra); return; }
 }
 // ---- + Sistema: escolhe a base e os equipamentos (com quantidade) que o pedido tem ----
@@ -23369,6 +23384,15 @@ function dadosRelatorio(r, d, pidSo){
   return { cliente: nomeCliente(r), endereco: cli ? cli.address || '' : '', emitidoEm: new Date().toISOString(), pedidos };
 }
 function baixarBlob(blob, nome){ const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 4000); }
+async function baixarRelatorioCliente(rids){          // cliente com registros nas duas empresas: um PDF só, com os pedidos de todos
+  await carregarInstTodos(); const regs = rids.map(porId).filter(Boolean); if(!regs.length) return;
+  const partes = regs.map(r => ({ r, dados: dadosRelatorio(r, inst[r.id] || {}, null) })); const pedidos = [];
+  partes.forEach(({ r, dados }) => dados.pedidos.forEach(p => pedidos.push(Object.assign({}, p, { descricao: (p.descricao || '') + (regs.length > 1 ? ' (' + (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1] + ')' : '') }))));
+  if(!pedidos.length){ avisar('Ainda não há equipamentos cadastrados nesta obra para gerar o relatório.', 6000); return; }
+  if(!window.PREV_API || !PREV_API.gerarPdfInstalacao){ avisar('O gerador de PDF não está disponível agora.'); return; }
+  try{ const blob = PREV_API.gerarPdfInstalacao(Object.assign({}, partes[0].dados, { pedidos })); baixarBlob(blob, 'Relatorio-Instalacao-' + (fold(partes[0].dados.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + hojeStr() + '.pdf'); avisar('Relatório gerado.'); }
+  catch(e){ console.error('obras: falha ao gerar o PDF', e); avisar('Não foi possível gerar o PDF agora. Tente de novo.', 6000); }
+}
 async function baixarRelatorioObra(rid, pid){
   await carregarInstTodos(); const r = porId(rid); const d = inst[rid]; if(!r) return;
   const dados = dadosRelatorio(r, d || {}, pid); if(!dados.pedidos.length){ avisar('Ainda não há equipamentos cadastrados' + (pid ? ' neste pedido' : ' nesta obra') + ' para gerar o relatório.', 6000); return; }
