@@ -2025,6 +2025,13 @@
   /* empresa marcada no cartão (aba Geral) e nas linhas dos pedidos do Gestor */
   .obr-emp{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; padding:2px 8px; border-radius:6px; border:1px solid var(--ink); color:var(--ink); background:var(--panel); }
   .obr-emp-eqp{ border-color:#2F6FB0; color:#2F6FB0; background:rgba(47,111,176,.08); }
+
+  /* ===== técnico: lista compacta de equipamentos (toca para abrir as etapas) ===== */
+  .obi-ped-n{ margin-left:auto; font-size:11.5px; font-weight:700; color:var(--text-dim); }
+  .obi-eqt{ border-top:1px dashed var(--line); } .obi-eq-row{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent; border:none; padding:11px 2px; cursor:pointer; font-family:inherit; font-size:14px; color:var(--ink); min-height:44px; }
+  .obi-eq-row b{ flex:1; min-width:0; overflow-wrap:anywhere; } .obi-seta{ width:14px; color:var(--text-dim); font-size:12px; } .obi-prog{ font-size:11.5px; font-weight:700; color:var(--text-dim); min-width:28px; text-align:right; }
+  .obi-eq-corpo{ padding:0 2px 12px 22px; } .obi-aviso-lib{ font-size:12.5px; color:var(--danger); margin:0 0 8px; } .obi-lib{ width:100%; min-height:44px; margin-bottom:8px; }
+  .obi-falta{ font-size:12px; color:var(--warning); margin-top:8px; } .obi-ok{ font-size:12px; color:var(--success-dark); margin-top:8px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -23074,8 +23081,7 @@ function renderGestor(){
     const regs = itens.map(x => x.r); const varias = regs.length > 1;                          // o cliente tem registros nas duas empresas
     const todosPeds = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const fin = todosPeds.filter(x => statusObraDe(x.r, x.p.id) === 'finalizado').length;
-    const acoes = varias ? regs.map(r => `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(r.id)}">+ Atividade da obra · ${esc(rotEmp(r))}</button>`).join('') + `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>`
-      : `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button><button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`;
+    const acoes = `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
     return `<div class="obrg-card"><div class="obrg-cli"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}<span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span>
         <span class="obrg-cli-a">${acoes}</span></div>
       ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const aberto = uiG.abertos.has(key);
@@ -23106,11 +23112,12 @@ function criarAtividade(rid, pid){
   const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
   abrirAgendamentoObra(r, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), { reg: rid, ped: pid });
 }
+const registrosDoCliente = (r) => { const k = fold(nomeCliente(r)); return registros().filter(x => fold(nomeCliente(x)) === k).sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.empresa) - EMPRESAS.findIndex(e => e[0] === b.empresa)); };
 function criarAtividadeObra(rid){
-  const r = porId(rid); if(!r) return; const nums = pedidosDe(r).filter(p => !p.cancelado).map(p => p.numero);
-  abrirAgendamentoObra(r, 'Instalação — ' + (nums.length ? 'pedidos ' + nums.join(', ') : 'obra'), { reg: rid, ped: null });
+  const r = porId(rid); if(!r) return; const regs = registrosDoCliente(r); const nums = regs.flatMap(x => pedidosDe(x).filter(p => !p.cancelado).map(p => p.numero));
+  abrirAgendamentoObra(r, 'Instalação — ' + (nums.length ? 'pedidos ' + nums.join(', ') : 'obra'), { reg: regs[0].id, ped: null, regs: regs.map(x => x.id) });    // uma atividade só para a obra inteira (Equiper e Eqp)
 }
-function vincularAtividade(svc){ const a = window.__obraAtiv; if(!a || !svc) return; svc.obraRegistroId = a.reg; if(a.ped) svc.obraPedidoId = a.ped; window.__obraAtiv = null; }
+function vincularAtividade(svc){ const a = window.__obraAtiv; if(!a || !svc) return; svc.obraRegistroId = a.reg; if(a.ped) svc.obraPedidoId = a.ped; else if(a.regs && a.regs.length > 1) svc.obraRegistroIds = a.regs.slice(); window.__obraAtiv = null; }
 // =====================================================================================
 // SISTEMAS (bases de instalação) — Obras e Pedidos do Gestor: lista de sistemas com seus subitens, que o Gestor cria e edita.
 // Nascem do catálogo da manutenção preventiva (cópia: editar aqui NÃO muda a preventiva). Nó novo: obraSistemas/<id>
@@ -23233,10 +23240,10 @@ function escreverInst(updates){ Object.keys(updates).forEach(p => setLocal(p, up
 function renderTudoInst(){ try{ renderGestor(); }catch(e){ console.error(e); } try{ renderSlotsTec(); }catch(e){ console.error(e); } }
 async function carregarInstTodos(){
   if(instTodosOk) return;
-  try{ const snap = await comTempo(rtdb.ref('obraInstalacao').get(), 9000); Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); }
-  catch(e){ console.warn('obras: não foi possível ler as instalações agora', e); }
+  try{ const snap = await comTempo(rtdb.ref('obraInstalacao').get(), 9000); Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); try{ localStorage.setItem('obra_inst_todos', JSON.stringify(inst)); }catch(e){} }
+  catch(e){ console.warn('obras: não foi possível ler as instalações agora (usando a cópia do aparelho)', e); try{ Object.assign(inst, JSON.parse(localStorage.getItem('obra_inst_todos') || '{}')); }catch(_){} }
   aplicarPendentes('obraInstalacao/'); instTodosOk = true;
-  if(!instTodosListener && rtdb){ instTodosListener = true; try{ rtdb.ref('obraInstalacao').on('value', snap => { Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); aplicarPendentes('obraInstalacao/'); renderTudoInst(); reconciliar(); }); }catch(e){} }
+  if(!instTodosListener && rtdb){ instTodosListener = true; try{ rtdb.ref('obraInstalacao').on('value', snap => { Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); try{ localStorage.setItem('obra_inst_todos', JSON.stringify(inst)); }catch(e){} aplicarPendentes('obraInstalacao/'); renderTudoInst(); reconciliar(); }); }catch(e){} }
 }
 async function carregarInstReg(regId){
   if(instRegOk[regId]) return; let dados = null; const chave = 'obra_inst_' + regId;
@@ -23316,7 +23323,7 @@ async function abrirAddSistema(rid, pid){
     if(!ordem) { $('obrAddErr').textContent = 'Escolha pelo menos um equipamento (quantidade maior que zero).'; return; }
     const d = inst[rid] || {}; const existentes = lista(((d.pedidos || {})[pid] || {}).sistemas); const sisId = uid('sx'); const pre = 'obraInstalacao/' + rid;
     ov.remove(); uiG.abertos.add(rid + '|' + pid);
-    await escreverInst({ [pre + '/cliente']: nomeCliente(r), [pre + '/pedidos/' + pid + '/numero']: p.numero, [pre + '/pedidos/' + pid + '/descricao']: p.descricao || null, [pre + '/pedidos/' + pid + '/sistemas/' + sisId]: { id: sisId, nome: base.nome + (rot ? ' — ' + rot : ''), baseId: base.id, ordem: existentes.length + 1, subitens } });
+    await escreverInst({ [pre + '/cliente']: nomeCliente(r), [pre + '/empresa']: r.empresa, [pre + '/pedidos/' + pid + '/numero']: p.numero, [pre + '/pedidos/' + pid + '/descricao']: p.descricao || null, [pre + '/pedidos/' + pid + '/sistemas/' + sisId]: { id: sisId, nome: base.nome + (rot ? ' — ' + rot : ''), baseId: base.id, ordem: existentes.length + 1, subitens } });
     avisar('Sistema adicionado ao pedido ' + p.numero + '.');
   };
 }
@@ -23326,20 +23333,37 @@ function abrirAddEquip(rid, pid, sid){
   formRapido({ titulo: 'Novo equipamento — ' + sis.nome, campos: [ { id: 'nome', rotulo: 'Nome do equipamento', obrig: true, dica: 'Ex.: Bomba de reforço' }, { id: 'etapas', rotulo: 'Etapas (separadas por vírgula)', valor: ETAPAS_PADRAO.join(', ') } ],
     aoSalvar: async (v) => { const novoId = uid('q') + 'x'; const ordem = 1 + Math.max(0, ...lista(sis.subitens).map(x => x.ordem || 0)); await escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + novoId]: { id: novoId, nome: v.nome, ordem, etapas: mapaEtapasDeTexto(v.etapas) } }); return null; } });
 }
-// ---- Técnico: checklist dentro do cartão da atividade ----
-const uiT = { abertos: {} };
-function pedidosDaAtividade(d, svc){
-  const ids = svc.obraPedidoId ? [svc.obraPedidoId] : Object.keys((d && d.pedidos) || {});
-  return ids.map(pid => ({ id: pid, numero: ((d.pedidos || {})[pid] || {}).numero, descricao: ((d.pedidos || {})[pid] || {}).descricao })).filter(p => subsDoPedido(d, p.id).length).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
+// ---- Técnico: lista de equipamentos dentro do cartão da atividade (toca no equipamento para abrir as etapas) ----
+const uiT = { abertos: {}, eq: {} };
+const ordEmpresa = (e) => { const i = EMPRESAS.findIndex(x => x[0] === e); return i < 0 ? 9 : i; };
+function regsDaAtividade(svc){
+  const ids = new Set([svc.obraRegistroId].concat(lista(svc.obraRegistroIds)).filter(Boolean));
+  if(!svc.obraPedidoId){ const k = fold(svc.client || ''); Object.keys(inst).forEach(id => { if(inst[id] && inst[id].cliente && fold(inst[id].cliente) === k) ids.add(id); }); }   // atividade da obra: todos os registros do cliente (Equiper e Eqp)
+  return [...ids].filter(id => inst[id]);
+}
+function blocosAtividade(svc){
+  const out = []; const rids = svc.obraPedidoId ? [svc.obraRegistroId].filter(id => inst[id]) : regsDaAtividade(svc);
+  rids.forEach(rid => { const d = inst[rid]; const pids = svc.obraPedidoId ? [svc.obraPedidoId] : Object.keys(d.pedidos || {}); pids.forEach(pid => { const p = (d.pedidos || {})[pid]; if(p && subsDoPedido(d, pid).length) out.push({ rid, d, pid, numero: p.numero, descricao: p.descricao, empresa: d.empresa || null }); }); });
+  return out.sort((a, b) => ordEmpresa(a.empresa) - ordEmpresa(b.empresa) || String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
+}
+function htmlEquipTec(d, rid, sub, lido){
+  const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const feitas = ets.filter(e => prog[e.id]).length; const aberto = !!uiT.eq[sub.id];
+  const falta = ets.filter(e => !prog[e.id]).map(e => e.nome); const travado = st === 'nao_liberado' || lido;
+  return `<div class="obi-eqt obi-eqt-${st}"><button type="button" class="obi-eq-row" data-obi-eq="${esc(sub.id)}" aria-expanded="${aberto}"><span class="obi-seta">${aberto ? '▾' : '▸'}</span><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-prog">${feitas}/${ets.length}</span></button>
+    ${aberto ? `<div class="obi-eq-corpo">
+      ${st === 'nao_liberado' && !lido ? `<div class="obi-aviso-lib">Ainda não foi liberado. Quando puder começar, toque em liberar.</div><button type="button" class="btn-primary obi-lib" data-obi-lib="${esc(rid)}|${esc(sub.id)}">Liberar para iniciar</button>` : ''}
+      <div class="obi-ets">${ets.map(e => { const f = prog[e.id]; return `<button type="button" class="obi-et ${f ? 'obi-et-on' : ''}" data-obi-et="${esc(rid)}|${esc(sub.id)}|${esc(e.id)}" ${travado ? 'disabled' : ''} title="${f ? esc('Marcado' + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : 'Marcar como feito'}">${f ? '✓ ' : ''}${esc(e.nome)}</button>`; }).join('')}</div>
+      ${st === 'iniciado' ? `<div class="obi-falta">Para finalizar falta marcar: <b>${esc(falta.join(', '))}</b></div>` : ''}${st === 'finalizado' ? '<div class="obi-ok">Todas as etapas feitas, inclusive o teste. Equipamento finalizado.</div>' : ''}</div>` : ''}</div>`;
 }
 function renderSlotTec(slot, svc){
-  const rid = svc.obraRegistroId; const d = inst[rid]; const aberto = uiT.abertos[svc.id] !== false;
-  if(!d || !instRegOk[rid]){ slot.innerHTML = '<div class="obi-tec"><div class="obi-tec-h">🏗 Instalação · carregando…</div></div>'; return; }
-  const peds = pedidosDaAtividade(d, svc); const subs = peds.flatMap(p => subsDoPedido(d, p.id));
+  const aberto = uiT.abertos[svc.id] !== false;
+  if(!instTodosOk){ slot.innerHTML = '<div class="obi-tec"><div class="obi-tec-h">🏗 Instalação · carregando…</div></div>'; return; }
+  const blocos = blocosAtividade(svc); const subs = blocos.flatMap(b => subsDoPedido(b.d, b.pid).map(x => ({ rid: b.rid, d: b.d, sub: x })));
   if(!subs.length){ slot.innerHTML = '<div class="obi-tec"><div class="obi-tec-h">🏗 Instalação</div><div class="prv-hint" style="padding:0 12px 10px;">Ainda não há equipamentos cadastrados para esta atividade. Peça ao Gestor.</div></div>'; return; }
-  const fin = subs.filter(x => estadoSub(d, x) === 'finalizado').length; const lido = svc.status === 'concluido';
-  slot.innerHTML = `<div class="obi-tec"><button type="button" class="obi-tec-h" data-obi-tog>🏗 Instalação — ${esc(d.cliente || '')}<span class="obi-tec-n">${fin} de ${subs.length} ${subs.length === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}</span><span>${aberto ? '▴' : '▾'}</span></button>
-    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${peds.map(p => `<div class="obi-ped"><div class="obi-ped-t"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || '')}</span></div>${lista(((d.pedidos || {})[p.id] || {}).sistemas).sort(ord).map(sis => `<div class="obi-sis"><div class="obi-sis-t">${esc(sis.nome)}</div>${lista(sis.subitens).sort(ord).map(sub => htmlEquip(d, rid, sub, { somenteLeitura: lido })).join('')}</div>`).join('')}</div>`).join('')}</div>` : ''}</div>`;
+  const fin = subs.filter(x => estadoSub(x.d, x.sub) === 'finalizado').length; const lido = svc.status === 'concluido'; const duas = new Set(blocos.map(b => b.empresa).filter(Boolean)).size > 1;
+  const nomeObra = (blocos[0].d.cliente) || svc.client || '';
+  slot.innerHTML = `<div class="obi-tec"><button type="button" class="obi-tec-h" data-obi-tog>🏗 Instalação — ${esc(nomeObra)}<span class="obi-tec-n">${fin} de ${subs.length} ${subs.length === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}</span><span>${aberto ? '▴' : '▾'}</span></button>
+    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${blocos.map(b => { const res = resumoPedido(b.d, b.pid); return `<div class="obi-ped"><div class="obi-ped-t">${duas && b.empresa ? `<span class="obr-emp obr-emp-${esc(b.empresa)}">${esc((EMPRESAS.find(e => e[0] === b.empresa) || [0, ''])[1])}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(b.numero)}</span><span class="obr-ped-desc">${esc(b.descricao || '')}</span><span class="obi-ped-n">${res.finalizados}/${res.total}</span></div>${lista(((b.d.pedidos || {})[b.pid] || {}).sistemas).sort(ord).map(sis => `<div class="obi-sis"><div class="obi-sis-t">${esc(sis.nome)}</div>${lista(sis.subitens).sort(ord).map(sub => htmlEquipTec(b.d, b.rid, sub, lido)).join('')}</div>`).join('')}</div>`; }).join('')}</div>` : ''}</div>`;
 }
 function renderSlotsTec(){ document.querySelectorAll('[data-obraslot]').forEach(slot => { const svc = services.find(x => String(x.id) === slot.dataset.obraslot); if(svc) renderSlotTec(slot, svc); }); }
 function montarSlotTecnico(card, svc){
@@ -23347,10 +23371,12 @@ function montarSlotTecnico(card, svc){
     if(!svc || !svc.obraRegistroId) return; const slot = document.createElement('div'); slot.className = 'obi-slot'; slot.dataset.obraslot = svc.id; card.appendChild(slot);
     slot.addEventListener('click', (e) => {
       if(e.target.closest('[data-obi-tog]')){ uiT.abertos[svc.id] = !(uiT.abertos[svc.id] !== false); renderSlotTec(slot, svc); return; }
-      const b = e.target.closest('[data-obi-et]'); if(!b) return; if(b.disabled){ const [rid, sub] = b.dataset.obiEt.split('|'); if(svc.status !== 'concluido') avisar('Este equipamento ainda não foi liberado pelo Gestor.', 4000); return; }
+      const eq = e.target.closest('[data-obi-eq]'); if(eq){ const k = eq.dataset.obiEq; uiT.eq[k] = !uiT.eq[k]; renderSlotTec(slot, svc); return; }
+      const lib = e.target.closest('[data-obi-lib]'); if(lib){ if(svc.status === 'concluido') return; const [rid, sub] = lib.dataset.obiLib.split('|'); const d = inst[rid] || {}; if(!((d.lib || {})[sub])) alternarLib(rid, sub); return; }       // o técnico libera (não liberado → liberado para iniciar)
+      const b = e.target.closest('[data-obi-et]'); if(!b) return; if(b.disabled){ if(svc.status !== 'concluido') avisar('Libere o equipamento para iniciar antes de marcar as etapas.', 4000); return; }
       const [rid, sub, et] = b.dataset.obiEt.split('|'); alternarEtapa(rid, sub, et);
     });
-    renderSlotTec(slot, svc); carregarInstReg(svc.obraRegistroId).then(() => renderSlotTec(slot, svc)).catch(e => console.error('obras: falha ao carregar a instalação', e));
+    renderSlotTec(slot, svc); carregarInstTodos().then(() => renderSlotTec(slot, svc)).catch(e => console.error('obras: falha ao carregar a instalação', e));
   }catch(e){ console.error('obras: falha ao montar a seção de instalação (o card segue normal)', e); }
 }
 // ---- Automação (feita pelo app do Gestor): primeira etapa marcada → pedido "Iniciado"; todos os equipamentos finalizados → pedido "Finalizado" e o Saldo vira "A cobrar" ----
@@ -23374,7 +23400,8 @@ async function reconciliar(){
     if(mudou){ renderGestor(); renderLista(); await store.save(true); avisos.forEach(t => avisar(t, 9000)); }
   } finally { reconciliando = false; }
 }
-async function iniciarGestor(){ try{ await garantirCarregado(); await carregarInstTodos(); reconciliar(); }catch(e){ console.error('obras: falha ao iniciar o acompanhamento', e); } }
+async function completarCabecalhos(){ const up = {}; registros().forEach(r => { const d = inst[r.id]; if(d && d.pedidos){ if(!d.empresa) up['obraInstalacao/' + r.id + '/empresa'] = r.empresa; if(!d.cliente) up['obraInstalacao/' + r.id + '/cliente'] = nomeCliente(r); } }); if(Object.keys(up).length) await escreverInst(up); }
+async function iniciarGestor(){ try{ await garantirCarregado(); await carregarInstTodos(); await completarCabecalhos(); reconciliar(); }catch(e){ console.error('obras: falha ao iniciar o acompanhamento', e); } }
 // ---- Relatório em PDF (para enviar ao responsável da obra; sem valores) ----
 function dadosRelatorio(r, d, pidSo){
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
