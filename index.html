@@ -1808,37 +1808,61 @@
   .cat-ed-danger{ color:var(--danger); }
   .cat-ed-chk{ display:inline-flex; align-items:center; gap:4px; font-size:12px; color:var(--text-dim); white-space:nowrap; }
   /* ===== Financeiro: menu lateral e Obras e Pedidos ===== */
-  @media (min-width: 760px){ #finHeader{ display:none !important; } #finSidebar .sidebar-nav-btn{ font-size:14px; } }
+  @media (min-width: 760px){ #finHeader{ display:none !important; }
+ #finSidebar .sidebar-nav-btn{ font-size:14px; } }
   #financeiroView .app-content{ min-width:0; }
   .obr-tab-n{ opacity:.7; font-weight:600; font-size:12px; }
   .obr-card{ display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:12px 16px; margin-bottom:8px; cursor:pointer; box-shadow:var(--shadow-sm); }
   .obr-card:hover{ background:var(--panel-2); }
-  .obr-card-main{ flex:1 1 280px; min-width:0; } .obr-cli{ font-weight:800; font-size:15px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .obr-card-main{ flex:1 1 280px; min-width:0; }
+ .obr-cli{ font-weight:800; font-size:15px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   .obr-sub{ font-size:12.5px; color:var(--text-dim); margin-top:3px; overflow-wrap:anywhere; }
-  .obr-barra{ height:6px; background:var(--panel-2); border-radius:999px; overflow:hidden; margin-top:8px; border:1px solid var(--line); } .obr-barra span{ display:block; height:100%; background:var(--success); border-radius:999px; }
+  .obr-barra{ height:6px; background:var(--panel-2); border-radius:999px; overflow:hidden; margin-top:8px; border:1px solid var(--line); }
+ .obr-barra span{ display:block; height:100%; background:var(--success); border-radius:999px; }
   .obr-barra-g{ height:10px; margin-top:6px; }
-  .obr-nums{ display:flex; gap:18px; flex-wrap:wrap; } .obr-nums > div{ min-width:104px; } .obr-nums label, .obr-resumo label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; } .obr-nums b{ font-size:14.5px; }
-  .obr-verde{ color:var(--success-dark); } .obr-ambar{ color:var(--warning); }
+  .obr-nums{ display:flex; gap:18px; flex-wrap:wrap; }
+ .obr-nums > div{ min-width:104px; }
+ .obr-nums label, .obr-resumo label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; }
+ .obr-nums b{ font-size:14.5px; }
+  .obr-verde{ color:var(--success-dark); }
+ .obr-ambar{ color:var(--warning); }
   .obr-modal{ max-width:760px; max-height:92vh; overflow-y:auto; }
-  .obr-sec{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; } .obr-sec-t{ display:flex; align-items:center; gap:8px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); margin-bottom:8px; }
-  .obr-sec-n{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:0 8px; font-size:11.5px; } .obr-sec-tot{ margin-left:auto; text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink); }
-  .obr-grid2{ display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; } .obr-grid2 .obr-largo{ grid-column:1 / -1; } .obr-grid2 > .field:not(.obr-meio):only-child{ grid-column:1 / -1; }
+  .obr-sec{ border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
+ .obr-sec-t{ display:flex; align-items:center; gap:8px; font-size:12px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); margin-bottom:8px; }
+  .obr-sec-n{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:0 8px; font-size:11.5px; }
+ .obr-sec-tot{ margin-left:auto; text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink); }
+  .obr-grid2{ display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; }
+ .obr-grid2 .obr-largo{ grid-column:1 / -1; }
+ .obr-grid2 > .field:not(.obr-meio):only-child{ grid-column:1 / -1; }
   #obrFormOverlay .obr-grid2 > .field:not(.obr-meio){ grid-column:1 / -1; }
   @media (max-width:560px){ .obr-grid2{ grid-template-columns:1fr; } }
-  .obr-tab{ width:100%; border-collapse:collapse; font-size:13px; } .obr-tab th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); padding:4px 6px; border-bottom:1px solid var(--line); }
-  .obr-tab td{ padding:7px 6px; border-bottom:1px dashed var(--line); vertical-align:top; } .obr-d{ text-align:right; white-space:nowrap; } .obr-canc td{ color:var(--text-dim); text-decoration:line-through; } .obr-canc td:last-child{ text-decoration:none; }
-  .obr-acoes{ white-space:nowrap; text-align:right; } .obr-ic{ border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:3px 8px; cursor:pointer; font-size:12px; margin-left:3px; color:var(--ink); } .obr-ic:hover{ background:var(--panel-2); } .obr-ic-ok{ color:var(--success-dark); border-color:var(--success); font-weight:800; }
-  .obr-ped-tag{ font-size:10.5px; background:var(--panel-2); border-radius:999px; padding:1px 7px; color:var(--text-dim); margin-left:4px; } .obr-obs{ font-size:11.5px; color:var(--text-dim); }
-  .obr-resumo{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; } .obr-resumo b{ font-size:15px; } @media (max-width:560px){ .obr-resumo{ grid-template-columns:1fr 1fr; } }
+  .obr-tab{ width:100%; border-collapse:collapse; font-size:13px; }
+ .obr-tab th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); padding:4px 6px; border-bottom:1px solid var(--line); }
+  .obr-tab td{ padding:7px 6px; border-bottom:1px dashed var(--line); vertical-align:top; }
+ .obr-d{ text-align:right; white-space:nowrap; }
+ .obr-canc td{ color:var(--text-dim); text-decoration:line-through; }
+ .obr-canc td:last-child{ text-decoration:none; }
+  .obr-acoes{ white-space:nowrap; text-align:right; }
+ .obr-ic{ border:1px solid var(--line); background:var(--panel); border-radius:6px; padding:3px 8px; cursor:pointer; font-size:12px; margin-left:3px; color:var(--ink); }
+ .obr-ic:hover{ background:var(--panel-2); }
+ .obr-ic-ok{ color:var(--success-dark); border-color:var(--success); font-weight:800; }
+  .obr-ped-tag{ font-size:10.5px; background:var(--panel-2); border-radius:999px; padding:1px 7px; color:var(--text-dim); margin-left:4px; }
+ .obr-obs{ font-size:11.5px; color:var(--text-dim); }
+  .obr-resumo{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; }
+ .obr-resumo b{ font-size:15px; }
+ @media (max-width:560px){ .obr-resumo{ grid-template-columns:1fr 1fr; } }
   .obr-rodape{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; border-top:1px solid var(--line); margin-top:16px; padding-top:10px; }
-  .obr-ped-linha{ display:grid; grid-template-columns:90px 1fr 130px auto; gap:6px; margin-bottom:6px; align-items:center; } @media (max-width:560px){ .obr-ped-linha{ grid-template-columns:70px 1fr 100px auto; } }
-  .obr-nota{ border-radius:var(--radius-sm); padding:8px 12px; font-size:12.5px; margin:2px 0 8px; } .obr-nota-ok{ background:var(--success-soft); color:var(--success-dark); } .obr-nota-novo{ background:var(--warning-soft); border:1px dashed var(--warning-line); }
+  .obr-ped-linha{ display:grid; grid-template-columns:90px 1fr 130px auto; gap:6px; margin-bottom:6px; align-items:center; }
+ @media (max-width:560px){ .obr-ped-linha{ grid-template-columns:70px 1fr 100px auto; } }
+  .obr-nota{ border-radius:var(--radius-sm); padding:8px 12px; font-size:12.5px; margin:2px 0 8px; }
+ .obr-nota-ok{ background:var(--success-soft); color:var(--success-dark); }
+ .obr-nota-novo{ background:var(--warning-soft); border:1px dashed var(--warning-line); }
   .prv-kpi-num.prv-kpi-txt{ font-size:21px; letter-spacing:-.3px; white-space:nowrap; }
   .obr-ic{ display:inline-block; width:auto; min-height:0; line-height:1.2; }
   .obr-acoes{ width:1%; }
   .obr-tab td .prv-chip{ white-space:nowrap; }
-  #obrBarra{ align-items:center; } #obrBarra select{ width:auto; max-width:100%; }
-
+  #obrBarra{ align-items:center; }
+ #obrBarra select{ width:auto; max-width:100%; }
   /* ===== condição de pagamento, situação das parcelas e blocos por pedido ===== */
   .obr-st{ display:inline-block; width:auto; border-radius:999px; padding:3px 10px; font-weight:700; font-size:12px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); min-height:0; }
   select.obr-st{ padding:3px 6px; cursor:pointer; max-width:150px; }
@@ -1848,37 +1872,47 @@
   .obr-st-recebido{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
   .obr-statusrow{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
   .obr-cond{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:var(--panel-2); border-radius:var(--radius-sm); padding:8px 12px; margin-bottom:10px; }
-  .obr-cond label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; } .obr-cond b{ font-size:13.5px; }
+  .obr-cond label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; }
+ .obr-cond b{ font-size:13.5px; }
   .obr-ped-bloco{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 10px; margin-bottom:10px; background:var(--panel); }
   .obr-ped-bloco-h{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:baseline; margin-bottom:6px; }
-  .obr-canc-bloco{ opacity:.7; } .obr-sub-i{ font-size:12.5px; color:var(--text-dim); } .obr-verm{ color:var(--danger); }
+  .obr-canc-bloco{ opacity:.7; }
+ .obr-sub-i{ font-size:12.5px; color:var(--text-dim); }
+ .obr-verm{ color:var(--danger); }
   .obr-resto-t{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin:6px 0 2px; }
   .obr-resto{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:4px 12px; }
-  .obr-cd-info{ font-size:12.5px; margin:4px 0 2px; } .obr-cd-ok{ color:var(--success-dark); font-weight:600; } .obr-cd-erro{ color:var(--danger); font-weight:600; } .obr-cd-neutro{ color:var(--text-dim); }
-  .obr-modo{ margin:12px 0 4px; display:flex; flex-direction:column; gap:6px; } .obr-modo label{ display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; } .obr-modo input{ width:auto; margin-top:3px; }
+  .obr-cd-info{ font-size:12.5px; margin:4px 0 2px; }
+ .obr-cd-ok{ color:var(--success-dark); font-weight:600; }
+ .obr-cd-erro{ color:var(--danger); font-weight:600; }
+ .obr-cd-neutro{ color:var(--text-dim); }
+  .obr-modo{ margin:12px 0 4px; display:flex; flex-direction:column; gap:6px; }
+ .obr-modo label{ display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; }
+ .obr-modo input{ width:auto; margin-top:3px; }
   .obr-tab tfoot td{ border-top:1px solid var(--line); border-bottom:none; }
-
   /* tela de Obras e Pedidos usa a largura toda (a dos portais é de 720px) e o quadro se reorganiza sozinho */
   #finObrasView > .tech-day-panel{ max-width:1100px; padding-left:14px; padding-right:14px; }
   /* cartão do cliente: título, contato, uma coluna por parcela (nome/% · valor · situação) e totais em uma linha */
   .obr-card{ display:block; cursor:pointer; padding:14px 16px 12px; }
-  .obr-cli{ font-size:16px; } .obr-sub{ margin-bottom:10px; }
+  .obr-cli{ font-size:16px; }
+ .obr-sub{ margin-bottom:10px; }
   .obr-parcs{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin:2px 0 10px; }
   .obr-parc{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 9px; background:var(--panel-2); display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; }
   .obr-parc-atraso{ border-color:var(--danger); background:var(--danger-soft); }
-  .obr-parc-t{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); } .obr-parc-t span{ font-weight:700; letter-spacing:0; text-transform:none; margin-left:3px; }
+  .obr-parc-t{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); }
+ .obr-parc-t span{ font-weight:700; letter-spacing:0; text-transform:none; margin-left:3px; }
   .obr-parc-v{ font-size:16px; font-weight:800; letter-spacing:-.2px; overflow-wrap:anywhere; }
   .obr-parc-s{ font-size:11px; color:var(--text-dim); }
   .obr-st-misto{ background:var(--panel); color:var(--ink); border-style:dashed; }
   .obr-sem-parc{ font-size:12.5px; color:var(--text-dim); background:var(--panel-2); border-radius:8px; padding:8px 10px; margin:2px 0 10px; }
-  .obr-tot{ display:flex; gap:6px 22px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); } .obr-tot b{ font-size:13.5px; color:var(--ink); margin-left:3px; } .obr-tot b.obr-verde{ color:var(--success-dark); } .obr-tot b.obr-ambar{ color:var(--warning); }
-
+  .obr-tot{ display:flex; gap:6px 22px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); }
+ .obr-tot b{ font-size:13.5px; color:var(--ink); margin-left:3px; }
+ .obr-tot b.obr-verde{ color:var(--success-dark); }
+ .obr-tot b.obr-ambar{ color:var(--warning); }
   /* pedidos em destaque no cartão (número em etiqueta escura + descrição em negrito) */
   .obr-peds{ display:flex; flex-direction:column; gap:5px; margin:6px 0 10px; }
   .obr-ped-item{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; }
   .obr-ped-num{ background:var(--ink); color:#fff; font-weight:800; font-size:12.5px; padding:2px 9px; border-radius:6px; white-space:nowrap; letter-spacing:.1px; }
   .obr-ped-desc{ font-weight:700; font-size:14.5px; color:var(--ink); overflow-wrap:anywhere; }
-
   /* quadro com 5 cartões SEMPRE numa linha só: ícone pequeno no canto, valor com a largura toda; em tela bem estreita a linha rola para o lado */
   #obrKpis{ grid-template-columns:repeat(5, minmax(158px, 1fr)) !important; gap:10px !important; overflow-x:auto; padding-bottom:3px; }
   #obrKpis .prv-kpi{ position:relative; display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:0; padding:10px 12px 10px 16px; min-width:0; }
@@ -1886,7 +1920,8 @@
   #obrKpis .prv-kpi-icone{ position:absolute; top:9px; right:9px; width:26px; height:26px; border-radius:8px; }
   #obrKpis .prv-kpi-icone svg{ width:14px; height:14px; }
   #obrKpis .prv-kpi-num{ font-size:19px; line-height:1.15; white-space:nowrap; justify-self:auto; }
-  #obrKpis .prv-kpi-rotulo{ font-size:12px; margin-top:3px; } #obrKpis .prv-kpi-sub{ font-size:10.5px; margin-top:0; line-height:1.25; }
+  #obrKpis .prv-kpi-rotulo{ font-size:12px; margin-top:3px; }
+ #obrKpis .prv-kpi-sub{ font-size:10.5px; margin-top:0; line-height:1.25; }
   /* ===== condição de pagamento, situação das parcelas e blocos por pedido ===== */
   .obr-st{ display:inline-block; width:auto; border-radius:999px; padding:3px 10px; font-weight:700; font-size:12px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); min-height:0; }
   select.obr-st{ padding:3px 6px; cursor:pointer; max-width:150px; }
@@ -1896,43 +1931,56 @@
   .obr-st-recebido{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
   .obr-statusrow{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0; }
   .obr-cond{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; background:var(--panel-2); border-radius:var(--radius-sm); padding:8px 12px; margin-bottom:10px; }
-  .obr-cond label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; } .obr-cond b{ font-size:13.5px; }
+  .obr-cond label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); font-weight:700; margin:0 0 2px; }
+ .obr-cond b{ font-size:13.5px; }
   .obr-ped-bloco{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 10px; margin-bottom:10px; background:var(--panel); }
   .obr-ped-bloco-h{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; align-items:baseline; margin-bottom:6px; }
-  .obr-canc-bloco{ opacity:.7; } .obr-sub-i{ font-size:12.5px; color:var(--text-dim); } .obr-verm{ color:var(--danger); }
+  .obr-canc-bloco{ opacity:.7; }
+ .obr-sub-i{ font-size:12.5px; color:var(--text-dim); }
+ .obr-verm{ color:var(--danger); }
   .obr-resto-t{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin:6px 0 2px; }
   .obr-resto{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:4px 12px; }
-  .obr-cd-info{ font-size:12.5px; margin:4px 0 2px; } .obr-cd-ok{ color:var(--success-dark); font-weight:600; } .obr-cd-erro{ color:var(--danger); font-weight:600; } .obr-cd-neutro{ color:var(--text-dim); }
-  .obr-modo{ margin:12px 0 4px; display:flex; flex-direction:column; gap:6px; } .obr-modo label{ display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; } .obr-modo input{ width:auto; margin-top:3px; }
+  .obr-cd-info{ font-size:12.5px; margin:4px 0 2px; }
+ .obr-cd-ok{ color:var(--success-dark); font-weight:600; }
+ .obr-cd-erro{ color:var(--danger); font-weight:600; }
+ .obr-cd-neutro{ color:var(--text-dim); }
+  .obr-modo{ margin:12px 0 4px; display:flex; flex-direction:column; gap:6px; }
+ .obr-modo label{ display:flex; gap:8px; align-items:flex-start; font-size:13px; cursor:pointer; }
+ .obr-modo input{ width:auto; margin-top:3px; }
   .obr-tab tfoot td{ border-top:1px solid var(--line); border-bottom:none; }
-
   /* tela de Obras e Pedidos usa a largura toda (a dos portais é de 720px) e o quadro se reorganiza sozinho */
   #finObrasView > .tech-day-panel{ max-width:1100px; padding-left:14px; padding-right:14px; }
   /* cartão do cliente: título, contato, uma coluna por parcela (nome/% · valor · situação) e totais em uma linha */
   .obr-card{ display:block; cursor:pointer; padding:14px 16px 12px; }
-  .obr-cli{ font-size:16px; } .obr-sub{ margin-bottom:10px; }
+  .obr-cli{ font-size:16px; }
+ .obr-sub{ margin-bottom:10px; }
   .obr-parcs{ display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; margin:2px 0 10px; }
   .obr-parc{ border:1px solid var(--line); border-radius:10px; padding:8px 10px 9px; background:var(--panel-2); display:flex; flex-direction:column; align-items:flex-start; gap:4px; min-width:0; }
   .obr-parc-atraso{ border-color:var(--danger); background:var(--danger-soft); }
-  .obr-parc-t{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); } .obr-parc-t span{ font-weight:700; letter-spacing:0; text-transform:none; margin-left:3px; }
+  .obr-parc-t{ font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); }
+ .obr-parc-t span{ font-weight:700; letter-spacing:0; text-transform:none; margin-left:3px; }
   .obr-parc-v{ font-size:16px; font-weight:800; letter-spacing:-.2px; overflow-wrap:anywhere; }
   .obr-parc-s{ font-size:11px; color:var(--text-dim); }
   .obr-st-misto{ background:var(--panel); color:var(--ink); border-style:dashed; }
   .obr-sem-parc{ font-size:12.5px; color:var(--text-dim); background:var(--panel-2); border-radius:8px; padding:8px 10px; margin:2px 0 10px; }
-  .obr-tot{ display:flex; gap:6px 22px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); } .obr-tot b{ font-size:13.5px; color:var(--ink); margin-left:3px; } .obr-tot b.obr-verde{ color:var(--success-dark); } .obr-tot b.obr-ambar{ color:var(--warning); }
-
+  .obr-tot{ display:flex; gap:6px 22px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); }
+ .obr-tot b{ font-size:13.5px; color:var(--ink); margin-left:3px; }
+ .obr-tot b.obr-verde{ color:var(--success-dark); }
+ .obr-tot b.obr-ambar{ color:var(--warning); }
   /* pedidos em destaque no cartão (número em etiqueta escura + descrição em negrito) */
   .obr-peds{ display:flex; flex-direction:column; gap:5px; margin:6px 0 10px; }
   .obr-ped-item{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; }
   .obr-ped-num{ background:var(--ink); color:#fff; font-weight:800; font-size:12.5px; padding:2px 9px; border-radius:6px; white-space:nowrap; letter-spacing:.1px; }
   .obr-ped-desc{ font-weight:700; font-size:14.5px; color:var(--ink); overflow-wrap:anywhere; }
-
   /* ===== cartão compacto: uma linha por pedido, com as parcelas dele ===== */
   .obr-card{ padding:10px 14px 9px; margin-bottom:8px; }
-  .obr-cli{ font-size:15px; gap:6px; align-items:center; margin-bottom:6px; } .obr-forma{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--text-dim); }
+  .obr-cli{ font-size:15px; gap:6px; align-items:center; margin-bottom:6px; }
+ .obr-forma{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--text-dim); }
   .obr-pedlin{ display:grid; grid-template-columns:minmax(150px, 230px) 1fr; gap:6px 12px; align-items:center; padding:6px 0; border-top:1px dashed var(--line); }
   .obr-pedlin-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 7px; min-width:0; }
-  .obr-ped-num{ font-size:11.5px; padding:1px 7px; } .obr-ped-desc{ font-size:13.5px; font-weight:700; } .obr-ped-val{ font-size:11.5px; color:var(--text-dim); font-weight:600; width:100%; }
+  .obr-ped-num{ font-size:11.5px; padding:1px 7px; }
+ .obr-ped-desc{ font-size:13.5px; font-weight:700; }
+ .obr-ped-val{ font-size:11.5px; color:var(--text-dim); font-weight:600; width:100%; }
   .obr-parcs-c{ display:grid; grid-template-columns:repeat(auto-fit, minmax(138px, 1fr)); gap:6px; min-width:0; }
   .obr-pc{ border:1px solid var(--line); border-radius:8px; padding:5px 8px 6px; background:var(--panel-2); min-width:0; }
   .obr-pc-atraso{ border-color:var(--danger); background:var(--danger-soft); }
@@ -1941,16 +1989,17 @@
   .obr-pc .obr-st{ font-size:10.5px; padding:1px 7px; white-space:nowrap; }
   .obr-pc-v{ font-size:14px; font-weight:800; letter-spacing:-.2px; margin-top:1px; }
   .obr-card .obr-sem-parc{ margin:0; padding:5px 9px; font-size:12px; }
-  .obr-card .obr-tot{ margin-top:6px; padding-top:6px; border-top:1px solid var(--line); font-size:11.5px; } .obr-card .obr-tot b{ font-size:13px; }
+  .obr-card .obr-tot{ margin-top:6px; padding-top:6px; border-top:1px solid var(--line); font-size:11.5px; }
+ .obr-card .obr-tot b{ font-size:13px; }
   .obr-card .obr-barra{ height:4px; margin-top:6px; }
-  @media (max-width:640px){ .obr-pedlin{ grid-template-columns:1fr; } .obr-ped-val{ width:auto; } }
-
+  @media (max-width:640px){ .obr-pedlin{ grid-template-columns:1fr; }
+ .obr-ped-val{ width:auto; } }
   /* a confirmação do app ("Excluir…?") precisa ficar POR CIMA das janelas criadas depois dela (detalhe, formulários) */
   #confirmOverlay{ z-index:9500; }
   #avisoNaoBloqueante{ z-index:9600; }
-  .obr-resumo{ grid-template-columns:repeat(3, 1fr); } @media (max-width:560px){ .obr-resumo{ grid-template-columns:1fr 1fr; } }
+  .obr-resumo{ grid-template-columns:repeat(3, 1fr); }
+ @media (max-width:560px){ .obr-resumo{ grid-template-columns:1fr 1fr; } }
   .obr-card .obr-pc-atraso{ border-color:var(--line); background:var(--panel-2); }
-
   /* caixinha da parcela: rótulo em cima (com reticências), valor + situação embaixo (a situação desce se não couber) — nunca vaza */
   .obr-pedlin{ grid-template-columns:minmax(150px, 230px) minmax(0, 1fr); }
   .obr-parcs-c{ grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); }
@@ -1960,190 +2009,207 @@
   .obr-pc-v{ font-size:14px; font-weight:800; letter-spacing:-.2px; white-space:nowrap; }
   .obr-pc .obr-st{ font-size:10.5px; padding:1px 7px; white-space:nowrap; }
   @media (max-width:640px){ .obr-pedlin{ grid-template-columns:minmax(0, 1fr); } }
-
   /* Financeiro no celular/tablet: a mesma barra de navegação inferior do Gestor (ícone em cima, nome embaixo, ativo em vermelho) */
   #finBottomNav{ display:none; }
-  @media (max-width: 759px){
-    #finBottomNav{ display:flex; position:fixed; left:0; right:0; bottom:0; z-index:95; background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -2px 12px rgba(20,20,22,0.06); padding:6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); }
+  @media (max-width: 759px){    #finBottomNav{ display:flex; position:fixed; left:0; right:0; bottom:0; z-index:95; background:var(--surface); border-top:1px solid var(--line); box-shadow:0 -2px 12px rgba(20,20,22,0.06); padding:6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); }
     #finBottomNav .bottom-nav-btn{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:transparent; border:none; color:var(--text-dim); font-family:var(--sans); font-size:10.5px; padding:6px 2px; cursor:pointer; border-radius:var(--radius-sm); position:relative; transition:color .15s; }
     #finBottomNav .bottom-nav-btn .bottom-nav-icon{ width:21px; height:21px; color:inherit; }
     #finBottomNav .bottom-nav-btn.active{ color:var(--accent); font-weight:600; }
     #financeiroView .page{ padding-bottom:84px; }
   }
-
-  /* ===== andamento do pedido (cores) ===== */
-  .obr-sp{ display:inline-block; width:auto; border-radius:999px; padding:2px 9px; font-weight:700; font-size:11px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); min-height:0; white-space:nowrap; }
-  /* Etapa INTERNA (compras): aguardando compra = vermelho · liberado para entrega = amarelo · entregue = verde
-     Etapa OBRA: aguardando liberação para início = vermelho · iniciado = azul · aguardando testes finais = verde claro · finalizado = verde escuro */
-  .obr-sp-aguardando_compra, .obr-sp-aguardando_inicio{ background:#C62828; color:#fff; border-color:#8E1B1B; }
-  .obr-sp-liberado_entrega{ background:#F6C945; color:#3D2C00; border-color:#C99A12; }
-  .obr-sp-entregue{ background:#4CAF73; color:#08341C; border-color:#2E8452; }
-  .obr-sp-iniciado{ background:#2F6FB0; color:#fff; border-color:#1F4F86; }
-  .obr-sp-aguardando_testes{ background:#CDEBD6; color:#1B5A37; border-color:#7FBF98; }
-  .obr-sp-finalizado{ background:#17653A; color:#fff; border-color:#0E4527; }
-  select.obr-sp{ padding:4px 8px; font-size:12px; cursor:pointer; max-width:100%; }
-  select.obr-sp option, select.obr-sp optgroup{ background:#fff; color:#17181A; }
-  /* ===== aba Obras e Pedidos do Gestor ===== */
-  .obrg-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
-  .obrg-chip{ cursor:pointer; font-family:inherit; } .obrg-chip b{ margin-left:4px; } .obrg-chip-on{ box-shadow:0 0 0 2px var(--ink); }
   .obrg-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 6px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
-  .obrg-cli{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; margin-bottom:4px; } .obrg-prog{ margin-left:auto; font-size:11.5px; color:var(--text-dim); font-weight:600; }
+  .obrg-cli{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; margin-bottom:4px; }
+ .obrg-prog{ margin-left:auto; font-size:11.5px; color:var(--text-dim); font-weight:600; }
   .obrg-ped{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; padding:8px 0; border-top:1px dashed var(--line); }
-  .obrg-ped-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 9px; min-width:0; flex:1 1 260px; } .obrg-ped-a{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; flex:0 1 auto; }
+  .obrg-ped-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 9px; min-width:0; flex:1 1 260px; }
+ .obrg-ped-a{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; flex:0 1 auto; }
   .obrg-quando{ flex:1 1 100%; margin:-2px 0 0; }
   @media (max-width:640px){ .obrg-ped-a{ justify-content:flex-start; flex:1 1 100%; } }
-
   /* ===== Sistemas (bases de instalação) ===== */
-  .obrg-sis{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 11px; margin-bottom:8px; cursor:pointer; box-shadow:var(--shadow-sm); } .obrg-sis:hover{ background:var(--panel-2); }
-  .obrg-sis-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; } .obrg-sis-ed{ margin-left:auto; font-size:12px; color:var(--text-dim); font-weight:600; }
+  .obrg-sis{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 11px; margin-bottom:8px; cursor:pointer; box-shadow:var(--shadow-sm); }
+ .obrg-sis:hover{ background:var(--panel-2); }
+  .obrg-sis-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; }
+ .obrg-sis-ed{ margin-left:auto; font-size:12px; color:var(--text-dim); font-weight:600; }
   .obrg-sis-subs{ display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
   .obrg-sub{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:2px 10px; font-size:12px; color:var(--ink); }
-  .obrg-subrow{ display:flex; gap:6px; align-items:center; margin-bottom:6px; } .obrg-subrow input{ flex:1; min-width:0; } .obrg-subrow .obr-ic{ flex:none; } .obrg-subrow .obr-ic:disabled{ opacity:.35; cursor:default; }
-
+  .obrg-subrow{ display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+ .obrg-subrow input{ flex:1; min-width:0; }
+ .obrg-subrow .obr-ic{ flex:none; }
+ .obrg-subrow .obr-ic:disabled{ opacity:.35; cursor:default; }
   .obrg-subbloco{ border:1px solid var(--line); border-radius:8px; padding:6px 8px 7px; margin-bottom:8px; background:var(--panel-2); }
   .obrg-subbloco .obrg-subrow{ margin-bottom:4px; }
-  .obrg-etrow{ display:flex; align-items:center; gap:8px; } .obrg-etrow span{ font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; font-weight:800; color:var(--text-dim); } .obrg-etrow input{ flex:1; min-width:0; font-size:12.5px; }
-
+  .obrg-etrow{ display:flex; align-items:center; gap:8px; }
+ .obrg-etrow span{ font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; font-weight:800; color:var(--text-dim); }
+ .obrg-etrow input{ flex:1; min-width:0; font-size:12.5px; }
   /* ===== equipamentos por pedido (painel do Gestor) e checklist do técnico ===== */
-  .obrg-cli-a{ display:flex; gap:6px; flex-wrap:wrap; } .obrg-btn-eq-on{ background:var(--panel-2); border-color:var(--ink); }
+  .obrg-cli-a{ display:flex; gap:6px; flex-wrap:wrap; }
+ .obrg-btn-eq-on{ background:var(--panel-2); border-color:var(--ink); }
   .obrg-eq{ flex:1 1 100%; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:4px 0 6px; }
-  .obrg-eq-bar{ display:flex; justify-content:space-between; align-items:center; gap:8px 12px; flex-wrap:wrap; margin-bottom:8px; } .obrg-eq-res{ font-size:12.5px; color:var(--text-dim); } .obrg-eq-acoes{ display:flex; gap:6px; flex-wrap:wrap; }
-  .obrg-sistema{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px 4px; margin-bottom:8px; } .obrg-sistema-h{ display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; } .obrg-sistema-h span{ display:flex; gap:6px; }
-  .obi-eq{ border-top:1px dashed var(--line); padding:7px 0 8px; } .obi-eq-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .obi-eq-h b{ font-size:13.5px; } .obi-eq-a{ margin-left:auto; display:flex; gap:6px; align-items:center; }
-  .obi-st{ display:inline-block; border-radius:999px; padding:2px 9px; font-weight:700; font-size:11px; border:1px solid var(--line); white-space:nowrap; }
-  .obi-st-nao_liberado{ background:var(--danger-soft); color:var(--danger); border-color:rgba(192,57,43,.45); }
-  .obi-st-liberado{ background:var(--panel); color:var(--danger); border-color:var(--danger); border-style:dashed; }
-  .obi-st-iniciado{ background:var(--warning-soft); color:var(--warning); border-color:var(--warning-line); }
-  .obi-st-finalizado{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
-  .obi-ets{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-  .obi-et{ width:auto; min-height:34px; padding:6px 13px; border-radius:999px; border:1.5px solid var(--line); background:var(--panel); color:var(--text-dim); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
-  .obi-et-on{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); } .obi-et:disabled{ opacity:.45; cursor:not-allowed; }
-  .obi-aviso{ font-size:11.5px; color:var(--danger); margin-top:5px; }
-  .obi-q{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:5px 0; border-bottom:1px dashed var(--line); } .obi-q small{ display:block; font-size:11px; color:var(--text-dim); } .obi-q input{ width:68px; text-align:center; }
-  .obi-slot{ margin:0 14px 14px; } .obi-tec{ border:1.5px solid var(--line); border-radius:12px; background:var(--panel); overflow:hidden; }
-  .obi-tec-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; text-align:left; padding:11px 13px; background:var(--panel-2); border:none; font-size:14px; font-weight:800; color:var(--ink); cursor:pointer; font-family:inherit; } .obi-tec-n{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--text-dim); }
-  .obi-tec-c{ padding:10px 13px 6px; } .obi-ped{ margin-bottom:10px; } .obi-ped-t{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:4px; } .obi-sis-t{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); margin:8px 0 0; }
-
+  .obrg-eq-bar{ display:flex; justify-content:space-between; align-items:center; gap:8px 12px; flex-wrap:wrap; margin-bottom:8px; }
+ .obrg-eq-res{ font-size:12.5px; color:var(--text-dim); }
+ .obrg-eq-acoes{ display:flex; gap:6px; flex-wrap:wrap; }
+  .obrg-sistema{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px 4px; margin-bottom:8px; }
+ .obrg-sistema-h{ display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+ .obrg-sistema-h span{ display:flex; gap:6px; }
   /* empresa marcada no cartão (aba Geral) e nas linhas dos pedidos do Gestor */
   .obr-emp{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; padding:2px 8px; border-radius:6px; border:1px solid var(--ink); color:var(--ink); background:var(--panel); }
   .obr-emp-eqp{ border-color:#2F6FB0; color:#2F6FB0; background:rgba(47,111,176,.08); }
-
-  /* ===== técnico: lista compacta de equipamentos (toca para abrir as etapas) ===== */
-  .obi-ped-n{ margin-left:auto; font-size:11.5px; font-weight:700; color:var(--text-dim); }
-  .obi-eqt{ border-top:1px dashed var(--line); } .obi-eq-row{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent; border:none; padding:11px 2px; cursor:pointer; font-family:inherit; font-size:14px; color:var(--ink); min-height:44px; }
-  .obi-eq-row b{ flex:1; min-width:0; overflow-wrap:anywhere; } .obi-seta{ width:14px; color:var(--text-dim); font-size:12px; } .obi-prog{ font-size:11.5px; font-weight:700; color:var(--text-dim); min-width:28px; text-align:right; }
-  .obi-eq-corpo{ padding:0 2px 12px 22px; } .obi-aviso-lib{ font-size:12.5px; color:var(--danger); margin:0 0 8px; } .obi-lib{ width:100%; min-height:44px; margin-bottom:8px; }
-  .obi-falta{ font-size:12px; color:var(--warning); margin-top:8px; } .obi-ok{ font-size:12px; color:var(--success-dark); margin-top:8px; font-weight:600; }
-
-  .obi-sis-btn{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid var(--line); padding:9px 2px 7px; margin:8px 0 0; cursor:pointer; font-family:inherit; min-height:40px; }
-  .obi-sis-btn .obi-sis-nome{ flex:1; min-width:0; overflow-wrap:anywhere; text-transform:uppercase; letter-spacing:.4px; font-weight:800; font-size:11.5px; color:var(--text-dim); }
-
-  /* ===== técnico no celular: leitura fácil (letras grandes, alto contraste, sistemas bem separados) ===== */
-  .obi-tec-c{ padding:12px 12px 6px; }
-  .obi-ped{ margin-bottom:22px; }
-  .obi-ped-t{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; background:var(--panel-2); border:1.5px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:12px; }
-  .obi-ped-t .obr-ped-num{ font-size:14px; padding:3px 10px; } .obi-ped-t .obr-ped-desc{ font-size:16.5px; font-weight:800; } .obi-ped-n{ font-size:14px; font-weight:800; color:var(--ink); }
-  /* cada sistema é um bloco com contorno e uma faixa escura de título */
-  .obi-tec .obi-sis{ border:2px solid var(--ink); border-radius:12px; overflow:hidden; margin:0 0 16px; background:var(--panel); box-shadow:0 2px 6px rgba(20,20,22,.14); }
-  .obi-tec .obi-sis-btn{ display:flex; align-items:center; gap:10px; width:100%; background:var(--ink); color:#fff; border:none; border-left:7px solid #D91A22; border-radius:0; padding:14px 14px; margin:0; min-height:56px; text-align:left; cursor:pointer; font-family:inherit; }
-  .obi-tec .obi-sis-btn .obi-seta{ color:#fff; font-size:17px; width:20px; }
-  .obi-tec .obi-sis-btn .obi-sis-nome{ flex:1; min-width:0; color:#fff; font-size:18px; font-weight:800; letter-spacing:.1px; text-transform:none; line-height:1.2; overflow-wrap:anywhere; }
-  .obi-tec .obi-sis-btn .obi-prog{ background:#fff; color:var(--ink); border-radius:999px; padding:4px 12px; font-size:15px; font-weight:800; min-width:0; }
-  /* equipamentos: letra maior, linha alta, zebra para separar */
-  .obi-tec .obi-eqt{ border-top:1px solid var(--line); padding:0 8px; } .obi-tec .obi-sis > .obi-eqt:nth-of-type(even){ background:var(--panel-2); }
-  .obi-tec .obi-eq-row{ min-height:60px; padding:12px 2px; gap:10px; font-size:17px; }
-  .obi-tec .obi-eq-row b{ font-size:17px; font-weight:800; line-height:1.25; } .obi-tec .obi-eq-row .obi-seta{ font-size:14px; width:16px; color:var(--ink); }
-  .obi-tec .obi-eq-row .obi-prog{ font-size:15px; font-weight:800; color:var(--ink); }
-  .obi-tec .obi-st{ font-size:13px; font-weight:800; padding:5px 12px; border-width:1.5px; }
-  .obi-tec .obi-eq-corpo{ padding:2px 4px 14px 26px; }
-  .obi-tec .obi-et{ min-height:48px; font-size:16px; padding:10px 20px; border-width:2px; color:var(--ink); }
-  .obi-tec .obi-et-on{ color:var(--success-dark); } .obi-tec .obi-et:disabled{ color:var(--text-dim); }
-  .obi-tec .obi-lib{ min-height:52px; font-size:16px; } .obi-tec .obi-aviso-lib{ font-size:14px; font-weight:600; } .obi-tec .obi-falta, .obi-tec .obi-ok{ font-size:14px; }
-  .obi-tec-h{ font-size:16px; } .obi-tec-n{ font-size:13px; }
-
-  /* linha do equipamento: nome grande em cima (pode quebrar em 2 linhas) e o selo da situação embaixo — nunca apertados lado a lado */
-  .obi-tec .obi-eq-row{ display:flex; align-items:center; gap:10px; min-height:64px; padding:12px 2px; }
-  .obi-tec .obi-eq-info{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:7px; }
-  .obi-tec .obi-eq-info b{ flex:none; }
-
-  .obi-tec .obi-eq-row{ box-sizing:border-box; width:100%; cursor:pointer; color:var(--ink); } .obi-tec .obi-eq-row:focus-visible{ outline:3px solid #2F6FB0; outline-offset:-3px; border-radius:8px; }
-
-  /* ===== cores dos estados do equipamento (pedido pelo Gestor) ===== */
-  .obi-st{ border-width:1.5px; }
-  .obi-st-nao_liberado{ background:#C62828; color:#fff; border-color:#8E1B1B; }                 /* vermelho forte */
-  .obi-st-liberado{ background:#F6C945; color:#3D2C00; border:1.5px solid #C99A12; }              /* amarelo */
-  .obi-st-iniciado{ background:#2F6FB0; color:#fff; border-color:#1F4F86; }                       /* azul */
-  .obi-st-finalizado{ background:#CDEBD6; color:#1B5A37; border-color:#7FBF98; }                  /* verde claro */
-  .obi-st-testado{ background:#1F7A44; color:#fff; border-color:#145A31; }                        /* verde forte */
-  /* barra lateral na linha do equipamento com a mesma cor: dá para ver o estado de longe */
-  .obi-tec .obi-eqt{ border-left:7px solid transparent; }
-  .obi-tec .obi-eqt-nao_liberado{ border-left-color:#C62828; } .obi-tec .obi-eqt-liberado{ border-left-color:#F6C945; } .obi-tec .obi-eqt-iniciado{ border-left-color:#2F6FB0; } .obi-tec .obi-eqt-finalizado{ border-left-color:#7FBF98; } .obi-tec .obi-eqt-testado{ border-left-color:#1F7A44; }
-  .obi-eq-nao_liberado{ border-left:5px solid #C62828; padding-left:8px; } .obi-eq-liberado{ border-left:5px solid #F6C945; padding-left:8px; } .obi-eq-iniciado{ border-left:5px solid #2F6FB0; padding-left:8px; } .obi-eq-finalizado{ border-left:5px solid #7FBF98; padding-left:8px; } .obi-eq-testado{ border-left:5px solid #1F7A44; padding-left:8px; }
-  .obi-tec .obi-falta{ color:#2F6FB0; }
-
   .obr-st-agendado{ background:rgba(107,79,160,.14); color:#5A3D96; border-color:rgba(107,79,160,.45); }
-  .obr-pc-d{ font-size:10.5px; color:#5A3D96; font-weight:700; margin-top:2px; } .obr-obs-prev b{ color:#5A3D96; }
-
-  .obr-tab-rolar{ overflow-x:auto; } .obr-data-bol{ width:auto; min-width:140px; padding:6px 8px; font-size:13px; }
-
+  .obr-pc-d{ font-size:10.5px; color:#5A3D96; font-weight:700; margin-top:2px; }
+ .obr-obs-prev b{ color:#5A3D96; }
+  .obr-tab-rolar{ overflow-x:auto; }
+ .obr-data-bol{ width:auto; min-width:140px; padding:6px 8px; font-size:13px; }
   /* ===== cartões de pagamento (lista do dia) ===== */
-  .pgc-ev{ background:var(--panel); border:1px solid var(--line); border-left:5px solid #5A3D96; border-radius:10px; padding:9px 12px; margin-bottom:6px; cursor:pointer; box-shadow:var(--shadow-sm); } .pgc-ev:hover{ background:var(--panel-2); }
-  .pgc-ev-recebido{ border-left-color:var(--success); } .pgc-ev-passou{ border-left-color:var(--danger); }
-  .pgc-ev-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .pgc-ev-h b{ font-size:14.5px; } .pgc-ev-v{ margin-left:auto; font-weight:800; font-size:15px; }
-  .pgc-ev-s{ font-size:12.5px; color:var(--text-dim); margin:2px 0 5px; } .pgc-ev-c{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .pgc-ev-t{ font-size:12px; color:var(--text-dim); margin-left:auto; }
-
-
+  .pgc-ev{ background:var(--panel); border:1px solid var(--line); border-left:5px solid #5A3D96; border-radius:10px; padding:9px 12px; margin-bottom:6px; cursor:pointer; box-shadow:var(--shadow-sm); }
+ .pgc-ev:hover{ background:var(--panel-2); }
+  .pgc-ev-recebido{ border-left-color:var(--success); }
+ .pgc-ev-passou{ border-left-color:var(--danger); }
+  .pgc-ev-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+ .pgc-ev-h b{ font-size:14.5px; }
+ .pgc-ev-v{ margin-left:auto; font-weight:800; font-size:15px; }
+  .pgc-ev-s{ font-size:12.5px; color:var(--text-dim); margin:2px 0 5px; }
+ .pgc-ev-c{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+ .pgc-ev-t{ font-size:12px; color:var(--text-dim); margin-left:auto; }
   /* ===== aba Agendados (usa o visual da Agenda: week-*, month-nav, cal-grid/cal-cell/cal-dot, day-panel) ===== */
-  #obrTabs{ overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; } #obrTabs::-webkit-scrollbar{ display:none; } #obrTabs .portal-tab{ flex:1 0 auto; white-space:nowrap; }
-  .pgag-filtros{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 14px; } .pgag-chk{ display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; white-space:nowrap; } .pgag-chk input{ width:auto; }
-  .pgag-semtot{ font-size:13px; color:var(--text-dim); margin:-2px 0 12px; } .pgag-semtot b{ color:var(--ink); }
-  @media (min-width:1025px){ .week-days-grid.pgag-n6{ grid-template-columns:repeat(6, 1fr); } .week-days-grid.pgag-n7{ grid-template-columns:repeat(7, 1fr); } }
-  .week-day-col-head[data-pgag-dia]{ cursor:pointer; } .pgag-sel{ box-shadow:0 0 0 2px var(--ink); border-radius:12px; }
+  #obrTabs{ overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; }
+ #obrTabs::-webkit-scrollbar{ display:none; }
+ #obrTabs .portal-tab{ flex:1 0 auto; white-space:nowrap; }
+  .pgag-filtros{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 14px; }
+ .pgag-chk{ display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; white-space:nowrap; }
+ .pgag-chk input{ width:auto; }
+  .pgag-semtot{ font-size:13px; color:var(--text-dim); margin:-2px 0 12px; }
+ .pgag-semtot b{ color:var(--ink); }
+  @media (min-width:1025px){ .week-days-grid.pgag-n6{ grid-template-columns:repeat(6, 1fr); }
+ .week-days-grid.pgag-n7{ grid-template-columns:repeat(7, 1fr); } }
+  .week-day-col-head[data-pgag-dia]{ cursor:pointer; }
+ .pgag-sel{ box-shadow:0 0 0 2px var(--ink); border-radius:12px; }
   .pgag-bar{ border:1px solid var(--line); border-left:4px solid #6B4FA0; border-radius:8px; padding:6px 8px; margin-bottom:6px; background:var(--panel); cursor:pointer; display:flex; flex-direction:column; gap:1px; font-size:12px; min-width:0; }
-  .pgag-bar b{ font-size:12.5px; overflow-wrap:anywhere; } .pgag-bar span{ font-weight:800; } .pgag-bar small{ color:var(--text-dim); overflow-wrap:anywhere; }
-  .pgag-bar-recebido{ border-left-color:var(--success); } .pgag-bar-passou{ border-left-color:var(--danger); background:var(--danger-soft); }
-  .pgag-vazio{ color:var(--text-dim); text-align:center; padding:6px 0; font-size:12px; } .pgag-dia-tot{ font-size:11.5px; font-weight:800; color:#5A3D96; text-align:right; margin-top:2px; }
-  .pgag-dot-prev{ background:#6B4FA0; } .pgag-dot-rec{ background:var(--success); } .pgag-dot-passou{ background:var(--danger); } .pgag-mais{ font-size:9.5px; color:var(--text-dim); font-weight:700; }
-  .pgag-leg{ display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); margin:10px 0 16px; } .pgag-leg span{ display:inline-flex; align-items:center; gap:6px; } .pgag-leg .cal-dot{ display:inline-block; margin:0; }
-  .pgag-dia-res{ font-size:13px; color:var(--text-dim); margin:0 0 10px; } .pgag-dia-res b{ color:var(--ink); }
+  .pgag-bar b{ font-size:12.5px; overflow-wrap:anywhere; }
+ .pgag-bar span{ font-weight:800; }
+ .pgag-bar small{ color:var(--text-dim); overflow-wrap:anywhere; }
+  .pgag-bar-recebido{ border-left-color:var(--success); }
+ .pgag-bar-passou{ border-left-color:var(--danger); background:var(--danger-soft); }
+  .pgag-vazio{ color:var(--text-dim); text-align:center; padding:6px 0; font-size:12px; }
+ .pgag-dia-tot{ font-size:11.5px; font-weight:800; color:#5A3D96; text-align:right; margin-top:2px; }
+  .pgag-dot-prev{ background:#6B4FA0; }
+ .pgag-dot-rec{ background:var(--success); }
+ .pgag-dot-passou{ background:var(--danger); }
+ .pgag-mais{ font-size:9.5px; color:var(--text-dim); font-weight:700; }
+  .pgag-leg{ display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); margin:10px 0 16px; }
+ .pgag-leg span{ display:inline-flex; align-items:center; gap:6px; }
+ .pgag-leg .cal-dot{ display:inline-block; margin:0; }
+  .pgag-dia-res{ font-size:13px; color:var(--text-dim); margin:0 0 10px; }
+ .pgag-dia-res b{ color:var(--ink); }
   .cal-cell[data-pgag-dia]{ cursor:pointer; }
-
   #pgagMes{ text-transform:none; }
-
-  /* ===== Gestor → Pedidos: painel de andamentos + linha compacta por cliente (cartão completo ao clicar) ===== */
-  .obrg-painel{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; margin:0 0 14px; }
-  .obrg-pc{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; width:auto; border-radius:12px; padding:10px 12px 9px; text-align:left; cursor:pointer; font-family:inherit; border-width:1.5px; white-space:normal; }
-  .obrg-pc .obrg-pc-n{ font-size:26px; line-height:1; font-weight:800; letter-spacing:-.5px; } .obrg-pc .obrg-pc-r{ font-size:12px; font-weight:800; line-height:1.2; } .obrg-pc small{ font-size:11px; font-weight:600; opacity:.8; }
-  .obrg-pc-zero{ opacity:.5; } .obrg-pc.obrg-chip-on{ opacity:1; box-shadow:0 0 0 3px var(--ink); }
   .obrg-exp{ display:flex; gap:6px; }
-  .obrg-cliente{ padding:0; overflow:hidden; } .obrg-resumo{ display:flex; align-items:center; gap:10px; padding:11px 14px; cursor:pointer; min-height:50px; flex-wrap:wrap; } .obrg-resumo:hover{ background:var(--panel-2); } .obrg-resumo:focus-visible{ outline:3px solid #2F6FB0; outline-offset:-3px; }
-  .obrg-seta{ width:14px; color:var(--text-dim); font-size:12px; flex:none; } .obrg-nome{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1 1 200px; min-width:0; } .obrg-nome b{ font-size:15px; overflow-wrap:anywhere; }
-  .obrg-princ{ display:flex; align-items:center; gap:6px; flex:0 1 auto; } .obrg-princ .obr-sp{ font-size:11.5px; } .obrg-outros{ font-size:11px; font-weight:800; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:1px 7px; }
-  .obrg-pontos{ display:flex; align-items:center; gap:3px; flex-wrap:wrap; max-width:150px; } .obrg-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.18); } .obrg-mais{ font-size:10px; color:var(--text-dim); font-weight:700; }
-  .obrg-dot-aguardando_compra, .obrg-dot-aguardando_inicio{ background:#C62828; } .obrg-dot-liberado_entrega{ background:#F6C945; } .obrg-dot-entregue{ background:#4CAF73; } .obrg-dot-iniciado{ background:#2F6FB0; } .obrg-dot-aguardando_testes{ background:#CDEBD6; border-color:#7FBF98; } .obrg-dot-finalizado{ background:#17653A; }
-  .obrg-resumo .obrg-prog{ margin-left:0; font-weight:800; color:var(--ink); min-width:34px; text-align:right; }
-  .obrg-detalhe{ border-top:1px solid var(--line); padding:6px 14px 8px; background:var(--panel); } .obrg-detalhe .obrg-cli{ margin-bottom:2px; }
-  @media (max-width:640px){ .obrg-painel{ grid-template-columns:repeat(2, 1fr); } .obrg-pontos{ max-width:none; } .obrg-resumo{ gap:6px 8px; } .obrg-princ{ flex:1 1 100%; padding-left:24px; } }
 
-  .obrg-pc{ box-sizing:border-box; } .obrg-pc:focus-visible{ outline:3px solid #2F6FB0; outline-offset:2px; }
 
-  /* ===== técnico: nome + selo na mesma linha, e cada etapa numa linha com as duas respostas (Não finalizado | Finalizado) ===== */
-  .obi-tec .obi-eq-info{ flex-direction:row; flex-wrap:wrap; align-items:center; gap:6px 10px; }
-  .obi-etl{ display:flex; flex-direction:column; gap:8px; margin:2px 0 4px; }
-  .obi-etl-row{ display:flex; align-items:center; justify-content:space-between; gap:8px 12px; flex-wrap:wrap; background:var(--panel); border:1.5px solid var(--line); border-radius:12px; padding:8px 10px; }
-  .obi-etl-feita{ border-color:#7FBF98; background:#F2FAF5; }
-  .obi-etl-nome{ font-size:17px; font-weight:800; color:var(--ink); flex:1 1 110px; min-width:0; }
-  .obi-seg{ display:inline-flex; border:2px solid var(--ink); border-radius:10px; overflow:hidden; flex:0 0 auto; }
-  .obi-seg-b{ width:auto; min-height:46px; padding:8px 14px; border:none; background:var(--panel); color:var(--text-dim); font-size:14.5px; font-weight:800; cursor:pointer; font-family:inherit; border-radius:0; }
-  .obi-seg-b + .obi-seg-b{ border-left:2px solid var(--ink); }
-  .obi-seg-nao.obi-seg-on{ background:#E8E9EB; color:var(--ink); } .obi-seg-sim.obi-seg-on{ background:#1F7A44; color:#fff; }
-  .obi-seg-b[aria-disabled="true"]{ opacity:.45; cursor:not-allowed; }
-  @media (max-width:380px){ .obi-seg{ width:100%; } .obi-seg-b{ flex:1; padding:8px 6px; } }
+  /* =====================================================================================================
+     VISUAL REFINADO (identidade EquipER, estilo iOS): cartões brancos, cantos suaves, linhas finas e sombras leves;
+     a cor de situação aparece em etiquetas SUAVES (fundo translúcido + borda fina + texto escuro) e em pequenos acentos.
+     Mapa de cores pedido: Etapa interna = vermelho / amarelo / verde · Etapa obra = vermelho / azul / verde claro / verde escuro.
+     ===================================================================================================== */
+  .obr-sp-aguardando_compra, .obr-sp-aguardando_inicio, .obi-st-nao_liberado, .obrg-k-aguardando_compra, .obrg-k-aguardando_inicio, .obrg-dot-aguardando_compra, .obrg-dot-aguardando_inicio
+    { --c:#C0392B; --c-num:#B3261E; --c-bg:rgba(192,57,43,.12); --c-line:rgba(192,57,43,.32); --c-tx:#96281D; }
+  .obr-sp-liberado_entrega, .obi-st-liberado, .obrg-k-liberado_entrega, .obrg-dot-liberado_entrega
+    { --c:#F2B705; --c-num:#9A7400; --c-bg:rgba(242,183,5,.20); --c-line:rgba(201,154,18,.50); --c-tx:#7A5B00; }
+  .obr-sp-entregue, .obrg-k-entregue, .obrg-dot-entregue
+    { --c:#2E7D4F; --c-num:#2E7D4F; --c-bg:rgba(46,125,79,.12); --c-line:rgba(46,125,79,.35); --c-tx:#1F5A38; }
+  .obr-sp-iniciado, .obi-st-iniciado, .obrg-k-iniciado, .obrg-dot-iniciado
+    { --c:#3D84B0; --c-num:#2B6A92; --c-bg:rgba(61,132,176,.12); --c-line:rgba(61,132,176,.34); --c-tx:#24607F; }
+  .obr-sp-aguardando_testes, .obi-st-finalizado, .obrg-k-aguardando_testes, .obrg-dot-aguardando_testes
+    { --c:#5FBF85; --c-num:#3D9A63; --c-bg:rgba(95,191,133,.18); --c-line:rgba(95,191,133,.50); --c-tx:#2E7D4F; }
+  .obr-sp-finalizado, .obi-st-testado, .obrg-k-finalizado, .obrg-dot-finalizado
+    { --c:#1F5A38; --c-num:#1F5A38; --c-bg:#1F5A38; --c-line:#1F5A38; --c-tx:#FFFFFF; }
 
-  /* painel em duas fases (etapa interna / etapa obra) */
-  .obrg-painel{ display:block; } .obrg-fase{ margin:0 0 12px; } .obrg-fase-t{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); margin:0 0 6px; display:flex; align-items:center; gap:8px; } .obrg-fase-t::after{ content:''; flex:1; height:1px; background:var(--line); }
-  .obrg-fase-c{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; }
-  .obrg-pc small{ opacity:.9; } .obrg-pc-zero{ opacity:.45; }
+  /* etiqueta de situação (pedido e equipamento) */
+  .obr-sp, .obi-st{ display:inline-flex; align-items:center; gap:6px; width:auto; min-height:0; font-size:11.5px; font-weight:600; line-height:1.3; padding:3px 10px 3px 8px; border-radius:999px; white-space:nowrap; background:var(--c-bg); color:var(--c-tx); border:1px solid var(--c-line); }
+  .obr-sp::before, .obi-st::before{ content:''; flex:none; width:7px; height:7px; border-radius:50%; background:var(--c); }
+  .obr-sp-finalizado::before, .obi-st-testado::before{ background:#fff; }
+  select.obr-sp{ display:inline-block; padding:5px 12px; font-size:12.5px; cursor:pointer; max-width:100%; font-family:inherit; }
+  select.obr-sp::before{ content:none; } select.obr-sp option, select.obr-sp optgroup{ background:#fff; color:#17181A; }
+
+  /* ---------- painel de andamentos (Gestor): cartões brancos com barra de cor, como os cartões do quadro do app ---------- */
+  .obrg-painel{ display:block; margin:0 0 14px; } .obrg-fase{ margin:0 0 14px; }
+  .obrg-fase-t{ display:flex; align-items:center; gap:10px; margin:0 0 8px 2px; font-size:12px; font-weight:600; letter-spacing:.2px; color:var(--text-secondary); } .obrg-fase-t::after{ content:''; flex:1; height:1px; background:var(--border); }
+  .obrg-fase-c{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+  .obrg-pc{ position:relative; display:flex; flex-direction:column; gap:2px; box-sizing:border-box; text-align:left; cursor:pointer; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px 11px 18px; overflow:hidden; font-family:inherit; box-shadow:0 1px 2px rgba(20,20,22,.05); transition:box-shadow .15s, transform .15s; }
+  .obrg-pc::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--c); }
+  .obrg-pc:hover{ box-shadow:0 4px 14px rgba(20,20,22,.08); }
+  .obrg-pc-n{ font-size:28px; line-height:1; font-weight:700; letter-spacing:-.6px; color:var(--c-num); font-variant-numeric:tabular-nums; }
+  .obrg-pc-r{ font-size:12.5px; font-weight:600; line-height:1.25; color:var(--text); margin-top:4px; }
+  .obrg-pc small{ font-size:11.5px; font-weight:500; color:var(--text-secondary); }
+  .obrg-pc-zero{ opacity:.55; } .obrg-pc.obrg-chip-on{ opacity:1; border-color:var(--c); box-shadow:0 0 0 2px var(--c), 0 6px 16px rgba(20,20,22,.10); }
+  .obrg-pc:focus-visible{ outline:3px solid #3D84B0; outline-offset:2px; }
+
+  /* ---------- clientes: lista de linhas arredondadas, abrem em cartão ---------- */
+  .obrg-cliente{ padding:0; overflow:hidden; border:1px solid var(--border); border-radius:16px; background:var(--surface); margin-bottom:10px; box-shadow:0 1px 2px rgba(20,20,22,.04), 0 6px 18px rgba(20,20,22,.04); }
+  .obrg-resumo{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:58px; padding:13px 16px; cursor:pointer; }
+  .obrg-resumo:hover{ background:#FAFAFB; } .obrg-resumo:focus-visible{ outline:3px solid #3D84B0; outline-offset:-3px; }
+  .obrg-seta{ flex:none; position:relative; width:14px; height:14px; font-size:0; } .obrg-seta::before{ content:''; position:absolute; left:2px; top:2px; width:7px; height:7px; border-right:2px solid #A3A7AD; border-bottom:2px solid #A3A7AD; transform:rotate(-45deg); transition:transform .18s; }
+  .obrg-resumo[aria-expanded="true"] .obrg-seta::before{ transform:rotate(45deg); left:3px; top:1px; }
+  .obrg-nome{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1 1 200px; min-width:0; } .obrg-nome b{ font-size:16px; font-weight:600; letter-spacing:-.1px; color:var(--ink); overflow-wrap:anywhere; }
+  .obrg-princ{ display:flex; align-items:center; gap:6px; flex:0 1 auto; } .obrg-outros{ font-size:11px; font-weight:600; color:var(--text-secondary); background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:1px 7px; }
+  .obrg-pontos{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; max-width:150px; } .obrg-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; background:var(--c); } .obrg-mais{ font-size:10px; font-weight:600; color:var(--text-secondary); }
+  .obrg-resumo .obrg-prog{ margin-left:0; min-width:34px; text-align:right; font-size:13px; font-weight:600; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+  .obrg-detalhe{ border-top:1px solid var(--border); padding:6px 16px 10px; background:#FCFCFD; }
+  @media (max-width:640px){ .obrg-fase-c{ grid-template-columns:repeat(2, 1fr); } .obrg-pontos{ max-width:none; } .obrg-resumo{ gap:6px 10px; } .obrg-princ{ flex:1 1 100%; padding-left:26px; } }
+
+  /* ---------- equipamentos no painel do Gestor ---------- */
+  .obi-eq{ border-top:1px solid var(--border); padding:10px 0 11px; } .obi-eq-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .obi-eq-h b{ font-size:14px; font-weight:600; color:var(--ink); } .obi-eq-a{ margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .obi-aviso{ font-size:12px; color:var(--danger-dark); margin-top:6px; }
+  .obi-q{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); } .obi-q small{ display:block; font-size:11px; color:var(--text-secondary); } .obi-q input{ width:68px; text-align:center; }
+
+  /* ---------- técnico: cartão da instalação ---------- */
+  .obi-slot{ margin:0 14px 14px; }
+  .obi-tec{ background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 1px 2px rgba(20,20,22,.04), 0 6px 18px rgba(20,20,22,.05); }
+  .obi-tec-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; min-height:54px; padding:14px 16px; text-align:left; background:var(--surface); border:none; font-size:16px; font-weight:600; color:var(--ink); cursor:pointer; font-family:inherit; }
+  .obi-tec-n{ margin-left:auto; font-size:12.5px; font-weight:500; color:var(--text-secondary); }
+  .obi-tec-c{ padding:4px 12px 12px; border-top:1px solid var(--border); }
+  .obi-ped{ margin:14px 0 2px; } .obi-ped-t{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:0 4px 9px; }
+  .obi-ped-t .obr-ped-num{ background:var(--surface-2); color:var(--ink); font-size:12.5px; font-weight:600; padding:3px 10px; border-radius:999px; border:1px solid var(--border); }
+  .obi-ped-t .obr-ped-desc{ font-size:15.5px; font-weight:600; color:var(--ink); } .obi-ped-n{ margin-left:auto; font-size:12.5px; font-weight:600; color:var(--text-secondary); }
+  /* sistema = grupo arredondado (como uma lista agrupada do iOS) */
+  .obi-sis{ border:1px solid var(--border); border-radius:14px; background:var(--surface); overflow:hidden; margin:0 0 12px; }
+  .obi-sis-btn{ display:flex; align-items:center; gap:10px; width:100%; min-height:50px; padding:12px 14px; text-align:left; background:var(--surface-2); border:none; border-bottom:1px solid var(--border); cursor:pointer; font-family:inherit; }
+  .obi-sis-nome{ flex:1; min-width:0; font-size:15.5px; font-weight:700; color:var(--ink); overflow-wrap:anywhere; }
+  .obi-sis-btn .obi-prog{ font-size:12.5px; font-weight:600; color:var(--text-secondary); background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:2px 10px; }
+  .obi-seta{ flex:none; position:relative; width:14px; height:14px; font-size:0; } .obi-seta::before{ content:''; position:absolute; left:2px; top:2px; width:7px; height:7px; border-right:2px solid #A3A7AD; border-bottom:2px solid #A3A7AD; transform:rotate(-45deg); transition:transform .18s; }
+  [aria-expanded="true"] > .obi-seta::before{ transform:rotate(45deg); left:3px; top:1px; }
+  /* equipamento = linha da lista */
+  .obi-eqt{ border-top:1px solid var(--border); padding:0 14px; } .obi-sis-btn + .obi-eqt{ border-top:none; }
+  .obi-eq-row{ box-sizing:border-box; display:flex; align-items:center; gap:10px; width:100%; min-height:60px; padding:11px 0; cursor:pointer; color:var(--ink); }
+  .obi-eq-row:focus-visible{ outline:3px solid #3D84B0; outline-offset:-3px; border-radius:8px; }
+  .obi-eq-info{ flex:1; min-width:0; display:flex; flex-direction:row; flex-wrap:wrap; align-items:center; gap:6px 10px; }
+  .obi-eq-info b{ font-size:15.5px; font-weight:600; line-height:1.25; color:var(--ink); }
+  .obi-eq-row .obi-prog{ font-size:13px; font-weight:600; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
+  .obi-eq-corpo{ padding:0 0 14px; }
+  .obi-aviso-lib{ font-size:13px; font-weight:500; color:var(--danger-dark); margin:0 0 8px; } .obi-lib{ width:100%; min-height:48px; margin-bottom:8px; font-size:15px; }
+  .obi-falta{ font-size:12.5px; color:#24607F; margin-top:10px; } .obi-ok{ font-size:12.5px; font-weight:600; color:var(--success-dark); margin-top:10px; }
+  /* etapas: grupo com linhas finas; cada etapa tem o seu controle de 3 opções (estilo iOS) */
+  .obi-etl{ display:flex; flex-direction:column; background:var(--surface-2); border-radius:12px; padding:0 12px; margin:2px 0 4px; }
+  .obi-etl-row{ display:flex; flex-direction:column; align-items:stretch; gap:8px; padding:10px 0 11px; border-top:1px solid var(--border); background:transparent; border-radius:0; } .obi-etl-row:first-child{ border-top:none; }
+  .obi-etl-nome{ font-size:14.5px; font-weight:600; color:var(--ink); }
+  .obi-seg{ display:flex; width:100%; gap:2px; padding:2px; border-radius:10px; background:#E3E4E7; }
+  .obi-seg-b{ flex:1 1 0; min-width:0; min-height:42px; padding:6px 2px; border:none; border-radius:8px; background:transparent; color:#5B6066; font-size:13.5px; font-weight:600; line-height:1.15; text-align:center; white-space:normal; word-break:keep-all; cursor:pointer; font-family:inherit; transition:background .15s, color .15s, box-shadow .15s; }
+  .obi-seg-nao_comecou.obi-seg-on{ background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,20,22,.16); }
+  .obi-seg-iniciado.obi-seg-on{ background:#3D84B0; color:#fff; box-shadow:0 1px 4px rgba(61,132,176,.45); }
+  .obi-seg-finalizado.obi-seg-on{ background:#2E7D4F; color:#fff; box-shadow:0 1px 4px rgba(46,125,79,.45); }
+  .obi-seg-b[aria-disabled="true"]{ opacity:.45; cursor:not-allowed; } .obi-seg-b:focus-visible{ outline:3px solid #3D84B0; outline-offset:1px; }
+  /* versão compacta (painel do Gestor): nome à esquerda, controle à direita */
+  .obi-etl-c .obi-etl-row{ flex-direction:row; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px 12px; padding:6px 0; } .obi-etl-c .obi-etl-nome{ font-size:13.5px; flex:1 1 90px; }
+  .obi-etl-c .obi-seg{ width:auto; } .obi-etl-c .obi-seg-b{ flex:none; min-height:32px; padding:4px 12px; font-size:12.5px; }
+  @media (max-width:420px){ .obi-seg-b{ font-size:12.5px; padding:6px 1px; } .obi-eq-corpo{ padding-bottom:12px; } }
+
+  /* linha do pedido (Gestor): título à esquerda, as duas etapas à direita (interna e obra) e os botões numa linha própria embaixo */
+  .obrg-ped{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 14px; padding:11px 0 12px; border-top:1px solid var(--border); }
+  .obrg-ped-h{ flex:1 1 240px; min-width:0; } .obrg-ped-st{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; flex:0 1 auto; max-width:100%; }
+  .obrg-ped-a{ flex:1 1 100%; display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-start; }
+  .obrg-obra-vazia{ font-size:11.5px; font-weight:500; color:var(--text-secondary); background:var(--surface-2); border:1px dashed var(--border); border-radius:999px; padding:4px 11px; white-space:nowrap; }
+  .obrg-btn-eq{ display:inline-flex; align-items:center; gap:8px; } .obrg-pontos-eq{ display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap; max-width:170px; } .obrg-seta-eq{ font-size:10px; color:var(--text-secondary); }
+  .obi-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); }
+  .obi-dot-nao_liberado{ --c:#C0392B; } .obi-dot-liberado{ --c:#F2B705; } .obi-dot-iniciado{ --c:#3D84B0; } .obi-dot-finalizado{ --c:#5FBF85; } .obi-dot-testado{ --c:#1F5A38; }
 </style>
 </head>
 <body>
@@ -19991,7 +20057,7 @@ function gerarPdfInstalacao(dados){
   y += hCli + 4;
   // ---------------- resumo ----------------
   const eqs = []; (dados.pedidos || []).forEach(p => p.sistemas.forEach(s => s.equipamentos.forEach(e => eqs.push(e))));
-  const n = (k) => eqs.filter(e => e.estado === k).length; const totEt = eqs.reduce((a, e) => a + e.etapas.length, 0), feitas = eqs.reduce((a, e) => a + e.etapas.filter(t => t.feito).length, 0); const pct = totEt ? Math.round(feitas / totEt * 100) : 0;
+  const n = (k) => eqs.filter(e => e.estado === k).length; const totEt = eqs.reduce((a, e) => a + e.etapas.length, 0), feitas = eqs.reduce((a, e) => a + e.etapas.filter(t => (t.estado || (t.feito ? 'finalizado' : '')) === 'finalizado').length, 0); const pct = totEt ? Math.round(feitas / totEt * 100) : 0;
   const caixas = [[String(eqs.length), 'Equipamentos', C.ink], [String(n('testado')), 'Finalizados e testados', '#1F7A44'], [String(n('finalizado')), 'Finalizados (a testar)', '#3E9A62'], [String(n('iniciado')), 'Iniciados', '#2F6FB0'], [String(n('liberado') + n('nao_liberado')), 'A iniciar', '#C62828']];
   const cw = (W - 4 * 2.5) / 5; garantir(20);
   caixas.forEach(([num, rot, cor], i) => { const x = M + i * (cw + 2.5); doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(x, y, cw, 16, 2, 2, 'FD'); setF('serifB', 17, cor); txt(num, x + 3.2, y + 8.6); setF('sansB', 6.6, C.dim); txt(rot, x + 3.2, y + 13.4); });
@@ -20005,14 +20071,14 @@ function gerarPdfInstalacao(dados){
       garantir(16); setF('sansB', 10, C.texto); txt(s.nome, M + 1, y + 3.4); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, y + 5.2, PW - M, y + 5.2); y += 8;
       s.equipamentos.forEach(e => {
         // linha das etapas: quebra em várias linhas se necessário
-        setF('sans', 8.6, C.texto); const itens = e.etapas.map(t => { const rot = limparPdf(t.nome) + (t.feito && t.em ? '  ' + fmtData(String(t.em).slice(0, 10)) : ''); return { t, rot, w: larg(rot) + 8 }; });
+        setF('sans', 8.6, C.texto); const itens = e.etapas.map(t => { const es = t.estado || (t.feito ? 'finalizado' : 'nao_comecou'); t.es = es; const rot = limparPdf(t.nome) + (es === 'finalizado' && t.em ? '  ' + fmtData(String(t.em).slice(0, 10)) : es === 'iniciado' ? '  (iniciado)' : ''); return { t, rot, w: larg(rot) + 8 }; });
         const linhas = []; let atual = [], acum = 0; itens.forEach(it => { if(acum + it.w > W - 10 && atual.length){ linhas.push(atual); atual = []; acum = 0; } atual.push(it); acum += it.w + 3; }); if(atual.length) linhas.push(atual);
         const h = 9 + linhas.length * 5.4; garantir(h + 1.5);
         doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha2); doc.setLineWidth(0.22); doc.roundedRect(M, y, W, h, 1.6, 1.6, 'FD');
         setF('sansB', 9.6, C.texto); txt(e.nome, M + 4, y + 5.5); pilula(ROT[e.estado] || e.estado, PIL[e.estado] || PDF_PILULA.red, PW - M - 3.5, y + 2.2, 5);
         let ly = y + 10.2; linhas.forEach(linha => { let x = M + 5; linha.forEach(it => {
-          if(it.t.feito){ doc.setFillColor('#2E7D4F'); doc.circle(x, ly - 1.1, 1.3, 'F'); } else { doc.setDrawColor(C.dim); doc.setLineWidth(0.3); doc.circle(x, ly - 1.1, 1.3, 'S'); }
-          setF(it.t.feito ? 'sansB' : 'sans', 8.6, it.t.feito ? C.texto : C.dim); txt(it.rot, x + 3, ly); x += it.w + 3; }); ly += 5.4; });
+          if(it.t.es === 'finalizado'){ doc.setFillColor('#2E7D4F'); doc.circle(x, ly - 1.1, 1.3, 'F'); } else if(it.t.es === 'iniciado'){ doc.setFillColor('#2F6FB0'); doc.circle(x, ly - 1.1, 1.3, 'F'); } else { doc.setDrawColor(C.dim); doc.setLineWidth(0.3); doc.circle(x, ly - 1.1, 1.3, 'S'); }
+          setF(it.t.es !== 'nao_comecou' ? 'sansB' : 'sans', 8.6, it.t.es !== 'nao_comecou' ? C.texto : C.dim); txt(it.rot, x + 3, ly); x += it.w + 3; }); ly += 5.4; });
         y += h + 2; });
       y += 2; });
     y += 3; });
@@ -22586,8 +22652,14 @@ const FASES_OBRA = [['interna', 'Etapa interna · compras'], ['obra', 'Etapa obr
 const faseDe = (k) => FASE_INTERNA.includes(k) ? 'interna' : 'obra';
 const opcoesAndamento = (atual) => FASES_OBRA.map(([f, n]) => `<optgroup label="${esc(n)}">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(([k, nome]) => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(nome)}</option>`).join('')}</optgroup>`).join('');
 const rotObra = (k) => (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];
-const statusObraDe = (r, pid) => { const e = (r.statusPedidos || {})[pid]; return e && e.s ? e.s : 'aguardando_compra'; };
-const chipObra = (r, p) => { const k = statusObraDe(r, p.id); return `<span class="obr-sp obr-sp-${k}" title="Andamento definido pelo Gestor">${esc(rotObra(k))}</span>`; };
+// O pedido tem DUAS trilhas que andam juntas: a INTERNA (compras → liberado para entrega → entregue) e a da OBRA (aguardando liberação → iniciado → aguardando testes → finalizado).
+// `statusPedidos[pid] = { i: interna, o: obra, s: a mais avançada (compatível), em, por, auto }`. Registro antigo (só com `s`) é lido assim: s interna → interna = s; s da obra → interna = entregue e obra = s.
+const OBRA_ST = ['aguardando_inicio', 'iniciado', 'aguardando_testes', 'finalizado'];
+const entradaSt = (r, pid) => (r && r.statusPedidos && r.statusPedidos[pid]) || {};
+function internoDe(r, pid){ const e = entradaSt(r, pid); if(e.i && FASE_INTERNA.includes(e.i)) return e.i; if(e.s && FASE_INTERNA.includes(e.s)) return e.s; return e.s || e.o ? 'entregue' : 'aguardando_compra'; }
+function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
+const statusObraDe = (r, pid) => obraDe(r, pid) || internoDe(r, pid);          // situação "principal" do pedido = a mais avançada
+const chipObra = (r, p) => { const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span>${o ? ` <span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span>` : ''}`; };
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
 const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
 const fmtPct = (x) => String(Math.round(Number(x) * 100) / 100).replace('.', ',');
@@ -23185,7 +23257,7 @@ function montarGestor(){
   busca.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ busca.value = ''; uiG.busca = ''; renderGestor(); } });
   document.getElementById('obrgEmpresa').addEventListener('change', (e) => { uiG.empresa = e.target.value; renderGestor(); });
   document.getElementById('obrgStatus').addEventListener('change', (e) => { uiG.status = e.target.value; renderGestor(); });
-  v.addEventListener('change', (e) => { const sel = e.target.closest('[data-obrg-st]'); if(sel){ const [rid, pid] = sel.dataset.obrgSt.split('|'); mudarAndamento(rid, pid, sel.value); } });
+  v.addEventListener('change', (e) => { const sel = e.target.closest('[data-obrg-st]'); if(sel){ const [rid, pid, tr] = sel.dataset.obrgSt.split('|'); mudarAndamento(rid, pid, tr, sel.value); } });
   v.addEventListener('click', (e) => {
     const ex = e.target.closest('[data-obrg-exp]'); if(ex){ uiG.clientes = ex.dataset.obrgExp === 'todos' ? new Set(uiG.chaves) : new Set(); renderGestor(); return; }
     const cl = e.target.closest('[data-obrg-cli]'); if(cl){ const k = cl.dataset.obrgCli; if(uiG.clientes.has(k)) uiG.clientes.delete(k); else uiG.clientes.add(k); renderGestor(); return; }
@@ -23204,6 +23276,7 @@ function mostrarAbaGestor(aba){
   if(aba === 'sistemas'){ renderSistemas(); garantirSistemas().then(renderSistemas).catch(e => console.error('sistemas: falha ao carregar', e)); } else renderGestor();
 }
 // Andamento principal do cliente = o GARGALO: o menos avançado entre os pedidos que ainda não terminaram (é ele que segura a obra); se todos terminaram, "Finalizado".
+const temStatus = (r, pid, k) => FASE_INTERNA.includes(k) ? internoDe(r, pid) === k : obraDe(r, pid) === k;
 function andamentoPrincipal(pares){
   const ordem = (k) => STATUS_OBRA.findIndex(x => x[0] === k); const ks = pares.map(x => statusObraDe(x.r, x.p.id)); const abertos = ks.filter(k => k !== 'finalizado');
   return (abertos.length ? abertos : ks).sort((a, b) => ordem(a) - ordem(b))[0];
@@ -23214,10 +23287,11 @@ function renderGestor(){
   const base = registros().filter(r => (!uiG.empresa || r.empresa === uiG.empresa)).map(r => ({ r, peds: pedidosDe(r).filter(p => !p.cancelado) })).filter(x => x.peds.length)
     .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
   // painel de cima: um cartão por andamento (pedidos e clientes); tocar filtra
-  const cont = {}, cli = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; cli[k] = new Set(); }); base.forEach(x => x.peds.forEach(p => { const k = statusObraDe(x.r, p.id); cont[k]++; cli[k].add(fold(nomeCliente(x.r))); }));
-  const cartao = ([k, n]) => `<div class="obrg-chip obrg-pc obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''} ${cont[k] ? '' : 'obrg-pc-zero'}" role="button" tabindex="0" data-obrg-chip="${k}" aria-pressed="${uiG.status === k}"><b class="obrg-pc-n">${cont[k]}</b><span class="obrg-pc-r">${esc(n)}</span><small>${cli[k].size} ${cli[k].size === 1 ? 'cliente' : 'clientes'}</small></div>`;
+  const cont = {}, cli = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; cli[k] = new Set(); });          // cada pedido conta na trilha interna E, se já existe, na da obra
+  base.forEach(x => x.peds.forEach(p => { const ks = [internoDe(x.r, p.id), obraDe(x.r, p.id)].filter(Boolean); ks.forEach(k => { cont[k]++; cli[k].add(fold(nomeCliente(x.r))); }); }));
+  const cartao = ([k, n]) => `<div class="obrg-chip obrg-pc obrg-k obrg-k-${k} ${uiG.status === k ? 'obrg-chip-on' : ''} ${cont[k] ? '' : 'obrg-pc-zero'}" role="button" tabindex="0" data-obrg-chip="${k}" aria-pressed="${uiG.status === k}"><b class="obrg-pc-n">${cont[k]}</b><span class="obrg-pc-r">${esc(n)}</span><small>${cli[k].size} ${cli[k].size === 1 ? 'cliente' : 'clientes'}</small></div>`;
   document.getElementById('obrgChips').innerHTML = FASES_OBRA.map(([f, nome]) => `<div class="obrg-fase"><div class="obrg-fase-t">${esc(nome)}</div><div class="obrg-fase-c">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(cartao).join('')}</div></div>`).join('');
-  const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length);
+  const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => temStatus(x.r, p.id, uiG.status)) : x.peds })).filter(x => x.peds.length);
   // UM cartão por cliente: os pedidos do mesmo cliente nas duas empresas (Equiper e Eqp) ficam juntos
   const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { chave: k, nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
   const lista_ = [...grupos.values()].map(g => ({ chave: g.chave, nome: g.nome, itens: g.itens.sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.r.empresa) - EMPRESAS.findIndex(e => e[0] === b.r.empresa)) })).sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
@@ -23241,18 +23315,24 @@ function renderGestor(){
         <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.length ? `<span class="obrg-outros" title="${outros.length} ${outros.length === 1 ? 'pedido em outro andamento' : 'pedidos em outros andamentos'}: ${esc(rotOutros)}">+${outros.length}</span>` : ''}</span>
         <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-prog" title="${fin} de ${todosPeds.length} finalizados">${fin}/${todosPeds.length}</span></div>
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
-      ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
+      ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const ki = internoDe(r, p.id), ko = obraDe(r, p.id); const e = entradaSt(r, p.id); const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
+        const quando = e.em ? 'Alterado' + (e.por ? ' por ' + e.por : '') + ' em ' + new Date(e.em).toLocaleDateString('pt-BR') : '';
+        const bolas = subsDoPedido(d, p.id); const dotsEq = bolas.slice(0, 14).map(x => `<i class="obi-dot obi-dot-${estadoSub(d, x)}" title="${esc(x.nome)} · ${esc(rotEstado(estadoSub(d, x)))}"></i>`).join('') + (bolas.length > 14 ? `<small class="obrg-mais">+${bolas.length - 14}</small>` : '');
         return `<div class="obrg-ped"><div class="obrg-ped-h">${varias ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotEmp(r))}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
-          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${opcoesAndamento(k)}</select><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}">Equipamentos${res.total ? ' · ' + res.finalizados + '/' + res.total : ''} ${ab ? '▴' : '▾'}</button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
-          ${e && e.em ? `<div class="obr-obs obrg-quando">alterado${e.por ? ' por ' + esc(e.por) : ''} em ${esc(new Date(e.em).toLocaleDateString('pt-BR'))}</div>` : ''}
+          <div class="obrg-ped-st"><select class="obr-sp obr-sp-${ki}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|i" aria-label="Etapa interna do pedido ${esc(p.numero)}" title="Etapa interna · compras${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'interna').map(([k, n]) => `<option value="${k}" ${k === ki ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${ko ? `<select class="obr-sp obr-sp-${ko}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|o" aria-label="Etapa obra do pedido ${esc(p.numero)}" title="Etapa obra${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'obra').map(([k, n]) => `<option value="${k}" ${k === ko ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>` : '<span class="obrg-obra-vazia" title="A etapa obra começa quando o equipamento é entregue">Obra · aguarda entrega</span>'}</div>
+          <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
     </div>`; }).join('')
     : `<div class="empty-state">${registros().length ? 'Nenhum pedido com esses filtros.' : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
 }
-async function mudarAndamento(rid, pid, novo){
-  const r = porId(rid); if(!r || !STATUS_OBRA.some(x => x[0] === novo)) return; if(statusObraDe(r, pid) === novo) return;
-  const antigo = (r.statusPedidos || {})[pid] || {}; const entrada = { s: novo, em: new Date().toISOString(), por: quem() }; if(antigo.auto) entrada.auto = antigo.auto;     // a marca da automação não se perde quando o Gestor ajusta à mão
+function gravarEntradaSt(r, pid, i, o, extra){          // grava as duas trilhas (e a mais avançada em `s`, para compatibilidade), sem campos vazios
+  const antigo = entradaSt(r, pid); const entrada = { i, s: o || i, em: new Date().toISOString(), por: quem() }; if(o) entrada.o = o; if(antigo.auto) entrada.auto = antigo.auto; Object.assign(entrada, extra || {});
   r.statusPedidos = Object.assign({}, r.statusPedidos, { [pid]: entrada });
+}
+async function mudarAndamento(rid, pid, trilha, novo){
+  const r = porId(rid); if(!r) return; const valida = trilha === 'i' ? FASE_INTERNA : OBRA_ST; if(!valida.includes(novo)) return;
+  const i0 = internoDe(r, pid), o0 = obraDe(r, pid); if((trilha === 'i' ? i0 : o0) === novo) return;
+  gravarEntradaSt(r, pid, trilha === 'i' ? novo : i0, trilha === 'o' ? novo : (entradaSt(r, pid).o || (entradaSt(r, pid).s && OBRA_ST.includes(entradaSt(r, pid).s) ? entradaSt(r, pid).s : null)));
   const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit;          // o Financeiro vê a situação da obra acompanhar os pedidos
   r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderGestor(); renderLista(); await store.save(true);
 }
@@ -23410,14 +23490,19 @@ async function carregarInstReg(regId){
   if(!instRegListener[regId] && rtdb){ instRegListener[regId] = true; try{ rtdb.ref('obraInstalacao/' + regId).on('value', snap => { inst[regId] = snap.exists() ? snap.val() : {}; aplicarPendentes('obraInstalacao/' + regId + '/'); try{ localStorage.setItem(chave, JSON.stringify(inst[regId])); }catch(e){} renderTudoInst(); }); }catch(e){} }
 }
 const subsDoPedido = (d, pid) => { const p = d && d.pedidos && d.pedidos[pid]; const out = []; lista(p && p.sistemas).sort(ord).forEach(sis => lista(sis.subitens).sort(ord).forEach(sub => out.push(Object.assign({}, sub, { sisId: sis.id, sisNome: sis.nome })))); return out; };
-const feitasDe = (d, sub) => etapasDe(sub).filter(e => ((d.prog || {})[sub.id] || {})[e.id]).length;
+// Cada etapa tem 3 respostas: Não começou (sem registro) · Iniciado · Finalizado. Registro antigo, sem "s", conta como Finalizado.
+const ESTADOS_ETAPA = [['nao_comecou', 'Não começou'], ['iniciado', 'Iniciado'], ['finalizado', 'Finalizado']];
+const rotEtapa = (k) => (ESTADOS_ETAPA.find(x => x[0] === k) || ESTADOS_ETAPA[0])[1];
+const estadoEtapa = (d, subId, etId) => { const f = (((d && d.prog) || {})[subId] || {})[etId]; return !f ? 'nao_comecou' : f.s === 'iniciado' ? 'iniciado' : 'finalizado'; };
+const feitasDe = (d, sub) => etapasDe(sub).filter(e => estadoEtapa(d, sub.id, e.id) === 'finalizado').length;           // etapas FINALIZADAS
+const comProgresso = (d, sub) => etapasDe(sub).filter(e => estadoEtapa(d, sub.id, e.id) !== 'nao_comecou').length;       // iniciadas ou finalizadas
 const ehTeste = (e) => fold(e.nome) === 'teste';           // a etapa "Teste" (sem acento/maiúscula) é a que leva de "Finalizado" a "Finalizado e testado"
 // Estado do equipamento: Não liberado → Liberado para iniciar → Iniciado → Finalizado (as etapas de instalação feitas, ex. Elétrica e Hidráulica; falta o Teste) → Finalizado e testado (todas, incluindo o Teste)
 function estadoSub(d, sub){
-  const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const feitas = ets.filter(e => prog[e.id]).length;
-  if(ets.length && feitas === ets.length) return 'testado';
-  const instal = ets.filter(e => !ehTeste(e)); if(feitas > 0 && instal.length && instal.every(e => prog[e.id])) return 'finalizado';
-  if(feitas > 0) return 'iniciado'; return (d.lib || {})[sub.id] ? 'liberado' : 'nao_liberado';
+  const ets = etapasDe(sub); const fin = (e) => estadoEtapa(d, sub.id, e.id) === 'finalizado'; const nFin = ets.filter(fin).length;
+  if(ets.length && nFin === ets.length) return 'testado';
+  const instal = ets.filter(e => !ehTeste(e)); if(nFin > 0 && instal.length && instal.every(fin)) return 'finalizado';
+  if(comProgresso(d, sub) > 0) return 'iniciado'; return (d.lib || {})[sub.id] ? 'liberado' : 'nao_liberado';
 }
 const instalado = (st) => st === 'finalizado' || st === 'testado';
 function resumoPedido(d, pid){
@@ -23425,11 +23510,17 @@ function resumoPedido(d, pid){
   return { total: subs.length, finalizados: est.filter(instalado).length, testados: c('testado'), iniciados: c('iniciado'), liberados: c('liberado'), naoLiberados: c('nao_liberado'), etapasTotal: subs.reduce((n, x) => n + etapasDe(x).length, 0), etapasFeitas: subs.reduce((n, x) => n + feitasDe(d, x), 0) };
 }
 const copiarEtapas = (sub) => Object.fromEntries(etapasDe(sub).map(e => [e.id, { id: e.id, nome: e.nome, ordem: e.ordem }]));
+function htmlEtapas(d, rid, sub, travado, compacto){
+  const prog = (d.prog || {})[sub.id] || {};
+  return `<div class="obi-etl${compacto ? ' obi-etl-c' : ''}" role="group" aria-label="Etapas de ${esc(sub.nome)}">${etapasDe(sub).map(e => { const es = estadoEtapa(d, sub.id, e.id); const f = prog[e.id]; const k = esc(rid) + '|' + esc(sub.id) + '|' + esc(e.id);
+    const quando = f ? esc(rotEtapa(es) + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : '';
+    return `<div class="obi-etl-row obi-etl-${es}"><span class="obi-etl-nome">${esc(e.nome)}</span><span class="obi-seg">${ESTADOS_ETAPA.map(([v, n]) => `<button type="button" class="obi-seg-b obi-seg-${v} ${es === v ? 'obi-seg-on' : ''}" data-obi-set="${k}|${v}" aria-pressed="${es === v}" ${travado ? 'aria-disabled="true"' : ''} ${es === v && quando ? `title="${quando}"` : ''}>${n}</button>`).join('')}</span></div>`; }).join('')}</div>`;
+}
 function htmlEquip(d, rid, sub, opt){
   opt = opt || {}; const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const bloqueado = !opt.gestor && st === 'nao_liberado'; const desab = !!opt.somenteLeitura || bloqueado;
   const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
   return `<div class="obi-eq obi-eq-${st}"><div class="obi-eq-h"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-eq-a">${acoes}</span></div>
-    <div class="obi-ets">${ets.map(e => { const f = prog[e.id]; return `<button type="button" class="obi-et ${f ? 'obi-et-on' : ''}" data-obi-et="${esc(rid)}|${esc(sub.id)}|${esc(e.id)}" ${desab ? 'disabled' : ''} title="${f ? esc('Marcado' + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : 'Marcar como feito'}">${f ? '✓ ' : ''}${esc(e.nome)}</button>`; }).join('')}</div>
+    ${htmlEtapas(d, rid, sub, false, true)}
     ${bloqueado ? '<div class="obi-aviso">Aguardando a liberação do Gestor para iniciar.</div>' : ''}</div>`;
 }
 function painelEquip(r, p, d){
@@ -23438,17 +23529,16 @@ function painelEquip(r, p, d){
       <span class="obrg-eq-acoes">${res.naoLiberados ? `<button type="button" class="btn-ghost oe-mini" data-obrg-libtodos="${esc(key)}">Liberar todos</button>` : ''}${res.total ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(key)}">⤓ PDF do pedido</button>` : ''}<button type="button" class="btn-primary oe-mini" data-obrg-addsis="${esc(key)}">+ Sistema</button></span></div>
     ${sists.map(sis => `<div class="obrg-sistema"><div class="obrg-sistema-h"><b>${esc(sis.nome)}</b><span><button type="button" class="btn-ghost oe-mini" data-obrg-addeq="${esc(key)}|${esc(sis.id)}">+ Equipamento</button><button type="button" class="btn-ghost oe-mini qd-remover" data-obrg-rmsis="${esc(key)}|${esc(sis.id)}">Remover sistema</button></span></div>${lista(sis.subitens).sort(ord).map(sub => htmlEquip(d, r.id, sub, { gestor: true, key: key + '|' + sis.id })).join('')}</div>`).join('') || '<div class="prv-hint" style="margin:6px 0;">Use <b>+ Sistema</b> para escolher uma base (aquecimento, piscina, pressurização…) e os equipamentos que este pedido tem.</div>'}</div>`;
 }
-function alternarEtapa(rid, subId, etId){
-  const d = inst[rid] || {}; const atual = ((d.prog || {})[subId] || {})[etId]; const path = 'obraInstalacao/' + rid + '/prog/' + subId + '/' + etId;
-  const valor = atual ? null : { em: new Date().toISOString(), por: quem() || null };
+function definirEtapa(rid, subId, etId, novo){        // grava só quando a resposta MUDA; "Não começou" apaga o registro
+  if(!ESTADOS_ETAPA.some(x => x[0] === novo)) return; const d = inst[rid] || {}; if(estadoEtapa(d, subId, etId) === novo) return;
+  const path = 'obraInstalacao/' + rid + '/prog/' + subId + '/' + etId; const valor = novo === 'nao_comecou' ? null : { s: novo, em: new Date().toISOString(), por: quem() || null };
   const sub = subsDoPedidoTodos(d).find(x => x.id === subId); const antes = sub ? estadoSub(d, sub) : null;
   escreverInst({ [path]: valor });
   const depois = sub ? estadoSub(inst[rid] || {}, sub) : null;
-  if(sub && depois === 'testado' && antes !== 'testado') avisar('Equipamento "' + sub.nome + '" finalizado e testado.', 4500); else if(sub && depois === 'finalizado' && antes !== 'finalizado') avisar('Equipamento "' + sub.nome + '" finalizado. Falta marcar o teste.', 4500);
+  if(sub && depois === 'testado' && antes !== 'testado') avisar('Equipamento "' + sub.nome + '" finalizado e testado.', 4500); else if(sub && depois === 'finalizado' && antes !== 'finalizado') avisar('Equipamento "' + sub.nome + '" finalizado. Falta finalizar o teste.', 4500);
   return depois;
 }
 const subsDoPedidoTodos = (d) => Object.keys((d && d.pedidos) || {}).flatMap(pid => subsDoPedido(d, pid));
-function definirEtapa(rid, subId, etId, feito){ const d = inst[rid] || {}; const atual = !!((d.prog || {})[subId] || {})[etId]; if(atual === !!feito) return; alternarEtapa(rid, subId, etId); }
 function alternarLib(rid, subId){ const d = inst[rid] || {}; const lib = (d.lib || {})[subId]; escreverInst({ ['obraInstalacao/' + rid + '/lib/' + subId]: lib ? null : { em: new Date().toISOString(), por: quem() || null } }); }
 function liberarTodos(rid, pid){ const d = inst[rid] || {}; const up = {}; subsDoPedido(d, pid).filter(x => estadoSub(d, x) === 'nao_liberado').forEach(x => { up['obraInstalacao/' + rid + '/lib/' + x.id] = { em: new Date().toISOString(), por: quem() || null }; }); if(Object.keys(up).length){ escreverInst(up); avisar('Equipamentos liberados para iniciar.'); } }
 function cliqueEquip(e){
@@ -23462,7 +23552,7 @@ function cliqueEquip(e){
     customConfirm('Remover o equipamento "' + sb.nome + '" deste pedido? O progresso já marcado nele também é apagado.', () => { escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + sub]: null, ['obraInstalacao/' + rid + '/lib/' + sub]: null, ['obraInstalacao/' + rid + '/prog/' + sub]: null }); }, 'Remover'); return; }
   if((b = g('data-obrg-lib'))){ const [rid, sub] = b.dataset.obrgLib.split('|'); alternarLib(rid, sub); return; }
   if((b = g('data-obrg-libtodos'))){ const [rid, pid] = b.dataset.obrgLibtodos.split('|'); liberarTodos(rid, pid); return; }
-  if((b = g('data-obi-et'))){ if(b.disabled) return; const [rid, sub, et] = b.dataset.obiEt.split('|'); alternarEtapa(rid, sub, et); return; }
+  if((b = g('data-obi-set'))){ if(b.getAttribute('aria-disabled') === 'true') return; const [rid, sub, et, v] = b.dataset.obiSet.split('|'); definirEtapa(rid, sub, et, v); return; }
   if((b = g('data-obrg-pdf'))){ const [rid, pid] = b.dataset.obrgPdf.split('|'); baixarRelatorioObra(rid, pid || null); return; }
   if((b = g('data-obrg-pdfcli'))){ baixarRelatorioCliente(b.dataset.obrgPdfcli.split(',')); return; }
   if((b = g('data-obrg-ativobra'))){ criarAtividadeObra(b.dataset.obrgAtivobra); return; }
@@ -23514,14 +23604,13 @@ function blocosAtividade(svc){
   return out.sort((a, b) => ordEmpresa(a.empresa) - ordEmpresa(b.empresa) || String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
 }
 function htmlEquipTec(d, rid, sub, lido){
-  const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const feitas = ets.filter(e => prog[e.id]).length; const aberto = !!uiT.eq[sub.id];
-  const falta = ets.filter(e => !prog[e.id]).map(e => e.nome); const travado = st === 'nao_liberado' || lido;
+  const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const feitas = feitasDe(d, sub); const aberto = !!uiT.eq[sub.id];
+  const falta = ets.filter(e => estadoEtapa(d, sub.id, e.id) !== 'finalizado').map(e => e.nome); const travado = st === 'nao_liberado' || lido;
   return `<div class="obi-eqt obi-eqt-${st}"><div class="obi-eq-row" role="button" tabindex="0" data-obi-eq="${esc(sub.id)}" aria-expanded="${aberto}"><span class="obi-seta">${aberto ? '▾' : '▸'}</span><span class="obi-eq-info"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span></span><span class="obi-prog">${feitas}/${ets.length}</span></div>
     ${aberto ? `<div class="obi-eq-corpo">
       ${st === 'nao_liberado' && !lido ? `<div class="obi-aviso-lib">Ainda não foi liberado. Quando puder começar, toque em liberar.</div><button type="button" class="btn-primary obi-lib" data-obi-lib="${esc(rid)}|${esc(sub.id)}">Liberar para iniciar</button>` : ''}
-      <div class="obi-etl" role="group" aria-label="Etapas de ${esc(sub.nome)}">${ets.map(e => { const f = prog[e.id]; const k = esc(rid) + '|' + esc(sub.id) + '|' + esc(e.id); const quando = f ? esc('Finalizado' + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : '';
-        return `<div class="obi-etl-row ${f ? 'obi-etl-feita' : ''}"><span class="obi-etl-nome">${esc(e.nome)}</span><span class="obi-seg"><button type="button" class="obi-seg-b obi-seg-nao ${f ? '' : 'obi-seg-on'}" data-obi-set="${k}|0" aria-pressed="${!f}" ${travado ? 'aria-disabled="true"' : ''}>Não finalizado</button><button type="button" class="obi-seg-b obi-seg-sim ${f ? 'obi-seg-on' : ''}" data-obi-set="${k}|1" aria-pressed="${!!f}" ${travado ? 'aria-disabled="true"' : ''} ${quando ? `title="${quando}"` : ''}>Finalizado</button></span></div>`; }).join('')}</div>
-      ${st === 'iniciado' ? `<div class="obi-falta">Falta marcar: <b>${esc(falta.join(', '))}</b></div>` : ''}${st === 'finalizado' ? `<div class="obi-falta">Instalação finalizada. Falta marcar o <b>${esc(falta.join(', '))}</b> para ficar finalizado e testado.</div>` : ''}${st === 'testado' ? '<div class="obi-ok">Todas as etapas feitas, inclusive o teste. Finalizado e testado.</div>' : ''}</div>` : ''}</div>`;
+      ${htmlEtapas(d, rid, sub, travado, false)}
+      ${st === 'iniciado' ? `<div class="obi-falta">Falta finalizar: <b>${esc(falta.join(', '))}</b></div>` : ''}${st === 'finalizado' ? `<div class="obi-falta">Instalação finalizada. Falta finalizar o <b>${esc(falta.join(', '))}</b> para ficar finalizado e testado.</div>` : ''}${st === 'testado' ? '<div class="obi-ok">Todas as etapas feitas, inclusive o teste. Finalizado e testado.</div>' : ''}</div>` : ''}</div>`;
 }
 function renderSlotTec(slot, svc){
   const aberto = uiT.abertos[svc.id] !== false;
@@ -23545,7 +23634,7 @@ function montarSlotTecnico(card, svc){
       const lib = e.target.closest('[data-obi-lib]'); if(lib){ if(svc.status === 'concluido') return; const [rid, sub] = lib.dataset.obiLib.split('|'); const d = inst[rid] || {}; if(!((d.lib || {})[sub])) alternarLib(rid, sub); return; }       // o técnico libera (não liberado → liberado para iniciar)
       const r = e.target.closest('[data-obi-set]'); if(!r) return;
       if(r.getAttribute('aria-disabled') === 'true'){ if(svc.status !== 'concluido') avisar('Libere o equipamento para iniciar antes de marcar as etapas.', 4000); return; }
-      const [rid, sub, et, v] = r.dataset.obiSet.split('|'); definirEtapa(rid, sub, et, v === '1');          // só grava quando a resposta MUDA (tocar de novo na que já está marcada não faz nada)
+      const [rid, sub, et, v] = r.dataset.obiSet.split('|'); definirEtapa(rid, sub, et, v);          // só grava quando a resposta MUDA (tocar de novo na que já está marcada não faz nada)
     });
     slot.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obi-eq-row')){ e.preventDefault(); e.target.click(); } });
     renderSlotTec(slot, svc); carregarInstTodos().then(() => renderSlotTec(slot, svc)).catch(e => console.error('obras: falha ao carregar a instalação', e));
@@ -23559,13 +23648,13 @@ async function reconciliar(){
     let mudou = false; const agora = new Date().toISOString(); const avisos = []; const rank = (k) => STATUS_OBRA.findIndex(x => x[0] === k);
     registros().forEach(r => { const d = inst[r.id]; if(!d || !d.pedidos) return;
       pedidosDe(r).filter(p => !p.cancelado).forEach(p => {
-        const subs = subsDoPedido(d, p.id); if(!subs.length) return; const est = subs.map(x => estadoSub(d, x)); const testados = est.every(e => e === 'testado'); const instalados = est.every(instalado); const algum = subs.some(x => feitasDe(d, x) > 0);
+        const subs = subsDoPedido(d, p.id); if(!subs.length) return; const est = subs.map(x => estadoSub(d, x)); const testados = est.every(e => e === 'testado'); const instalados = est.every(instalado); const algum = subs.some(x => comProgresso(d, x) > 0);
         const ent = (r.statusPedidos || {})[p.id] || {}; const atual = statusObraDe(r, p.id); let alvo = null;
         if(testados && ent.auto !== 'finalizado') alvo = 'finalizado';                                                                                   // tudo instalado E testado → Finalizado + Saldo a cobrar
         else if(instalados && !testados && ent.auto !== 'aguardando_testes' && ent.auto !== 'finalizado' && rank(atual) < rank('aguardando_testes')) alvo = 'aguardando_testes';   // tudo instalado, faltam testes
         else if(algum && !ent.auto && rank(atual) < rank('iniciado')) alvo = 'iniciado';
         if(!alvo) return;
-        r.statusPedidos = Object.assign({}, r.statusPedidos, { [p.id]: { s: alvo, em: agora, por: 'automático (instalação)', auto: alvo } });
+        r.statusPedidos = Object.assign({}, r.statusPedidos, { [p.id]: { i: 'entregue', o: alvo, s: alvo, em: agora, por: 'automático (instalação)', auto: alvo } });          // quem instala já recebeu o equipamento
         if(alvo === 'finalizado'){ const sd = alvoSaldo(r, p.numero, null);
           if(sd && (sd.tipo === 'Saldo' || sd.tipo === 'Parcela única') && stDe(sd) === 'nao_liberado'){ sd.status = 'a_cobrar'; sd.liberadoEm = hojeStr(); sd.liberadoAuto = true; r.parcelas = Object.assign({}, r.parcelas); avisos.push('Pedido ' + p.numero + ' (' + nomeCliente(r) + ') finalizado: o Saldo de ' + brl(sd.valor) + ' foi liberado para cobrança.'); }
           else avisos.push('Pedido ' + p.numero + ' (' + nomeCliente(r) + ') finalizado.'); }
@@ -23580,7 +23669,7 @@ async function iniciarGestor(){ try{ await garantirCarregado(); await carregarIn
 function dadosRelatorio(r, d, pidSo){
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
   const pedidos = pedidosDe(r).filter(p => !p.cancelado && (!pidSo || p.id === pidSo)).map(p => { const dp = (d.pedidos || {})[p.id];
-    const sistemas = lista(dp && dp.sistemas).sort(ord).map(sis => ({ nome: sis.nome, equipamentos: lista(sis.subitens).sort(ord).map(sub => ({ nome: sub.nome, estado: estadoSub(d, sub), etapas: etapasDe(sub).map(e => { const f = ((d.prog || {})[sub.id] || {})[e.id]; return { nome: e.nome, feito: !!f, em: f ? f.em : null }; }) })) })).filter(x => x.equipamentos.length);
+    const sistemas = lista(dp && dp.sistemas).sort(ord).map(sis => ({ nome: sis.nome, equipamentos: lista(sis.subitens).sort(ord).map(sub => ({ nome: sub.nome, estado: estadoSub(d, sub), etapas: etapasDe(sub).map(e => { const f = ((d.prog || {})[sub.id] || {})[e.id]; const es = estadoEtapa(d, sub.id, e.id); return { nome: e.nome, estado: es, feito: es === 'finalizado', em: f ? f.em : null }; }) })) })).filter(x => x.equipamentos.length);
     return { numero: p.numero, descricao: p.descricao || '', sistemas }; }).filter(p => p.sistemas.length);
   return { cliente: nomeCliente(r), endereco: cli ? cli.address || '' : '', emitidoEm: new Date().toISOString(), pedidos };
 }
@@ -23714,7 +23803,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 init();
