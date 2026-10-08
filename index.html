@@ -4046,6 +4046,17 @@ function attachRealtimeServicesListener(){
 //    nenhum fluxo fazer rollback de algo que só está esperando conexão. Só devolve false se nem
 //    o localStorage aceitar (aí o alert antigo continua valendo).
 // =====================================================================================
+// Selecionar texto numa caixa e soltar o mouse fora dela gera um "clique" no fundo escuro e fechava a caixa (perdendo o que foi digitado).
+// Regra global, para TODAS as caixas: o fundo só conta como clique se o botão foi apertado E solto nele. Roda antes dos ouvintes de cada caixa.
+(function(){
+  let apertouEm = null; const ehFundo = (el) => !!(el && el.classList && [...el.classList].some(c => /overlay|backdrop/i.test(c)));
+  const marcar = (e) => { apertouEm = e.target; };
+  document.addEventListener('mousedown', marcar, true); document.addEventListener('touchstart', marcar, true); document.addEventListener('pointerdown', marcar, true);
+  document.addEventListener('click', (e) => {
+    if(ehFundo(e.target) && apertouEm && apertouEm !== e.target){ e.stopPropagation(); e.preventDefault(); }   // começou dentro da caixa: ignora
+    apertouEm = null;
+  }, true);
+})();
 const OUTBOX_PREFIX = 'equiper_outbox_';
 const CACHE_PREFIX  = 'equiper_cache_';
 const OUTBOX_LOJAS  = ['services', 'oficinaEquipamentos', 'maintenanceContracts'];
