@@ -2078,6 +2078,35 @@
   .obi-tec .obi-eqt-nao_liberado{ border-left-color:#C62828; } .obi-tec .obi-eqt-liberado{ border-left-color:#F6C945; } .obi-tec .obi-eqt-iniciado{ border-left-color:#2F6FB0; } .obi-tec .obi-eqt-finalizado{ border-left-color:#7FBF98; } .obi-tec .obi-eqt-testado{ border-left-color:#1F7A44; }
   .obi-eq-nao_liberado{ border-left:5px solid #C62828; padding-left:8px; } .obi-eq-liberado{ border-left:5px solid #F6C945; padding-left:8px; } .obi-eq-iniciado{ border-left:5px solid #2F6FB0; padding-left:8px; } .obi-eq-finalizado{ border-left:5px solid #7FBF98; padding-left:8px; } .obi-eq-testado{ border-left:5px solid #1F7A44; padding-left:8px; }
   .obi-tec .obi-falta{ color:#2F6FB0; }
+
+  .obr-st-agendado{ background:rgba(107,79,160,.14); color:#5A3D96; border-color:rgba(107,79,160,.45); }
+  .obr-pc-d{ font-size:10.5px; color:#5A3D96; font-weight:700; margin-top:2px; } .obr-obs-prev b{ color:#5A3D96; }
+
+  .obr-tab-rolar{ overflow-x:auto; } .obr-data-bol{ width:auto; min-width:140px; padding:6px 8px; font-size:13px; }
+
+  /* ===== cartões de pagamento (lista do dia) ===== */
+  .pgc-ev{ background:var(--panel); border:1px solid var(--line); border-left:5px solid #5A3D96; border-radius:10px; padding:9px 12px; margin-bottom:6px; cursor:pointer; box-shadow:var(--shadow-sm); } .pgc-ev:hover{ background:var(--panel-2); }
+  .pgc-ev-recebido{ border-left-color:var(--success); } .pgc-ev-passou{ border-left-color:var(--danger); }
+  .pgc-ev-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .pgc-ev-h b{ font-size:14.5px; } .pgc-ev-v{ margin-left:auto; font-weight:800; font-size:15px; }
+  .pgc-ev-s{ font-size:12.5px; color:var(--text-dim); margin:2px 0 5px; } .pgc-ev-c{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .pgc-ev-t{ font-size:12px; color:var(--text-dim); margin-left:auto; }
+
+
+  /* ===== aba Agendados (usa o visual da Agenda: week-*, month-nav, cal-grid/cal-cell/cal-dot, day-panel) ===== */
+  #obrTabs{ overflow-x:auto; flex-wrap:nowrap; scrollbar-width:none; } #obrTabs::-webkit-scrollbar{ display:none; } #obrTabs .portal-tab{ flex:1 0 auto; white-space:nowrap; }
+  .pgag-filtros{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 14px; } .pgag-chk{ display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer; white-space:nowrap; } .pgag-chk input{ width:auto; }
+  .pgag-semtot{ font-size:13px; color:var(--text-dim); margin:-2px 0 12px; } .pgag-semtot b{ color:var(--ink); }
+  @media (min-width:1025px){ .week-days-grid.pgag-n6{ grid-template-columns:repeat(6, 1fr); } .week-days-grid.pgag-n7{ grid-template-columns:repeat(7, 1fr); } }
+  .week-day-col-head[data-pgag-dia]{ cursor:pointer; } .pgag-sel{ box-shadow:0 0 0 2px var(--ink); border-radius:12px; }
+  .pgag-bar{ border:1px solid var(--line); border-left:4px solid #6B4FA0; border-radius:8px; padding:6px 8px; margin-bottom:6px; background:var(--panel); cursor:pointer; display:flex; flex-direction:column; gap:1px; font-size:12px; min-width:0; }
+  .pgag-bar b{ font-size:12.5px; overflow-wrap:anywhere; } .pgag-bar span{ font-weight:800; } .pgag-bar small{ color:var(--text-dim); overflow-wrap:anywhere; }
+  .pgag-bar-recebido{ border-left-color:var(--success); } .pgag-bar-passou{ border-left-color:var(--danger); background:var(--danger-soft); }
+  .pgag-vazio{ color:var(--text-dim); text-align:center; padding:6px 0; font-size:12px; } .pgag-dia-tot{ font-size:11.5px; font-weight:800; color:#5A3D96; text-align:right; margin-top:2px; }
+  .pgag-dot-prev{ background:#6B4FA0; } .pgag-dot-rec{ background:var(--success); } .pgag-dot-passou{ background:var(--danger); } .pgag-mais{ font-size:9.5px; color:var(--text-dim); font-weight:700; }
+  .pgag-leg{ display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--text-dim); margin:10px 0 16px; } .pgag-leg span{ display:inline-flex; align-items:center; gap:6px; } .pgag-leg .cal-dot{ display:inline-block; margin:0; }
+  .pgag-dia-res{ font-size:13px; color:var(--text-dim); margin:0 0 10px; } .pgag-dia-res b{ color:var(--ink); }
+  .cal-cell[data-pgag-dia]{ cursor:pointer; }
+
+  #pgagMes{ text-transform:none; }
 </style>
 </head>
 <body>
@@ -22499,13 +22528,17 @@ const quem = () => (typeof currentRole !== 'undefined' && currentRole === 'tech'
 const avisar = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 5000); }catch(e){ try{ alert(t); }catch(_){} } };
 
 const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
-const ABAS_OBR = EMPRESAS.concat([['geral', 'Geral']]);                 // a aba Geral mostra os registros das duas empresas juntos
+// Abas: Equiper | Eqp | Geral (o que ainda tem a receber) · Agendados (calendário de pagamentos) · Finalizados (tudo recebido = quitado, das duas empresas)
+const ABAS_OBR = EMPRESAS.concat([['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);
+const ehFinalizado = (r) => totais(r).fin === 'quitado';          // tudo recebido: o registro vai para Finalizados (e volta sozinho se surgir um novo valor a receber)
+function registrosDaAba(k){ const todos = registros(); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
 const rotAba = (k) => (ABAS_OBR.find(e => e[0] === k) || ['', k])[1];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
 const TIPOS_PARCELA = ['Sinal'].concat(Array.from({ length: 11 }, (_, i) => (i + 2) + 'ª parcela'), ['Saldo', 'Parcela única', 'Restante', 'Outro']);
 // Situação de cada parcela: Não liberado (ainda não é hora de cobrar) → A cobrar (liberada) → Enviado (cobrança enviada ao cliente) → Recebido.
-const STATUS_PARC = [['nao_liberado', 'Não liberado'], ['a_cobrar', 'A cobrar'], ['enviado', 'Enviado'], ['recebido', 'Recebido']];
+// Agendado = cobrança enviada e o cliente combinou uma DATA de pagamento (a data fica em `agendadoPara` e entra no calendário de pagamentos).
+const STATUS_PARC = [['nao_liberado', 'Não liberado'], ['a_cobrar', 'A cobrar'], ['enviado', 'Enviado'], ['agendado', 'Agendado'], ['recebido', 'Recebido']];
 const stDe = (p) => p.status || (p.pago ? 'recebido' : 'a_cobrar');          // registros da 1ª versão tinham só "pago"
 // Andamento de cada PEDIDO (quem muda é o Gestor, na aba "Obras e Pedidos" dele; o Financeiro só vê). Fica em `statusPedidos`, um campo à parte do registro,
 // para o Gestor nunca regravar pedidos/parcelas do Financeiro (e vice-versa).
@@ -22530,16 +22563,16 @@ const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.o
 function totais(r){
   const todosPed = pedidosDe(r), ativos = todosPed.filter(p => !p.cancelado); const canc = new Set(todosPed.filter(p => p.cancelado).map(p => String(p.numero)));
   const par = parcelasDe(r).filter(p => stDe(p) === 'recebido' || !(p.pedido && canc.has(String(p.pedido))));      // parcela de pedido cancelado só conta se já foi recebida
-  const por = { nao_liberado: 0, a_cobrar: 0, enviado: 0, recebido: 0 }, cont = { nao_liberado: 0, a_cobrar: 0, enviado: 0, recebido: 0 };
+  const por = { nao_liberado: 0, a_cobrar: 0, enviado: 0, agendado: 0, recebido: 0 }, cont = { nao_liberado: 0, a_cobrar: 0, enviado: 0, agendado: 0, recebido: 0 };
   par.forEach(p => { const k = stDe(p); por[k] += Number(p.valor) || 0; cont[k]++; }); Object.keys(por).forEach(k => { por[k] = Math.round(por[k] * 100) / 100; });
-  const contratado = soma(ativos.map(p => p.valor)), recebido = por.recebido, previsto = Math.round((por.nao_liberado + por.a_cobrar + por.enviado) * 100) / 100;
+  const contratado = soma(ativos.map(p => p.valor)), recebido = por.recebido, previsto = Math.round((por.nao_liberado + por.a_cobrar + por.enviado + por.agendado) * 100) / 100;
   const saldo = Math.round((contratado - recebido) * 100) / 100;
   const fin = contratado <= 0 ? 'sem_valor' : saldo <= 0.005 ? 'quitado' : recebido > 0 ? 'parcial' : 'a_receber';
   return { contratado, recebido, previsto, saldo, por, cont, aProgramar: Math.max(0, Math.round((saldo - previsto) * 100) / 100), pct: contratado > 0 ? Math.min(100, Math.round(recebido / contratado * 100)) : 0, fin, nPedidos: ativos.length };
 }
-function gerarParcelas(r, ped, pcts){      // cria as parcelas de UM pedido pela condição (Sinal já "A cobrar"; as demais "Não liberado")
+function gerarParcelas(r, ped, pcts, extra){      // cria as parcelas de UM pedido pela condição (Sinal já "A cobrar"; as demais "Não liberado"); extra = { datas:[data de cada parcela, ex. boletos], forma }
   const vals = dividirValor(Number(ped.valor), pcts); const out = {}; let ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
-  pcts.forEach((pc, i) => { const id = uid('c') + i; out[id] = { id, tipo: rotuloParcela(i, pcts.length), pedido: ped.numero, pct: pc, valor: vals[i], status: i === 0 ? 'a_cobrar' : 'nao_liberado', ordem: ordem++ }; });
+  pcts.forEach((pc, i) => { const id = uid('c') + i; out[id] = { id, tipo: rotuloParcela(i, pcts.length), pedido: ped.numero, pct: pc, valor: vals[i], status: i === 0 ? 'a_cobrar' : 'nao_liberado', ordem: ordem++ }; if(extra && extra.datas && extra.datas[i]) out[id].agendadoPara = extra.datas[i]; if(extra && extra.forma) out[id].forma = extra.forma; });
   return out;
 }
 // ----- Saldo do pedido: as parcelas de um pedido sempre somam o valor dele. Parcela nova sai do Saldo; excluir devolve ao Saldo. -----
@@ -22578,12 +22611,13 @@ function montar(){
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
-      <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="quitado">Quitados</option></select>
+      <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="agendado">Com parcela Agendada</option><option value="quitado">Quitados</option></select>
       <select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
       <button type="button" class="btn-primary" data-obr="novo">+ Novo registro</button>
     </div>
     <div id="obrLista" style="padding:0 20px 30px;"></div>
+    <div id="obrAgendados" style="display:none; padding:0 20px 30px;"></div>
   </div>`;
   const busca = document.getElementById('obrBusca');
   if(window.SUG_API) SUG_API.ligar(busca, 'clientes');
@@ -22603,12 +22637,12 @@ function montar(){
 }
 function kpis(todos){
   // Ordem do fluxo: Contratado → A cobrar → Enviado → Recebido → A receber (o que ainda falta entrar, incluindo o que não foi liberado).
-  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado)), nl = soma(t.map(x => x.por.nao_liberado));
-  const aRec = soma(t.map(x => Math.max(0, x.saldo))); const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado, 0), nSaldo = t.filter(x => x.saldo > 0.005).length;
+  const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado + x.por.agendado)), nl = soma(t.map(x => x.por.nao_liberado));
+  const aRec = soma(t.map(x => Math.max(0, x.saldo))); const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado + x.cont.agendado, 0), nAg = t.reduce((n, x) => n + x.cont.agendado, 0), nSaldo = t.filter(x => x.saldo > 0.005).length;
   return PREV_API.kpiCards([
     { tom: 'neutro', icone: 'total', texto: brlCurto(contr), zero: !(contr > 0), rotulo: 'Contratado', sub: todos.length + (todos.length === 1 ? ' obra' : ' obras') + ' · ' + soma(t.map(x => x.nPedidos)) + (soma(t.map(x => x.nPedidos)) === 1 ? ' pedido' : ' pedidos') },
     { tom: 'amarelo', icone: 'relogio', texto: brlCurto(ac), zero: !(ac > 0), rotulo: 'A cobrar', sub: nAc + (nAc === 1 ? ' parcela liberada' : ' parcelas liberadas') },
-    { tom: 'azul', icone: 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando pagamento' },
+    { tom: 'azul', icone: 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando' + (nAg ? ' · ' + nAg + ' agendada' + (nAg === 1 ? '' : 's') : '') },
     { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
     { tom: 'neutro', icone: 'caixa', texto: brlCurto(aRec), zero: !(aRec > 0), rotulo: 'A receber', sub: nSaldo + (nSaldo === 1 ? ' obra' : ' obras') + ' com saldo' + (nl > 0 ? ' · ' + brlCurto(nl) + ' não liberado' : '') },
   ]);
@@ -22617,7 +22651,7 @@ const rotuloStatus = (k) => (STATUS_PARC.find(x => x[0] === k) || ['', k])[1];
 // Cartão do cliente: uma linha COMPACTA por pedido (número + descrição + valor) com as parcelas dele lado a lado (nome/% · valor · situação).
 function celulaParcela(p){
   const st = stDe(p); const nome = (p.tipo || 'Parcela') + (p.pct != null ? ' ' + fmtPct(p.pct) + '%' : '');
-  return `<div class="obr-pc" title="${esc(nome)}"><div class="obr-pc-n">${esc(nome)}</div><div class="obr-pc-b"><span class="obr-pc-v">${esc(brl(p.valor))}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div></div>`;
+  return `<div class="obr-pc" title="${esc(nome)}"><div class="obr-pc-n">${esc(nome)}</div><div class="obr-pc-b"><span class="obr-pc-v">${esc(brl(p.valor))}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div>${p.agendadoPara && st !== 'recebido' ? `<div class="obr-pc-d">pagamento ${esc(fmtData(p.agendadoPara))}</div>` : ''}</div>`;
 }
 function linhaPedido(r, p, parcelas){
   return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span>${chipObra(r, p)}<span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
@@ -22625,7 +22659,7 @@ function linhaPedido(r, p, parcelas){
 }
 function cartao(r){
   const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
-  const chips = [ui.empresa === 'geral' ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotAba(r.empresa))}</span>` : '', `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+  const chips = [(ui.empresa === 'geral' || ui.empresa === 'finalizados') ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotAba(r.empresa))}</span>` : '', `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''].join('');
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   const mostrar = ped.slice(0, 5);
@@ -22640,17 +22674,18 @@ function cartao(r){
 }
 function renderLista(){
   const box = document.getElementById('obrLista'); if(!box) return;
-  const doEmp = (k) => k === 'geral' ? registros() : registros().filter(r => r.empresa === k);
-  ABAS_OBR.forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + doEmp(k).length + ')'; });
-  const todos = doEmp(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
+  ABAS_OBR.forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
+  const ag = ui.empresa === 'agendados'; document.getElementById('obrBarra').style.display = ag ? 'none' : ''; box.style.display = ag ? 'none' : ''; const bag = document.getElementById('obrAgendados'); if(bag) bag.style.display = ag ? '' : 'none';
+  if(ag){ montarAgendados(); renderAgendados(); document.getElementById('obrContagem').textContent = previstosTodos().length + (previstosTodos().length === 1 ? ' pagamento previsto' : ' pagamentos previstos'); return; }
+  const todos = registrosDaAba(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
   const q = fold(ui.busca);
   let l = todos.filter(r => !q || fold([nomeCliente(r), r.contato, r.fone, r.formaPagamento, pedidosDe(r).map(p => p.numero + ' ' + p.descricao).join(' ')].join(' ')).includes(q));
-  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'acobrar' && !t.cont.a_cobrar) return false; if(ui.fin === 'enviado' && !t.cont.enviado) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
+  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'acobrar' && !t.cont.a_cobrar) return false; if(ui.fin === 'enviado' && !t.cont.enviado) return false; if(ui.fin === 'agendado' && !t.cont.agendado) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
     .sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b))));
   document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   box.innerHTML = l.length ? l.map(cartao).join('')
-    : (todos.length === 0 ? `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'cadastrado' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`
+    : (todos.length === 0 ? (ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
       : `<div class="empty-state">Nenhum registro encontrado${q ? ' para "' + esc(ui.busca.trim()) + '"' : ''}.${q ? `<br><br><button type="button" class="btn-primary" data-obr="criar-busca" data-nome="${esc(ui.busca.trim())}">+ Criar registro para "${esc(ui.busca.trim())}"</button>` : ''}</div>`);
 }
 
@@ -22725,7 +22760,8 @@ function renderPed(){
 function infoStatus(p){
   const st = stDe(p); let t = '';
   if(st === 'recebido' && p.pagoEm) t = 'recebido em ' + fmtData(p.pagoEm); else if(st === 'enviado' && p.enviadoEm) t = 'enviado em ' + fmtData(p.enviadoEm); else if(st === 'a_cobrar' && p.liberadoEm) t = 'liberado em ' + fmtData(p.liberadoEm);
-  return t ? `<div class="obr-obs">${esc(t)}</div>` : '';
+  const prev = p.agendadoPara && st !== 'recebido' ? `<div class="obr-obs obr-obs-prev">pagamento previsto: <b>${esc(fmtData(p.agendadoPara))}</b>${p.agendadoPara < hojeStr() ? ' <span class="obr-verm">(a data passou)</span>' : ''}</div>` : '';
+  return (t ? `<div class="obr-obs">${esc(t)}</div>` : '') + prev;
 }
 function linhaParcela(p){
   const st = stDe(p);
@@ -22754,7 +22790,7 @@ function renderPag(){
     <div class="prv-hint" style="margin:4px 0 8px;">${t.pct}% recebido${t.aProgramar > 0.005 ? ' · <b>' + esc(brl(t.aProgramar)) + '</b> do contratado ainda sem parcela' : ''}${t.saldo < -0.005 ? ' · recebido <b>' + esc(brl(-t.saldo)) + '</b> acima do contratado' : ''}</div>
     ${blocos || '<div class="prv-hint">Cadastre os pedidos para lançar as parcelas.</div>'}
     ${avulsas.length ? `<div class="obr-ped-bloco"><div class="obr-ped-bloco-h"><div><b>Parcelas avulsas</b> <span class="obr-sub-i">(sem pedido específico)</span></div></div>${tabelaParcelas(avulsas)}</div>` : ''}
-    <div class="prv-linha" style="margin-top:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost oe-mini" data-obr-d="par-add">+ Parcela avulsa</button><button type="button" class="btn-primary oe-mini" data-obr-d="par-pago">+ Pagamento recebido</button></div></div>`;
+  </div>`;
 }
 function renderRodape(){
   const r = atual(); const el = document.getElementById('obrDetRodape'); if(!r || !el) return;
@@ -22768,11 +22804,20 @@ function nomeCampoPedidos(r){ return [['', 'Nenhum (parcela avulsa)']].concat(pe
 async function mudarStatus(id, novo){
   const r = atual(); if(!r || !r.parcelas || !r.parcelas[id]) return; const p = r.parcelas[id]; const antigo = stDe(p); if(novo === antigo) return;
   if(novo === 'recebido'){ renderPag(); abrirRecebimento(id); return; }          // o seletor volta ao que era; o recebimento é confirmado no formulário
+  if(novo === 'agendado'){ renderPag(); abrirAgendarPagamento(id); return; }      // idem: a data combinada é pedida na janela
   const aplicar = async () => { const h = hojeStr(); p.status = novo; p.pago = null; if(antigo === 'recebido') p.pagoEm = null;
-    if(novo === 'enviado') p.enviadoEm = p.enviadoEm || h; else p.enviadoEm = null; if(novo === 'a_cobrar') p.liberadoEm = p.liberadoEm || h; else if(novo === 'nao_liberado') p.liberadoEm = null;
+    if(novo === 'enviado' || novo === 'agendado') p.enviadoEm = p.enviadoEm || h; else p.enviadoEm = null; if(novo === 'a_cobrar') p.liberadoEm = p.liberadoEm || h; else if(novo === 'nao_liberado') p.liberadoEm = null;
     r.parcelas = Object.assign({}, r.parcelas); await gravar(r); renderDetalheSecoes(); };
   if(antigo === 'recebido'){ renderPag(); return customConfirm('Desfazer o recebimento de ' + brl(p.valor) + ' (' + (p.tipo || 'parcela') + ')? A data do recebimento será apagada.', aplicar, 'Desfazer'); }
   await aplicar();
+}
+// Agendar o pagamento: a cobrança foi enviada e o cliente combinou uma data. A data entra no calendário de pagamentos.
+function abrirAgendarPagamento(id){
+  const r = atual(); const p = r && r.parcelas && r.parcelas[id]; if(!p) return;
+  formRapido({ titulo: 'Agendar pagamento — ' + (p.tipo || 'Parcela') + (p.pedido ? ' (pedido ' + p.pedido + ')' : ''), aviso: 'Valor: <b>' + esc(brl(p.valor)) + '</b>. Informe a data que o cliente combinou para pagar; ela aparece no calendário de pagamentos.', ok: 'Agendar', campos: [
+    { id: 'agendadoPara', rotulo: 'Data combinada para o pagamento', tipo: 'data', valor: p.agendadoPara || '', obrig: true },
+    { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p.forma || r.formaPagamento || '' }, { id: 'obs', rotulo: 'Observação', valor: p.obs || '', dica: 'Ex.: combinado por WhatsApp' } ],
+    aoSalvar: async (v) => { if(!v.agendadoPara) return 'Informe a data combinada.'; const h = hojeStr(); p.status = 'agendado'; p.pago = null; p.pagoEm = null; p.agendadoPara = v.agendadoPara; p.enviadoEm = p.enviadoEm || h; p.liberadoEm = p.liberadoEm || null; p.forma = v.forma || null; p.obs = v.obs || null; r.parcelas = Object.assign({}, r.parcelas); await gravar(r); renderDetalheSecoes(); avisar('Pagamento agendado para ' + fmtData(v.agendadoPara) + '. Está no calendário de pagamentos.', 6000); return null; } });
 }
 function proximaPendente(r, p){ return lista(r.parcelas).filter(x => String(x.pedido || '') === String(p.pedido || '') && x.id !== p.id && stDe(x) !== 'recebido' && (x.ordem || 0) > (p.ordem || 0)).sort((a, b) => (a.ordem || 0) - (b.ordem || 0))[0] || null; }
 // Recebimento da parcela. Se entrar MENOS que o previsto, o restante pode virar uma nova parcela, ser somado à próxima ou ficar para depois.
@@ -22840,22 +22885,24 @@ function acaoDetalhe(a, ds){
     if(dele.some(x => stDe(x) === 'recebido')) return avisar('O pedido ' + p.numero + ' já tem parcelas recebidas. Marque como "cancelado" em ✎ em vez de remover, para manter o histórico.', 8000);
     return customConfirm('Remover o pedido ' + p.numero + (dele.length ? ' e as ' + dele.length + ' parcelas dele' : '') + ' deste registro?', async () => { const m = Object.assign({}, r.pedidos); delete m[ds.id]; r.pedidos = m; const mp = Object.assign({}, r.parcelas); dele.forEach(x => { delete mp[x.id]; }); r.parcelas = mp; await gravar(r); renderDetalheSecoes(); }, 'Remover');
   }
-  if(a === 'par-add' || a === 'par-pago' || a === 'par-edit' || a === 'par-receber'){
+  if(a === 'par-add' || a === 'par-edit' || a === 'par-receber'){
     if(a === 'par-receber') return abrirRecebimento(ds.id);
     const p = a === 'par-edit' ? r.parcelas[ds.id] : null; if(a === 'par-edit' && !p) return;
     const numPed = p ? (p.pedido || '') : (ds.ped || ''); const alvoAtual = p && p.pedido ? alvoSaldo(r, p.pedido, null) : null; const ehSaldo = !!(alvoAtual && alvoAtual.id === p.id);
-    const st0 = p ? stDe(p) : (a === 'par-pago' ? 'recebido' : 'nao_liberado');
+    const st0 = p ? stDe(p) : 'nao_liberado';
     const nExist = numPed ? parcelasDoPedido(r, numPed).filter(x => x.tipo !== 'Saldo' && x.tipo !== 'Restante').length : 0;
-    const tipo0 = p ? p.tipo : (numPed ? (nExist === 0 ? 'Sinal' : (nExist + 1) + 'ª parcela') : (a === 'par-pago' ? 'Sinal' : 'Parcela única'));
+    const tipo0 = p ? p.tipo : (numPed ? (nExist === 0 ? 'Sinal' : (nExist + 1) + 'ª parcela') : 'Parcela única');
     const alvoNovo = !p && numPed ? alvoSaldo(r, numPed, null) : null;
-    return formRapido({ titulo: a === 'par-pago' ? 'Registrar pagamento recebido' : p ? 'Editar parcela' : 'Nova parcela', ok: 'Salvar',
+    return formRapido({ titulo: p ? 'Editar parcela' : 'Nova parcela', ok: 'Salvar',
       aviso: ehSaldo ? 'O Saldo é o que sobra do pedido: o valor dele se ajusta sozinho quando você cria, edita ou exclui as outras parcelas.' : (!p && numPed ? (alvoNovo ? 'A nova parcela entra <b>antes do Saldo</b> e o valor sai dele (Saldo atual: <b>' + esc(brl(alvoNovo.valor)) + '</b>). O total do pedido não muda.' : 'Parcela ligada a um pedido sai do Saldo dele, e o total do pedido não muda.') : 'Parcelas ligadas a um pedido saem do Saldo dele, e o total do pedido não muda.'), campos: [
       { id: 'tipo', rotulo: 'Parcela', tipo: 'select', opcoes: TIPOS_PARCELA, valor: tipo0, meio: true, bloqueado: ehSaldo }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true, bloqueado: ehSaldo },
-      { id: 'status', rotulo: 'Situação', tipo: 'select', opcoes: STATUS_PARC, valor: st0, meio: true }, { id: 'pagoEm', rotulo: 'Data do recebimento', tipo: 'data', valor: p && p.pagoEm ? p.pagoEm : (st0 === 'recebido' ? hojeStr() : ''), meio: true },
-      { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p ? p.forma || '' : (r.formaPagamento || ''), meio: true }, { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: numPed, meio: true, bloqueado: !!p },
+      { id: 'status', rotulo: 'Situação', tipo: 'select', opcoes: STATUS_PARC, valor: st0, meio: true }, { id: 'agendadoPara', rotulo: 'Data prevista de pagamento', tipo: 'data', valor: p ? p.agendadoPara || '' : '', meio: true, dica: 'Combinada com o cliente ou data do boleto' },
+      { id: 'pagoEm', rotulo: 'Data do recebimento', tipo: 'data', valor: p && p.pagoEm ? p.pagoEm : (st0 === 'recebido' ? hojeStr() : ''), meio: true },
+      { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p ? p.forma || '' : (r.formaPagamento || ''), meio: true }, { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: numPed, bloqueado: !!p },
       { id: 'obs', rotulo: 'Observação', valor: p ? p.obs || '' : '', dica: 'Ex.: comprovante…' } ],
       aoSalvar: async (v) => {
         if(!(v.valor > 0)) return 'Informe o valor da parcela.';
+        if(v.status === 'agendado' && !v.agendadoPara) return 'Informe a data combinada para o pagamento (situação "Agendado").';
         const rec = v.status === 'recebido'; if(rec && !v.pagoEm) return 'Informe a data do recebimento.'; if(rec && v.pagoEm > hojeStr()) return 'A data do recebimento não pode ser futura.';
         const numero = p ? (p.pedido || null) : (v.pedido || null); const ped = numero ? pedidosDe(r).find(x => String(x.numero) === String(numero)) : null;
         const mapa = Object.assign({}, r.parcelas); const id = p ? p.id : uid('c'); const h = hojeStr(); let ordem = p ? p.ordem : 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0)); let pct = p ? (p.pct != null ? p.pct : null) : null; let aviso = '';
@@ -22886,7 +22933,7 @@ function acaoDetalhe(a, ds){
           }
         }
         mapa[id] = { id, tipo: v.tipo, pedido: numero, pct, valor: v.valor, status: v.status, pago: null, pagoEm: rec ? v.pagoEm : null,
-          enviadoEm: v.status === 'enviado' ? ((p && p.enviadoEm) || h) : null, liberadoEm: v.status === 'a_cobrar' ? ((p && p.liberadoEm) || h) : (p && v.status !== 'nao_liberado' ? p.liberadoEm || null : null), forma: v.forma || null, obs: v.obs || null,
+          agendadoPara: v.agendadoPara || null, enviadoEm: (v.status === 'enviado' || v.status === 'agendado') ? ((p && p.enviadoEm) || h) : null, liberadoEm: v.status === 'a_cobrar' ? ((p && p.liberadoEm) || h) : (p && v.status !== 'nao_liberado' ? p.liberadoEm || null : null), forma: v.forma || null, obs: v.obs || null,
           valorPrevisto: p && p.valorPrevisto != null ? p.valorPrevisto : null, restanteDe: p && p.restanteDe ? p.restanteDe : null, ordem };
         r.parcelas = mapa; await gravar(r); renderDetalheSecoes(); if(aviso) avisar(aviso, 6000); return null; } });
   }
@@ -22964,7 +23011,7 @@ function abrirNovo(pre){
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrNovoOverlay';
   ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">Novo registro de obra</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, pedidos (quantos forem, cada um com seu valor) e a condição de pagamento: o valor de cada pedido é dividido nas parcelas.</p>
     <div class="obr-grid2">
-      <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || (ui.empresa === 'geral' ? 'equiper' : ui.empresa)) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+      <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || (EMPRESAS.some(e => e[0] === ui.empresa) ? ui.empresa : 'equiper')) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="field"><label>Cliente *</label><input type="text" id="obrNCli" value="${esc(pre.cliente || '')}" placeholder="Digite para buscar os clientes cadastrados" autocomplete="off"></div>
     </div>
     <div id="obrNCliInfo"></div>
@@ -22985,16 +23032,18 @@ function abrirNovo(pre){
   const linha = () => `<div class="obr-ped-linha"><input type="text" data-ped="numero" placeholder="Nº" inputmode="numeric"><input type="text" data-ped="descricao" placeholder="Descrição do serviço"><input type="text" data-ped="valor" inputmode="decimal" placeholder="Valor (R$)"><button type="button" class="obr-ic" data-ped-rm title="Remover pedido">✕</button></div>`;
   const valoresPedidos = () => [...ov.querySelectorAll('[data-ped="valor"]')].map(i => parseValor(i.value)).filter(v => v != null && !Number.isNaN(v) && v > 0);
   let cond = null;
+  const datasBol = [];                                        // data de cada boleto, por parcela (guardadas aqui para não se perderem quando a prévia é redesenhada)
   const previa = () => {
-    const box = $('obrNPrevia'); if(!cond) return; const c = cond.ler(); const vals = valoresPedidos(); const total = soma(vals); $('obrNTotal').textContent = 'Total ' + brl(total);
+    const box = $('obrNPrevia'); if(!cond) return; const c = cond.ler(); const vals = valoresPedidos(); const total = soma(vals); $('obrNTotal').textContent = 'Total ' + brl(total); const boleto = $('obrNForma').value === 'Boleto';
     if(!c.ok || c.n === 0 || !vals.length){ box.innerHTML = c.n === 0 ? '' : '<div class="prv-hint" style="margin:6px 0 0;">' + (!vals.length ? 'Informe o valor dos pedidos para ver as parcelas.' : 'Feche os 100% para ver as parcelas.') + '</div>'; return; }
     const porPedido = vals.map(v => dividirValor(v, c.pcts)); const linhas = c.pcts.map((pc, i) => ({ nome: rotuloParcela(i, c.n), pct: pc, valor: soma(porPedido.map(x => x[i])) }));
-    box.innerHTML = `<table class="obr-tab" style="margin-top:8px;"><thead><tr><th>Parcela</th><th class="obr-d">%</th><th class="obr-d">Valor (todos os pedidos)</th><th>Situação inicial</th></tr></thead><tbody>${linhas.map((l, i) => `<tr><td>${esc(l.nome)}</td><td class="obr-d">${esc(fmtPct(l.pct))}%</td><td class="obr-d">${esc(brl(l.valor))}</td><td><span class="obr-st obr-st-${i === 0 ? 'a_cobrar' : 'nao_liberado'}">${i === 0 ? 'A cobrar' : 'Não liberado'}</span></td></tr>`).join('')}</tbody><tfoot><tr><td><b>Total</b></td><td class="obr-d"><b>100%</b></td><td class="obr-d"><b>${esc(brl(total))}</b></td><td></td></tr></tfoot></table><div class="prv-hint" style="margin:4px 0 0;">Cada pedido é dividido separadamente, com a mesma proporção.</div>`;
+    box.innerHTML = `<div class="obr-tab-rolar"><table class="obr-tab" style="margin-top:8px;"><thead><tr><th>Parcela</th><th class="obr-d">%</th><th class="obr-d">Valor (todos os pedidos)</th><th>Situação inicial</th>${boleto ? '<th>Data do boleto</th>' : ''}</tr></thead><tbody>${linhas.map((l, i) => `<tr><td>${esc(l.nome)}</td><td class="obr-d">${esc(fmtPct(l.pct))}%</td><td class="obr-d">${esc(brl(l.valor))}</td><td><span class="obr-st obr-st-${i === 0 ? 'a_cobrar' : 'nao_liberado'}">${i === 0 ? 'A cobrar' : 'Não liberado'}</span></td>${boleto ? `<td><input type="date" class="obr-data-bol" data-bol="${i}" value="${esc(datasBol[i] || '')}" aria-label="Data do boleto da parcela ${esc(l.nome)}"></td>` : ''}</tr>`).join('')}</tbody><tfoot><tr><td><b>Total</b></td><td class="obr-d"><b>100%</b></td><td class="obr-d"><b>${esc(brl(total))}</b></td><td></td>${boleto ? '<td></td>' : ''}</tr></tfoot></table></div><div class="prv-hint" style="margin:4px 0 0;">Cada pedido é dividido separadamente, com a mesma proporção.${boleto ? ' <b>Boleto:</b> informe a data de cada boleto (vale para todos os pedidos); ela entra na previsão do calendário de pagamentos. Dá para preencher ou ajustar depois.' : ''}</div>`;
   };
   cond = construirCondicao($('obrNCond'), [50, 40, 10], previa);
   $('obrNPedidos').insertAdjacentHTML('beforeend', linha());
   $('obrNAddPed').onclick = () => { $('obrNPedidos').insertAdjacentHTML('beforeend', linha()); const ins = ov.querySelectorAll('.obr-ped-linha'); ins[ins.length - 1].querySelector('input').focus(); };
-  ov.addEventListener('input', (e) => { if(e.target.dataset && e.target.dataset.ped === 'valor') previa(); });
+  ov.addEventListener('input', (e) => { if(e.target.dataset && e.target.dataset.ped === 'valor') previa(); if(e.target.dataset && e.target.dataset.bol !== undefined) datasBol[Number(e.target.dataset.bol)] = e.target.value; });
+  ov.addEventListener('change', (e) => { if(e.target.id === 'obrNForma') previa(); if(e.target.dataset && e.target.dataset.bol !== undefined) datasBol[Number(e.target.dataset.bol)] = e.target.value; });
   ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrNCancel'){ ov.remove(); return; } const rm = e.target.closest('[data-ped-rm]'); if(rm){ if(ov.querySelectorAll('.obr-ped-linha').length > 1) rm.closest('.obr-ped-linha').remove(); else rm.closest('.obr-ped-linha').querySelectorAll('input').forEach(i => { i.value = ''; }); previa(); } });
   // cliente: existente (preenche dados) ou novo (pede o endereço e cadastra)
   let estado = '';
@@ -23007,10 +23056,10 @@ function abrirNovo(pre){
   };
   const cli = $('obrNCli'); if(window.SUG_API) SUG_API.ligar(cli, 'clientes');
   cli.addEventListener('input', atualizarCliente); cli.addEventListener('change', atualizarCliente); atualizarCliente();
-  $('obrNOk').onclick = () => criarRegistro(ov, cond);
+  $('obrNOk').onclick = () => criarRegistro(ov, cond, () => datasBol.slice());
   setTimeout(() => (pre.cliente ? ov.querySelector('[data-ped="numero"]') : cli).focus(), 40);
 }
-async function criarRegistro(ov, cond){
+async function criarRegistro(ov, cond, datasFn){
   const $ = (id) => document.getElementById(id); const err = (t) => { $('obrNErr').textContent = t; };
   const nome = $('obrNCli').value.trim(); if(!nome) return err('Informe o cliente.');
   const ex = clientePorNome(nome); const end = $('obrNEnd') ? $('obrNEnd').value.trim() : ''; if(!ex && !end) return err('Cliente novo: informe o endereço para cadastrá-lo em Clientes.');
@@ -23034,23 +23083,24 @@ async function criarRegistro(ov, cond){
     const agora = new Date().toISOString(); const id = uid('ob_');
     const rec = { id, empresa: $('obrNEmp').value, cliente: cl ? cl.name : nome, clienteId: cl ? cl.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, cond: c.n ? { pcts: c.pcts } : null, situacao: $('obrNSit').value, obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {}, parcelas: {} };
     ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor }; });
-    if(c.n) Object.values(rec.pedidos).forEach(p => { rec.parcelas = Object.assign({}, rec.parcelas, gerarParcelas(rec, p, c.pcts)); });
+    const boleto = $('obrNForma').value === 'Boleto'; const datas = boleto && datasFn ? datasFn().slice(0, c.n) : []; const nDatas = datas.filter(Boolean).length;
+    if(c.n) Object.values(rec.pedidos).forEach(p => { rec.parcelas = Object.assign({}, rec.parcelas, gerarParcelas(rec, p, c.pcts, { datas, forma: boleto ? 'Boleto' : null })); });
     store.items.push(rec); if(ui.empresa !== 'geral') ui.empresa = rec.empresa; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); ui.busca = ''; const bi = document.getElementById('obrBusca'); if(bi) bi.value = '';
     ov.remove(); renderLista(); await store.save(true);
-    avisar(!ex ? 'Registro criado e cliente cadastrado em Clientes.' : 'Registro criado' + (c.n ? ' com ' + (ped.length * c.n) + ' parcelas.' : '.')); abrirDetalhe(id);
+    avisar((!ex ? 'Registro criado e cliente cadastrado em Clientes.' : 'Registro criado' + (c.n ? ' com ' + (ped.length * c.n) + ' parcelas.' : '.')) + (nDatas ? ' As datas dos boletos entraram no calendário de pagamentos.' : ''), nDatas ? 7000 : undefined); abrirDetalhe(id);
   }catch(e){ console.error(e); err('Não foi possível salvar agora. Verifique a conexão e tente de novo.'); btn.disabled = false; btn.textContent = 'Criar registro'; }
 }
 
 function exportarCsv(){
   const linhas = [['Empresa', 'Cliente', 'Contato', 'Telefone', 'Forma de pagamento', 'Condicao', 'Situacao da obra', 'Pedido', 'Descricao', 'Valor do pedido', 'Contratado (registro)', 'Recebido', 'Saldo', 'Nao liberado', 'A cobrar', 'Enviado']];
   const dec = (v) => Number(v || 0).toFixed(2).replace('.', ',');
-  registros().filter(r => ui.empresa === 'geral' || r.empresa === ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => {
+  registrosDaAba(ui.empresa).sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b)))).forEach(r => {
     const t = totais(r); const ped = pedidosDe(r); const pc = pctsDe(r); const cond = pc.length ? (pc.length === 1 ? 'A vista' : pc.length + 'x: ' + pc.map((x, i) => rotuloParcela(i, pc.length) + ' ' + fmtPct(x) + '%').join(' / ')) : '';
     (ped.length ? ped : [{}]).forEach((p, i) => linhas.push([(EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1], nomeCliente(r), r.contato || '', r.fone || '', r.formaPagamento || '', cond, rotSit(r.situacao), p.numero || '', (p.descricao || '') + (p.cancelado ? ' (cancelado)' : ''), p.valor != null ? dec(p.valor) : '',
       i === 0 ? dec(t.contratado) : '', i === 0 ? dec(t.recebido) : '', i === 0 ? dec(t.saldo) : '', i === 0 ? dec(t.por.nao_liberado) : '', i === 0 ? dec(t.por.a_cobrar) : '', i === 0 ? dec(t.por.enviado) : '']));
   });
   const csv = '\uFEFF' + linhas.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\r\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + (ui.empresa === 'geral' ? 'geral' : ui.empresa) + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'obras-e-pedidos-' + ui.empresa + '-' + hojeStr() + '.csv'; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 3000);
 }
 
 // =====================================================================================
@@ -23489,6 +23539,102 @@ async function baixarRelatorioObra(rid, pid){
 }
 async function abrirGestor(){ montarGestor(); mostrarAbaGestor(uiG.aba); try{ await garantirCarregado(); }catch(e){ console.error('obras: falha ao carregar', e); } if(uiG.aba === 'pedidos') renderGestor(); }
 
+// =====================================================================================
+// AGENDADOS (aba de Obras e Pedidos): calendário de pagamentos no MESMO visual da Agenda do Gestor.
+// De cima para baixo: painel com os números principais · resumo dos pagamentos da semana · calendário do mês com pontinhos nos dias
+// · (ao clicar num dia) os pagamentos daquele dia. Previsto = parcela AINDA NÃO recebida com data (`agendadoPara`: data combinada ou data do boleto);
+// recebido = parcela já recebida (pode ser ocultado).
+// =====================================================================================
+const uiC = { mes: null, dia: null, semana: null, empresa: '', recebidos: true, montado: false };
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const DOW3 = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']; const DOWF = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const pad2 = (n) => String(n).padStart(2, '0'); const isoD = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); const partesD = (x) => x.split('-').map(Number);
+const somarDias = (x, n) => { const [y, m, d] = partesD(x); return isoD(new Date(y, m - 1, d + n)); };
+const segundaDe = (x) => { const [y, m, d] = partesD(x); const dt = new Date(y, m - 1, d); dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7)); return isoD(dt); };
+const dowDe = (x) => { const [y, m, d] = partesD(x); return new Date(y, m - 1, d).getDay(); };
+function coletarEventos(op){
+  op = op || {}; const out = [];
+  registros().filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
+    const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
+    parcelasDe(r).forEach(p => {
+      const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && ped.cancelado && st !== 'recebido') return;      // parcela de pedido cancelado não conta
+      const base = { rid: r.id, pid: p.id, cliente: nomeCliente(r), empresa: r.empresa, pedido: p.pedido || '', desc: ped ? ped.descricao || '' : '', tipo: p.tipo || 'Parcela', valor: Number(p.valor) || 0, status: st, forma: p.forma || '' };
+      if(st === 'recebido'){ if(op.recebidos !== false && p.pagoEm) out.push(Object.assign({}, base, { data: p.pagoEm, ev: 'recebido' })); }
+      else if(p.agendadoPara) out.push(Object.assign({}, base, { data: p.agendadoPara, ev: 'previsto' }));
+    });
+  });
+  return out.sort((a, b) => a.data.localeCompare(b.data) || a.cliente.localeCompare(b.cliente, 'pt-BR'));
+}
+const eventosCal = () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos });
+const previstosTodos = () => coletarEventos({ recebidos: false });
+function htmlEvento(e, hoje, comEmpresa){
+  const passou = e.ev === 'previsto' && e.data < hoje;
+  return `<div class="pgc-ev pgc-ev-${e.ev} ${passou ? 'pgc-ev-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><div class="pgc-ev-h"><b>${esc(e.cliente)}</b>${comEmpresa ? `<span class="obr-emp obr-emp-${esc(e.empresa)}">${esc((EMPRESAS.find(x => x[0] === e.empresa) || [0, ''])[1])}</span>` : ''}<span class="pgc-ev-v">${esc(brl(e.valor))}</span></div><div class="pgc-ev-s">${e.pedido ? 'Pedido ' + esc(e.pedido) + (e.desc ? ' · ' + esc(e.desc) : '') + ' · ' : ''}${esc(e.tipo)}</div><div class="pgc-ev-c"><span class="obr-st obr-st-${esc(e.status)}">${esc(rotuloStatus(e.status))}</span>${e.forma ? `<span class="obr-ped-tag">${esc(e.forma)}</span>` : ''}<span class="pgc-ev-t">${e.ev === 'recebido' ? 'recebido em ' + esc(fmtData(e.data)) : passou ? '<b class="obr-verm">a data passou</b> · ' + esc(fmtData(e.data)) : 'previsto para ' + esc(fmtData(e.data))}</span></div></div>`;
+}
+function montarAgendados(){
+  const v = document.getElementById('obrAgendados'); if(!v || uiC.montado) return; uiC.montado = true; const h = hojeStr(); uiC.mes = uiC.mes || h.slice(0, 7); uiC.semana = uiC.semana || segundaDe(h);
+  v.innerHTML = `<div class="pgag-filtros"><select id="pgagEmpresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select><label class="pgag-chk"><input type="checkbox" id="pgagRec" checked> Mostrar recebidos</label></div>
+    <div class="week-summary" id="pgagSemana"><div class="week-summary-head"><div class="week-summary-title">Pagamentos da semana</div><div class="week-nav"><button type="button" class="nav-btn" data-pgag="semAnt" title="Semana anterior">‹</button><div class="week-summary-range mono" id="pgagSemRange"></div><button type="button" class="nav-btn" data-pgag="semProx" title="Próxima semana">›</button><button type="button" class="btn-ghost week-current-btn" data-pgag="semHoje" id="pgagSemHoje" style="display:none;">Semana atual</button></div></div>
+      <div class="pgag-semtot" id="pgagSemTot"></div><div class="week-days-grid" id="pgagSemGrid"></div></div>
+    <div class="month-nav"><button type="button" class="nav-btn" data-pgag="mesAnt" title="Mês anterior">‹</button><div class="month-title" id="pgagMes"></div><button type="button" class="nav-btn" data-pgag="mesProx" title="Próximo mês">›</button><button type="button" class="btn-ghost oe-mini" data-pgag="mesHoje">Hoje</button></div>
+    <div class="cal-grid" id="pgagGrid"></div>
+    <div class="pgag-leg"><span><i class="cal-dot pgag-dot-prev"></i> previsto</span><span><i class="cal-dot pgag-dot-rec"></i> recebido</span><span><i class="cal-dot pgag-dot-passou"></i> a data passou</span></div>
+    <div class="day-panel" id="pgagDia" style="display:none;"><div class="day-panel-head"><div class="day-panel-title" id="pgagDiaT"></div><button type="button" class="btn-ghost" data-pgag="fecharDia">Fechar</button></div><div id="pgagDiaL"></div></div>`;
+  const sel = (d) => { uiC.dia = uiC.dia === d ? null : d; if(uiC.dia){ uiC.semana = segundaDe(d); uiC.mes = d.slice(0, 7); } renderAgendados(); if(uiC.dia){ const p = document.getElementById('pgagDia'); if(p && p.scrollIntoView) try{ p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }catch(e){} } };
+  v.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-pgag]'); if(a){ const k = a.dataset.pgag; const hj = hojeStr(); const [ano, mes] = partesD(uiC.mes + '-01');
+      if(k === 'semAnt' || k === 'semProx'){ uiC.semana = somarDias(uiC.semana, k === 'semAnt' ? -7 : 7); uiC.mes = somarDias(uiC.semana, 3).slice(0, 7); uiC.dia = null; }
+      else if(k === 'semHoje'){ uiC.semana = segundaDe(hj); uiC.mes = hj.slice(0, 7); uiC.dia = null; }
+      else if(k === 'mesAnt' || k === 'mesProx'){ const dt = new Date(ano, mes - 1 + (k === 'mesAnt' ? -1 : 1), 1); uiC.mes = dt.getFullYear() + '-' + pad2(dt.getMonth() + 1); uiC.dia = null; }
+      else if(k === 'mesHoje'){ uiC.mes = hj.slice(0, 7); uiC.semana = segundaDe(hj); uiC.dia = hj; }
+      else if(k === 'fecharDia'){ uiC.dia = null; }
+      renderAgendados(); return; }
+    const reg = e.target.closest('[data-cal-reg]'); if(reg){ const rid = reg.dataset.calReg; if(porId(rid)) abrirDetalhe(rid); return; }
+    const dia = e.target.closest('[data-pgag-dia]'); if(dia) sel(dia.dataset.pgagDia);
+  });
+  v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-pgag-dia],[data-cal-reg]')){ e.preventDefault(); e.target.click(); } });
+  document.getElementById('pgagEmpresa').addEventListener('change', (e) => { uiC.empresa = e.target.value; renderAgendados(); });
+  document.getElementById('pgagRec').addEventListener('change', (e) => { uiC.recebidos = e.target.checked; renderAgendados(); });
+}
+function renderAgendados(){
+  const v = document.getElementById('obrAgendados'); if(!v || !uiC.montado || ui.empresa !== 'agendados') return;
+  const hoje = hojeStr(); const evs = eventosCal(); const porDia = {}; evs.forEach(e => { (porDia[e.data] = porDia[e.data] || []).push(e); }); const sm = (l) => soma(l.map(e => e.valor));
+  // ---- painel de informações (no lugar do quadro financeiro) ----
+  const prev = coletarEventos({ empresa: uiC.empresa, recebidos: false }); const seg0 = segundaDe(hoje), dom0 = somarDias(seg0, 6);
+  const dHoje = prev.filter(e => e.data === hoje), dSem = prev.filter(e => e.data >= seg0 && e.data <= dom0), dMes = prev.filter(e => e.data.slice(0, 7) === hoje.slice(0, 7)), dPassou = prev.filter(e => e.data < hoje), prox = prev.find(e => e.data >= hoje);
+  const n = (l, um, vs) => l.length + (l.length === 1 ? ' ' + um : ' ' + vs);
+  document.getElementById('obrKpis').innerHTML = PREV_API.kpiCards([
+    { tom: 'azul', icone: 'agenda', texto: brlCurto(sm(dHoje)), zero: !dHoje.length, rotulo: 'Hoje', sub: n(dHoje, 'pagamento', 'pagamentos') },
+    { tom: 'azul', icone: 'relogio', texto: brlCurto(sm(dSem)), zero: !dSem.length, rotulo: 'Esta semana', sub: n(dSem, 'pagamento', 'pagamentos') },
+    { tom: 'neutro', icone: 'total', texto: brlCurto(sm(dMes)), zero: !dMes.length, rotulo: 'Neste mês', sub: n(dMes, 'pagamento', 'pagamentos') },
+    { tom: dPassou.length ? 'vermelho' : 'neutro', icone: dPassou.length ? 'alerta' : 'ok', texto: brlCurto(sm(dPassou)), zero: !dPassou.length, rotulo: 'Data já passou', sub: dPassou.length ? n(dPassou, 'sem recebimento', 'sem recebimento') : 'nada atrasado' },
+    { tom: 'verde', icone: 'caixa', texto: prox ? fmtData(prox.data).slice(0, 5) : '—', zero: !prox, rotulo: 'Próximo pagamento', sub: prox ? prox.cliente + ' · ' + brl(prox.valor) : 'nenhum agendado' } ]);
+  // ---- resumo da semana ----
+  const seg = uiC.semana; const doDia = (d) => porDia[d] || []; const fimSem = [5, 6].some(i => doDia(somarDias(seg, i)).length); const nDias = fimSem ? (doDia(somarDias(seg, 6)).length ? 7 : 6) : 5; const dias = Array.from({ length: nDias }, (_, i) => somarDias(seg, i));
+  const [sy, sm_, sd] = partesD(dias[0]), [ey, em, ed] = partesD(dias[dias.length - 1]);
+  document.getElementById('pgagSemRange').textContent = sm_ === em ? `${sd}–${ed} de ${MESES[sm_ - 1]}` : `${sd} de ${MESES[sm_ - 1]} – ${ed} de ${MESES[em - 1]}`;
+  document.getElementById('pgagSemHoje').style.display = seg === seg0 ? 'none' : '';
+  const dSemana = evs.filter(e => e.data >= dias[0] && e.data <= dias[dias.length - 1]); const pSem = dSemana.filter(e => e.ev === 'previsto'), rSem = dSemana.filter(e => e.ev === 'recebido');
+  document.getElementById('pgagSemTot').innerHTML = `Previsto na semana: <b>${esc(brl(sm(pSem)))}</b> (${pSem.length} ${pSem.length === 1 ? 'pagamento' : 'pagamentos'})${uiC.recebidos ? ` · Recebido: <b>${esc(brl(sm(rSem)))}</b> (${rSem.length})` : ''}`;
+  const gs = document.getElementById('pgagSemGrid'); gs.className = 'week-days-grid' + (nDias === 6 ? ' pgag-n6' : nDias === 7 ? ' pgag-n7' : '');
+  gs.innerHTML = dias.map(d => { const [, , dd] = partesD(d); const l = doDia(d); const isHoje = d === hoje; const tot = sm(l.filter(e => e.ev === 'previsto'));
+    return `<div class="week-day-col${isHoje ? ' is-today' : ''}${uiC.dia === d ? ' pgag-sel' : ''}"><div class="week-day-col-head${isHoje ? ' today' : ''}" role="button" tabindex="0" data-pgag-dia="${d}" title="Ver os pagamentos deste dia"><span>${DOW3[dowDe(d)]} ${dd}</span><span class="week-day-count">${l.length}</span></div><div class="week-day-list">${l.map(e => `<div class="pgag-bar pgag-bar-${e.ev}${e.ev === 'previsto' && e.data < hoje ? ' pgag-bar-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><b>${esc(e.cliente)}</b><span>${esc(brl(e.valor))}</span><small>${e.pedido ? 'Pedido ' + esc(e.pedido) + ' · ' : ''}${esc(e.tipo)}${e.forma ? ' · ' + esc(e.forma) : ''}</small></div>`).join('') || '<div class="pgag-vazio">—</div>'}</div>${tot ? `<div class="pgag-dia-tot">${esc(brl(tot))}</div>` : ''}</div>`; }).join('');
+  // ---- calendário do mês (pontinhos) ----
+  const [ano, mes] = partesD(uiC.mes + '-01'); document.getElementById('pgagMes').textContent = MESES[mes - 1].charAt(0).toUpperCase() + MESES[mes - 1].slice(1) + ' de ' + ano;
+  const offset = new Date(ano, mes - 1, 1).getDay(); const total = new Date(ano, mes, 0).getDate(); let g = DOW3.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  for(let i = 0; i < offset; i++) g += '<div class="cal-cell empty"></div>';
+  for(let d = 1; d <= total; d++){ const data = uiC.mes + '-' + pad2(d); const l = doDia(data);
+    const dots = l.slice(0, 8).map(e => `<div class="cal-dot ${e.ev === 'recebido' ? 'pgag-dot-rec' : e.data < hoje ? 'pgag-dot-passou' : 'pgag-dot-prev'}"></div>`).join('') + (l.length > 8 ? `<span class="pgag-mais">+${l.length - 8}</span>` : '');
+    g += `<div class="cal-cell${data === hoje ? ' today' : ''}${uiC.dia === data ? ' selected' : ''}" role="button" tabindex="0" data-pgag-dia="${data}" aria-label="${d} de ${MESES[mes - 1]}${l.length ? ', ' + l.length + (l.length === 1 ? ' pagamento' : ' pagamentos') : ''}"><div class="cal-daynum">${d}</div><div class="cal-dots">${dots}</div></div>`; }
+  document.getElementById('pgagGrid').innerHTML = g;
+  // ---- painel do dia ----
+  const painel = document.getElementById('pgagDia'); if(!uiC.dia){ painel.style.display = 'none'; return; }
+  const [dy, dm, dd2] = partesD(uiC.dia); const ld = doDia(uiC.dia); painel.style.display = 'block';
+  document.getElementById('pgagDiaT').innerHTML = `${dd2} de ${MESES[dm - 1]} <span>· ${DOWF[dowDe(uiC.dia)]}</span>`;
+  const pd = ld.filter(e => e.ev === 'previsto'), rd = ld.filter(e => e.ev === 'recebido');
+  document.getElementById('pgagDiaL').innerHTML = ld.length ? `<div class="pgag-dia-res">Previsto no dia: <b>${esc(brl(sm(pd)))}</b> (${pd.length})${uiC.recebidos ? ` · Recebido: <b>${esc(brl(sm(rd)))}</b> (${rd.length})` : ''}</div>` + ld.map(e => htmlEvento(e, hoje, !uiC.empresa)).join('') : '<div class="empty-state">Nada previsto nem recebido neste dia.</div>';
+}
+
 // ---------- navegação do Financeiro (menu lateral / abas no celular) ----------
 let secao = 'os';
 function mostrarSecao(s){
@@ -23504,7 +23650,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 init();
