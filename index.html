@@ -1990,6 +1990,37 @@
   .obrg-ped-h{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 9px; min-width:0; flex:1 1 260px; } .obrg-ped-a{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; flex:0 1 auto; }
   .obrg-quando{ flex:1 1 100%; margin:-2px 0 0; }
   @media (max-width:640px){ .obrg-ped-a{ justify-content:flex-start; flex:1 1 100%; } }
+
+  /* ===== Sistemas (bases de instalação) ===== */
+  .obrg-sis{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 11px; margin-bottom:8px; cursor:pointer; box-shadow:var(--shadow-sm); } .obrg-sis:hover{ background:var(--panel-2); }
+  .obrg-sis-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; } .obrg-sis-ed{ margin-left:auto; font-size:12px; color:var(--text-dim); font-weight:600; }
+  .obrg-sis-subs{ display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+  .obrg-sub{ background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:2px 10px; font-size:12px; color:var(--ink); }
+  .obrg-subrow{ display:flex; gap:6px; align-items:center; margin-bottom:6px; } .obrg-subrow input{ flex:1; min-width:0; } .obrg-subrow .obr-ic{ flex:none; } .obrg-subrow .obr-ic:disabled{ opacity:.35; cursor:default; }
+
+  .obrg-subbloco{ border:1px solid var(--line); border-radius:8px; padding:6px 8px 7px; margin-bottom:8px; background:var(--panel-2); }
+  .obrg-subbloco .obrg-subrow{ margin-bottom:4px; }
+  .obrg-etrow{ display:flex; align-items:center; gap:8px; } .obrg-etrow span{ font-size:10.5px; text-transform:uppercase; letter-spacing:.3px; font-weight:800; color:var(--text-dim); } .obrg-etrow input{ flex:1; min-width:0; font-size:12.5px; }
+
+  /* ===== equipamentos por pedido (painel do Gestor) e checklist do técnico ===== */
+  .obrg-cli-a{ display:flex; gap:6px; flex-wrap:wrap; } .obrg-btn-eq-on{ background:var(--panel-2); border-color:var(--ink); }
+  .obrg-eq{ flex:1 1 100%; background:var(--panel-2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:4px 0 6px; }
+  .obrg-eq-bar{ display:flex; justify-content:space-between; align-items:center; gap:8px 12px; flex-wrap:wrap; margin-bottom:8px; } .obrg-eq-res{ font-size:12.5px; color:var(--text-dim); } .obrg-eq-acoes{ display:flex; gap:6px; flex-wrap:wrap; }
+  .obrg-sistema{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px 10px 4px; margin-bottom:8px; } .obrg-sistema-h{ display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px; } .obrg-sistema-h span{ display:flex; gap:6px; }
+  .obi-eq{ border-top:1px dashed var(--line); padding:7px 0 8px; } .obi-eq-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .obi-eq-h b{ font-size:13.5px; } .obi-eq-a{ margin-left:auto; display:flex; gap:6px; align-items:center; }
+  .obi-st{ display:inline-block; border-radius:999px; padding:2px 9px; font-weight:700; font-size:11px; border:1px solid var(--line); white-space:nowrap; }
+  .obi-st-nao_liberado{ background:var(--danger-soft); color:var(--danger); border-color:rgba(192,57,43,.45); }
+  .obi-st-liberado{ background:var(--panel); color:var(--danger); border-color:var(--danger); border-style:dashed; }
+  .obi-st-iniciado{ background:var(--warning-soft); color:var(--warning); border-color:var(--warning-line); }
+  .obi-st-finalizado{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
+  .obi-ets{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .obi-et{ width:auto; min-height:34px; padding:6px 13px; border-radius:999px; border:1.5px solid var(--line); background:var(--panel); color:var(--text-dim); font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .obi-et-on{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); } .obi-et:disabled{ opacity:.45; cursor:not-allowed; }
+  .obi-aviso{ font-size:11.5px; color:var(--danger); margin-top:5px; }
+  .obi-q{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:5px 0; border-bottom:1px dashed var(--line); } .obi-q small{ display:block; font-size:11px; color:var(--text-dim); } .obi-q input{ width:68px; text-align:center; }
+  .obi-slot{ margin:0 14px 14px; } .obi-tec{ border:1.5px solid var(--line); border-radius:12px; background:var(--panel); overflow:hidden; }
+  .obi-tec-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; text-align:left; padding:11px 13px; background:var(--panel-2); border:none; font-size:14px; font-weight:800; color:var(--ink); cursor:pointer; font-family:inherit; } .obi-tec-n{ margin-left:auto; font-size:11.5px; font-weight:600; color:var(--text-dim); }
+  .obi-tec-c{ padding:10px 13px 6px; } .obi-ped{ margin-bottom:10px; } .obi-ped-t{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:4px; } .obi-sis-t{ font-size:11px; text-transform:uppercase; letter-spacing:.4px; font-weight:800; color:var(--text-dim); margin:8px 0 0; }
 </style>
 </head>
 <body>
@@ -4181,6 +4212,7 @@ async function outboxTentarSincronizar(motivo){
     if(outboxTem('oficinaEquipamentos') && typeof saveOficinaEquipamentos === 'function') await saveOficinaEquipamentos(true);
     if(outboxTem('maintenanceContracts') && typeof saveMaintenanceContracts === 'function') await saveMaintenanceContracts(true);
     if(outboxTem('preventivo') && window.PREV_API) await PREV_API.flush();
+    if(outboxTem('obraInstalacao') && window.OBR_API) await OBR_API.flushInstalacao();
     if(typeof sincronizarMidiaPendente === 'function') await sincronizarMidiaPendente();
   }catch(e){ console.error('outbox: falha na sincronização (' + (motivo || 'periódica') + ')', e); }
   finally{ outboxSincronizando = false; outboxAtualizarIndicador(); }
@@ -12011,6 +12043,7 @@ function renderAll(){
 // Modal handling
 const overlay = document.getElementById('overlay');
 function openModal(prefillDate){
+  window.__obraAtiv = null;
   pendingDate = prefillDate || selectedDate || todayStr();
   document.getElementById('f-date').value = pendingDate;
   document.getElementById('f-client').value = '';
@@ -12021,7 +12054,7 @@ function openModal(prefillDate){
   overlay.classList.add('open');
   setTimeout(() => document.getElementById('f-client').focus(), 50);
 }
-function closeModal(){ overlay.classList.remove('open'); }
+function closeModal(){ overlay.classList.remove('open'); window.__obraAtiv = null; }
 
 document.getElementById('openAddBtn').addEventListener('click', () => openModal());
 document.getElementById('addFromPanelBtn').addEventListener('click', () => openModal(selectedDate));
@@ -12074,6 +12107,7 @@ document.getElementById('submitAddBtn').addEventListener('click', (e) => {
       technician: null,
       status: 'aguardando'
     };
+    if(window.OBR_API) OBR_API.vincularAtividade(newService);     // atividade criada a partir de Obras e Pedidos leva o vínculo com a obra
     const taNew = document.querySelector('[data-instrtext="new"]');
     if(taNew) newInstr.text = taNew.value; // garante o texto mesmo sem o evento change ter disparado
     if(newInstr.text.trim() || newInstr.photos.length || newInstr.audios.length){
@@ -14094,6 +14128,7 @@ function renderTechView(){
     `;
     list.appendChild(card);
     if(window.PREV_API) PREV_API.montarSlot(card, s); // relatório preventivo (só em atividade preventiva com unidades configuradas)
+    if(window.OBR_API) OBR_API.montarSlotTecnico(card, s); // checklist de instalação (só em atividade criada a partir de um pedido/obra)
   });
 
   list.querySelectorAll('[data-withdrawequip]').forEach(btn => {
@@ -17118,6 +17153,7 @@ async function ensureRoleDataLoaded(role){
     if(window.QUADROS_API) QUADROS_API.iniciar();  // quadros de comando: em segundo plano (alimenta o contador de Cadastros e OS)
     if(window.REINST_API) REINST_API.agendar();    // confere equipamentos x atividades (reinstalação)
     if(window.OS_API) OS_API.iniciar();            // ordens de serviço (agrupamento por número)
+    if(window.OBR_API) OBR_API.iniciarGestor();    // obras: acompanha a instalação (andamento do pedido e Saldo a cobrar)
   } else if(role === 'tech'){
     await ensureServicesLoaded();
     // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
@@ -19787,6 +19823,72 @@ function gerarPdfRelatorio(rel, fotos){
 
 
 // ====================================================================================
+// PDF DO RELATÓRIO DE INSTALAÇÃO (08/10) — andamento dos equipamentos de uma obra (ou de um pedido), para enviar ao responsável.
+// Mesmo desenho do relatório de manutenção (logo, faixa vermelha, cartões). Sem valores. Devolve um Blob.
+// dados = { cliente, endereco, emitidoEm, pedidos:[{numero, descricao, sistemas:[{nome, equipamentos:[{nome, estado, etapas:[{nome, feito, em}]}]}]}] }
+// ====================================================================================
+function gerarPdfInstalacao(dados){
+  const J = carregarJsPdf(); const doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+  doc.addFileToVFS('LibSans.ttf', FONTE_SANS); doc.addFont('LibSans.ttf', 'LibSans', 'normal');
+  doc.addFileToVFS('LibSansB.ttf', FONTE_SANS_B); doc.addFont('LibSansB.ttf', 'LibSans', 'bold');
+  doc.addFileToVFS('LibSerifB.ttf', FONTE_SERIF_B); doc.addFont('LibSerifB.ttf', 'LibSerif', 'bold');
+  const PW = 210, PH = 297, M = 12, W = PW - 2 * M, LIM = PH - 17; const C = PDF_COR; let y = 12;
+  const setF = (f, tam, cor) => { doc.setFont(f === 'serifB' ? 'LibSerif' : 'LibSans', f === 'sans' ? 'normal' : 'bold'); doc.setFontSize(tam); doc.setTextColor(cor || C.texto); };
+  const larg = (t) => doc.getTextWidth(t); const txt = (t, x, yy, op) => doc.text(limparPdf(t), x, yy, op);
+  const cliente = limparPdf(dados.cliente || '');
+  const ROT = { nao_liberado: 'Não liberado', liberado: 'Liberado para iniciar', iniciado: 'Iniciado', finalizado: 'Finalizado' };
+  const PIL = { nao_liberado: PDF_PILULA.red, liberado: PDF_PILULA.red, iniciado: PDF_PILULA.amber, finalizado: PDF_PILULA.green };
+  function novaPagina(){ doc.addPage(); setF('sans', 7.5, C.dim); txt('Equiper · Instalação — ' + cliente, M, 10.5); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, 12.3, PW - M, 12.3); y = 17.5; }
+  const garantir = (h) => { if(y + h > LIM) novaPagina(); };
+  function pilula(texto, estilo, xDir, yTopo, h){ const [bg, fg] = estilo; setF('sansB', 8, fg); const w = larg(limparPdf(texto)) + 5; doc.setFillColor(bg); doc.roundedRect(xDir - w, yTopo, w, h, h / 2, h / 2, 'F'); txt(texto, xDir - w / 2, yTopo + h / 2 + 1.05, { align: 'center' }); return w; }
+  // ---------------- cabeçalho ----------------
+  const lh = 17, lw = lh * 1.093;
+  try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 3.6, { align: 'right' }); doc.setCharSpace(0);
+  setF('serifB', 21, C.ink); txt('Instalação', PW - M, y + 11.4, { align: 'right' }); setF('sans', 8, C.dim); txt('Equiper Serviços', PW - M, y + 16, { align: 'right' });
+  y += lh + 3.2; doc.setFillColor(C.red); doc.rect(M, y, W, 0.9, 'F'); y += 5.5;
+  // ---------------- cliente ----------------
+  setF('sansB', 11.5, C.texto); const nomeL = doc.splitTextToSize(limparPdf(dados.cliente || '—'), W - 8); setF('sans', 9, C.dim); const endL = dados.endereco ? doc.splitTextToSize(limparPdf(dados.endereco), W - 8) : [];
+  const hCli = 4.5 + nomeL.length * 5 + (endL.length ? endL.length * 4.2 + 1 : 0) + 8;
+  doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(M, y, W, hCli, 2, 2, 'FD');
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.4); txt('CLIENTE', M + 4, y + 4.6); doc.setCharSpace(0); txt('Emitido em ' + fmtData(String(dados.emitidoEm || '').slice(0, 10)), PW - M - 4, y + 4.6, { align: 'right' });
+  setF('sansB', 11.5, C.texto); let yy = y + 10; nomeL.forEach(l => { txt(l, M + 4, yy); yy += 5; });
+  if(endL.length){ setF('sans', 9, C.dim); endL.forEach(l => { txt(l, M + 4, yy); yy += 4.2; }); }
+  y += hCli + 4;
+  // ---------------- resumo ----------------
+  const eqs = []; (dados.pedidos || []).forEach(p => p.sistemas.forEach(s => s.equipamentos.forEach(e => eqs.push(e))));
+  const n = (k) => eqs.filter(e => e.estado === k).length; const totEt = eqs.reduce((a, e) => a + e.etapas.length, 0), feitas = eqs.reduce((a, e) => a + e.etapas.filter(t => t.feito).length, 0); const pct = totEt ? Math.round(feitas / totEt * 100) : 0;
+  const caixas = [[String(eqs.length), 'Equipamentos', C.ink], [String(n('finalizado')), 'Finalizados', '#1F5A38'], [String(n('iniciado')), 'Em instalação', '#875C1F'], [String(n('liberado') + n('nao_liberado')), 'A iniciar', '#C0392B']];
+  const cw = (W - 3 * 3) / 4; garantir(20);
+  caixas.forEach(([num, rot, cor], i) => { const x = M + i * (cw + 3); doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(x, y, cw, 16, 2, 2, 'FD'); setF('serifB', 17, cor); txt(num, x + 4, y + 8.6); setF('sansB', 7.6, C.dim); txt(rot, x + 4, y + 13.4); });
+  y += 19; setF('sans', 8.5, C.dim); txt('Progresso geral: ' + feitas + ' de ' + totEt + ' etapas concluídas (' + pct + '%)', M, y + 2.5); doc.setFillColor('#ECEDEF'); doc.roundedRect(M, y + 4.2, W, 2.6, 1.3, 1.3, 'F'); if(pct > 0){ doc.setFillColor('#2E7D4F'); doc.roundedRect(M, y + 4.2, Math.max(2.6, W * pct / 100), 2.6, 1.3, 1.3, 'F'); } y += 11;
+  // ---------------- pedidos → sistemas → equipamentos ----------------
+  (dados.pedidos || []).forEach(p => {
+    const todos = []; p.sistemas.forEach(s => s.equipamentos.forEach(e => todos.push(e))); const fin = todos.filter(e => e.estado === 'finalizado').length;
+    garantir(14); doc.setFillColor(C.ink); doc.roundedRect(M, y, W, 8.6, 1.8, 1.8, 'F'); setF('sansB', 9.5, '#FFFFFF'); txt('Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), M + 4, y + 5.7);
+    setF('sansB', 8, '#FFFFFF'); txt(fin + ' de ' + todos.length + (todos.length === 1 ? ' finalizado' : ' finalizados'), PW - M - 4, y + 5.6, { align: 'right' }); y += 11.5;
+    p.sistemas.forEach(s => {
+      garantir(16); setF('sansB', 10, C.texto); txt(s.nome, M + 1, y + 3.4); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, y + 5.2, PW - M, y + 5.2); y += 8;
+      s.equipamentos.forEach(e => {
+        // linha das etapas: quebra em várias linhas se necessário
+        setF('sans', 8.6, C.texto); const itens = e.etapas.map(t => { const rot = limparPdf(t.nome) + (t.feito && t.em ? '  ' + fmtData(String(t.em).slice(0, 10)) : ''); return { t, rot, w: larg(rot) + 8 }; });
+        const linhas = []; let atual = [], acum = 0; itens.forEach(it => { if(acum + it.w > W - 10 && atual.length){ linhas.push(atual); atual = []; acum = 0; } atual.push(it); acum += it.w + 3; }); if(atual.length) linhas.push(atual);
+        const h = 9 + linhas.length * 5.4; garantir(h + 1.5);
+        doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha2); doc.setLineWidth(0.22); doc.roundedRect(M, y, W, h, 1.6, 1.6, 'FD');
+        setF('sansB', 9.6, C.texto); txt(e.nome, M + 4, y + 5.5); pilula(ROT[e.estado] || e.estado, PIL[e.estado] || PDF_PILULA.red, PW - M - 3.5, y + 2.2, 5);
+        let ly = y + 10.2; linhas.forEach(linha => { let x = M + 5; linha.forEach(it => {
+          if(it.t.feito){ doc.setFillColor('#2E7D4F'); doc.circle(x, ly - 1.1, 1.3, 'F'); } else { doc.setDrawColor(C.dim); doc.setLineWidth(0.3); doc.circle(x, ly - 1.1, 1.3, 'S'); }
+          setF(it.t.feito ? 'sansB' : 'sans', 8.6, it.t.feito ? C.texto : C.dim); txt(it.rot, x + 3, ly); x += it.w + 3; }); ly += 5.4; });
+        y += h + 2; });
+      y += 2; });
+    y += 3; });
+  // ---------------- rodapé com numeração ----------------
+  const total = doc.getNumberOfPages(); for(let i = 1; i <= total; i++){ doc.setPage(i); setF('sans', 7.5, C.dim); txt('Equiper Serviços · Relatório de instalação', M, PH - 8); txt('Página ' + i + ' de ' + total, PW - M, PH - 8, { align: 'right' }); }
+  return doc.output('blob');
+}
+
+
+// ====================================================================================
 // CORREÇÃO DE TEXTO COM IA (30/09) — usada no painel "Revisar observações antes de enviar" (só o Gestor).
 // A IA lê a observação do técnico, reescreve (ortografia, pontuação, clareza, tom profissional) e aponta o que o Gestor
 // deve conferir (trecho ambíguo, informação que parece faltar, contradição com os achados do relatório).
@@ -21011,6 +21113,7 @@ window.PREV_API = {
   flush,
   gerarPdfRelatorio,
   pendenciasRelatorio,
+  gerarPdfInstalacao,
   relatorioDoRascunho,
   estruturaDaUnidade,
   garantirRascunho,
@@ -22324,7 +22427,7 @@ const campoValor = (v) => (v == null || v === '') ? '' : Number(v).toFixed(2).re
 const lista = (o) => Object.values(o || {}).filter(Boolean);
 const soma = (a) => Math.round(a.reduce((n, x) => n + (Number(x) || 0), 0) * 100) / 100;
 const uid = (p) => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const quem = () => (typeof currentRole !== 'undefined' && currentRole === 'manager' && typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
+const quem = () => (typeof currentRole !== 'undefined' && currentRole === 'tech' && typeof currentTechName !== 'undefined' && currentTechName) || (typeof currentRole !== 'undefined' && currentRole === 'manager' && typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
 const avisar = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 5000); }catch(e){ try{ alert(t); }catch(_){} } };
 
 const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
@@ -22393,7 +22496,7 @@ async function garantirCarregado(){
   if(!carregando) carregando = store.load().then(() => { store.attach(() => aoMudarRemoto()); carregado = true; });
   await carregando;
 }
-function aoMudarRemoto(){ renderLista(); renderGestor(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
+function aoMudarRemoto(){ renderLista(); renderGestor(); reconciliar(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
 async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderLista(); await store.save(true); }
 
 // ---------- tela principal ----------
@@ -22885,7 +22988,7 @@ function exportarCsv(){
 // O que ele muda aqui aparece no Financeiro: o andamento de cada pedido e a "situação da obra" do registro (derivada dos pedidos).
 // Usa o MESMO armazenamento do Financeiro (nó obrasPedidos); grava só `statusPedidos` e `situacao` — nunca pedidos/parcelas.
 // =====================================================================================
-const uiG = { busca: '', empresa: '', status: '', montado: false };
+const uiG = { busca: '', empresa: '', status: '', montado: false, aba: 'pedidos', sisBusca: '', abertos: new Set() };
 function situacaoDerivada(r){
   const ativos = pedidosDe(r).filter(p => !p.cancelado); if(!ativos.length) return null; const ss = ativos.map(p => statusObraDe(r, p.id));
   if(ss.every(x => x === 'finalizado')) return 'finalizada';
@@ -22895,13 +22998,25 @@ function situacaoDerivada(r){
 function montarGestor(){
   const v = document.getElementById('tabObras'); if(!v || uiG.montado) return; uiG.montado = true;
   v.innerHTML = `<div class="tecnicos-head"><div><div class="tecnicos-title">Obras e Pedidos</div><div class="tecnicos-date mono" id="obrgContagem"></div></div></div>
+    <div class="portal-tabs" id="obrgAbas" style="padding:0 0 12px;"><button type="button" class="portal-tab active" data-obrg-aba="pedidos">Pedidos</button><button type="button" class="portal-tab" data-obrg-aba="sistemas">Sistemas<span class="obr-tab-n" id="obrgSisN"></span></button></div>
+    <div id="obrgPanePedidos">
     <div class="obrg-chips" id="obrgChips"></div>
     <div class="fin-filtros" style="padding:0 0 12px;">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrgBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrgEmpresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
       <select id="obrgStatus"><option value="">Qualquer andamento</option>${STATUS_OBRA.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
     </div>
-    <div id="obrgLista"></div>`;
+    <div id="obrgLista"></div>
+    </div>
+    <div id="obrgPaneSistemas" style="display:none;">
+      <p class="prv-hint" style="margin:0 0 10px;">Bases dos sistemas que a Equiper instala. Cada base tem os subitens (equipamentos) que o técnico vai marcando como instalados. Começam com os sistemas da manutenção preventiva e você pode criar, editar e excluir à vontade; mexer aqui <b>não altera</b> a manutenção preventiva.</p>
+      <div class="fin-filtros" style="padding:0 0 12px;">
+        <div class="search-clear-wrap" style="flex:2 1 240px; min-width:200px;"><input type="search" id="obrgSisBusca" placeholder="Buscar sistema ou subitem…" autocomplete="off"></div>
+        <button type="button" class="btn-ghost" data-obrg-sis="importar">⇪ Trazer da manutenção preventiva</button>
+        <button type="button" class="btn-primary" data-obrg-sis="novo">+ Novo sistema</button>
+      </div>
+      <div id="obrgSisLista"></div>
+    </div>`;
   const busca = document.getElementById('obrgBusca'); if(window.SUG_API) SUG_API.ligar(busca, 'clientes');
   busca.addEventListener('input', () => { uiG.busca = busca.value; renderGestor(); });
   busca.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ busca.value = ''; uiG.busca = ''; renderGestor(); } });
@@ -22910,46 +23025,347 @@ function montarGestor(){
   v.addEventListener('change', (e) => { const sel = e.target.closest('[data-obrg-st]'); if(sel){ const [rid, pid] = sel.dataset.obrgSt.split('|'); mudarAndamento(rid, pid, sel.value); } });
   v.addEventListener('click', (e) => {
     const c = e.target.closest('[data-obrg-chip]'); if(c){ uiG.status = uiG.status === c.dataset.obrgChip ? '' : c.dataset.obrgChip; document.getElementById('obrgStatus').value = uiG.status; renderGestor(); return; }
-    const a = e.target.closest('[data-obrg-ativ]'); if(a){ const [rid, pid] = a.dataset.obrgAtiv.split('|'); criarAtividade(rid, pid); }
+    const a = e.target.closest('[data-obrg-ativ]'); if(a){ const [rid, pid] = a.dataset.obrgAtiv.split('|'); criarAtividade(rid, pid); return; }
+    const ab = e.target.closest('[data-obrg-aba]'); if(ab){ mostrarAbaGestor(ab.dataset.obrgAba); return; }
+    const ss = e.target.closest('[data-obrg-sis]'); if(ss){ const k = ss.dataset.obrgSis; if(k === 'novo') abrirSistema(null); else if(k === 'importar') importarDaPreventiva(); else if(k === 'abrir') abrirSistema(ss.dataset.id); }
   });
+  v.addEventListener('click', cliqueEquip);
+  const sb = document.getElementById('obrgSisBusca'); sb.addEventListener('input', () => { uiG.sisBusca = sb.value; renderSistemas(); }); sb.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ sb.value = ''; uiG.sisBusca = ''; renderSistemas(); } });
+  v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-sis')){ e.preventDefault(); abrirSistema(e.target.dataset.id); } });
+}
+function mostrarAbaGestor(aba){
+  uiG.aba = aba; document.querySelectorAll('#obrgAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgAba === aba));
+  document.getElementById('obrgPanePedidos').style.display = aba === 'pedidos' ? '' : 'none'; document.getElementById('obrgPaneSistemas').style.display = aba === 'sistemas' ? '' : 'none';
+  if(aba === 'sistemas'){ renderSistemas(); garantirSistemas().then(renderSistemas).catch(e => console.error('sistemas: falha ao carregar', e)); } else renderGestor();
 }
 function renderGestor(){
   const v = document.getElementById('tabObras'); if(!v || !uiG.montado || v.style.display === 'none') return;
   const q = fold(uiG.busca);
-  // pedidos ativos de cada registro (cancelado fica de fora)
   const base = registros().filter(r => (!uiG.empresa || r.empresa === uiG.empresa)).map(r => ({ r, peds: pedidosDe(r).filter(p => !p.cancelado) })).filter(x => x.peds.length)
     .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
   const cont = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; }); base.forEach(x => x.peds.forEach(p => { cont[statusObraDe(x.r, p.id)]++; }));
   document.getElementById('obrgChips').innerHTML = STATUS_OBRA.map(([k, n]) => `<button type="button" class="obrg-chip obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''}" data-obrg-chip="${k}">${esc(n)} <b>${cont[k]}</b></button>`).join('');
-  const lista = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length).sort((a, b) => fold(nomeCliente(a.r)).localeCompare(fold(nomeCliente(b.r))));
-  const nPed = lista.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista.length + (lista.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
+  const lista_ = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length).sort((a, b) => fold(nomeCliente(a.r)).localeCompare(fold(nomeCliente(b.r))));
+  const nPed = lista_.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista_.length + (lista_.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
-  box.innerHTML = lista.length ? lista.map(({ r, peds }) => {
-    const todos = pedidosDe(r).filter(p => !p.cancelado); const fin = todos.filter(p => statusObraDe(r, p.id) === 'finalizado').length;
-    return `<div class="obrg-card"><div class="obrg-cli"><b>${esc(nomeCliente(r))}</b><span class="prv-chip gray">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1])}</span><span class="obrg-prog">${fin} de ${todos.length} ${todos.length === 1 ? 'finalizado' : 'finalizados'}</span></div>
-      ${peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id];
+  box.innerHTML = lista_.length ? lista_.map(({ r, peds }) => {
+    const todos = pedidosDe(r).filter(p => !p.cancelado); const fin = todos.filter(p => statusObraDe(r, p.id) === 'finalizado').length; const d = inst[r.id] || {};
+    return `<div class="obrg-card"><div class="obrg-cli"><b>${esc(nomeCliente(r))}</b><span class="prv-chip gray">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1])}</span><span class="obrg-prog">${fin} de ${todos.length} ${todos.length === 1 ? 'finalizado' : 'finalizados'}</span>
+        <span class="obrg-cli-a"><button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(r.id)}">+ Atividade da obra</button><button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(r.id)}|">⤓ Relatório PDF</button></span></div>
+      ${peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const aberto = uiG.abertos.has(key);
         return `<div class="obrg-ped"><div class="obrg-ped-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
-          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${STATUS_OBRA.map(([kk, n]) => `<option value="${kk}" ${kk === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(r.id)}|${esc(p.id)}">+ Atividade</button></div>
-          ${e && e.em ? `<div class="obr-obs obrg-quando">alterado${e.por ? ' por ' + esc(e.por) : ''} em ${esc(new Date(e.em).toLocaleDateString('pt-BR'))}</div>` : ''}</div>`; }).join('')}
+          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${STATUS_OBRA.map(([kk, n]) => `<option value="${kk}" ${kk === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${aberto ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}">Equipamentos${res.total ? ' · ' + res.finalizados + '/' + res.total : ''} ${aberto ? '▴' : '▾'}</button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
+          ${e && e.em ? `<div class="obr-obs obrg-quando">alterado${e.por ? ' por ' + esc(e.por) : ''} em ${esc(new Date(e.em).toLocaleDateString('pt-BR'))}</div>` : ''}
+          ${aberto ? painelEquip(r, p, d) : ''}</div>`; }).join('')}
     </div>`; }).join('')
     : `<div class="empty-state">${registros().length ? 'Nenhum pedido com esses filtros.' : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
 }
 async function mudarAndamento(rid, pid, novo){
   const r = porId(rid); if(!r || !STATUS_OBRA.some(x => x[0] === novo)) return; if(statusObraDe(r, pid) === novo) return;
-  r.statusPedidos = Object.assign({}, r.statusPedidos, { [pid]: { s: novo, em: new Date().toISOString(), por: quem() } });
+  const antigo = (r.statusPedidos || {})[pid] || {}; const entrada = { s: novo, em: new Date().toISOString(), por: quem() }; if(antigo.auto) entrada.auto = antigo.auto;     // a marca da automação não se perde quando o Gestor ajusta à mão
+  r.statusPedidos = Object.assign({}, r.statusPedidos, { [pid]: entrada });
   const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit;          // o Financeiro vê a situação da obra acompanhar os pedidos
   r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderGestor(); renderLista(); await store.save(true);
 }
-function criarAtividade(rid, pid){
-  const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return; const nome = nomeCliente(r);
+function abrirAgendamentoObra(r, descricao, vinculo){
+  const nome = nomeCliente(r);
   if(typeof openModal !== 'function'){ avisar('Não foi possível abrir o agendamento agora.'); return; }
   openModal();                                                                          // o mesmo "+ Agendar serviço" da Agenda, já preenchido
-  document.getElementById('f-client').value = nome; document.getElementById('f-desc').value = 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '');
+  document.getElementById('f-client').value = nome; document.getElementById('f-desc').value = descricao;
   const end = typeof findClientAddress === 'function' ? findClientAddress(nome) : ''; if(end) document.getElementById('f-addr').value = end;
+  window.__obraAtiv = vinculo;                                                          // a atividade salva leva junto a obra (e o pedido): o técnico vê o checklist
   setTimeout(() => { const d = document.getElementById('f-desc'); if(d) d.focus(); }, 60);
 }
-async function abrirGestor(){ montarGestor(); renderGestor(); try{ await garantirCarregado(); }catch(e){ console.error('obras: falha ao carregar', e); } renderGestor(); }
+function criarAtividade(rid, pid){
+  const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
+  abrirAgendamentoObra(r, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), { reg: rid, ped: pid });
+}
+function criarAtividadeObra(rid){
+  const r = porId(rid); if(!r) return; const nums = pedidosDe(r).filter(p => !p.cancelado).map(p => p.numero);
+  abrirAgendamentoObra(r, 'Instalação — ' + (nums.length ? 'pedidos ' + nums.join(', ') : 'obra'), { reg: rid, ped: null });
+}
+function vincularAtividade(svc){ const a = window.__obraAtiv; if(!a || !svc) return; svc.obraRegistroId = a.reg; if(a.ped) svc.obraPedidoId = a.ped; window.__obraAtiv = null; }
+// =====================================================================================
+// SISTEMAS (bases de instalação) — Obras e Pedidos do Gestor: lista de sistemas com seus subitens, que o Gestor cria e edita.
+// Nascem do catálogo da manutenção preventiva (cópia: editar aqui NÃO muda a preventiva). Nó novo: obraSistemas/<id>
+//   { id, nome, subitens:{id:{id,nome,ordem}}, origem:<tipo da preventiva>|null, active, criadoEm, criadoPor, atualizadoEm, atualizadoPor }
+// =====================================================================================
+// Etapas de cada equipamento: padrão Elétrica / Hidráulica / Teste (editável por equipamento, na base). O equipamento fica FINALIZADO com todas marcadas.
+const ETAPAS_PADRAO = ['Elétrica', 'Hidráulica', 'Teste'];
+const etapasPadraoMap = () => Object.fromEntries(ETAPAS_PADRAO.map((n, i) => ['e' + (i + 1), { id: 'e' + (i + 1), nome: n, ordem: i + 1 }]));
+const etapasDe = (sub) => { const l = lista(sub && sub.etapas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)); return l.length ? l : lista(etapasPadraoMap()); };   // base antiga, sem etapas: vale o padrão
+const storeSis = createEstoqueStore('obraSistemas', '⚠️ Não foi possível salvar o sistema. Verifique sua internet e tente novamente.');
+let carregadoSis = false, carregandoSis = null;
+async function garantirSistemas(){
+  if(carregadoSis) return;
+  if(!carregandoSis) carregandoSis = storeSis.load().then(() => { storeSis.attach(() => { renderSistemas(); }); carregadoSis = true; });
+  await carregandoSis;
+}
+const sistemas = () => storeSis.items.filter(x => x && x.id && x.active !== false);
+const subitensDe = (x) => lista(x.subitens).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+const sisPorId = (id) => storeSis.items.find(x => x.id === id);
+async function gravarSis(){ await storeSis.save(true); renderSistemas(); }
+function renderSistemas(){
+  const box = document.getElementById('obrgSisLista'); const v = document.getElementById('tabObras'); if(!box || !v || v.style.display === 'none' || uiG.aba !== 'sistemas') return;
+  const q = fold(uiG.sisBusca); const todos = sistemas();
+  const el = document.getElementById('obrgSisN'); if(el) el.textContent = carregadoSis ? ' (' + todos.length + ')' : '';
+  const l = todos.filter(x => !q || fold(x.nome + ' ' + subitensDe(x).map(i => i.nome).join(' ')).includes(q)).sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  if(!carregadoSis){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
+  box.innerHTML = l.length ? l.map(x => { const subs = subitensDe(x); return `<div class="obrg-sis" data-obrg-sis="abrir" data-id="${esc(x.id)}" role="button" tabindex="0">
+      <div class="obrg-sis-h"><b>${esc(x.nome)}</b><span class="prv-chip gray">${subs.length} ${subs.length === 1 ? 'subitem' : 'subitens'}</span>${x.origem ? '<span class="obr-ped-tag">da preventiva</span>' : ''}<span class="obrg-sis-ed">✎ Editar</span></div>
+      <div class="obrg-sis-subs">${subs.map(i => `<span class="obrg-sub" title="Etapas: ${esc(etapasDe(i).map(e => e.nome).join(', '))}">${esc(i.nome)}</span>`).join('')}</div></div>`; }).join('')
+    : (todos.length ? '<div class="empty-state">Nenhum sistema com esse texto.</div>'
+      : `<div class="empty-state">Nenhum sistema ainda.<br><br><button type="button" class="btn-primary" data-obrg-sis="importar">⇪ Começar com os sistemas da manutenção preventiva</button><br><br><button type="button" class="btn-ghost" data-obrg-sis="novo">+ Criar do zero</button></div>`);
+}
+async function importarDaPreventiva(){
+  await garantirSistemas();
+  const cat = (window.CAT_API && CAT_API.atual) ? CAT_API.atual() : null; if(!cat || !cat.length){ avisar('O catálogo da manutenção preventiva ainda não está disponível. Tente de novo em instantes.'); return; }
+  const jaTem = new Set(storeSis.items.filter(x => x && x.origem).map(x => x.origem)); const agora = new Date().toISOString(); let n = 0, ordemBase = 0;
+  cat.filter(t => !t.exclusivoDe && !jaTem.has(t.tipo)).forEach(t => {
+    const id = uid('sis_') + (ordemBase++); const subitens = {}; (t.itens || []).forEach((it, i) => { const sid = 'i' + (i + 1); subitens[sid] = { id: sid, nome: it.nome, ordem: i + 1, etapas: etapasPadraoMap() }; });
+    storeSis.items.push({ id, nome: t.nome, subitens, origem: t.tipo, active: true, criadoEm: agora, criadoPor: quem() }); n++;
+  });
+  if(!n){ avisar('Todos os sistemas da manutenção preventiva já foram trazidos.'); return; }
+  renderSistemas(); await storeSis.save(true); renderSistemas();
+  avisar(n + (n === 1 ? ' sistema trazido' : ' sistemas trazidos') + ' da manutenção preventiva. Os específicos de um cliente (como o Sítio Santo Antônio) não vêm; crie à mão se precisar.', 8000);
+}
+// Editor: nome + lista de subitens, cada um com a sua linha de ETAPAS (renomear, reordenar, remover, acrescentar)
+function abrirSistema(id){
+  const ex = id ? sisPorId(id) : null; if(id && !ex) return; let ov = document.getElementById('obrSisOverlay'); if(ov) ov.remove();
+  const txtEtapas = (sub) => etapasDe(sub).map(e => e.nome).join(', ');
+  let subs = ex ? subitensDe(ex).map(i => ({ id: i.id, nome: i.nome, etapas: txtEtapas(i), ant: i.etapas || null })) : [{ id: null, nome: '', etapas: ETAPAS_PADRAO.join(', '), ant: null }];
+  ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrSisOverlay'; document.body.appendChild(ov);
+  const pintar = () => {
+    ov.innerHTML = `<div class="modal" style="max-width:560px; max-height:90vh; overflow-y:auto;"><h3>${ex ? 'Editar sistema' : 'Novo sistema'}</h3>
+      ${ex && ex.origem ? '<p class="prv-hint" style="margin:0 0 8px;">Esta base veio da manutenção preventiva. Mudar aqui <b>não altera</b> a preventiva.</p>' : ''}
+      <div class="field"><label for="obrSisNome">Nome do sistema *</label><input type="text" id="obrSisNome" value="${esc(ex ? ex.nome : '')}" placeholder="Ex.: Aquecimento por boiler" autocomplete="off" maxlength="80"></div>
+      <div class="obr-resto-t">Subitens (equipamentos do sistema) e suas etapas *</div>
+      <p class="prv-hint" style="margin:0 0 8px;">As <b>etapas</b> são o que o técnico marca em cada equipamento (padrão: Elétrica, Hidráulica, Teste, separadas por vírgula). O equipamento fica <b>Finalizado</b> quando todas estiverem marcadas.</p>
+      <div id="obrSisSubs">${subs.map((x, i) => `<div class="obrg-subbloco" data-i="${i}"><div class="obrg-subrow"><input type="text" data-sub="nome" value="${esc(x.nome)}" placeholder="Ex.: Boiler, Bomba de recirculação…" maxlength="80" autocomplete="off"><button type="button" class="obr-ic" data-sub-act="up" title="Subir" ${i === 0 ? 'disabled' : ''}>↑</button><button type="button" class="obr-ic" data-sub-act="down" title="Descer" ${i === subs.length - 1 ? 'disabled' : ''}>↓</button><button type="button" class="obr-ic" data-sub-act="rm" title="Remover">✕</button></div><div class="obrg-etrow"><span>Etapas</span><input type="text" data-sub="etapas" value="${esc(x.etapas)}" placeholder="${esc(ETAPAS_PADRAO.join(', '))}" maxlength="160" autocomplete="off"></div></div>`).join('')}</div>
+      <div class="prv-linha" style="margin-top:6px;"><button type="button" class="btn-ghost oe-mini" data-sub-act="add">+ Subitem</button></div>
+      <div class="field-error" id="obrSisErr"></div>
+      <div class="modal-actions" style="justify-content:space-between;">${ex ? '<button type="button" class="btn-ghost qd-remover" id="obrSisExcluir">Excluir sistema</button>' : '<span></span>'}<span style="display:flex; gap:8px;"><button type="button" class="btn-ghost" id="obrSisCancel">Cancelar</button><button type="button" class="btn-primary" id="obrSisOk">Salvar</button></span></div></div>`;
+  };
+  const ler = () => { subs = [...ov.querySelectorAll('.obrg-subbloco')].map((b, i) => ({ id: subs[i] ? subs[i].id : null, ant: subs[i] ? subs[i].ant : null, nome: b.querySelector('[data-sub="nome"]').value, etapas: b.querySelector('[data-sub="etapas"]').value })); };
+  const etapasDoTexto = (x) => {          // "Elétrica, Hidráulica, Teste" → mapa de etapas, mantendo o id das que já existiam (pelo nome)
+    const vistos = new Set(); const nomes = String(x.etapas || '').split(/[,;\n]+/).map(t => t.trim()).filter(t => { if(!t) return false; const k = fold(t); if(vistos.has(k)) return false; vistos.add(k); return true; }).slice(0, 10);
+    const final = nomes.length ? nomes : ETAPAS_PADRAO; const ant = lista(x.ant); const usados = new Set(); let prox = 1; const mapa = {};
+    final.forEach((n, i) => { const igual = ant.find(a => fold(a.nome) === fold(n) && !usados.has(a.id)); let eid; if(igual) eid = igual.id; else { while(ant.some(a => a.id === 'e' + prox) || usados.has('e' + prox)) prox++; eid = 'e' + prox; } usados.add(eid); mapa[eid] = { id: eid, nome: n.slice(0, 40), ordem: i + 1 }; });
+    return mapa;
+  };
+  pintar();
+  ov.addEventListener('click', async (e) => {
+    if(e.target === ov || e.target.id === 'obrSisCancel'){ ov.remove(); return; }
+    const b = e.target.closest('[data-sub-act]');
+    if(b){ const nomeAtual = ov.querySelector('#obrSisNome').value; ler(); const bloco = b.closest('.obrg-subbloco'); const i = bloco ? Number(bloco.dataset.i) : -1; const a = b.dataset.subAct;
+      if(a === 'add') subs.push({ id: null, nome: '', etapas: ETAPAS_PADRAO.join(', '), ant: null }); else if(a === 'rm') subs.splice(i, 1); else if(a === 'up' && i > 0){ [subs[i - 1], subs[i]] = [subs[i], subs[i - 1]]; } else if(a === 'down' && i < subs.length - 1){ [subs[i + 1], subs[i]] = [subs[i], subs[i + 1]]; }
+      if(!subs.length) subs.push({ id: null, nome: '', etapas: ETAPAS_PADRAO.join(', '), ant: null }); pintar(); ov.querySelector('#obrSisNome').value = nomeAtual; if(a === 'add'){ const ins = ov.querySelectorAll('[data-sub="nome"]'); ins[ins.length - 1].focus(); } return; }
+    if(e.target.id === 'obrSisExcluir'){ customConfirm('Excluir o sistema "' + ex.nome + '"? Ele sai da lista de bases (manutenção preventiva e pedidos que já usam este sistema não são afetados).', async () => { ex.active = false; ex.atualizadoEm = new Date().toISOString(); ex.atualizadoPor = quem(); ov.remove(); await gravarSis(); avisar('Sistema excluído.'); }, 'Excluir'); return; }
+    if(e.target.id === 'obrSisOk'){
+      const err = (t) => { ov.querySelector('#obrSisErr').textContent = t; }; const nome = ov.querySelector('#obrSisNome').value.trim(); ler();
+      if(!nome) return err('Dê um nome ao sistema.'); if(sistemas().some(x => fold(x.nome) === fold(nome) && (!ex || x.id !== ex.id))) return err('Já existe um sistema chamado "' + nome + '".');
+      const nomes = subs.map(x => x.nome.trim()).filter(Boolean); if(!nomes.length) return err('Acrescente pelo menos um subitem.');
+      const vistos = new Set(); for(const n of nomes){ if(vistos.has(fold(n))) return err('O subitem "' + n + '" aparece duas vezes.'); vistos.add(fold(n)); }
+      const subitens = {}; let ordem = 0; subs.filter(x => x.nome.trim()).forEach(x => { ordem++; const sid = x.id || ('i' + ordem + Math.random().toString(36).slice(2, 5)); subitens[sid] = { id: sid, nome: x.nome.trim(), ordem, etapas: etapasDoTexto(x) }; });
+      const agora = new Date().toISOString(); ov.querySelector('#obrSisOk').disabled = true;
+      if(ex){ ex.nome = nome; ex.subitens = subitens; ex.atualizadoEm = agora; ex.atualizadoPor = quem(); }
+      else storeSis.items.push({ id: uid('sis_'), nome, subitens, origem: null, active: true, criadoEm: agora, criadoPor: quem() });
+      ov.remove(); await gravarSis(); avisar(ex ? 'Sistema atualizado.' : 'Sistema criado.'); }
+  });
+  setTimeout(() => { const n = ov.querySelector('#obrSisNome'); if(n && !ex) n.focus(); }, 40);
+}
+// =====================================================================================
+// INSTALAÇÃO POR PEDIDO (08/10) — equipamentos de cada pedido (escolhidos pelo Gestor a partir das bases de Sistemas) e o checklist do técnico.
+// Nó novo: obraInstalacao/<registro> (SEM valores; o técnico lê e grava aqui, nunca em obrasPedidos):
+//   { cliente, pedidos:{<ped>:{numero,descricao,sistemas:{<sis>:{id,nome,baseId,ordem,subitens:{<sub>:{id,nome,ordem,etapas:{<et>:{id,nome,ordem}}}}}}}},
+//     lib:{<sub>:{em,por}}      ← Gestor libera o equipamento para iniciar
+//     prog:{<sub>:{<et>:{em,por}}} ← técnico (ou Gestor) marca cada etapa; todas marcadas = Finalizado }
+// Estado do equipamento (derivado): Não liberado → Liberado para iniciar → Iniciado (alguma etapa) → Finalizado (todas).
+// Cada marcação grava num caminho próprio (dois técnicos nunca sobrescrevem um ao outro) e fica numa fila local se faltar sinal.
+// =====================================================================================
+const ESTADOS_SUB = [['nao_liberado', 'Não liberado'], ['liberado', 'Liberado para iniciar'], ['iniciado', 'Iniciado'], ['finalizado', 'Finalizado']];
+const rotEstado = (k) => (ESTADOS_SUB.find(x => x[0] === k) || ESTADOS_SUB[0])[1];
+const ord = (a, b) => (a.ordem || 0) - (b.ordem || 0);
+const inst = {}; let instTodosOk = false, instTodosListener = false; const instRegOk = {}, instRegListener = {};
+const comTempo = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+function setLocal(path, valor){
+  const partes = path.split('/').slice(1); let o = inst; for(let i = 0; i < partes.length - 1; i++){ if(o[partes[i]] == null || typeof o[partes[i]] !== 'object') o[partes[i]] = {}; o = o[partes[i]]; }
+  const k = partes[partes.length - 1]; if(valor === null || valor === undefined) delete o[k]; else o[k] = JSON.parse(JSON.stringify(valor));
+}
+function aplicarPendentes(prefixo){ const p = outboxLer('obraInstalacao'); Object.keys(p).filter(k => k.indexOf(prefixo) === 0).forEach(k => setLocal(k, p[k])); }
+let instFila = Promise.resolve();
+function enviarInst(updates){          // acumula na fila local (não substitui o que já estava pendente) e tenta enviar; sem sinal, fica guardado
+  const pend = outboxLer('obraInstalacao'); Object.keys(updates).forEach(k => { pend[k] = updates[k] === undefined ? null : updates[k]; }); outboxGravar('obraInstalacao', pend);
+  instFila = instFila.then(async () => {
+    const p = outboxLer('obraInstalacao'); if(!Object.keys(p).length || !rtdb) return;
+    try{ await rtdb.ref().update(p); const atual = outboxLer('obraInstalacao'); Object.keys(p).forEach(k => { if(JSON.stringify(atual[k]) === JSON.stringify(p[k])) delete atual[k]; }); outboxGravar('obraInstalacao', atual); }
+    catch(e){ console.warn('obras: marcações guardadas, serão enviadas quando houver sinal', e); }
+  });
+  return instFila;
+}
+function escreverInst(updates){ Object.keys(updates).forEach(p => setLocal(p, updates[p])); renderTudoInst(); return enviarInst(updates); }
+function renderTudoInst(){ try{ renderGestor(); }catch(e){ console.error(e); } try{ renderSlotsTec(); }catch(e){ console.error(e); } }
+async function carregarInstTodos(){
+  if(instTodosOk) return;
+  try{ const snap = await comTempo(rtdb.ref('obraInstalacao').get(), 9000); Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); }
+  catch(e){ console.warn('obras: não foi possível ler as instalações agora', e); }
+  aplicarPendentes('obraInstalacao/'); instTodosOk = true;
+  if(!instTodosListener && rtdb){ instTodosListener = true; try{ rtdb.ref('obraInstalacao').on('value', snap => { Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); aplicarPendentes('obraInstalacao/'); renderTudoInst(); reconciliar(); }); }catch(e){} }
+}
+async function carregarInstReg(regId){
+  if(instRegOk[regId]) return; let dados = null; const chave = 'obra_inst_' + regId;
+  try{ const snap = await comTempo(rtdb.ref('obraInstalacao/' + regId).get(), 8000); dados = snap.exists() ? snap.val() : {}; try{ localStorage.setItem(chave, JSON.stringify(dados)); }catch(e){} }
+  catch(e){ try{ dados = JSON.parse(localStorage.getItem(chave) || 'null'); }catch(_){} if(!dados) dados = {}; }
+  inst[regId] = dados; aplicarPendentes('obraInstalacao/' + regId + '/'); instRegOk[regId] = true;
+  if(!instRegListener[regId] && rtdb){ instRegListener[regId] = true; try{ rtdb.ref('obraInstalacao/' + regId).on('value', snap => { inst[regId] = snap.exists() ? snap.val() : {}; aplicarPendentes('obraInstalacao/' + regId + '/'); try{ localStorage.setItem(chave, JSON.stringify(inst[regId])); }catch(e){} renderTudoInst(); }); }catch(e){} }
+}
+const subsDoPedido = (d, pid) => { const p = d && d.pedidos && d.pedidos[pid]; const out = []; lista(p && p.sistemas).sort(ord).forEach(sis => lista(sis.subitens).sort(ord).forEach(sub => out.push(Object.assign({}, sub, { sisId: sis.id, sisNome: sis.nome })))); return out; };
+const feitasDe = (d, sub) => etapasDe(sub).filter(e => ((d.prog || {})[sub.id] || {})[e.id]).length;
+function estadoSub(d, sub){ const n = etapasDe(sub).length; const f = feitasDe(d, sub); if(n && f === n) return 'finalizado'; if(f > 0) return 'iniciado'; return (d.lib || {})[sub.id] ? 'liberado' : 'nao_liberado'; }
+function resumoPedido(d, pid){
+  const subs = subsDoPedido(d, pid); const est = subs.map(x => estadoSub(d, x)); const c = (k) => est.filter(e => e === k).length;
+  return { total: subs.length, finalizados: c('finalizado'), iniciados: c('iniciado'), liberados: c('liberado'), naoLiberados: c('nao_liberado'), etapasTotal: subs.reduce((n, x) => n + etapasDe(x).length, 0), etapasFeitas: subs.reduce((n, x) => n + feitasDe(d, x), 0) };
+}
+const copiarEtapas = (sub) => Object.fromEntries(etapasDe(sub).map(e => [e.id, { id: e.id, nome: e.nome, ordem: e.ordem }]));
+function htmlEquip(d, rid, sub, opt){
+  opt = opt || {}; const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const bloqueado = !opt.gestor && st === 'nao_liberado'; const desab = !!opt.somenteLeitura || bloqueado;
+  const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
+  return `<div class="obi-eq obi-eq-${st}"><div class="obi-eq-h"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-eq-a">${acoes}</span></div>
+    <div class="obi-ets">${ets.map(e => { const f = prog[e.id]; return `<button type="button" class="obi-et ${f ? 'obi-et-on' : ''}" data-obi-et="${esc(rid)}|${esc(sub.id)}|${esc(e.id)}" ${desab ? 'disabled' : ''} title="${f ? esc('Marcado' + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : 'Marcar como feito'}">${f ? '✓ ' : ''}${esc(e.nome)}</button>`; }).join('')}</div>
+    ${bloqueado ? '<div class="obi-aviso">Aguardando a liberação do Gestor para iniciar.</div>' : ''}</div>`;
+}
+function painelEquip(r, p, d){
+  const res = resumoPedido(d, p.id); const dp = (d.pedidos || {})[p.id]; const sists = lista(dp && dp.sistemas).sort(ord); const key = r.id + '|' + p.id;
+  return `<div class="obrg-eq"><div class="obrg-eq-bar"><span class="obrg-eq-res">${res.total ? `<b>${res.finalizados}</b> de ${res.total} ${res.total === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'} · ${res.etapasFeitas}/${res.etapasTotal} etapas` : 'Nenhum equipamento neste pedido ainda'}</span>
+      <span class="obrg-eq-acoes">${res.naoLiberados ? `<button type="button" class="btn-ghost oe-mini" data-obrg-libtodos="${esc(key)}">Liberar todos</button>` : ''}${res.total ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(key)}">⤓ PDF do pedido</button>` : ''}<button type="button" class="btn-primary oe-mini" data-obrg-addsis="${esc(key)}">+ Sistema</button></span></div>
+    ${sists.map(sis => `<div class="obrg-sistema"><div class="obrg-sistema-h"><b>${esc(sis.nome)}</b><span><button type="button" class="btn-ghost oe-mini" data-obrg-addeq="${esc(key)}|${esc(sis.id)}">+ Equipamento</button><button type="button" class="btn-ghost oe-mini qd-remover" data-obrg-rmsis="${esc(key)}|${esc(sis.id)}">Remover sistema</button></span></div>${lista(sis.subitens).sort(ord).map(sub => htmlEquip(d, r.id, sub, { gestor: true, key: key + '|' + sis.id })).join('')}</div>`).join('') || '<div class="prv-hint" style="margin:6px 0;">Use <b>+ Sistema</b> para escolher uma base (aquecimento, piscina, pressurização…) e os equipamentos que este pedido tem.</div>'}</div>`;
+}
+function alternarEtapa(rid, subId, etId){
+  const d = inst[rid] || {}; const atual = ((d.prog || {})[subId] || {})[etId]; const path = 'obraInstalacao/' + rid + '/prog/' + subId + '/' + etId;
+  const valor = atual ? null : { em: new Date().toISOString(), por: quem() || null };
+  const sub = subsDoPedidoTodos(d).find(x => x.id === subId); const antes = sub ? estadoSub(d, sub) : null;
+  escreverInst({ [path]: valor });
+  const depois = sub ? estadoSub(inst[rid] || {}, sub) : null; if(sub && depois === 'finalizado' && antes !== 'finalizado') avisar('Equipamento "' + sub.nome + '" finalizado.', 4500);
+  return depois;
+}
+const subsDoPedidoTodos = (d) => Object.keys((d && d.pedidos) || {}).flatMap(pid => subsDoPedido(d, pid));
+function alternarLib(rid, subId){ const d = inst[rid] || {}; const lib = (d.lib || {})[subId]; escreverInst({ ['obraInstalacao/' + rid + '/lib/' + subId]: lib ? null : { em: new Date().toISOString(), por: quem() || null } }); }
+function liberarTodos(rid, pid){ const d = inst[rid] || {}; const up = {}; subsDoPedido(d, pid).filter(x => estadoSub(d, x) === 'nao_liberado').forEach(x => { up['obraInstalacao/' + rid + '/lib/' + x.id] = { em: new Date().toISOString(), por: quem() || null }; }); if(Object.keys(up).length){ escreverInst(up); avisar('Equipamentos liberados para iniciar.'); } }
+function cliqueEquip(e){
+  const g = (attr) => e.target.closest('[' + attr + ']'); let b;
+  if((b = g('data-obrg-eq'))){ const k = b.dataset.obrgEq; if(uiG.abertos.has(k)) uiG.abertos.delete(k); else uiG.abertos.add(k); renderGestor(); carregarInstTodos().then(renderGestor).catch(() => {}); return; }
+  if((b = g('data-obrg-addsis'))){ const [rid, pid] = b.dataset.obrgAddsis.split('|'); abrirAddSistema(rid, pid); return; }
+  if((b = g('data-obrg-addeq'))){ const [rid, pid, sid] = b.dataset.obrgAddeq.split('|'); abrirAddEquip(rid, pid, sid); return; }
+  if((b = g('data-obrg-rmsis'))){ const [rid, pid, sid] = b.dataset.obrgRmsis.split('|'); const sis = (((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas; const x = sis && sis[sid]; if(!x) return;
+    customConfirm('Remover o sistema "' + x.nome + '" e os equipamentos dele deste pedido? O progresso já marcado também é apagado.', () => { const up = { ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid]: null }; lista(x.subitens).forEach(sb => { up['obraInstalacao/' + rid + '/lib/' + sb.id] = null; up['obraInstalacao/' + rid + '/prog/' + sb.id] = null; }); escreverInst(up); }, 'Remover'); return; }
+  if((b = g('data-obrg-rmsub'))){ const [rid, pid, sid, sub] = b.dataset.obrgRmsub.split('|'); const x = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; const sb = x && x.subitens && x.subitens[sub]; if(!sb) return;
+    customConfirm('Remover o equipamento "' + sb.nome + '" deste pedido? O progresso já marcado nele também é apagado.', () => { escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + sub]: null, ['obraInstalacao/' + rid + '/lib/' + sub]: null, ['obraInstalacao/' + rid + '/prog/' + sub]: null }); }, 'Remover'); return; }
+  if((b = g('data-obrg-lib'))){ const [rid, sub] = b.dataset.obrgLib.split('|'); alternarLib(rid, sub); return; }
+  if((b = g('data-obrg-libtodos'))){ const [rid, pid] = b.dataset.obrgLibtodos.split('|'); liberarTodos(rid, pid); return; }
+  if((b = g('data-obi-et'))){ if(b.disabled) return; const [rid, sub, et] = b.dataset.obiEt.split('|'); alternarEtapa(rid, sub, et); return; }
+  if((b = g('data-obrg-pdf'))){ const [rid, pid] = b.dataset.obrgPdf.split('|'); baixarRelatorioObra(rid, pid || null); return; }
+  if((b = g('data-obrg-ativobra'))){ criarAtividadeObra(b.dataset.obrgAtivobra); return; }
+}
+// ---- + Sistema: escolhe a base e os equipamentos (com quantidade) que o pedido tem ----
+async function abrirAddSistema(rid, pid){
+  await garantirSistemas(); await carregarInstTodos(); const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
+  const bases = sistemas().sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  if(!bases.length){ avisar('Antes, crie ou traga as bases na aba "Sistemas".', 7000); return; }
+  let ov = document.getElementById('obrAddSisOverlay'); if(ov) ov.remove(); ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrAddSisOverlay';
+  const subsHtml = (baseId) => { const b = bases.find(x => x.id === baseId); return subitensDe(b).map(sub => `<div class="obi-q"><span>${esc(sub.nome)}<small>${esc(etapasDe(sub).map(e => e.nome).join(' · '))}</small></span><input type="number" min="0" max="20" value="1" data-q="${esc(sub.id)}" aria-label="Quantidade de ${esc(sub.nome)}"></div>`).join(''); };
+  ov.innerHTML = `<div class="modal" style="max-width:540px; max-height:90vh; overflow-y:auto;"><h3>Adicionar sistema — Pedido ${esc(p.numero)}</h3><p class="prv-hint" style="margin:0 0 8px;">Escolha a base e, em cada equipamento, quantos o pedido tem (<b>0</b> = não tem). Os equipamentos entram como <b>Não liberados</b> até você liberar.</p>
+    <div class="field"><label for="obrAddBase">Sistema *</label><select id="obrAddBase">${bases.map(b => `<option value="${esc(b.id)}">${esc(b.nome)}</option>`).join('')}</select></div>
+    <div class="field"><label for="obrAddIdent">Identificação (opcional)</label><input type="text" id="obrAddIdent" maxlength="60" placeholder="Ex.: Piscina principal, Casa de hóspedes" autocomplete="off"></div>
+    <div class="obr-resto-t">Equipamentos</div><div id="obrAddSubs">${subsHtml(bases[0].id)}</div>
+    <div class="field" style="margin-top:8px;"><label for="obrAddExtra">Outro equipamento que não está na base (opcional)</label><input type="text" id="obrAddExtra" maxlength="80" placeholder="Nome do equipamento" autocomplete="off"></div>
+    <div class="field-error" id="obrAddErr"></div><div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrAddCancel">Cancelar</button><button type="button" class="btn-primary" id="obrAddOk">Adicionar ao pedido</button></div></div>`;
+  document.body.appendChild(ov); const $ = (id) => document.getElementById(id);
+  $('obrAddBase').addEventListener('change', (e) => { $('obrAddSubs').innerHTML = subsHtml(e.target.value); });
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrAddCancel') ov.remove(); });
+  $('obrAddOk').onclick = async () => {
+    const base = bases.find(x => x.id === $('obrAddBase').value); const rot = $('obrAddIdent').value.trim(); const subitens = {}; let ordem = 0;
+    subitensDe(base).forEach(sub => { const inp = ov.querySelector('[data-q="' + sub.id + '"]'); const q = Math.max(0, Math.min(20, parseInt(inp && inp.value, 10) || 0)); for(let k = 1; k <= q; k++){ ordem++; const sid = uid('q') + ordem; subitens[sid] = { id: sid, nome: q > 1 ? sub.nome + ' ' + k : sub.nome, ordem, etapas: copiarEtapas(sub) }; } });
+    const extra = $('obrAddExtra').value.trim(); if(extra){ ordem++; const sid = uid('q') + ordem; subitens[sid] = { id: sid, nome: extra, ordem, etapas: etapasPadraoMap() }; }
+    if(!ordem) { $('obrAddErr').textContent = 'Escolha pelo menos um equipamento (quantidade maior que zero).'; return; }
+    const d = inst[rid] || {}; const existentes = lista(((d.pedidos || {})[pid] || {}).sistemas); const sisId = uid('sx'); const pre = 'obraInstalacao/' + rid;
+    ov.remove(); uiG.abertos.add(rid + '|' + pid);
+    await escreverInst({ [pre + '/cliente']: nomeCliente(r), [pre + '/pedidos/' + pid + '/numero']: p.numero, [pre + '/pedidos/' + pid + '/descricao']: p.descricao || null, [pre + '/pedidos/' + pid + '/sistemas/' + sisId]: { id: sisId, nome: base.nome + (rot ? ' — ' + rot : ''), baseId: base.id, ordem: existentes.length + 1, subitens } });
+    avisar('Sistema adicionado ao pedido ' + p.numero + '.');
+  };
+}
+function mapaEtapasDeTexto(txt){ const vistos = new Set(); const nomes = String(txt || '').split(/[,;\n]+/).map(t => t.trim()).filter(t => { if(!t) return false; const k = fold(t); if(vistos.has(k)) return false; vistos.add(k); return true; }).slice(0, 10); const final = nomes.length ? nomes : ETAPAS_PADRAO; return Object.fromEntries(final.map((n, i) => ['e' + (i + 1), { id: 'e' + (i + 1), nome: n.slice(0, 40), ordem: i + 1 }])); }
+function abrirAddEquip(rid, pid, sid){
+  const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; if(!sis) return;
+  formRapido({ titulo: 'Novo equipamento — ' + sis.nome, campos: [ { id: 'nome', rotulo: 'Nome do equipamento', obrig: true, dica: 'Ex.: Bomba de reforço' }, { id: 'etapas', rotulo: 'Etapas (separadas por vírgula)', valor: ETAPAS_PADRAO.join(', ') } ],
+    aoSalvar: async (v) => { const novoId = uid('q') + 'x'; const ordem = 1 + Math.max(0, ...lista(sis.subitens).map(x => x.ordem || 0)); await escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + novoId]: { id: novoId, nome: v.nome, ordem, etapas: mapaEtapasDeTexto(v.etapas) } }); return null; } });
+}
+// ---- Técnico: checklist dentro do cartão da atividade ----
+const uiT = { abertos: {} };
+function pedidosDaAtividade(d, svc){
+  const ids = svc.obraPedidoId ? [svc.obraPedidoId] : Object.keys((d && d.pedidos) || {});
+  return ids.map(pid => ({ id: pid, numero: ((d.pedidos || {})[pid] || {}).numero, descricao: ((d.pedidos || {})[pid] || {}).descricao })).filter(p => subsDoPedido(d, p.id).length).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
+}
+function renderSlotTec(slot, svc){
+  const rid = svc.obraRegistroId; const d = inst[rid]; const aberto = uiT.abertos[svc.id] !== false;
+  if(!d || !instRegOk[rid]){ slot.innerHTML = '<div class="obi-tec"><div class="obi-tec-h">🏗 Instalação · carregando…</div></div>'; return; }
+  const peds = pedidosDaAtividade(d, svc); const subs = peds.flatMap(p => subsDoPedido(d, p.id));
+  if(!subs.length){ slot.innerHTML = '<div class="obi-tec"><div class="obi-tec-h">🏗 Instalação</div><div class="prv-hint" style="padding:0 12px 10px;">Ainda não há equipamentos cadastrados para esta atividade. Peça ao Gestor.</div></div>'; return; }
+  const fin = subs.filter(x => estadoSub(d, x) === 'finalizado').length; const lido = svc.status === 'concluido';
+  slot.innerHTML = `<div class="obi-tec"><button type="button" class="obi-tec-h" data-obi-tog>🏗 Instalação — ${esc(d.cliente || '')}<span class="obi-tec-n">${fin} de ${subs.length} ${subs.length === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}</span><span>${aberto ? '▴' : '▾'}</span></button>
+    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${peds.map(p => `<div class="obi-ped"><div class="obi-ped-t"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || '')}</span></div>${lista(((d.pedidos || {})[p.id] || {}).sistemas).sort(ord).map(sis => `<div class="obi-sis"><div class="obi-sis-t">${esc(sis.nome)}</div>${lista(sis.subitens).sort(ord).map(sub => htmlEquip(d, rid, sub, { somenteLeitura: lido })).join('')}</div>`).join('')}</div>`).join('')}</div>` : ''}</div>`;
+}
+function renderSlotsTec(){ document.querySelectorAll('[data-obraslot]').forEach(slot => { const svc = services.find(x => String(x.id) === slot.dataset.obraslot); if(svc) renderSlotTec(slot, svc); }); }
+function montarSlotTecnico(card, svc){
+  try{
+    if(!svc || !svc.obraRegistroId) return; const slot = document.createElement('div'); slot.className = 'obi-slot'; slot.dataset.obraslot = svc.id; card.appendChild(slot);
+    slot.addEventListener('click', (e) => {
+      if(e.target.closest('[data-obi-tog]')){ uiT.abertos[svc.id] = !(uiT.abertos[svc.id] !== false); renderSlotTec(slot, svc); return; }
+      const b = e.target.closest('[data-obi-et]'); if(!b) return; if(b.disabled){ const [rid, sub] = b.dataset.obiEt.split('|'); if(svc.status !== 'concluido') avisar('Este equipamento ainda não foi liberado pelo Gestor.', 4000); return; }
+      const [rid, sub, et] = b.dataset.obiEt.split('|'); alternarEtapa(rid, sub, et);
+    });
+    renderSlotTec(slot, svc); carregarInstReg(svc.obraRegistroId).then(() => renderSlotTec(slot, svc)).catch(e => console.error('obras: falha ao carregar a instalação', e));
+  }catch(e){ console.error('obras: falha ao montar a seção de instalação (o card segue normal)', e); }
+}
+// ---- Automação (feita pelo app do Gestor): primeira etapa marcada → pedido "Iniciado"; todos os equipamentos finalizados → pedido "Finalizado" e o Saldo vira "A cobrar" ----
+let reconciliando = false;
+async function reconciliar(){
+  if(reconciliando || typeof currentRole === 'undefined' || currentRole !== 'manager' || !carregado || !instTodosOk) return; reconciliando = true;
+  try{
+    let mudou = false; const agora = new Date().toISOString(); const avisos = []; const rank = (k) => STATUS_OBRA.findIndex(x => x[0] === k);
+    registros().forEach(r => { const d = inst[r.id]; if(!d || !d.pedidos) return;
+      pedidosDe(r).filter(p => !p.cancelado).forEach(p => {
+        const subs = subsDoPedido(d, p.id); if(!subs.length) return; const todos = subs.every(x => estadoSub(d, x) === 'finalizado'); const algum = subs.some(x => feitasDe(d, x) > 0);
+        const ent = (r.statusPedidos || {})[p.id] || {}; let alvo = null;
+        if(todos && ent.auto !== 'finalizado') alvo = 'finalizado'; else if(algum && !ent.auto && rank(statusObraDe(r, p.id)) < rank('iniciado')) alvo = 'iniciado';
+        if(!alvo) return;
+        r.statusPedidos = Object.assign({}, r.statusPedidos, { [p.id]: { s: alvo, em: agora, por: 'automático (instalação)', auto: alvo } });
+        if(alvo === 'finalizado'){ const sd = alvoSaldo(r, p.numero, null);
+          if(sd && (sd.tipo === 'Saldo' || sd.tipo === 'Parcela única') && stDe(sd) === 'nao_liberado'){ sd.status = 'a_cobrar'; sd.liberadoEm = hojeStr(); sd.liberadoAuto = true; r.parcelas = Object.assign({}, r.parcelas); avisos.push('Pedido ' + p.numero + ' (' + nomeCliente(r) + ') finalizado: o Saldo de ' + brl(sd.valor) + ' foi liberado para cobrança.'); }
+          else avisos.push('Pedido ' + p.numero + ' (' + nomeCliente(r) + ') finalizado.'); }
+        const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit; r.atualizadoEm = agora; r.atualizadoPor = 'automático (instalação)'; mudou = true;
+      }); });
+    if(mudou){ renderGestor(); renderLista(); await store.save(true); avisos.forEach(t => avisar(t, 9000)); }
+  } finally { reconciliando = false; }
+}
+async function iniciarGestor(){ try{ await garantirCarregado(); await carregarInstTodos(); reconciliar(); }catch(e){ console.error('obras: falha ao iniciar o acompanhamento', e); } }
+// ---- Relatório em PDF (para enviar ao responsável da obra; sem valores) ----
+function dadosRelatorio(r, d, pidSo){
+  const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
+  const pedidos = pedidosDe(r).filter(p => !p.cancelado && (!pidSo || p.id === pidSo)).map(p => { const dp = (d.pedidos || {})[p.id];
+    const sistemas = lista(dp && dp.sistemas).sort(ord).map(sis => ({ nome: sis.nome, equipamentos: lista(sis.subitens).sort(ord).map(sub => ({ nome: sub.nome, estado: estadoSub(d, sub), etapas: etapasDe(sub).map(e => { const f = ((d.prog || {})[sub.id] || {})[e.id]; return { nome: e.nome, feito: !!f, em: f ? f.em : null }; }) })) })).filter(x => x.equipamentos.length);
+    return { numero: p.numero, descricao: p.descricao || '', sistemas }; }).filter(p => p.sistemas.length);
+  return { cliente: nomeCliente(r), endereco: cli ? cli.address || '' : '', emitidoEm: new Date().toISOString(), pedidos };
+}
+function baixarBlob(blob, nome){ const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 4000); }
+async function baixarRelatorioObra(rid, pid){
+  await carregarInstTodos(); const r = porId(rid); const d = inst[rid]; if(!r) return;
+  const dados = dadosRelatorio(r, d || {}, pid); if(!dados.pedidos.length){ avisar('Ainda não há equipamentos cadastrados' + (pid ? ' neste pedido' : ' nesta obra') + ' para gerar o relatório.', 6000); return; }
+  if(!window.PREV_API || !PREV_API.gerarPdfInstalacao){ avisar('O gerador de PDF não está disponível agora.'); return; }
+  try{ const blob = PREV_API.gerarPdfInstalacao(dados); const dia = hojeStr(); const nome = 'Relatorio-Instalacao-' + (fold(dados.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + (pid ? '-pedido-' + String((r.pedidos[pid] || {}).numero || '').replace(/[^A-Za-z0-9]+/g, '') : '') + '-' + dia + '.pdf'; baixarBlob(blob, nome); avisar('Relatório gerado.'); }
+  catch(e){ console.error('obras: falha ao gerar o PDF', e); avisar('Não foi possível gerar o PDF agora. Tente de novo.', 6000); }
+}
+async function abrirGestor(){ montarGestor(); mostrarAbaGestor(uiG.aba); try{ await garantirCarregado(); }catch(e){ console.error('obras: falha ao carregar', e); } if(uiG.aba === 'pedidos') renderGestor(); }
 
 // ---------- navegação do Financeiro (menu lateral / abas no celular) ----------
 let secao = 'os';
@@ -22966,7 +23382,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 init();
