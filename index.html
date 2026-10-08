@@ -2032,6 +2032,52 @@
   .obi-eq-row b{ flex:1; min-width:0; overflow-wrap:anywhere; } .obi-seta{ width:14px; color:var(--text-dim); font-size:12px; } .obi-prog{ font-size:11.5px; font-weight:700; color:var(--text-dim); min-width:28px; text-align:right; }
   .obi-eq-corpo{ padding:0 2px 12px 22px; } .obi-aviso-lib{ font-size:12.5px; color:var(--danger); margin:0 0 8px; } .obi-lib{ width:100%; min-height:44px; margin-bottom:8px; }
   .obi-falta{ font-size:12px; color:var(--warning); margin-top:8px; } .obi-ok{ font-size:12px; color:var(--success-dark); margin-top:8px; font-weight:600; }
+
+  .obi-sis-btn{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; background:transparent; border:none; border-bottom:1px solid var(--line); padding:9px 2px 7px; margin:8px 0 0; cursor:pointer; font-family:inherit; min-height:40px; }
+  .obi-sis-btn .obi-sis-nome{ flex:1; min-width:0; overflow-wrap:anywhere; text-transform:uppercase; letter-spacing:.4px; font-weight:800; font-size:11.5px; color:var(--text-dim); }
+
+  /* ===== técnico no celular: leitura fácil (letras grandes, alto contraste, sistemas bem separados) ===== */
+  .obi-tec-c{ padding:12px 12px 6px; }
+  .obi-ped{ margin-bottom:22px; }
+  .obi-ped-t{ display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; background:var(--panel-2); border:1.5px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:12px; }
+  .obi-ped-t .obr-ped-num{ font-size:14px; padding:3px 10px; } .obi-ped-t .obr-ped-desc{ font-size:16.5px; font-weight:800; } .obi-ped-n{ font-size:14px; font-weight:800; color:var(--ink); }
+  /* cada sistema é um bloco com contorno e uma faixa escura de título */
+  .obi-tec .obi-sis{ border:2px solid var(--ink); border-radius:12px; overflow:hidden; margin:0 0 16px; background:var(--panel); box-shadow:0 2px 6px rgba(20,20,22,.14); }
+  .obi-tec .obi-sis-btn{ display:flex; align-items:center; gap:10px; width:100%; background:var(--ink); color:#fff; border:none; border-left:7px solid #D91A22; border-radius:0; padding:14px 14px; margin:0; min-height:56px; text-align:left; cursor:pointer; font-family:inherit; }
+  .obi-tec .obi-sis-btn .obi-seta{ color:#fff; font-size:17px; width:20px; }
+  .obi-tec .obi-sis-btn .obi-sis-nome{ flex:1; min-width:0; color:#fff; font-size:18px; font-weight:800; letter-spacing:.1px; text-transform:none; line-height:1.2; overflow-wrap:anywhere; }
+  .obi-tec .obi-sis-btn .obi-prog{ background:#fff; color:var(--ink); border-radius:999px; padding:4px 12px; font-size:15px; font-weight:800; min-width:0; }
+  /* equipamentos: letra maior, linha alta, zebra para separar */
+  .obi-tec .obi-eqt{ border-top:1px solid var(--line); padding:0 8px; } .obi-tec .obi-sis > .obi-eqt:nth-of-type(even){ background:var(--panel-2); }
+  .obi-tec .obi-eq-row{ min-height:60px; padding:12px 2px; gap:10px; font-size:17px; }
+  .obi-tec .obi-eq-row b{ font-size:17px; font-weight:800; line-height:1.25; } .obi-tec .obi-eq-row .obi-seta{ font-size:14px; width:16px; color:var(--ink); }
+  .obi-tec .obi-eq-row .obi-prog{ font-size:15px; font-weight:800; color:var(--ink); }
+  .obi-tec .obi-st{ font-size:13px; font-weight:800; padding:5px 12px; border-width:1.5px; }
+  .obi-tec .obi-eq-corpo{ padding:2px 4px 14px 26px; }
+  .obi-tec .obi-et{ min-height:48px; font-size:16px; padding:10px 20px; border-width:2px; color:var(--ink); }
+  .obi-tec .obi-et-on{ color:var(--success-dark); } .obi-tec .obi-et:disabled{ color:var(--text-dim); }
+  .obi-tec .obi-lib{ min-height:52px; font-size:16px; } .obi-tec .obi-aviso-lib{ font-size:14px; font-weight:600; } .obi-tec .obi-falta, .obi-tec .obi-ok{ font-size:14px; }
+  .obi-tec-h{ font-size:16px; } .obi-tec-n{ font-size:13px; }
+
+  /* linha do equipamento: nome grande em cima (pode quebrar em 2 linhas) e o selo da situação embaixo — nunca apertados lado a lado */
+  .obi-tec .obi-eq-row{ display:flex; align-items:center; gap:10px; min-height:64px; padding:12px 2px; }
+  .obi-tec .obi-eq-info{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:7px; }
+  .obi-tec .obi-eq-info b{ flex:none; }
+
+  .obi-tec .obi-eq-row{ box-sizing:border-box; width:100%; cursor:pointer; color:var(--ink); } .obi-tec .obi-eq-row:focus-visible{ outline:3px solid #2F6FB0; outline-offset:-3px; border-radius:8px; }
+
+  /* ===== cores dos estados do equipamento (pedido pelo Gestor) ===== */
+  .obi-st{ border-width:1.5px; }
+  .obi-st-nao_liberado{ background:#C62828; color:#fff; border-color:#8E1B1B; }                 /* vermelho forte */
+  .obi-st-liberado{ background:#F6C945; color:#3D2C00; border:1.5px solid #C99A12; }              /* amarelo */
+  .obi-st-iniciado{ background:#2F6FB0; color:#fff; border-color:#1F4F86; }                       /* azul */
+  .obi-st-finalizado{ background:#CDEBD6; color:#1B5A37; border-color:#7FBF98; }                  /* verde claro */
+  .obi-st-testado{ background:#1F7A44; color:#fff; border-color:#145A31; }                        /* verde forte */
+  /* barra lateral na linha do equipamento com a mesma cor: dá para ver o estado de longe */
+  .obi-tec .obi-eqt{ border-left:7px solid transparent; }
+  .obi-tec .obi-eqt-nao_liberado{ border-left-color:#C62828; } .obi-tec .obi-eqt-liberado{ border-left-color:#F6C945; } .obi-tec .obi-eqt-iniciado{ border-left-color:#2F6FB0; } .obi-tec .obi-eqt-finalizado{ border-left-color:#7FBF98; } .obi-tec .obi-eqt-testado{ border-left-color:#1F7A44; }
+  .obi-eq-nao_liberado{ border-left:5px solid #C62828; padding-left:8px; } .obi-eq-liberado{ border-left:5px solid #F6C945; padding-left:8px; } .obi-eq-iniciado{ border-left:5px solid #2F6FB0; padding-left:8px; } .obi-eq-finalizado{ border-left:5px solid #7FBF98; padding-left:8px; } .obi-eq-testado{ border-left:5px solid #1F7A44; padding-left:8px; }
+  .obi-tec .obi-falta{ color:#2F6FB0; }
 </style>
 </head>
 <body>
@@ -19858,8 +19904,8 @@ function gerarPdfInstalacao(dados){
   const setF = (f, tam, cor) => { doc.setFont(f === 'serifB' ? 'LibSerif' : 'LibSans', f === 'sans' ? 'normal' : 'bold'); doc.setFontSize(tam); doc.setTextColor(cor || C.texto); };
   const larg = (t) => doc.getTextWidth(t); const txt = (t, x, yy, op) => doc.text(limparPdf(t), x, yy, op);
   const cliente = limparPdf(dados.cliente || '');
-  const ROT = { nao_liberado: 'Não liberado', liberado: 'Liberado para iniciar', iniciado: 'Iniciado', finalizado: 'Finalizado' };
-  const PIL = { nao_liberado: PDF_PILULA.red, liberado: PDF_PILULA.red, iniciado: PDF_PILULA.amber, finalizado: PDF_PILULA.green };
+  const ROT = { nao_liberado: 'Não liberado', liberado: 'Liberado para iniciar', iniciado: 'Iniciado', finalizado: 'Finalizado', testado: 'Finalizado e testado' };
+  const PIL = { nao_liberado: ['#C62828', '#FFFFFF'], liberado: ['#F6C945', '#3D2C00'], iniciado: ['#2F6FB0', '#FFFFFF'], finalizado: ['#CDEBD6', '#1B5A37'], testado: ['#1F7A44', '#FFFFFF'] };   // vermelho forte, amarelo, azul, verde claro, verde forte
   function novaPagina(){ doc.addPage(); setF('sans', 7.5, C.dim); txt('Equiper · Instalação — ' + cliente, M, 10.5); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, 12.3, PW - M, 12.3); y = 17.5; }
   const garantir = (h) => { if(y + h > LIM) novaPagina(); };
   function pilula(texto, estilo, xDir, yTopo, h){ const [bg, fg] = estilo; setF('sansB', 8, fg); const w = larg(limparPdf(texto)) + 5; doc.setFillColor(bg); doc.roundedRect(xDir - w, yTopo, w, h, h / 2, h / 2, 'F'); txt(texto, xDir - w / 2, yTopo + h / 2 + 1.05, { align: 'center' }); return w; }
@@ -19880,13 +19926,13 @@ function gerarPdfInstalacao(dados){
   // ---------------- resumo ----------------
   const eqs = []; (dados.pedidos || []).forEach(p => p.sistemas.forEach(s => s.equipamentos.forEach(e => eqs.push(e))));
   const n = (k) => eqs.filter(e => e.estado === k).length; const totEt = eqs.reduce((a, e) => a + e.etapas.length, 0), feitas = eqs.reduce((a, e) => a + e.etapas.filter(t => t.feito).length, 0); const pct = totEt ? Math.round(feitas / totEt * 100) : 0;
-  const caixas = [[String(eqs.length), 'Equipamentos', C.ink], [String(n('finalizado')), 'Finalizados', '#1F5A38'], [String(n('iniciado')), 'Em instalação', '#875C1F'], [String(n('liberado') + n('nao_liberado')), 'A iniciar', '#C0392B']];
-  const cw = (W - 3 * 3) / 4; garantir(20);
-  caixas.forEach(([num, rot, cor], i) => { const x = M + i * (cw + 3); doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(x, y, cw, 16, 2, 2, 'FD'); setF('serifB', 17, cor); txt(num, x + 4, y + 8.6); setF('sansB', 7.6, C.dim); txt(rot, x + 4, y + 13.4); });
+  const caixas = [[String(eqs.length), 'Equipamentos', C.ink], [String(n('testado')), 'Finalizados e testados', '#1F7A44'], [String(n('finalizado')), 'Finalizados (a testar)', '#3E9A62'], [String(n('iniciado')), 'Iniciados', '#2F6FB0'], [String(n('liberado') + n('nao_liberado')), 'A iniciar', '#C62828']];
+  const cw = (W - 4 * 2.5) / 5; garantir(20);
+  caixas.forEach(([num, rot, cor], i) => { const x = M + i * (cw + 2.5); doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(x, y, cw, 16, 2, 2, 'FD'); setF('serifB', 17, cor); txt(num, x + 3.2, y + 8.6); setF('sansB', 6.6, C.dim); txt(rot, x + 3.2, y + 13.4); });
   y += 19; setF('sans', 8.5, C.dim); txt('Progresso geral: ' + feitas + ' de ' + totEt + ' etapas concluídas (' + pct + '%)', M, y + 2.5); doc.setFillColor('#ECEDEF'); doc.roundedRect(M, y + 4.2, W, 2.6, 1.3, 1.3, 'F'); if(pct > 0){ doc.setFillColor('#2E7D4F'); doc.roundedRect(M, y + 4.2, Math.max(2.6, W * pct / 100), 2.6, 1.3, 1.3, 'F'); } y += 11;
   // ---------------- pedidos → sistemas → equipamentos ----------------
   (dados.pedidos || []).forEach(p => {
-    const todos = []; p.sistemas.forEach(s => s.equipamentos.forEach(e => todos.push(e))); const fin = todos.filter(e => e.estado === 'finalizado').length;
+    const todos = []; p.sistemas.forEach(s => s.equipamentos.forEach(e => todos.push(e))); const fin = todos.filter(e => e.estado === 'finalizado' || e.estado === 'testado').length;
     garantir(14); doc.setFillColor(C.ink); doc.roundedRect(M, y, W, 8.6, 1.8, 1.8, 'F'); setF('sansB', 9.5, '#FFFFFF'); txt('Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), M + 4, y + 5.7);
     setF('sansB', 8, '#FFFFFF'); txt(fin + ' de ' + todos.length + (todos.length === 1 ? ' finalizado' : ' finalizados'), PW - M - 4, y + 5.6, { align: 'right' }); y += 11.5;
     p.sistemas.forEach(s => {
@@ -23216,7 +23262,7 @@ function abrirSistema(id){
 // Estado do equipamento (derivado): Não liberado → Liberado para iniciar → Iniciado (alguma etapa) → Finalizado (todas).
 // Cada marcação grava num caminho próprio (dois técnicos nunca sobrescrevem um ao outro) e fica numa fila local se faltar sinal.
 // =====================================================================================
-const ESTADOS_SUB = [['nao_liberado', 'Não liberado'], ['liberado', 'Liberado para iniciar'], ['iniciado', 'Iniciado'], ['finalizado', 'Finalizado']];
+const ESTADOS_SUB = [['nao_liberado', 'Não liberado'], ['liberado', 'Liberado para iniciar'], ['iniciado', 'Iniciado'], ['finalizado', 'Finalizado'], ['testado', 'Finalizado e testado']];
 const rotEstado = (k) => (ESTADOS_SUB.find(x => x[0] === k) || ESTADOS_SUB[0])[1];
 const ord = (a, b) => (a.ordem || 0) - (b.ordem || 0);
 const inst = {}; let instTodosOk = false, instTodosListener = false; const instRegOk = {}, instRegListener = {};
@@ -23254,10 +23300,18 @@ async function carregarInstReg(regId){
 }
 const subsDoPedido = (d, pid) => { const p = d && d.pedidos && d.pedidos[pid]; const out = []; lista(p && p.sistemas).sort(ord).forEach(sis => lista(sis.subitens).sort(ord).forEach(sub => out.push(Object.assign({}, sub, { sisId: sis.id, sisNome: sis.nome })))); return out; };
 const feitasDe = (d, sub) => etapasDe(sub).filter(e => ((d.prog || {})[sub.id] || {})[e.id]).length;
-function estadoSub(d, sub){ const n = etapasDe(sub).length; const f = feitasDe(d, sub); if(n && f === n) return 'finalizado'; if(f > 0) return 'iniciado'; return (d.lib || {})[sub.id] ? 'liberado' : 'nao_liberado'; }
+const ehTeste = (e) => fold(e.nome) === 'teste';           // a etapa "Teste" (sem acento/maiúscula) é a que leva de "Finalizado" a "Finalizado e testado"
+// Estado do equipamento: Não liberado → Liberado para iniciar → Iniciado → Finalizado (as etapas de instalação feitas, ex. Elétrica e Hidráulica; falta o Teste) → Finalizado e testado (todas, incluindo o Teste)
+function estadoSub(d, sub){
+  const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const feitas = ets.filter(e => prog[e.id]).length;
+  if(ets.length && feitas === ets.length) return 'testado';
+  const instal = ets.filter(e => !ehTeste(e)); if(feitas > 0 && instal.length && instal.every(e => prog[e.id])) return 'finalizado';
+  if(feitas > 0) return 'iniciado'; return (d.lib || {})[sub.id] ? 'liberado' : 'nao_liberado';
+}
+const instalado = (st) => st === 'finalizado' || st === 'testado';
 function resumoPedido(d, pid){
   const subs = subsDoPedido(d, pid); const est = subs.map(x => estadoSub(d, x)); const c = (k) => est.filter(e => e === k).length;
-  return { total: subs.length, finalizados: c('finalizado'), iniciados: c('iniciado'), liberados: c('liberado'), naoLiberados: c('nao_liberado'), etapasTotal: subs.reduce((n, x) => n + etapasDe(x).length, 0), etapasFeitas: subs.reduce((n, x) => n + feitasDe(d, x), 0) };
+  return { total: subs.length, finalizados: est.filter(instalado).length, testados: c('testado'), iniciados: c('iniciado'), liberados: c('liberado'), naoLiberados: c('nao_liberado'), etapasTotal: subs.reduce((n, x) => n + etapasDe(x).length, 0), etapasFeitas: subs.reduce((n, x) => n + feitasDe(d, x), 0) };
 }
 const copiarEtapas = (sub) => Object.fromEntries(etapasDe(sub).map(e => [e.id, { id: e.id, nome: e.nome, ordem: e.ordem }]));
 function htmlEquip(d, rid, sub, opt){
@@ -23269,7 +23323,7 @@ function htmlEquip(d, rid, sub, opt){
 }
 function painelEquip(r, p, d){
   const res = resumoPedido(d, p.id); const dp = (d.pedidos || {})[p.id]; const sists = lista(dp && dp.sistemas).sort(ord); const key = r.id + '|' + p.id;
-  return `<div class="obrg-eq"><div class="obrg-eq-bar"><span class="obrg-eq-res">${res.total ? `<b>${res.finalizados}</b> de ${res.total} ${res.total === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'} · ${res.etapasFeitas}/${res.etapasTotal} etapas` : 'Nenhum equipamento neste pedido ainda'}</span>
+  return `<div class="obrg-eq"><div class="obrg-eq-bar"><span class="obrg-eq-res">${res.total ? `<b>${res.finalizados}</b> de ${res.total} ${res.total === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}${res.testados ? ' · <b>' + res.testados + '</b> ' + (res.testados === 1 ? 'testado' : 'testados') : ''} · ${res.etapasFeitas}/${res.etapasTotal} etapas` : 'Nenhum equipamento neste pedido ainda'}</span>
       <span class="obrg-eq-acoes">${res.naoLiberados ? `<button type="button" class="btn-ghost oe-mini" data-obrg-libtodos="${esc(key)}">Liberar todos</button>` : ''}${res.total ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(key)}">⤓ PDF do pedido</button>` : ''}<button type="button" class="btn-primary oe-mini" data-obrg-addsis="${esc(key)}">+ Sistema</button></span></div>
     ${sists.map(sis => `<div class="obrg-sistema"><div class="obrg-sistema-h"><b>${esc(sis.nome)}</b><span><button type="button" class="btn-ghost oe-mini" data-obrg-addeq="${esc(key)}|${esc(sis.id)}">+ Equipamento</button><button type="button" class="btn-ghost oe-mini qd-remover" data-obrg-rmsis="${esc(key)}|${esc(sis.id)}">Remover sistema</button></span></div>${lista(sis.subitens).sort(ord).map(sub => htmlEquip(d, r.id, sub, { gestor: true, key: key + '|' + sis.id })).join('')}</div>`).join('') || '<div class="prv-hint" style="margin:6px 0;">Use <b>+ Sistema</b> para escolher uma base (aquecimento, piscina, pressurização…) e os equipamentos que este pedido tem.</div>'}</div>`;
 }
@@ -23278,7 +23332,8 @@ function alternarEtapa(rid, subId, etId){
   const valor = atual ? null : { em: new Date().toISOString(), por: quem() || null };
   const sub = subsDoPedidoTodos(d).find(x => x.id === subId); const antes = sub ? estadoSub(d, sub) : null;
   escreverInst({ [path]: valor });
-  const depois = sub ? estadoSub(inst[rid] || {}, sub) : null; if(sub && depois === 'finalizado' && antes !== 'finalizado') avisar('Equipamento "' + sub.nome + '" finalizado.', 4500);
+  const depois = sub ? estadoSub(inst[rid] || {}, sub) : null;
+  if(sub && depois === 'testado' && antes !== 'testado') avisar('Equipamento "' + sub.nome + '" finalizado e testado.', 4500); else if(sub && depois === 'finalizado' && antes !== 'finalizado') avisar('Equipamento "' + sub.nome + '" finalizado. Falta marcar o teste.', 4500);
   return depois;
 }
 const subsDoPedidoTodos = (d) => Object.keys((d && d.pedidos) || {}).flatMap(pid => subsDoPedido(d, pid));
@@ -23334,7 +23389,7 @@ function abrirAddEquip(rid, pid, sid){
     aoSalvar: async (v) => { const novoId = uid('q') + 'x'; const ordem = 1 + Math.max(0, ...lista(sis.subitens).map(x => x.ordem || 0)); await escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + novoId]: { id: novoId, nome: v.nome, ordem, etapas: mapaEtapasDeTexto(v.etapas) } }); return null; } });
 }
 // ---- Técnico: lista de equipamentos dentro do cartão da atividade (toca no equipamento para abrir as etapas) ----
-const uiT = { abertos: {}, eq: {} };
+const uiT = { abertos: {}, eq: {}, sis: {} };
 const ordEmpresa = (e) => { const i = EMPRESAS.findIndex(x => x[0] === e); return i < 0 ? 9 : i; };
 function regsDaAtividade(svc){
   const ids = new Set([svc.obraRegistroId].concat(lista(svc.obraRegistroIds)).filter(Boolean));
@@ -23349,21 +23404,22 @@ function blocosAtividade(svc){
 function htmlEquipTec(d, rid, sub, lido){
   const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const feitas = ets.filter(e => prog[e.id]).length; const aberto = !!uiT.eq[sub.id];
   const falta = ets.filter(e => !prog[e.id]).map(e => e.nome); const travado = st === 'nao_liberado' || lido;
-  return `<div class="obi-eqt obi-eqt-${st}"><button type="button" class="obi-eq-row" data-obi-eq="${esc(sub.id)}" aria-expanded="${aberto}"><span class="obi-seta">${aberto ? '▾' : '▸'}</span><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-prog">${feitas}/${ets.length}</span></button>
+  return `<div class="obi-eqt obi-eqt-${st}"><div class="obi-eq-row" role="button" tabindex="0" data-obi-eq="${esc(sub.id)}" aria-expanded="${aberto}"><span class="obi-seta">${aberto ? '▾' : '▸'}</span><span class="obi-eq-info"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span></span><span class="obi-prog">${feitas}/${ets.length}</span></div>
     ${aberto ? `<div class="obi-eq-corpo">
       ${st === 'nao_liberado' && !lido ? `<div class="obi-aviso-lib">Ainda não foi liberado. Quando puder começar, toque em liberar.</div><button type="button" class="btn-primary obi-lib" data-obi-lib="${esc(rid)}|${esc(sub.id)}">Liberar para iniciar</button>` : ''}
       <div class="obi-ets">${ets.map(e => { const f = prog[e.id]; return `<button type="button" class="obi-et ${f ? 'obi-et-on' : ''}" data-obi-et="${esc(rid)}|${esc(sub.id)}|${esc(e.id)}" ${travado ? 'disabled' : ''} title="${f ? esc('Marcado' + (f.por ? ' por ' + f.por : '') + (f.em ? ' em ' + new Date(f.em).toLocaleDateString('pt-BR') : '')) : 'Marcar como feito'}">${f ? '✓ ' : ''}${esc(e.nome)}</button>`; }).join('')}</div>
-      ${st === 'iniciado' ? `<div class="obi-falta">Para finalizar falta marcar: <b>${esc(falta.join(', '))}</b></div>` : ''}${st === 'finalizado' ? '<div class="obi-ok">Todas as etapas feitas, inclusive o teste. Equipamento finalizado.</div>' : ''}</div>` : ''}</div>`;
+      ${st === 'iniciado' ? `<div class="obi-falta">Falta marcar: <b>${esc(falta.join(', '))}</b></div>` : ''}${st === 'finalizado' ? `<div class="obi-falta">Instalação finalizada. Falta marcar o <b>${esc(falta.join(', '))}</b> para ficar finalizado e testado.</div>` : ''}${st === 'testado' ? '<div class="obi-ok">Todas as etapas feitas, inclusive o teste. Finalizado e testado.</div>' : ''}</div>` : ''}</div>`;
 }
 function renderSlotTec(slot, svc){
   const aberto = uiT.abertos[svc.id] !== false;
   if(!instTodosOk){ slot.innerHTML = '<div class="obi-tec"><div class="obi-tec-h">🏗 Instalação · carregando…</div></div>'; return; }
   const blocos = blocosAtividade(svc); const subs = blocos.flatMap(b => subsDoPedido(b.d, b.pid).map(x => ({ rid: b.rid, d: b.d, sub: x })));
   if(!subs.length){ slot.innerHTML = '<div class="obi-tec"><div class="obi-tec-h">🏗 Instalação</div><div class="prv-hint" style="padding:0 12px 10px;">Ainda não há equipamentos cadastrados para esta atividade. Peça ao Gestor.</div></div>'; return; }
-  const fin = subs.filter(x => estadoSub(x.d, x.sub) === 'finalizado').length; const lido = svc.status === 'concluido'; const duas = new Set(blocos.map(b => b.empresa).filter(Boolean)).size > 1;
+  const fin = subs.filter(x => instalado(estadoSub(x.d, x.sub))).length; const nTest = subs.filter(x => estadoSub(x.d, x.sub) === 'testado').length; const lido = svc.status === 'concluido'; const duas = new Set(blocos.map(b => b.empresa).filter(Boolean)).size > 1;
   const nomeObra = (blocos[0].d.cliente) || svc.client || '';
-  slot.innerHTML = `<div class="obi-tec"><button type="button" class="obi-tec-h" data-obi-tog>🏗 Instalação — ${esc(nomeObra)}<span class="obi-tec-n">${fin} de ${subs.length} ${subs.length === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}</span><span>${aberto ? '▴' : '▾'}</span></button>
-    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${blocos.map(b => { const res = resumoPedido(b.d, b.pid); return `<div class="obi-ped"><div class="obi-ped-t">${duas && b.empresa ? `<span class="obr-emp obr-emp-${esc(b.empresa)}">${esc((EMPRESAS.find(e => e[0] === b.empresa) || [0, ''])[1])}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(b.numero)}</span><span class="obr-ped-desc">${esc(b.descricao || '')}</span><span class="obi-ped-n">${res.finalizados}/${res.total}</span></div>${lista(((b.d.pedidos || {})[b.pid] || {}).sistemas).sort(ord).map(sis => `<div class="obi-sis"><div class="obi-sis-t">${esc(sis.nome)}</div>${lista(sis.subitens).sort(ord).map(sub => htmlEquipTec(b.d, b.rid, sub, lido)).join('')}</div>`).join('')}</div>`; }).join('')}</div>` : ''}</div>`;
+  slot.innerHTML = `<div class="obi-tec"><button type="button" class="obi-tec-h" data-obi-tog>🏗 Instalação — ${esc(nomeObra)}<span class="obi-tec-n">${fin} de ${subs.length} ${subs.length === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}${nTest ? ' · ' + nTest + (nTest === 1 ? ' testado' : ' testados') : ''}</span><span>${aberto ? '▴' : '▾'}</span></button>
+    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${blocos.map(b => { const res = resumoPedido(b.d, b.pid); return `<div class="obi-ped"><div class="obi-ped-t">${duas && b.empresa ? `<span class="obr-emp obr-emp-${esc(b.empresa)}">${esc((EMPRESAS.find(e => e[0] === b.empresa) || [0, ''])[1])}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(b.numero)}</span><span class="obr-ped-desc">${esc(b.descricao || '')}</span><span class="obi-ped-n">${res.finalizados}/${res.total}</span></div>${lista(((b.d.pedidos || {})[b.pid] || {}).sistemas).sort(ord).map(sis => { const sk = b.rid + '|' + sis.id; const eqs = lista(sis.subitens).sort(ord); const abertoS = uiT.sis[sk] !== false; const finS = eqs.filter(x => instalado(estadoSub(b.d, x))).length;
+          return `<div class="obi-sis"><button type="button" class="obi-sis-t obi-sis-btn" data-obi-sis="${esc(sk)}" aria-expanded="${abertoS}"><span class="obi-seta">${abertoS ? '▾' : '▸'}</span><span class="obi-sis-nome">${esc(sis.nome)}</span><span class="obi-prog">${finS}/${eqs.length}</span></button>${abertoS ? eqs.map(sub => htmlEquipTec(b.d, b.rid, sub, lido)).join('') : ''}</div>`; }).join('')}</div>`; }).join('')}</div>` : ''}</div>`;
 }
 function renderSlotsTec(){ document.querySelectorAll('[data-obraslot]').forEach(slot => { const svc = services.find(x => String(x.id) === slot.dataset.obraslot); if(svc) renderSlotTec(slot, svc); }); }
 function montarSlotTecnico(card, svc){
@@ -23371,11 +23427,13 @@ function montarSlotTecnico(card, svc){
     if(!svc || !svc.obraRegistroId) return; const slot = document.createElement('div'); slot.className = 'obi-slot'; slot.dataset.obraslot = svc.id; card.appendChild(slot);
     slot.addEventListener('click', (e) => {
       if(e.target.closest('[data-obi-tog]')){ uiT.abertos[svc.id] = !(uiT.abertos[svc.id] !== false); renderSlotTec(slot, svc); return; }
+      const sisB = e.target.closest('[data-obi-sis]'); if(sisB){ const k = sisB.dataset.obiSis; uiT.sis[k] = !(uiT.sis[k] !== false); renderSlotTec(slot, svc); return; }          // recolher/expandir o sistema
       const eq = e.target.closest('[data-obi-eq]'); if(eq){ const k = eq.dataset.obiEq; uiT.eq[k] = !uiT.eq[k]; renderSlotTec(slot, svc); return; }
       const lib = e.target.closest('[data-obi-lib]'); if(lib){ if(svc.status === 'concluido') return; const [rid, sub] = lib.dataset.obiLib.split('|'); const d = inst[rid] || {}; if(!((d.lib || {})[sub])) alternarLib(rid, sub); return; }       // o técnico libera (não liberado → liberado para iniciar)
       const b = e.target.closest('[data-obi-et]'); if(!b) return; if(b.disabled){ if(svc.status !== 'concluido') avisar('Libere o equipamento para iniciar antes de marcar as etapas.', 4000); return; }
       const [rid, sub, et] = b.dataset.obiEt.split('|'); alternarEtapa(rid, sub, et);
     });
+    slot.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obi-eq-row')){ e.preventDefault(); e.target.click(); } });
     renderSlotTec(slot, svc); carregarInstTodos().then(() => renderSlotTec(slot, svc)).catch(e => console.error('obras: falha ao carregar a instalação', e));
   }catch(e){ console.error('obras: falha ao montar a seção de instalação (o card segue normal)', e); }
 }
@@ -23387,9 +23445,11 @@ async function reconciliar(){
     let mudou = false; const agora = new Date().toISOString(); const avisos = []; const rank = (k) => STATUS_OBRA.findIndex(x => x[0] === k);
     registros().forEach(r => { const d = inst[r.id]; if(!d || !d.pedidos) return;
       pedidosDe(r).filter(p => !p.cancelado).forEach(p => {
-        const subs = subsDoPedido(d, p.id); if(!subs.length) return; const todos = subs.every(x => estadoSub(d, x) === 'finalizado'); const algum = subs.some(x => feitasDe(d, x) > 0);
-        const ent = (r.statusPedidos || {})[p.id] || {}; let alvo = null;
-        if(todos && ent.auto !== 'finalizado') alvo = 'finalizado'; else if(algum && !ent.auto && rank(statusObraDe(r, p.id)) < rank('iniciado')) alvo = 'iniciado';
+        const subs = subsDoPedido(d, p.id); if(!subs.length) return; const est = subs.map(x => estadoSub(d, x)); const testados = est.every(e => e === 'testado'); const instalados = est.every(instalado); const algum = subs.some(x => feitasDe(d, x) > 0);
+        const ent = (r.statusPedidos || {})[p.id] || {}; const atual = statusObraDe(r, p.id); let alvo = null;
+        if(testados && ent.auto !== 'finalizado') alvo = 'finalizado';                                                                                   // tudo instalado E testado → Finalizado + Saldo a cobrar
+        else if(instalados && !testados && ent.auto !== 'aguardando_testes' && ent.auto !== 'finalizado' && rank(atual) < rank('aguardando_testes')) alvo = 'aguardando_testes';   // tudo instalado, faltam testes
+        else if(algum && !ent.auto && rank(atual) < rank('iniciado')) alvo = 'iniciado';
         if(!alvo) return;
         r.statusPedidos = Object.assign({}, r.statusPedidos, { [p.id]: { s: alvo, em: agora, por: 'automático (instalação)', auto: alvo } });
         if(alvo === 'finalizado'){ const sd = alvoSaldo(r, p.numero, null);
