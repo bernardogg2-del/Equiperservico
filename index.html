@@ -1973,14 +1973,16 @@
 
   /* ===== andamento do pedido (cores) ===== */
   .obr-sp{ display:inline-block; width:auto; border-radius:999px; padding:2px 9px; font-weight:700; font-size:11px; border:1px solid var(--line); background:var(--panel-2); color:var(--text-dim); min-height:0; white-space:nowrap; }
-  .obr-sp-aguardando_compra{ background:var(--warning-soft); color:var(--warning); border-color:var(--warning-line); }
-  .obr-sp-liberado_entrega{ background:rgba(47,111,176,.10); color:#2F6FB0; border-color:rgba(47,111,176,.30); }
-  .obr-sp-entregue{ background:rgba(47,111,176,.20); color:#1F4F86; border-color:rgba(47,111,176,.45); }
-  .obr-sp-aguardando_inicio{ background:var(--panel-2); color:var(--ink); border-color:var(--ink); border-style:dashed; }
-  .obr-sp-iniciado{ background:rgba(46,125,79,.12); color:var(--success-dark); border-color:rgba(46,125,79,.35); }
-  .obr-sp-aguardando_testes{ background:rgba(135,92,31,.22); color:#6B4515; border-color:var(--warning-line); }
-  .obr-sp-finalizado{ background:var(--success-soft); color:var(--success-dark); border-color:var(--success); }
+  /* Etapa INTERNA (compras): aguardando compra = vermelho · liberado para entrega = amarelo · entregue = verde
+     Etapa OBRA: aguardando liberação para início = vermelho · iniciado = azul · aguardando testes finais = verde claro · finalizado = verde escuro */
+  .obr-sp-aguardando_compra, .obr-sp-aguardando_inicio{ background:#C62828; color:#fff; border-color:#8E1B1B; }
+  .obr-sp-liberado_entrega{ background:#F6C945; color:#3D2C00; border-color:#C99A12; }
+  .obr-sp-entregue{ background:#4CAF73; color:#08341C; border-color:#2E8452; }
+  .obr-sp-iniciado{ background:#2F6FB0; color:#fff; border-color:#1F4F86; }
+  .obr-sp-aguardando_testes{ background:#CDEBD6; color:#1B5A37; border-color:#7FBF98; }
+  .obr-sp-finalizado{ background:#17653A; color:#fff; border-color:#0E4527; }
   select.obr-sp{ padding:4px 8px; font-size:12px; cursor:pointer; max-width:100%; }
+  select.obr-sp option, select.obr-sp optgroup{ background:#fff; color:#17181A; }
   /* ===== aba Obras e Pedidos do Gestor ===== */
   .obrg-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px; }
   .obrg-chip{ cursor:pointer; font-family:inherit; } .obrg-chip b{ margin-left:4px; } .obrg-chip-on{ box-shadow:0 0 0 2px var(--ink); }
@@ -2118,7 +2120,7 @@
   .obrg-seta{ width:14px; color:var(--text-dim); font-size:12px; flex:none; } .obrg-nome{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1 1 200px; min-width:0; } .obrg-nome b{ font-size:15px; overflow-wrap:anywhere; }
   .obrg-princ{ display:flex; align-items:center; gap:6px; flex:0 1 auto; } .obrg-princ .obr-sp{ font-size:11.5px; } .obrg-outros{ font-size:11px; font-weight:800; color:var(--text-dim); background:var(--panel-2); border:1px solid var(--line); border-radius:999px; padding:1px 7px; }
   .obrg-pontos{ display:flex; align-items:center; gap:3px; flex-wrap:wrap; max-width:150px; } .obrg-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; border:1px solid rgba(0,0,0,.18); } .obrg-mais{ font-size:10px; color:var(--text-dim); font-weight:700; }
-  .obrg-dot-aguardando_compra{ background:#E0B04A; } .obrg-dot-liberado_entrega{ background:#7FA9D6; } .obrg-dot-entregue{ background:#2F6FB0; } .obrg-dot-aguardando_inicio{ background:#fff; border-color:#17181A; } .obrg-dot-iniciado{ background:#6BB886; } .obrg-dot-aguardando_testes{ background:#A06A1F; } .obrg-dot-finalizado{ background:#1F7A44; }
+  .obrg-dot-aguardando_compra, .obrg-dot-aguardando_inicio{ background:#C62828; } .obrg-dot-liberado_entrega{ background:#F6C945; } .obrg-dot-entregue{ background:#4CAF73; } .obrg-dot-iniciado{ background:#2F6FB0; } .obrg-dot-aguardando_testes{ background:#CDEBD6; border-color:#7FBF98; } .obrg-dot-finalizado{ background:#17653A; }
   .obrg-resumo .obrg-prog{ margin-left:0; font-weight:800; color:var(--ink); min-width:34px; text-align:right; }
   .obrg-detalhe{ border-top:1px solid var(--line); padding:6px 14px 8px; background:var(--panel); } .obrg-detalhe .obrg-cli{ margin-bottom:2px; }
   @media (max-width:640px){ .obrg-painel{ grid-template-columns:repeat(2, 1fr); } .obrg-pontos{ max-width:none; } .obrg-resumo{ gap:6px 8px; } .obrg-princ{ flex:1 1 100%; padding-left:24px; } }
@@ -2137,6 +2139,11 @@
   .obi-seg-nao.obi-seg-on{ background:#E8E9EB; color:var(--ink); } .obi-seg-sim.obi-seg-on{ background:#1F7A44; color:#fff; }
   .obi-seg-b[aria-disabled="true"]{ opacity:.45; cursor:not-allowed; }
   @media (max-width:380px){ .obi-seg{ width:100%; } .obi-seg-b{ flex:1; padding:8px 6px; } }
+
+  /* painel em duas fases (etapa interna / etapa obra) */
+  .obrg-painel{ display:block; } .obrg-fase{ margin:0 0 12px; } .obrg-fase-t{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); margin:0 0 6px; display:flex; align-items:center; gap:8px; } .obrg-fase-t::after{ content:''; flex:1; height:1px; background:var(--line); }
+  .obrg-fase-c{ display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:8px; }
+  .obrg-pc small{ opacity:.9; } .obrg-pc-zero{ opacity:.45; }
 </style>
 </head>
 <body>
@@ -22573,6 +22580,11 @@ const stDe = (p) => p.status || (p.pago ? 'recebido' : 'a_cobrar');          // 
 // Andamento de cada PEDIDO (quem muda é o Gestor, na aba "Obras e Pedidos" dele; o Financeiro só vê). Fica em `statusPedidos`, um campo à parte do registro,
 // para o Gestor nunca regravar pedidos/parcelas do Financeiro (e vice-versa).
 const STATUS_OBRA = [['aguardando_compra', 'Aguardando compra de equipamentos'], ['liberado_entrega', 'Liberado para entrega'], ['entregue', 'Entregue'], ['aguardando_inicio', 'Aguardando liberação para início'], ['iniciado', 'Iniciado'], ['aguardando_testes', 'Aguardando testes finais'], ['finalizado', 'Finalizado']];
+// Duas fases: a INTERNA (nossa: compras e entrega do equipamento) e a da OBRA (instalação no cliente)
+const FASE_INTERNA = ['aguardando_compra', 'liberado_entrega', 'entregue'];
+const FASES_OBRA = [['interna', 'Etapa interna · compras'], ['obra', 'Etapa obra']];
+const faseDe = (k) => FASE_INTERNA.includes(k) ? 'interna' : 'obra';
+const opcoesAndamento = (atual) => FASES_OBRA.map(([f, n]) => `<optgroup label="${esc(n)}">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(([k, nome]) => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(nome)}</option>`).join('')}</optgroup>`).join('');
 const rotObra = (k) => (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];
 const statusObraDe = (r, pid) => { const e = (r.statusPedidos || {})[pid]; return e && e.s ? e.s : 'aguardando_compra'; };
 const chipObra = (r, p) => { const k = statusObraDe(r, p.id); return `<span class="obr-sp obr-sp-${k}" title="Andamento definido pelo Gestor">${esc(rotObra(k))}</span>`; };
@@ -23154,7 +23166,7 @@ function montarGestor(){
     <div class="fin-filtros" style="padding:0 0 12px;">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrgBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrgEmpresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
-      <select id="obrgStatus"><option value="">Qualquer andamento</option>${STATUS_OBRA.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
+      <select id="obrgStatus"><option value="">Qualquer andamento</option>${opcoesAndamento('')}</select>
       <span class="obrg-exp"><button type="button" class="btn-ghost oe-mini" data-obrg-exp="todos">Expandir tudo</button><button type="button" class="btn-ghost oe-mini" data-obrg-exp="nenhum">Recolher tudo</button></span>
     </div>
     <div id="obrgLista"></div>
@@ -23203,7 +23215,8 @@ function renderGestor(){
     .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
   // painel de cima: um cartão por andamento (pedidos e clientes); tocar filtra
   const cont = {}, cli = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; cli[k] = new Set(); }); base.forEach(x => x.peds.forEach(p => { const k = statusObraDe(x.r, p.id); cont[k]++; cli[k].add(fold(nomeCliente(x.r))); }));
-  document.getElementById('obrgChips').innerHTML = STATUS_OBRA.map(([k, n]) => `<div class="obrg-chip obrg-pc obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''} ${cont[k] ? '' : 'obrg-pc-zero'}" role="button" tabindex="0" data-obrg-chip="${k}" aria-pressed="${uiG.status === k}"><b class="obrg-pc-n">${cont[k]}</b><span class="obrg-pc-r">${esc(n)}</span><small>${cli[k].size} ${cli[k].size === 1 ? 'cliente' : 'clientes'}</small></div>`).join('');
+  const cartao = ([k, n]) => `<div class="obrg-chip obrg-pc obr-sp obr-sp-${k} ${uiG.status === k ? 'obrg-chip-on' : ''} ${cont[k] ? '' : 'obrg-pc-zero'}" role="button" tabindex="0" data-obrg-chip="${k}" aria-pressed="${uiG.status === k}"><b class="obrg-pc-n">${cont[k]}</b><span class="obrg-pc-r">${esc(n)}</span><small>${cli[k].size} ${cli[k].size === 1 ? 'cliente' : 'clientes'}</small></div>`;
+  document.getElementById('obrgChips').innerHTML = FASES_OBRA.map(([f, nome]) => `<div class="obrg-fase"><div class="obrg-fase-t">${esc(nome)}</div><div class="obrg-fase-c">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(cartao).join('')}</div></div>`).join('');
   const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => statusObraDe(x.r, p.id) === uiG.status) : x.peds })).filter(x => x.peds.length);
   // UM cartão por cliente: os pedidos do mesmo cliente nas duas empresas (Equiper e Eqp) ficam juntos
   const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { chave: k, nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
@@ -23230,7 +23243,7 @@ function renderGestor(){
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
       ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const k = statusObraDe(r, p.id); const e = (r.statusPedidos || {})[p.id]; const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
         return `<div class="obrg-ped"><div class="obrg-ped-h">${varias ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotEmp(r))}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
-          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${STATUS_OBRA.map(([kk, n]) => `<option value="${kk}" ${kk === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}">Equipamentos${res.total ? ' · ' + res.finalizados + '/' + res.total : ''} ${ab ? '▴' : '▾'}</button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
+          <div class="obrg-ped-a"><select class="obr-sp obr-sp-${k}" data-obrg-st="${esc(r.id)}|${esc(p.id)}" aria-label="Andamento do pedido ${esc(p.numero)}">${opcoesAndamento(k)}</select><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}">Equipamentos${res.total ? ' · ' + res.finalizados + '/' + res.total : ''} ${ab ? '▴' : '▾'}</button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${e && e.em ? `<div class="obr-obs obrg-quando">alterado${e.por ? ' por ' + esc(e.por) : ''} em ${esc(new Date(e.em).toLocaleDateString('pt-BR'))}</div>` : ''}
           ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
     </div>`; }).join('')
