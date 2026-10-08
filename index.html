@@ -752,13 +752,17 @@
   }
   .return-section{ margin-top: 8px; }
   .return-checkbox-label{
-    display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
-    font-size: 13.5px; font-weight:600; color: var(--amber); text-transform:none;
-    border: 1px solid var(--warning-line); border-radius: var(--radius-sm); padding: 10px 8px;
-    transition: background 0.15s;
+    display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; width:100%; box-sizing:border-box;
+    padding: 10px 8px; font-size: 13.5px; font-weight:600; text-transform:none;
+    background: transparent; color: var(--text-dim); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    transition: background 0.15s, border-color 0.15s, color 0.15s; margin:0; user-select:none;
   }
-  .return-checkbox-label:has(input:checked){ background: var(--warning-soft); }
-  .return-checkbox-label input[type="checkbox"]{ width:16px; height:16px; accent-color: var(--amber); cursor:pointer; }
+  .return-checkbox-label:hover{ border-color: var(--text-dim); color: var(--text); }
+  .return-checkbox-label input[type="checkbox"]{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
+  .return-checkbox-label .ret-ico::before{ content:'↩'; }
+  .return-checkbox-label:has(input:checked){ background: var(--panel-2); border-color: var(--text); color: var(--text); }
+  .return-checkbox-label:has(input:checked) .ret-ico::before{ content:'✓'; }
+  .return-checkbox-label:has(input:focus-visible){ outline:2px solid var(--text-dim); outline-offset:2px; }
   .return-reason-field{ margin-top:12px; }
   .return-reason-field label{ display:block; font-size:11.5px; color: var(--text-dim); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.03em; }
   .return-reason-field input{ width:100%; }
@@ -14301,7 +14305,7 @@ function renderTechView(){
       <div class="return-section">
         <label class="return-checkbox-label">
           <input type="checkbox" data-needsreturn="${s.id}" ${s.needsReturn ? 'checked' : ''}>
-          <span>Precisa retornar</span>
+          <span class="ret-ico"></span><span>Precisa retornar</span>
         </label>
         <div class="return-reason-field" data-returnreasonwrap="${s.id}" style="display:${s.needsReturn ? 'block' : 'none'};">
           <label>Motivo do retorno</label>
@@ -23605,10 +23609,10 @@ function blocosAtividade(svc){
 }
 function htmlEquipTec(d, rid, sub, lido){
   const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const feitas = feitasDe(d, sub); const aberto = !!uiT.eq[sub.id];
-  const falta = ets.filter(e => estadoEtapa(d, sub.id, e.id) !== 'finalizado').map(e => e.nome); const travado = st === 'nao_liberado' || lido;
+  const falta = ets.filter(e => estadoEtapa(d, sub.id, e.id) !== 'finalizado').map(e => e.nome); const travado = st === 'nao_liberado';
   return `<div class="obi-eqt obi-eqt-${st}"><div class="obi-eq-row" role="button" tabindex="0" data-obi-eq="${esc(sub.id)}" aria-expanded="${aberto}"><span class="obi-seta">${aberto ? '▾' : '▸'}</span><span class="obi-eq-info"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span></span><span class="obi-prog">${feitas}/${ets.length}</span></div>
     ${aberto ? `<div class="obi-eq-corpo">
-      ${st === 'nao_liberado' && !lido ? `<div class="obi-aviso-lib">Ainda não foi liberado. Quando puder começar, toque em liberar.</div><button type="button" class="btn-primary obi-lib" data-obi-lib="${esc(rid)}|${esc(sub.id)}">Liberar para iniciar</button>` : ''}
+      ${st === 'nao_liberado' ? `<div class="obi-aviso-lib">Ainda não foi liberado. Quando puder começar, toque em liberar.</div><button type="button" class="btn-primary obi-lib" data-obi-lib="${esc(rid)}|${esc(sub.id)}">Liberar para iniciar</button>` : ''}
       ${htmlEtapas(d, rid, sub, travado, false)}
       ${st === 'iniciado' ? `<div class="obi-falta">Falta finalizar: <b>${esc(falta.join(', '))}</b></div>` : ''}${st === 'finalizado' ? `<div class="obi-falta">Instalação finalizada. Falta finalizar o <b>${esc(falta.join(', '))}</b> para ficar finalizado e testado.</div>` : ''}${st === 'testado' ? '<div class="obi-ok">Todas as etapas feitas, inclusive o teste. Finalizado e testado.</div>' : ''}</div>` : ''}</div>`;
 }
@@ -23620,7 +23624,7 @@ function renderSlotTec(slot, svc){
   const fin = subs.filter(x => instalado(estadoSub(x.d, x.sub))).length; const nTest = subs.filter(x => estadoSub(x.d, x.sub) === 'testado').length; const lido = svc.status === 'concluido'; const duas = new Set(blocos.map(b => b.empresa).filter(Boolean)).size > 1;
   const nomeObra = (blocos[0].d.cliente) || svc.client || '';
   slot.innerHTML = `<div class="obi-tec"><button type="button" class="obi-tec-h" data-obi-tog>🏗 Instalação — ${esc(nomeObra)}<span class="obi-tec-n">${fin} de ${subs.length} ${subs.length === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}${nTest ? ' · ' + nTest + (nTest === 1 ? ' testado' : ' testados') : ''}</span><span>${aberto ? '▴' : '▾'}</span></button>
-    ${aberto ? `<div class="obi-tec-c">${lido ? '<div class="prv-hint" style="margin:0 0 8px;">Atividade concluída: o checklist fica só para consulta.</div>' : ''}${blocos.map(b => { const res = resumoPedido(b.d, b.pid); return `<div class="obi-ped"><div class="obi-ped-t"><span class="obr-ped-num">Pedido ${esc(b.numero)}</span><span class="obr-ped-desc">${esc(b.descricao || '')}</span><span class="obi-ped-n">${res.finalizados}/${res.total}</span></div>${lista(((b.d.pedidos || {})[b.pid] || {}).sistemas).sort(ord).map(sis => { const sk = b.rid + '|' + sis.id; const eqs = lista(sis.subitens).sort(ord); const abertoS = uiT.sis[sk] !== false; const finS = eqs.filter(x => instalado(estadoSub(b.d, x))).length;
+    ${aberto ? `<div class="obi-tec-c">${blocos.map(b => { const res = resumoPedido(b.d, b.pid); return `<div class="obi-ped"><div class="obi-ped-t"><span class="obr-ped-num">Pedido ${esc(b.numero)}</span><span class="obr-ped-desc">${esc(b.descricao || '')}</span><span class="obi-ped-n">${res.finalizados}/${res.total}</span></div>${lista(((b.d.pedidos || {})[b.pid] || {}).sistemas).sort(ord).map(sis => { const sk = b.rid + '|' + sis.id; const eqs = lista(sis.subitens).sort(ord); const abertoS = uiT.sis[sk] !== false; const finS = eqs.filter(x => instalado(estadoSub(b.d, x))).length;
           return `<div class="obi-sis"><button type="button" class="obi-sis-t obi-sis-btn" data-obi-sis="${esc(sk)}" aria-expanded="${abertoS}"><span class="obi-seta">${abertoS ? '▾' : '▸'}</span><span class="obi-sis-nome">${esc(sis.nome)}</span><span class="obi-prog">${finS}/${eqs.length}</span></button>${abertoS ? eqs.map(sub => htmlEquipTec(b.d, b.rid, sub, lido)).join('') : ''}</div>`; }).join('')}</div>`; }).join('')}</div>` : ''}</div>`;
 }
 function renderSlotsTec(){ document.querySelectorAll('[data-obraslot]').forEach(slot => { const svc = services.find(x => String(x.id) === slot.dataset.obraslot); if(svc) renderSlotTec(slot, svc); }); }
@@ -23631,9 +23635,9 @@ function montarSlotTecnico(card, svc){
       if(e.target.closest('[data-obi-tog]')){ uiT.abertos[svc.id] = !(uiT.abertos[svc.id] !== false); renderSlotTec(slot, svc); return; }
       const sisB = e.target.closest('[data-obi-sis]'); if(sisB){ const k = sisB.dataset.obiSis; uiT.sis[k] = !(uiT.sis[k] !== false); renderSlotTec(slot, svc); return; }          // recolher/expandir o sistema
       const eq = e.target.closest('[data-obi-eq]'); if(eq){ const k = eq.dataset.obiEq; uiT.eq[k] = !uiT.eq[k]; renderSlotTec(slot, svc); return; }
-      const lib = e.target.closest('[data-obi-lib]'); if(lib){ if(svc.status === 'concluido') return; const [rid, sub] = lib.dataset.obiLib.split('|'); const d = inst[rid] || {}; if(!((d.lib || {})[sub])) alternarLib(rid, sub); return; }       // o técnico libera (não liberado → liberado para iniciar)
+      const lib = e.target.closest('[data-obi-lib]'); if(lib){ const [rid, sub] = lib.dataset.obiLib.split('|'); const d = inst[rid] || {}; if(!((d.lib || {})[sub])) alternarLib(rid, sub); return; }       // o técnico libera (não liberado → liberado para iniciar)
       const r = e.target.closest('[data-obi-set]'); if(!r) return;
-      if(r.getAttribute('aria-disabled') === 'true'){ if(svc.status !== 'concluido') avisar('Libere o equipamento para iniciar antes de marcar as etapas.', 4000); return; }
+      if(r.getAttribute('aria-disabled') === 'true'){ avisar('Libere o equipamento para iniciar antes de marcar as etapas.', 4000); return; }
       const [rid, sub, et, v] = r.dataset.obiSet.split('|'); definirEtapa(rid, sub, et, v);          // só grava quando a resposta MUDA (tocar de novo na que já está marcada não faz nada)
     });
     slot.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obi-eq-row')){ e.preventDefault(); e.target.click(); } });
