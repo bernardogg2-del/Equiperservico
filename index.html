@@ -4723,6 +4723,28 @@ function isMultiTechRecord(s){
 //   quando existe parceiro, a chave usada é compartilhada entre os dois — os dois ids do par,
 //   sempre na mesma ordem não importa de qual lado a chamada partiu — pra que ambos disputem a
 //   MESMA transação, igual já acontece pra dupla nova.
+function retornoObsText(svc){ return `Retorno referente ao atendimento de ${shortLabel(svc.date)}. Motivo: ${(svc.returnReason && svc.returnReason.trim()) ? svc.returnReason.trim() : (svc.observations || '(sem observação)')}`; }
+// "Precisa retornar" marcado DEPOIS de concluir a atividade (ou concluída sem ter gerado o retorno): cria o retorno agora, uma única vez por atividade/dupla
+async function garantirRetornoAposConclusao(svc){
+  if(!svc || svc.status !== 'concluido' || !svc.needsReturn || svc.retornoCriado) return false;
+  if(svc.pairId){ const partner = services.find(x => x.pairId === svc.pairId && x.id !== svc.id); if(partner && partner.retornoCriado){ svc.retornoCriado = true; return true; } }
+  await createRetornoIfNeeded(svc);
+  if(svc.pairId){ const partner = services.find(x => x.pairId === svc.pairId && x.id !== svc.id); if(partner && svc.retornoCriado) partner.retornoCriado = true; }
+  return !!svc.retornoCriado;
+}
+const retornoTentado = new Set(); let varrendoRetornos = false;
+async function varrerRetornosPendentes(){
+  if(varrendoRetornos || currentRole !== 'manager' || !Array.isArray(services)) return;
+  const corte = addDays(todayStr(), -30);   // só atividades recentes: não ressuscita pendências antigas
+  const alvo = services.filter(s => s.status === 'concluido' && s.needsReturn && !s.retornoCriado && !retornoTentado.has(s.id) && String(s.date || '') >= corte);
+  if(!alvo.length) return;
+  varrendoRetornos = true;
+  try{
+    let mudou = false;
+    for(const s of alvo){ retornoTentado.add(s.id); if(await garantirRetornoAposConclusao(s)) mudou = true; }
+    if(mudou){ await saveServices(true); renderAll(); }
+  }catch(e){ console.error('retornos pendentes:', e); } finally { varrendoRetornos = false; }
+}
 async function createRetornoIfNeeded(svc){
   if(!svc.needsReturn || svc.retornoCriado) return;
   if(rtdb){
@@ -4763,7 +4785,7 @@ async function createRetornoIfNeeded(svc){
       status: 'aguardando',
       checkIn: '',
       checkOut: '',
-      observations: `Retorno referente ao atendimento de ${shortLabel(svc.date)}. Motivo: ${(svc.returnReason && svc.returnReason.trim()) ? svc.returnReason.trim() : (svc.observations || '(sem observação)')}`,
+      observations: retornoObsText(svc),
       isRetorno: true,
       retornoDeId: svc.id
     };
@@ -12356,6 +12378,7 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
 });
 
 function renderAll(){
+  if(currentRole === 'manager') setTimeout(varrerRetornosPendentes, 0);
   renderTechList();
   renderDayBoxes();
   renderTodayIncompleteSection();
@@ -14521,7 +14544,9 @@ function renderTechView(){
       if(wrap) wrap.style.display = e.target.checked ? 'block' : 'none';
       if(svc){
         svc.needsReturn = e.target.checked;
+        if(svc.needsReturn) await garantirRetornoAposConclusao(svc);      // atividade já concluída: o retorno nasce agora
         await saveServices();
+        if(svc.needsReturn && svc.retornoCriado) renderAll();
       }
     });
   });
@@ -14531,6 +14556,8 @@ function renderTechView(){
       const svc = services.find(x => x.id === id);
       if(svc){
         svc.returnReason = e.target.value;
+        const ret = svc.retornoCriado ? services.find(x => x.retornoDeId === svc.id && x.status === 'aguardando') : null;
+        if(ret) ret.observations = retornoObsText(svc);              // o retorno já criado acompanha o motivo digitado depois
         await saveServices();
       }
     });
