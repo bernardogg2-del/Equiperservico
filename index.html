@@ -1816,6 +1816,7 @@
   .pn-k-n{ font-size:25px; font-weight:800; letter-spacing:-.6px; line-height:1.05; color:var(--c-num, var(--text)); }
   .pn-k-r{ font-size:12px; font-weight:650; color:var(--text); line-height:1.25; }
   .pn-k-s{ font-size:11px; color:var(--text-dim); }
+  .pn-t-ink{ --c:#1D1D1F; --c-num:#1D1D1F; background:var(--panel-2, #f4f4f5); }
   .pn-t-red{ --c:#C0392B; --c-num:#B3261E; } .pn-t-amber{ --c:#F2B705; --c-num:#9A7400; } .pn-t-blue{ --c:#3D84B0; --c-num:#2B6A92; } .pn-t-green{ --c:#2E7D4F; --c-num:#2E7D4F; } .pn-t-gray{ --c:#9aa0a6; --c-num:#555a60; }
   .pn-lin{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13px; }
   .pn-lin:first-of-type{ margin-top:10px; }
@@ -1849,6 +1850,12 @@
   .pn-obras .pn-ped-r{ flex-wrap:nowrap; justify-content:flex-end; }
   .pn-obras .pn-sel{ min-width:210px; }
   @media (max-width:980px){ .pn-obras .pn-ped{ grid-template-columns:1fr auto; } .pn-obras .pn-ped-t{ display:flex; grid-column:1 / -1; flex-wrap:wrap; } .pn-obras .pn-ped-c{ white-space:normal; } .pn-obras .pn-ped-d{ white-space:normal; } }
+  .pn-cli{ border:1px solid var(--line); border-radius:14px; margin:0 0 10px; padding:4px 14px 2px; background:#fff; }
+  .pn-cli-h{ display:flex; align-items:baseline; gap:10px; padding:10px 0 6px; }
+  .pn-cli-n{ font-size:15.5px; font-weight:800; letter-spacing:-.2px; color:var(--text); }
+  .pn-cli-s{ font-size:12px; color:var(--text-dim); font-weight:600; }
+  .pn-cli .pn-ped{ border-top:1px solid var(--line); }
+  .pn-obras .pn-ped{ grid-template-columns:auto minmax(160px, 1fr) auto; }
   .pn-obra{ border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px; background:#fff; }
   .pn-obra-n{ font-size:15px; font-weight:800; letter-spacing:-.2px; margin-bottom:4px; }
   .pn-ped{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
@@ -2189,6 +2196,7 @@
      ===================================================================================================== */
   .obr-sp-aguardando_compra, .obr-sp-aguardando_inicio, .obi-st-nao_liberado, .obrg-k-aguardando_compra, .obrg-k-aguardando_inicio, .obrg-dot-aguardando_compra, .obrg-dot-aguardando_inicio
     { --c:#C0392B; --c-num:#B3261E; --c-bg:rgba(192,57,43,.12); --c-line:rgba(192,57,43,.32); --c-tx:#96281D; }
+  .obrg-k-total{ --c:#1D1D1F; --c-num:#1D1D1F; --c-bg:rgba(29,29,31,.07); --c-line:rgba(29,29,31,.25); --c-tx:#1D1D1F; cursor:default; background:var(--panel-2, #f4f4f5); }
   .obr-sp-comprado, .obrg-k-comprado, .obrg-dot-comprado
     { --c:#E67E22; --c-num:#B85F0F; --c-bg:rgba(230,126,34,.15); --c-line:rgba(230,126,34,.42); --c-tx:#9A4F0A; }
   .obr-sp-liberado_inicio, .obrg-k-liberado_inicio, .obrg-dot-liberado_inicio,
@@ -23419,7 +23427,11 @@ function renderGestor(){
   const cont = {}, cli = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; cli[k] = new Set(); });          // cada pedido conta na trilha interna E, se já existe, na da obra
   base.forEach(x => x.peds.forEach(p => { const ks = [internoDe(x.r, p.id), obraDe(x.r, p.id)].filter(Boolean); ks.forEach(k => { cont[k]++; cli[k].add(fold(nomeCliente(x.r))); }); }));
   const cartao = ([k, n]) => `<div class="obrg-chip obrg-pc obrg-k obrg-k-${k} ${uiG.status === k ? 'obrg-chip-on' : ''} ${cont[k] ? '' : 'obrg-pc-zero'}" role="button" tabindex="0" data-obrg-chip="${k}" aria-pressed="${uiG.status === k}"><b class="obrg-pc-n">${cont[k]}</b><span class="obrg-pc-r">${esc(n)}</span><small>${cli[k].size} ${cli[k].size === 1 ? 'cliente' : 'clientes'}</small></div>`;
-  document.getElementById('obrgChips').innerHTML = FASES_OBRA.map(([f, nome]) => `<div class="obrg-fase"><div class="obrg-fase-t">${esc(nome)}</div><div class="obrg-fase-c">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(cartao).join('')}</div></div>`).join('');
+  // marcador-resumo de cada etapa: quantos CLIENTES estão nela (interna = ainda tem pedido por entregar; obra = tem pedido na obra, ainda não finalizado)
+  const cliFase = { interna: new Set(), obra: new Set() }, pedFase = { interna: 0, obra: 0 };
+  base.forEach(x => x.peds.forEach(p => { const nm = fold(nomeCliente(x.r)); if(internoDe(x.r, p.id) !== 'entregue'){ cliFase.interna.add(nm); pedFase.interna++; } const o = obraDe(x.r, p.id); if(o && o !== 'finalizado'){ cliFase.obra.add(nm); pedFase.obra++; } }));
+  const totalFase = (f) => `<div class="obrg-pc obrg-k obrg-k-total" title="${f === 'interna' ? 'Clientes com pelo menos um pedido ainda na etapa interna (antes de entregue)' : 'Clientes com pelo menos um pedido na etapa obra (ainda não finalizado)'}"><b class="obrg-pc-n">${cliFase[f].size}</b><span class="obrg-pc-r">${f === 'interna' ? 'Clientes na etapa interna' : 'Clientes na etapa obra'}</span><small>${pedFase[f]} ${pedFase[f] === 1 ? 'pedido' : 'pedidos'}</small></div>`;
+  document.getElementById('obrgChips').innerHTML = FASES_OBRA.map(([f, nome]) => `<div class="obrg-fase"><div class="obrg-fase-t">${esc(nome)}</div><div class="obrg-fase-c">${totalFase(f)}${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(cartao).join('')}</div></div>`).join('');
   const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => temStatus(x.r, p.id, uiG.status)) : x.peds })).filter(x => x.peds.length);
   // UM cartão por cliente: os pedidos do mesmo cliente nas duas empresas (Equiper e Eqp) ficam juntos
   const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { chave: k, nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
@@ -23983,9 +23995,9 @@ function blocoCadastrosOS(){
     ${(pend || qd || eq) ? `<div class="pn-nota">Para cadastrar: ${[pend ? pend + (pend === 1 ? ' atividade' : ' atividades') : '', qd ? qd + (qd === 1 ? ' quadro de comando' : ' quadros de comando') : '', eq ? eq + (eq === 1 ? ' equipamento da oficina' : ' equipamentos da oficina') : ''].filter(Boolean).join(' · ')}</div>` : ''}`;
   return bloco('Cadastros e OS', 'os', corpo);
 }
-function tilesInterna(ped, clicavel){
+function tilesInterna(ped, clicavel, extra){
   const A = O(); const fases = A.FASE_INTERNA || [];
-  return `<div class="pn-kpis">${fases.map(k => { const n = ped.filter(x => x.i === k).length; const cl = new Set(ped.filter(x => x.i === k).map(x => x.r.clienteId || fold(x.r.cliente))).size;
+  return `<div class="pn-kpis">${extra || ''}${fases.map(k => { const n = ped.filter(x => x.i === k).length; const cl = new Set(ped.filter(x => x.i === k).map(x => x.r.clienteId || fold(x.r.cliente))).size;
     return `<button type="button" class="pn-k obr-sp-${k} pn-vars ${clicavel && ui.alexEtapa === k ? 'on' : ''}" ${clicavel ? `data-pn-etapa="${k}"` : `data-pn-go="obras"`}><span class="pn-k-n">${n}</span><span class="pn-k-r">${esc(A.rotObra(k))}</span><span class="pn-k-s">${cl} ${cl === 1 ? 'cliente' : 'clientes'}</span></button>`; }).join('')}</div>`;
 }
 
@@ -24004,8 +24016,12 @@ function renderGestor(){
     : '<div class="pn-vazio">Nenhuma atividade agendada para hoje.</div>');
   // obras
   const ped = pedidosObras();
+  const cliI = new Set(ped.filter(x => x.i !== 'entregue').map(x => x.r.clienteId || fold(x.r.cliente))), cliO = new Set(ped.filter(x => x.o && x.o !== 'finalizado').map(x => x.r.clienteId || fold(x.r.cliente)));
+  const nPI = ped.filter(x => x.i !== 'entregue').length, nPO = ped.filter(x => x.o && x.o !== 'finalizado').length;
+  const totalI = `<button type="button" class="pn-k pn-t-ink" data-pn-go="obras"><span class="pn-k-n">${cliI.size}</span><span class="pn-k-r">Clientes na etapa interna</span><span class="pn-k-s">${nPI} ${nPI === 1 ? 'pedido' : 'pedidos'}</span></button>`;
+  const totalO = `<button type="button" class="pn-k pn-t-ink" data-pn-go="obras"><span class="pn-k-n">${cliO.size}</span><span class="pn-k-r">Clientes na etapa obra</span><span class="pn-k-s">${nPO} ${nPO === 1 ? 'pedido' : 'pedidos'}</span></button>`;
   const tilesObra = (A.STATUS_OBRA ? A.STATUS_OBRA.filter(([k]) => !(A.FASE_INTERNA || []).includes(k)) : []).map(([k, n]) => { const q = ped.filter(x => x.o === k).length; return `<button type="button" class="pn-k obr-sp-${k} pn-vars" data-pn-go="obras"><span class="pn-k-n">${q}</span><span class="pn-k-r">${esc(n)}</span></button>`; }).join('');
-  const bObras = bloco('Etapas das obras', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : `<div class="pn-fase">Etapa interna · compras</div>${tilesInterna(ped, false)}<div class="pn-fase">Etapa obra</div><div class="pn-kpis">${tilesObra}</div><div class="pn-nota">${ped.length} ${ped.length === 1 ? 'pedido' : 'pedidos'} em andamento nas obras</div>`);
+  const bObras = bloco('Etapas das obras', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : `<div class="pn-fase">Etapa interna · compras</div>${tilesInterna(ped, false, totalI)}<div class="pn-fase">Etapa obra</div><div class="pn-kpis">${totalO}${tilesObra}</div><div class="pn-nota">${ped.length} ${ped.length === 1 ? 'pedido' : 'pedidos'} em andamento nas obras</div>`);
   // oficina
   const eqs = typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []; const rotG = typeof OE_GRUPO_LABEL !== 'undefined' ? OE_GRUPO_LABEL : {};
   const tomG = { vistoria: 'red', manutencao: 'amber', teste: 'blue', reinstalacao: 'green' };
@@ -24016,30 +24032,36 @@ function renderGestor(){
 }
 
 // ---------- PAINEL ALEX ----------
+// etapa do CLIENTE = a do pedido MENOS avançado (um pedido aguardando compra segura o cliente em "Aguardando compra"; só vai para Entregues quando todos foram entregues)
+function clientesAlex(){
+  const A = O(); const FASES = A.FASE_INTERNA || []; const nomeDe = (x) => A.nomeCliente ? A.nomeCliente(x.r) : x.r.cliente;
+  const mapa = new Map();
+  pedidosObras().filter(x => x.o !== 'finalizado').forEach(x => { const nome = nomeDe(x); const k = fold(nome); if(!mapa.has(k)) mapa.set(k, { nome, peds: [] }); mapa.get(k).peds.push(x); });
+  return [...mapa.values()].map(c => { c.etapa = FASES[Math.min(...c.peds.map(x => Math.max(0, FASES.indexOf(x.i))))] || FASES[0]; return c; })
+    .sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+}
 function renderAlex(){
   const box = document.getElementById('tabPAlex'); if(!box || box.style.display === 'none') return;
   const A = O(); const foco = document.activeElement; const focoBusca = foco && foco.id === 'pnAlexBusca'; const caret = focoBusca ? foco.selectionStart : null;
-  const ped = pedidosObras().filter(x => x.o !== 'finalizado');           // obra finalizada sai da lista
-  const termo = fold(ui.alexBusca); const nomeDe = (x) => A.nomeCliente ? A.nomeCliente(x.r) : x.r.cliente;
-  const buscados = ped.filter(x => !termo || fold(nomeDe(x) + ' ' + x.p.numero + ' ' + (x.p.descricao || '')).includes(termo));
-  const FASES = A.FASE_INTERNA || [];
-  const ehEntregue = (x) => x.i === 'entregue';
-  const nCompras = buscados.filter(x => !ehEntregue(x)).length, nEntregues = buscados.filter(ehEntregue).length;
+  const FASES = A.FASE_INTERNA || []; const termo = fold(ui.alexBusca);
+  const todos = clientesAlex();
+  // a busca esconde pedidos/clientes, mas a etapa do cliente continua calculada com TODOS os pedidos dele
+  const visiveis = todos.map(c => Object.assign({}, c, { mostra: !termo ? c.peds : c.peds.filter(x => fold(c.nome + ' ' + x.p.numero + ' ' + (x.p.descricao || '')).includes(termo)) })).filter(c => c.mostra.length);
+  const entregues = visiveis.filter(c => c.etapa === 'entregue'), compras = visiveis.filter(c => c.etapa !== 'entregue');
   const opts = (atual) => FASES.map(k => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(A.rotObra(k))}</option>`).join('');
-  const linhaPed = (x, mostraObra) => `<div class="pn-ped"><div class="pn-ped-t"><span class="pn-ped-c">${esc(nomeDe(x))}</span><span class="obr-ped-num pn-num">Pedido ${esc(x.p.numero)}</span><span class="pn-ped-d">${esc(x.p.descricao || '')}</span></div><div class="pn-ped-r">${mostraObra && x.o ? `<span class="obr-sp obr-sp-${x.o}" title="Etapa obra">${esc(A.rotObra(x.o))}</span>` : ''}<select class="pn-sel obr-sp obr-sp-${x.i}" data-pn-st="${esc(x.r.id)}|${esc(x.p.id)}" aria-label="Etapa interna do pedido ${esc(x.p.numero)}">${opts(x.i)}</select></div></div>`;
-  const porNome = (a, b) => fold(nomeDe(a)).localeCompare(fold(nomeDe(b))) || String(a.p.numero).localeCompare(String(b.p.numero), 'pt-BR', { numeric: true });
+  const porNum = (a, b) => String(a.p.numero).localeCompare(String(b.p.numero), 'pt-BR', { numeric: true });
+  const linhaPed = (x, mostraObra) => `<div class="pn-ped"><div class="pn-ped-t"><span class="obr-ped-num pn-num">Pedido ${esc(x.p.numero)}</span><span class="pn-ped-d">${esc(x.p.descricao || '')}</span></div><div class="pn-ped-r">${mostraObra && x.o ? `<span class="obr-sp obr-sp-${x.o}" title="Etapa obra">${esc(A.rotObra(x.o))}</span>` : ''}<select class="pn-sel obr-sp obr-sp-${x.i}" data-pn-st="${esc(x.r.id)}|${esc(x.p.id)}" aria-label="Etapa interna do pedido ${esc(x.p.numero)}">${opts(x.i)}</select></div></div>`;
+  const cartaoCli = (c, mostraObra) => { const ent = c.peds.filter(x => x.i === 'entregue').length; return `<div class="pn-cli"><div class="pn-cli-h"><span class="pn-cli-n">${esc(c.nome)}</span><span class="pn-cli-s">${c.peds.length} ${c.peds.length === 1 ? 'pedido' : 'pedidos'}${ent && ent < c.peds.length ? ' · ' + ent + ' entregue' + (ent > 1 ? 's' : '') : ''}</span></div>${c.mostra.slice().sort(porNum).map(x => linhaPed(x, mostraObra)).join('')}</div>`; };
   let corpo;
   if(!obrasPronto) corpo = '<div class="pn-vazio">Carregando…</div>';
-  else if(ui.alexAba === 'entregues'){
-    const l = buscados.filter(ehEntregue).sort(porNome);
-    corpo = l.length ? `<div class="pn-sec-lista">${l.map(x => linhaPed(x, true)).join('')}</div>` : `<div class="pn-vazio">${termo ? 'Nenhum pedido entregue com esse texto.' : 'Nenhum pedido entregue em andamento.'}</div>`;
-  } else {
+  else if(ui.alexAba === 'entregues') corpo = entregues.length ? entregues.map(c => cartaoCli(c, true)).join('') : `<div class="pn-vazio">${termo ? 'Nenhum cliente com esse texto.' : 'Nenhum cliente com todos os pedidos entregues.'}</div>`;
+  else {
     const etapas = FASES.filter(k => k !== 'entregue').filter(k => !ui.alexEtapa || ui.alexEtapa === k);
-    const secs = etapas.map(k => { const l = buscados.filter(x => x.i === k).sort(porNome); return `<div class="pn-sec obr-sp-${k}"><div class="pn-sec-h"><span class="pn-sec-t">${esc(A.rotObra(k))}</span><span class="pn-sec-n">${l.length}</span></div>${l.length ? `<div class="pn-sec-lista">${l.map(x => linhaPed(x, false)).join('')}</div>` : '<div class="pn-vazio pn-vazio-s">Nenhum pedido nesta etapa.</div>'}</div>`; }).join('');
-    corpo = secs;
+    corpo = etapas.map(k => { const l = compras.filter(c => c.etapa === k); return `<div class="pn-sec obr-sp-${k}"><div class="pn-sec-h"><span class="pn-sec-t">${esc(A.rotObra(k))}</span><span class="pn-sec-n">${l.length} ${l.length === 1 ? 'cliente' : 'clientes'}</span></div>${l.length ? l.map(c => cartaoCli(c, false)).join('') : '<div class="pn-vazio pn-vazio-s">Nenhum cliente nesta etapa.</div>'}</div>`; }).join('');
   }
-  const bEtapas = bloco('Resumo das etapas internas', '', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : tilesInterna(ped, true) + (ui.alexEtapa ? '<div class="pn-nota">Filtrando por uma etapa. <button type="button" class="pn-link" data-pn-etapa="">Mostrar todas</button></div>' : ''));
-  const abas = `<div class="os-abas pn-abas" role="tablist"><button type="button" role="tab" aria-selected="${ui.alexAba !== 'entregues'}" class="os-aba ${ui.alexAba !== 'entregues' ? 'on' : ''}" data-pn-aba="compras">Compras<span class="os-aba-n">${nCompras}</span></button><button type="button" role="tab" aria-selected="${ui.alexAba === 'entregues'}" class="os-aba ${ui.alexAba === 'entregues' ? 'on' : ''}" data-pn-aba="entregues">Entregues<span class="os-aba-n">${nEntregues}</span></button></div>`;
+  const tiles = `<div class="pn-kpis">${FASES.map(k => { const cs = todos.filter(c => c.etapa === k); const np = cs.reduce((n, c) => n + c.peds.length, 0); return `<button type="button" class="pn-k obr-sp-${k} pn-vars ${ui.alexEtapa === k ? 'on' : ''}" data-pn-etapa="${k}"><span class="pn-k-n">${cs.length}</span><span class="pn-k-r">${esc(A.rotObra(k))}</span><span class="pn-k-s">${cs.length === 1 ? 'cliente' : 'clientes'} · ${np} ${np === 1 ? 'pedido' : 'pedidos'}</span></button>`; }).join('')}</div>`;
+  const bEtapas = bloco('Resumo das etapas internas', '', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : tiles + (ui.alexEtapa ? '<div class="pn-nota">Filtrando por uma etapa. <button type="button" class="pn-link" data-pn-etapa="">Mostrar todas</button></div>' : '<div class="pn-nota">A etapa do cliente é a do pedido menos avançado.</div>'));
+  const abas = `<div class="os-abas pn-abas" role="tablist"><button type="button" role="tab" aria-selected="${ui.alexAba !== 'entregues'}" class="os-aba ${ui.alexAba !== 'entregues' ? 'on' : ''}" data-pn-aba="compras">Compras<span class="os-aba-n">${compras.length}</span></button><button type="button" role="tab" aria-selected="${ui.alexAba === 'entregues'}" class="os-aba ${ui.alexAba === 'entregues' ? 'on' : ''}" data-pn-aba="entregues">Entregues<span class="os-aba-n">${entregues.length}</span></button></div>`;
   const bObras = `<section class="pn-bloco pn-largo pn-obras"><div class="pn-bloco-h"><h3>Obras e etapas internas</h3></div><div class="pn-barra">${abas}<div class="pn-busca"><input type="search" id="pnAlexBusca" placeholder="Buscar cliente, nº do pedido ou descrição…" value="${esc(ui.alexBusca)}" autocomplete="off"></div></div>${corpo}</section>`;
   box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS()}${blocoEstoque()}</div>${bObras}`;
   if(focoBusca){ const b = document.getElementById('pnAlexBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
