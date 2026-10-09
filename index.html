@@ -1829,6 +1829,17 @@
   .pn-vazio{ padding:14px 4px; font-size:13px; color:var(--text-dim); }
   .pn-link{ border:0; background:none; color:var(--text); font:inherit; font-size:12px; font-weight:700; text-decoration:underline; cursor:pointer; padding:0; }
   .pn-busca{ margin:0 0 12px; } .pn-busca input{ width:100%; max-width:420px; }
+  .pn-barra{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 14px; }
+  .pn-barra .os-abas{ margin:0; max-width:300px; flex:0 1 300px; }
+  .pn-barra .pn-busca{ margin:0; flex:1 1 260px; } .pn-barra .pn-busca input{ max-width:none; }
+  .pn-sec{ margin:0 0 14px; }
+  .pn-sec-h{ display:flex; align-items:center; gap:8px; padding:0 2px 6px; border-bottom:2px solid var(--c, var(--line)); margin-bottom:2px; }
+  .pn-sec-t{ font-size:12.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--c-tx, var(--text)); }
+  .pn-sec-n{ font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:999px; background:var(--c-bg, var(--panel-2)); color:var(--c-tx, var(--text-dim)); }
+  .pn-vazio-s{ padding:8px 2px; font-size:12.5px; }
+  .pn-ped-c{ font-size:14px; font-weight:800; letter-spacing:-.1px; min-width:150px; }
+  .pn-ped-r{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .pn-ped{ padding:9px 2px; } .pn-sec-lista .pn-ped:first-child{ border-top:0; }
   .pn-obra{ border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px; background:#fff; }
   .pn-obra-n{ font-size:15px; font-weight:800; letter-spacing:-.2px; margin-bottom:4px; }
   .pn-ped{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
@@ -23926,7 +23937,7 @@ const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&a
 const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const num = (n) => Number(n) || 0;
 const O = () => window.OBR_API || {};
-const ui = { alexEtapa: '', alexBusca: '' };
+const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras' };
 let obrasPronto = false, osPronto = false;
 
 function dataHoje(){ try{ const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }catch(e){ return ''; } }
@@ -24000,14 +24011,27 @@ function renderAlex(){
   const box = document.getElementById('tabPAlex'); if(!box || box.style.display === 'none') return;
   const A = O(); const foco = document.activeElement; const focoBusca = foco && foco.id === 'pnAlexBusca'; const caret = focoBusca ? foco.selectionStart : null;
   const ped = pedidosObras().filter(x => x.o !== 'finalizado');           // obra finalizada sai da lista
-  const termo = fold(ui.alexBusca);
-  let vis = ped.filter(x => (!ui.alexEtapa || x.i === ui.alexEtapa) && (!termo || fold((A.nomeCliente ? A.nomeCliente(x.r) : x.r.cliente) + ' ' + x.p.numero + ' ' + (x.p.descricao || '')).includes(termo)));
-  const grupos = new Map(); vis.forEach(x => { const nome = A.nomeCliente ? A.nomeCliente(x.r) : x.r.cliente; const k = fold(nome); if(!grupos.has(k)) grupos.set(k, { nome, itens: [] }); grupos.get(k).itens.push(x); });
-  const lista = [...grupos.values()].sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
-  const opts = (atual) => (A.FASE_INTERNA || []).map(k => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(A.rotObra(k))}</option>`).join('');
-  const bLista = !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : lista.length ? lista.map(g => `<div class="pn-obra"><div class="pn-obra-n">${esc(g.nome)}</div>${g.itens.map(x => `<div class="pn-ped"><div class="pn-ped-t"><span class="obr-ped-num pn-num">Pedido ${esc(x.p.numero)}</span><span class="pn-ped-d">${esc(x.p.descricao || '')}</span></div><select class="pn-sel obr-sp obr-sp-${x.i}" data-pn-st="${esc(x.r.id)}|${esc(x.p.id)}" aria-label="Etapa interna do pedido ${esc(x.p.numero)}">${opts(x.i)}</select></div>`).join('')}</div>`).join('') : `<div class="pn-vazio">${ui.alexEtapa || termo ? 'Nenhum pedido com esse filtro.' : 'Nenhum pedido em andamento.'}</div>`;
+  const termo = fold(ui.alexBusca); const nomeDe = (x) => A.nomeCliente ? A.nomeCliente(x.r) : x.r.cliente;
+  const buscados = ped.filter(x => !termo || fold(nomeDe(x) + ' ' + x.p.numero + ' ' + (x.p.descricao || '')).includes(termo));
+  const FASES = A.FASE_INTERNA || [];
+  const ehEntregue = (x) => x.i === 'entregue';
+  const nCompras = buscados.filter(x => !ehEntregue(x)).length, nEntregues = buscados.filter(ehEntregue).length;
+  const opts = (atual) => FASES.map(k => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(A.rotObra(k))}</option>`).join('');
+  const linhaPed = (x, mostraObra) => `<div class="pn-ped"><div class="pn-ped-t"><span class="pn-ped-c">${esc(nomeDe(x))}</span><span class="obr-ped-num pn-num">Pedido ${esc(x.p.numero)}</span><span class="pn-ped-d">${esc(x.p.descricao || '')}</span></div><div class="pn-ped-r">${mostraObra && x.o ? `<span class="obr-sp obr-sp-${x.o}" title="Etapa obra">${esc(A.rotObra(x.o))}</span>` : ''}<select class="pn-sel obr-sp obr-sp-${x.i}" data-pn-st="${esc(x.r.id)}|${esc(x.p.id)}" aria-label="Etapa interna do pedido ${esc(x.p.numero)}">${opts(x.i)}</select></div></div>`;
+  const porNome = (a, b) => fold(nomeDe(a)).localeCompare(fold(nomeDe(b))) || String(a.p.numero).localeCompare(String(b.p.numero), 'pt-BR', { numeric: true });
+  let corpo;
+  if(!obrasPronto) corpo = '<div class="pn-vazio">Carregando…</div>';
+  else if(ui.alexAba === 'entregues'){
+    const l = buscados.filter(ehEntregue).sort(porNome);
+    corpo = l.length ? `<div class="pn-sec-lista">${l.map(x => linhaPed(x, true)).join('')}</div>` : `<div class="pn-vazio">${termo ? 'Nenhum pedido entregue com esse texto.' : 'Nenhum pedido entregue em andamento.'}</div>`;
+  } else {
+    const etapas = FASES.filter(k => k !== 'entregue').filter(k => !ui.alexEtapa || ui.alexEtapa === k);
+    const secs = etapas.map(k => { const l = buscados.filter(x => x.i === k).sort(porNome); return `<div class="pn-sec obr-sp-${k}"><div class="pn-sec-h"><span class="pn-sec-t">${esc(A.rotObra(k))}</span><span class="pn-sec-n">${l.length}</span></div>${l.length ? `<div class="pn-sec-lista">${l.map(x => linhaPed(x, false)).join('')}</div>` : '<div class="pn-vazio pn-vazio-s">Nenhum pedido nesta etapa.</div>'}</div>`; }).join('');
+    corpo = secs;
+  }
   const bEtapas = bloco('Resumo das etapas internas', '', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : tilesInterna(ped, true) + (ui.alexEtapa ? '<div class="pn-nota">Filtrando por uma etapa. <button type="button" class="pn-link" data-pn-etapa="">Mostrar todas</button></div>' : ''));
-  const bObras = `<section class="pn-bloco pn-largo"><div class="pn-bloco-h"><h3>Obras e etapas internas</h3><span class="pn-cont">${vis.length} ${vis.length === 1 ? 'pedido' : 'pedidos'}</span></div><div class="pn-busca"><input type="search" id="pnAlexBusca" placeholder="Buscar cliente, nº do pedido ou descrição…" value="${esc(ui.alexBusca)}" autocomplete="off"></div>${bLista}</section>`;
+  const abas = `<div class="os-abas pn-abas" role="tablist"><button type="button" role="tab" aria-selected="${ui.alexAba !== 'entregues'}" class="os-aba ${ui.alexAba !== 'entregues' ? 'on' : ''}" data-pn-aba="compras">Compras<span class="os-aba-n">${nCompras}</span></button><button type="button" role="tab" aria-selected="${ui.alexAba === 'entregues'}" class="os-aba ${ui.alexAba === 'entregues' ? 'on' : ''}" data-pn-aba="entregues">Entregues<span class="os-aba-n">${nEntregues}</span></button></div>`;
+  const bObras = `<section class="pn-bloco pn-largo"><div class="pn-bloco-h"><h3>Obras e etapas internas</h3></div><div class="pn-barra">${abas}<div class="pn-busca"><input type="search" id="pnAlexBusca" placeholder="Buscar cliente, nº do pedido ou descrição…" value="${esc(ui.alexBusca)}" autocomplete="off"></div></div>${corpo}</section>`;
   box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS()}${blocoEstoque()}${bObras}</div>`;
   if(focoBusca){ const b = document.getElementById('pnAlexBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
 }
@@ -24023,7 +24047,8 @@ function ligar(){
   ['tabPGestor', 'tabPAlex'].forEach(id => { const box = document.getElementById(id); if(!box || box._pnLigado) return; box._pnLigado = true;
     box.addEventListener('click', (e) => {
       const g = e.target.closest('[data-pn-go]'); if(g){ ir(g.dataset.pnGo, g.dataset.pnSub); return; }
-      const et = e.target.closest('[data-pn-etapa]'); if(et){ const k = et.dataset.pnEtapa; ui.alexEtapa = (k && ui.alexEtapa === k) ? '' : k; renderAlex(); return; }
+      const ab = e.target.closest('[data-pn-aba]'); if(ab){ ui.alexAba = ab.dataset.pnAba; renderAlex(); return; }
+      const et = e.target.closest('[data-pn-etapa]'); if(et){ const k = et.dataset.pnEtapa; ui.alexEtapa = (k && ui.alexEtapa === k) ? '' : k; if(k === 'entregue') ui.alexAba = 'entregues'; else if(k) ui.alexAba = 'compras'; renderAlex(); return; }
       const sv = e.target.closest('[data-pn-svc]'); if(sv && typeof openServiceDetails === 'function'){ const s = (typeof services !== 'undefined' ? services : []).find(x => String(x.id) === sv.dataset.pnSvc); if(s) openServiceDetails(s.id); }
     });
     box.addEventListener('input', (e) => { if(e.target.id === 'pnAlexBusca'){ ui.alexBusca = e.target.value; renderAlex(); } });
