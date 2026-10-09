@@ -8109,6 +8109,13 @@ async function applyEstoqueMovimento(itemId, type, quantity, observation){
 // campo, listener realtime, diff por campo, retry 3x, um nó por registro, sem lógica de exclusão
 // por ausência). Os nós já existentes (estoque, estoqueMovimentacoes) continuam com o código
 // original, intocado.
+// remove 'undefined' em qualquer nível (objetos viram sem o campo; listas viram null) — o Firebase rejeita a gravação inteira se encontrar um
+function semUndefined(v){
+  if(v === undefined) return null;
+  if(Array.isArray(v)) return v.map(semUndefined);
+  if(v && typeof v === 'object'){ const o = {}; Object.keys(v).forEach(k => { if(v[k] !== undefined) o[k] = semUndefined(v[k]); }); return o; }
+  return v;
+}
 function createEstoqueStore(nodeName, alertMsg){
   const store = { items: [], snapshot: {}, attached: false, inFlight: false, queued: false, onRemote: null };
   const snap = (r) => { const s = {}; Object.keys(r).forEach(k => { s[k] = JSON.stringify(r[k]); }); return s; };
@@ -8131,7 +8138,8 @@ function createEstoqueStore(nodeName, alertMsg){
       if(local && confirmed !== undefined){
         const m = {}; new Set([...Object.keys(remote), ...Object.keys(local)]).forEach(f => {
           const lj = JSON.stringify(local[f]); const cj = confirmed[f];
-          m[f] = (cj !== undefined && lj !== cj) ? local[f] : remote[f];
+          const val = (cj !== undefined && lj !== cj) ? local[f] : remote[f];
+          if(val !== undefined) m[f] = val;   // nunca guarda campo 'undefined' (o Firebase recusa a gravação inteira)
         }); merged.push(m);
       } else merged.push(remote);
       store.snapshot[id] = snap(remote);
@@ -8155,7 +8163,11 @@ function createEstoqueStore(nodeName, alertMsg){
       const updates = {}; const sent = {}; let has = false;
       store.items.forEach(r => {
         const id = String(r.id); const confirmed = store.snapshot[id] || {}; let ch = false; const cf = {};
-        Object.keys(r).forEach(f => { const j = JSON.stringify(r[f]); if(confirmed[f] !== j){ updates[nodeName + '/' + id + '/' + f] = r[f]; cf[f] = j; ch = true; } });
+        Object.keys(r).forEach(f => {
+          if(r[f] === undefined){ if(confirmed[f] === undefined) return; r[f] = null; }      // campo apagado/indefinido: grava null (remove) em vez de travar o salvamento
+          const j = JSON.stringify(r[f]);
+          if(confirmed[f] !== j){ updates[nodeName + '/' + id + '/' + f] = semUndefined(r[f]); cf[f] = j; ch = true; }
+        });
         if(ch){ sent[id] = cf; has = true; }
       });
       if(has){ await rtdb.ref().update(updates); Object.keys(sent).forEach(id => { store.snapshot[id] = Object.assign({}, store.snapshot[id], sent[id]); }); }
