@@ -674,7 +674,7 @@
   .photo-thumb{ position:relative; width:60px; height:60px; border:1px solid var(--line); border-radius: var(--radius-sm); overflow:hidden; }
   .photo-thumb img{ width:100%; height:100%; object-fit:cover; display:block; cursor:zoom-in; }
   .lightbox-overlay{
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:500;
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:9400;
     align-items:center; justify-content:center; cursor:zoom-out;
     padding: calc(20px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px))
              calc(20px + env(safe-area-inset-bottom, 0px)) calc(20px + env(safe-area-inset-left, 0px));
@@ -1775,7 +1775,7 @@
   .qd-det-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
   .qd-obs-lida{ white-space:pre-wrap; background:var(--panel-2); border-radius:8px; padding:10px 12px; font-size:13.5px; }
   .qd-fotos{ display:flex; gap:8px; flex-wrap:wrap; margin:6px 0; }
-  .qd-foto{ position:relative; width:92px; height:92px; } .qd-foto img{ width:100%; height:100%; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+  .qd-foto{ position:relative; width:92px; height:92px; } .qd-foto img{ cursor:zoom-in; width:100%; height:100%; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
   .qd-foto button{ position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:50%; border:none; background:var(--danger); color:#fff; font-size:12px; cursor:pointer; }
   /* ===== lista de sugestões própria (cliente / equipamento) ===== */
   .app-sug{ position:absolute; left:0; right:0; top:100%; z-index:50; margin-top:4px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-sm); box-shadow:var(--shadow-md); max-height:240px; overflow:auto; }
@@ -1783,6 +1783,11 @@
   .app-sug-item:last-child{ border-bottom:none; }
   .app-sug-item:hover, .app-sug-item.ativo{ background:var(--panel-2); }
   /* ===== Ordens de serviço (Cadastros e OS → Cobrar / Não cobrar) ===== */
+  .os-abas{ display:flex; gap:4px; padding:3px; background:var(--panel-2); border:1px solid var(--line); border-radius:12px; margin:0 0 6px; max-width:460px; }
+  .os-aba{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 6px; border:0; background:transparent; border-radius:9px; font:inherit; font-size:13px; font-weight:600; color:var(--text-dim); cursor:pointer; transition:background .15s,color .15s; }
+  .os-aba.on{ background:#fff; color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  .os-aba-n{ font-size:11px; font-weight:700; min-width:20px; padding:1px 6px; border-radius:999px; background:rgba(0,0,0,.07); }
+  .os-aba.on .os-aba-n{ background:var(--text); color:#fff; }
   .os-secao{ margin:14px 0; } .os-secao > summary{ cursor:pointer; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin-bottom:8px; }
   .os-linhas{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
   .os-linhas td{ padding:5px 6px; border-top:1px dashed var(--line); vertical-align:top; }
@@ -4972,7 +4977,8 @@ async function openServiceDetails(id){
       <div class="repeat-label">Repetir esta atividade</div>
       <div class="repeat-buttons">
         <button type="button" class="btn-ghost" id="repeatTomorrowBtn">Repetir para amanhã</button>
-        <button type="button" class="btn-ghost" id="repeatWeekBtn">Repetir para toda essa semana</button>
+        <button type="button" class="btn-ghost" id="repeatWeekBtn">Repetir até o fim dessa semana</button>
+        <button type="button" class="btn-ghost" id="repeatNextWeekBtn">Repetir na próxima semana</button>
       </div>
     </div>` : ''}
 
@@ -5120,20 +5126,16 @@ async function openServiceDetails(id){
         repeatInFlight.current = false;
       }
     });
-    document.getElementById('repeatWeekBtn').addEventListener('click', async () => {
+    const repetirEmDatas = async (btnId, calcular) => {
       if(repeatInFlight.current) return; // já está processando esse clique, ignora repetição
+      const datas = calcular();
+      if(!datas.length){ try{ avisoNaoBloqueante('Não há dias úteis à frente nessa semana. Use "Repetir na próxima semana".', 5000); }catch(e){} return; }
       repeatInFlight.current = true;
-      const btn = document.getElementById('repeatWeekBtn');
+      const btn = document.getElementById(btnId);
       const originalLabel = btn.textContent;
       btn.disabled = true;
       btn.textContent = 'Salvando...';
-      const monday = startOfWeek(s.date);
-      const weekDates = [];
-      for(let i=0;i<5;i++){
-        const d = addDays(monday, i);
-        if(d !== s.date) weekDates.push(d);
-      }
-      const created = repeatService(s, weekDates);
+      const created = repeatService(s, datas);
       try{
         await flushServiceMediaPending();
         const ok = await saveServices();
@@ -5148,7 +5150,19 @@ async function openServiceDetails(id){
       } finally {
         repeatInFlight.current = false;
       }
-    });
+    };
+    // só os dias À FRENTE da atividade, até sexta-feira da mesma semana
+    document.getElementById('repeatWeekBtn').addEventListener('click', () => repetirEmDatas('repeatWeekBtn', () => {
+      const monday = startOfWeek(s.date); const out = [];
+      for(let i = 0; i < 5; i++){ const d = addDays(monday, i); if(d > s.date) out.push(d); }
+      return out;
+    }));
+    // segunda a sexta da semana seguinte
+    document.getElementById('repeatNextWeekBtn').addEventListener('click', () => repetirEmDatas('repeatNextWeekBtn', () => {
+      const monday = addDays(startOfWeek(s.date), 7); const out = [];
+      for(let i = 0; i < 5; i++) out.push(addDays(monday, i));
+      return out;
+    }));
   }
   document.getElementById('deleteDetailsBtn').addEventListener('click', () => {
     customConfirm(`Excluir a atividade de "${s.client}"? Essa ação não pode ser desfeita.`, async () => {
@@ -5203,6 +5217,10 @@ function repeatService(svc, dates){
           copy.technicians = source.technicians.slice();
         }
         if(sharedPairId) copy.pairId = sharedPairId;
+        // Atividade de obra: o checklist de instalação (relatório do técnico) acompanha cada dia repetido
+        if(source.obraRegistroId) copy.obraRegistroId = source.obraRegistroId;
+        if(source.obraPedidoId) copy.obraPedidoId = source.obraPedidoId;
+        if(Array.isArray(source.obraRegistroIds) && source.obraRegistroIds.length) copy.obraRegistroIds = source.obraRegistroIds.slice();
         // Orientações do gestor fazem parte da definição do serviço (como descrição/endereço):
         // acompanham a repetição, com cópias independentes dos arrays.
         if(hasInstructions(source)){
@@ -10553,7 +10571,7 @@ async function saveOficinaStaleThresholdDays(days){
 // a época (não depende do fuso horário do navegador nem de "hoje" calendário).
 function getEquipmentStaleInfo(eq){
   const base = { stale: false, daysStopped: null, daysOverdue: null, referenceDate: null, limit: oficinaStaleThresholdDays };
-  if(!eq || eq.status === 'reinstalado') return base;
+  if(!eq || eq.status === 'reinstalado' || eq.status === 'removido_oficina') return base;   // saiu do fluxo: não conta como parado
   if(typeof eq.withdrawnAt !== 'string' || !eq.withdrawnAt) return base;
   const ref = Date.parse(eq.withdrawnAt);
   if(!Number.isFinite(ref)) return base; // data inválida
@@ -21406,7 +21424,7 @@ function garantirDetalhe(){
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'qdDetalheOverlay';
   ov.innerHTML = '<div class="modal" style="max-width:560px; max-height:90vh; overflow-y:auto;"><div id="qdDetalheCorpo"></div></div>';
   document.body.appendChild(ov);
-  ov.addEventListener('click', (e) => { if(e.target === ov) fecharDetalhe(); const b = e.target.closest('[data-qdd]'); if(b) acaoDetalhe(b.dataset.qdd, b); });
+  ov.addEventListener('click', (e) => { if(e.target === ov) fecharDetalhe(); const zi = e.target.closest('.qd-foto img'); if(zi){ openPhotoLightbox(zi.src); return; } const b = e.target.closest('[data-qdd]'); if(b) acaoDetalhe(b.dataset.qdd, b); });
   ov.addEventListener('change', (e) => { if(e.target.id === 'qdFotoInput') adicionarFotos(e.target, 'fotos'); if(e.target.id === 'qdFotoGestorInput') adicionarFotos(e.target, 'fotosGestor'); });
   ov.addEventListener('focusout', (e) => { if(e.target.id === 'qdObsGestor') salvarObs('obsGestor', e.target.value); if(e.target.id === 'qdObsMontador') salvarObs('obsMontador', e.target.value); });
   return ov;
@@ -22199,7 +22217,8 @@ function cartao(os){
     <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
   </div>`;
 }
-let buscaDecisao = '';
+let buscaDecisao = ''; let abaDecisao = 'decidir';   // sub-abas: decidir (A definir) · definidas (Cobrar / Não cobrar) · aguardando
+try{ const sv = localStorage.getItem('osAbaDecisao'); if(['decidir', 'definidas', 'aguardando'].includes(sv)) abaDecisao = sv; }catch(e){}
 function renderAba(){
   const box = document.getElementById('prvOsDecisao'); if(!box) return;
   const todasOs = todas(); const n = todasOs.filter(o => o.status === 'decidir' || o.status === 'aguardando').length;
@@ -22208,18 +22227,21 @@ function renderAba(){
   const lista = termo ? todasOs.filter(o => fold(o.numero + ' ' + o.cliente + ' ' + itensDe(o).map(l => l.descricao + ' ' + (l.tecnicos || []).join(' ')).join(' ')).includes(termo)) : todasOs;
   const aba = document.getElementById('prvOsTabDecisao'); if(aba) aba.textContent = 'Cobrar / Não cobrar' + (n ? ' (' + n + ')' : '');
   if(box.style.display === 'none') return;
+  const nDe = (f) => lista.filter(f).length;
+  const ABAS_DEC = [['decidir', 'A definir', nDe(o => o.status === 'decidir')], ['definidas', 'Definidas', nDe(o => o.status === 'cobrar' || o.status === 'nao_cobrar')], ['aguardando', 'Aguardando', nDe(o => o.status === 'aguardando')]];
+  const barraAbas = `<div class="os-abas" role="tablist">${ABAS_DEC.map(([k, nome, c]) => `<button type="button" role="tab" aria-selected="${abaDecisao === k}" class="os-aba ${abaDecisao === k ? 'on' : ''}" data-os-act="aba" data-aba="${k}">${nome}<span class="os-aba-n">${c}</span></button>`).join('')}</div>`;
   const sec = (st, aberto) => { const l = lista.filter(o => o.status === st).sort((a, b) => String(b.criadoEm).localeCompare(String(a.criadoEm))); if(!l.length) return ''; return `<details ${aberto ? 'open' : ''} class="os-secao"><summary>${esc(ROT_STATUS[st])} (${l.length})</summary>${l.map(cartao).join('')}</details>`; };
   const foco = document.activeElement; const focoBusca = foco && foco.id === 'osDecisaoBusca'; const caret = focoBusca ? foco.selectionStart : null;
   box.innerHTML = `<div class="prv-linha" style="margin:0 0 10px; align-items:center;"><div class="search-clear-wrap" style="flex:1; min-width:220px; max-width:460px;"><input type="search" id="osDecisaoBusca" placeholder="Buscar por cliente, número da OS, descrição ou técnico…" value="${esc(buscaDecisao)}" autocomplete="off"><button type="button" class="search-clear-btn" data-os-act="limpar-busca">✕</button></div>${termo ? `<span class="prv-hint" style="margin:0; font-size:12px;">${lista.length ? lista.length + (lista.length === 1 ? ' OS encontrada' : ' OS encontradas') : 'Nenhuma OS encontrada'}</span>` : ''}</div>
 `
-    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? sec('decidir', true) + sec('aguardando', true) + sec('cobrar', !!termo) + sec('nao_cobrar', !!termo) : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Cadastre uma OS numa atividade e ela aparece aqui.</div>')));
+    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? barraAbas + ((abaDecisao === 'decidir' ? sec('decidir', true) : abaDecisao === 'aguardando' ? sec('aguardando', true) : sec('cobrar', true) + sec('nao_cobrar', true)) || '<div class="empty-state">Nenhuma OS nesta aba' + (termo ? ' com esse texto' : '') + '.</div>') : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Cadastre uma OS numa atividade e ela aparece aqui.</div>')));
   if(focoBusca){ const b = document.getElementById('osDecisaoBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
   if(!box._osLigado){ box._osLigado = true;
     box.addEventListener('input', (e) => { if(e.target.id === 'osDecisaoBusca'){ buscaDecisao = e.target.value; renderAba(); } });
     box.addEventListener('keydown', (e) => { if(e.target.id === 'osDecisaoBusca' && e.key === 'Escape'){ buscaDecisao = ''; renderAba(); } });
     box.addEventListener('click', (e) => {
       const b = e.target.closest('[data-os-act]');
-      if(b){ const a = b.dataset.osAct; if(a === 'migrar') abrirMigracao(); else if(a === 'cobrar') decidir(b.dataset.id, 'cobrar'); else if(a === 'aguardar') decidir(b.dataset.id, 'aguardando'); else if(a === 'voltar') decidir(b.dataset.id, 'decidir'); else if(a === 'nao-cobrar') abrirNaoCobrar(b.dataset.id); else if(a === 'limpar-busca'){ buscaDecisao = ''; renderAba(); const i = document.getElementById('osDecisaoBusca'); if(i) i.focus(); } return; }
+      if(b){ const a = b.dataset.osAct; if(a === 'aba'){ abaDecisao = b.dataset.aba; try{ localStorage.setItem('osAbaDecisao', abaDecisao); }catch(_){} renderAba(); } else if(a === 'migrar') abrirMigracao(); else if(a === 'cobrar') decidir(b.dataset.id, 'cobrar'); else if(a === 'aguardar') decidir(b.dataset.id, 'aguardando'); else if(a === 'voltar') decidir(b.dataset.id, 'decidir'); else if(a === 'nao-cobrar') abrirNaoCobrar(b.dataset.id); else if(a === 'limpar-busca'){ buscaDecisao = ''; renderAba(); const i = document.getElementById('osDecisaoBusca'); if(i) i.focus(); } return; }
       const tr = e.target.closest('[data-os-linha]'); if(tr) abrirLinha(tr.dataset.osLinha);
     }); }
 }
