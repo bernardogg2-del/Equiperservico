@@ -1788,6 +1788,51 @@
   .os-aba.on{ background:#fff; color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
   .os-aba-n{ font-size:11px; font-weight:700; min-width:20px; padding:1px 6px; border-radius:999px; background:rgba(0,0,0,.07); }
   .os-aba.on .os-aba-n{ background:var(--text); color:#fff; }
+
+  /* ===== Painel Gestor / Painel Alex ===== */
+  .pn-tab{ max-width:1180px; margin:0 auto; padding:4px 0 28px; }
+  .pn-head{ display:flex; align-items:flex-end; justify-content:space-between; margin:6px 2px 14px; }
+  .pn-title{ font-size:24px; font-weight:800; letter-spacing:-.4px; color:var(--text); }
+  .pn-sub{ font-size:13px; color:var(--text-dim); margin-top:2px; }
+  .pn-grade{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:14px; align-items:start; }
+  .pn-bloco{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px 16px 14px; box-shadow:0 1px 2px rgba(20,20,22,.04), 0 8px 22px rgba(20,20,22,.04); min-width:0; }
+  .pn-largo{ grid-column:1 / -1; }
+  .pn-bloco-h{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+  .pn-bloco-h h3{ margin:0; font-size:15px; font-weight:750; letter-spacing:-.1px; color:var(--text); }
+  .pn-ver{ border:0; background:var(--panel-2); color:var(--text-dim); font:inherit; font-size:12px; font-weight:650; padding:5px 11px; border-radius:999px; cursor:pointer; }
+  .pn-ver:hover{ color:var(--text); }
+  .pn-cont{ font-size:12px; color:var(--text-dim); font-weight:600; }
+  .pn-fase{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; color:var(--text-dim); margin:12px 0 6px; }
+  .pn-fase:first-of-type{ margin-top:0; }
+  .pn-kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(112px, 1fr)); gap:8px; }
+  .pn-k{ position:relative; display:flex; flex-direction:column; gap:2px; text-align:left; font:inherit; cursor:pointer; background:#fff; border:1px solid var(--line); border-radius:13px; padding:10px 12px 10px 14px; transition:box-shadow .15s, transform .1s; }
+  .pn-k::before{ content:''; position:absolute; left:0; top:9px; bottom:9px; width:4px; border-radius:0 4px 4px 0; background:var(--c, #9aa0a6); }
+  .pn-k:hover{ box-shadow:0 4px 14px rgba(20,20,22,.08); }
+  .pn-k:active{ transform:scale(.985); }
+  .pn-k.on{ border-color:var(--c, #333); box-shadow:0 0 0 2px var(--c-bg, rgba(0,0,0,.08)); }
+  .pn-k-n{ font-size:25px; font-weight:800; letter-spacing:-.6px; line-height:1.05; color:var(--c-num, var(--text)); }
+  .pn-k-r{ font-size:12px; font-weight:650; color:var(--text); line-height:1.25; }
+  .pn-k-s{ font-size:11px; color:var(--text-dim); }
+  .pn-t-red{ --c:#C0392B; --c-num:#B3261E; } .pn-t-amber{ --c:#F2B705; --c-num:#9A7400; } .pn-t-blue{ --c:#3D84B0; --c-num:#2B6A92; } .pn-t-green{ --c:#2E7D4F; --c-num:#2E7D4F; } .pn-t-gray{ --c:#9aa0a6; --c-num:#555a60; }
+  .pn-lin{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13px; }
+  .pn-lin:first-of-type{ margin-top:10px; }
+  .pn-kpis + .pn-lin{ margin-top:12px; }
+  .pn-click{ cursor:pointer; } .pn-click:hover .pn-lin-t{ text-decoration:underline; }
+  .pn-lin-t{ flex:1; min-width:0; font-weight:650; color:var(--text); } .pn-lin-t small{ display:block; font-weight:400; color:var(--text-dim); font-size:11.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pn-lin-m{ color:var(--text-dim); font-size:12px; white-space:nowrap; }
+  .pn-pill{ font-size:11.5px; font-weight:700; padding:3px 9px; border-radius:999px; white-space:nowrap; }
+  .pn-p-red{ background:rgba(192,57,43,.12); color:#96281D; } .pn-p-amber{ background:rgba(242,183,5,.2); color:#7A5B00; }
+  .pn-mais, .pn-nota{ font-size:12px; color:var(--text-dim); margin-top:10px; }
+  .pn-vazio{ padding:14px 4px; font-size:13px; color:var(--text-dim); }
+  .pn-link{ border:0; background:none; color:var(--text); font:inherit; font-size:12px; font-weight:700; text-decoration:underline; cursor:pointer; padding:0; }
+  .pn-busca{ margin:0 0 12px; } .pn-busca input{ width:100%; max-width:420px; }
+  .pn-obra{ border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px; background:#fff; }
+  .pn-obra-n{ font-size:15px; font-weight:800; letter-spacing:-.2px; margin-bottom:4px; }
+  .pn-ped{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
+  .pn-ped:first-of-type{ border-top:0; }
+  .pn-ped-t{ display:flex; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; } .pn-ped-d{ font-size:13px; color:var(--text); font-weight:600; }
+  .pn-sel{ appearance:none; -webkit-appearance:none; font:inherit; font-size:12.5px; font-weight:700; padding:6px 26px 6px 12px; border-radius:999px; cursor:pointer; border:1px solid var(--c-line, var(--line)); background-color:var(--c-bg, var(--panel-2)); color:var(--c-tx, var(--text)); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23666' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+  @media (max-width:760px){ .pn-grade{ grid-template-columns:1fr; } .pn-title{ font-size:21px; } .pn-ped{ flex-direction:column; align-items:flex-start; } }
   .os-secao{ margin:14px 0; } .os-secao > summary{ cursor:pointer; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin-bottom:8px; }
   .os-linhas{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
   .os-linhas td{ padding:5px 6px; border-top:1px dashed var(--line); vertical-align:top; }
@@ -2772,6 +2817,8 @@
       </div>
     </div>
     <nav class="sidebar-nav" id="sidebarNav">
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnPGestor"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel Gestor</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnPAlex"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Painel Alex</span></button>
       <button type="button" class="sidebar-nav-btn active" id="sidebarBtnAgenda"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg><span>Agenda</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnTecnicos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span>Enviar agenda</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnManutencoes"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg><span>Manutenções</span></button>
@@ -2857,6 +2904,8 @@
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg>
       <span>Oficina</span>
     </button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPGestor"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel Gestor</span></button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPAlex"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Painel Alex</span></button>
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
       <span>Obras e Pedidos</span>
     </button>
@@ -3338,6 +3387,8 @@
        viver no nível do body quando Técnico/Oficina abrem a própria tela cheia (openEstoque()). -->
   <div id="tabEstoque" style="display:none;"></div>
   <div id="tabObras" style="display:none;"></div>
+  <div id="tabPGestor" class="pn-tab" style="display:none;"></div>
+  <div id="tabPAlex" class="pn-tab" style="display:none;"></div>
 
   <!-- Detalhes de um equipamento da Oficina (visão do Gestor) — só leitura nesta etapa. -->
   <div class="overlay" id="oficinaGestorDetalheOverlay">
@@ -12046,6 +12097,8 @@ function switchTab(tab){
   document.getElementById('tabOficinaGestor').style.display = tab === 'oficinagestor' ? '' : 'none';
   document.getElementById('tabEstoque').style.display = tab === 'estoque' ? '' : 'none';
   document.getElementById('tabObras').style.display = tab === 'obras' ? '' : 'none';
+  document.getElementById('tabPGestor').style.display = tab === 'pgestor' ? '' : 'none';
+  document.getElementById('tabPAlex').style.display = tab === 'palex' ? '' : 'none';
   document.getElementById('tabBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('tabBtnTecnicos').classList.toggle('active', tab === 'tecnicos');
   document.getElementById('tabBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
@@ -12065,9 +12118,11 @@ function switchTab(tab){
   document.getElementById('sidebarBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('sidebarBtnEstoque').classList.toggle('active', tab === 'estoque');
   document.getElementById('sidebarBtnObras').classList.toggle('active', tab === 'obras');
+  document.getElementById('sidebarBtnPGestor').classList.toggle('active', tab === 'pgestor');
+  document.getElementById('sidebarBtnPAlex').classList.toggle('active', tab === 'palex');
   // Navegação inferior (mobile): 4 destinos primários + "Mais" (fica ativo quando o destino
   // atual é um dos 3 que moram dentro da folha "Mais": Enviar agenda, Clientes, Acessos).
-  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque' || tab === 'obras';
+  const maisAtivo = tab === 'os' || tab === 'clientes' || tab === 'acessos' || tab === 'oficinagestor' || tab === 'estoque' || tab === 'obras' || tab === 'pgestor' || tab === 'palex';
   document.getElementById('bottomNavBtnAgenda').classList.toggle('active', tab === 'agenda');
   document.getElementById('bottomNavBtnManutencoes').classList.toggle('active', tab === 'manutencoes');
   document.getElementById('bottomNavBtnOS').classList.toggle('active', tab === 'os');
@@ -12079,12 +12134,15 @@ function switchTab(tab){
   document.getElementById('bottomNavBtnOficinaGestor').classList.toggle('active', tab === 'oficinagestor');
   document.getElementById('bottomNavBtnEstoque').classList.toggle('active', tab === 'estoque');
   document.getElementById('bottomNavBtnObras').classList.toggle('active', tab === 'obras');
+  document.getElementById('bottomNavBtnPGestor').classList.toggle('active', tab === 'pgestor');
+  document.getElementById('bottomNavBtnPAlex').classList.toggle('active', tab === 'palex');
   if(tab === 'clientes') renderClientes();
   if(tab === 'acessos') renderAcessosUsuariosList();
   if(tab === 'painel') renderPainelDeControle();
   if(tab === 'oficinagestor') renderOficinaGestorTab();
   if(tab === 'estoque') openEstoqueGestorTab();
   if(tab === 'obras' && window.OBR_API) OBR_API.abrirGestor();
+  if((tab === 'pgestor' || tab === 'palex') && window.PAINEIS_API) PAINEIS_API.abrir();
   if(tab === 'painel' && window.REL_API) REL_API.abrir();   // Relatórios de OS
 }
 document.getElementById('tabBtnAgenda').addEventListener('click', () => switchTab('agenda'));
@@ -12100,6 +12158,10 @@ document.getElementById('sidebarBtnClientes').addEventListener('click', () => sw
 document.getElementById('sidebarBtnAcessos').addEventListener('click', () => switchTab('acessos'));
 document.getElementById('sidebarBtnOficinaGestor').addEventListener('click', () => switchTab('oficinagestor'));
 document.getElementById('sidebarBtnObras').addEventListener('click', () => switchTab('obras'));
+document.getElementById('sidebarBtnPGestor').addEventListener('click', () => switchTab('pgestor'));
+document.getElementById('sidebarBtnPAlex').addEventListener('click', () => switchTab('palex'));
+document.getElementById('bottomNavBtnPGestor').addEventListener('click', () => { switchTab('pgestor'); toggleBottomNavSheet(false); });
+document.getElementById('bottomNavBtnPAlex').addEventListener('click', () => { switchTab('palex'); toggleBottomNavSheet(false); });
 document.getElementById('bottomNavBtnObras').addEventListener('click', () => { switchTab('obras'); toggleBottomNavSheet(false); });
 document.getElementById('bottomNavBtnOficinaGestor').addEventListener('click', () => { switchTab('oficinagestor'); toggleBottomNavSheet(false); });
 document.getElementById('bottomNavBtnGaleria').addEventListener('click', () => { toggleBottomNavSheet(false); openGaleria('managerView'); });
@@ -17677,6 +17739,8 @@ function acessosMastersAtivos(){ return USERS.filter(u => u.isMaster === true &&
 // autenticação/regras no Firebase, que continuam como estavam.
 // =====================================================================================
 const ABAS_GESTOR = [
+  { id: 'pgestor',       label: 'Painel Gestor',      botoes: ['sidebarBtnPGestor', 'bottomNavBtnPGestor'] },
+  { id: 'palex',         label: 'Painel Alex',        botoes: ['sidebarBtnPAlex', 'bottomNavBtnPAlex'] },
   { id: 'agenda',        label: 'Agenda',             botoes: ['tabBtnAgenda', 'sidebarBtnAgenda', 'bottomNavBtnAgenda'] },
   { id: 'tecnicos',      label: 'Enviar agenda',      botoes: ['tabBtnTecnicos', 'sidebarBtnTecnicos', 'bottomNavBtnTecnicos'] },
   { id: 'manutencoes',   label: 'Manutenções',        botoes: ['tabBtnManutencoes', 'sidebarBtnManutencoes', 'bottomNavBtnManutencoes'] },
@@ -23845,8 +23909,131 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
+
+// =====================================================================================
+// PAINEL GESTOR e PAINEL ALEX (09/10) — dois painéis de controle na lateral do Gestor. Só leem o que o app já tem em memória
+// (atividades, Obras e Pedidos, Oficina, Estoque, Cadastros e OS); a única gravação é a troca da etapa interna de um pedido no Painel Alex
+// (a mesma troca que o Gestor faz em Obras e Pedidos).
+// =====================================================================================
+(function(){
+'use strict';
+const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const num = (n) => Number(n) || 0;
+const O = () => window.OBR_API || {};
+const ui = { alexEtapa: '', alexBusca: '' };
+let obrasPronto = false, osPronto = false;
+
+function dataHoje(){ try{ const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }catch(e){ return ''; } }
+function ir(tab, subBtn){ try{ if(typeof switchTab === 'function') switchTab(tab); if(subBtn){ const b = subBtn === 'prvOsTabAguardando' ? document.querySelector('#prvOsTabs [data-prvos="aguardando"]') : document.getElementById(subBtn); if(b) b.click(); } }catch(e){ console.error(e); } }
+function cab(titulo, sub){ return `<div class="pn-head"><div><div class="pn-title">${esc(titulo)}</div><div class="pn-sub">${esc(sub)}</div></div></div>`; }
+function bloco(titulo, destino, corpo, extra){ return `<section class="pn-bloco"><div class="pn-bloco-h"><h3>${esc(titulo)}</h3>${destino ? `<button type="button" class="pn-ver" data-pn-go="${esc(destino)}"${extra ? ` data-pn-sub="${esc(extra)}"` : ''}>Abrir ›</button>` : ''}</div>${corpo}</section>`; }
+function kpi(n, rot, tom, go, sub, ativo, dataAttr){ return `<button type="button" class="pn-k pn-t-${tom} ${ativo ? 'on' : ''}" ${go ? `data-pn-go="${esc(go)}"` : ''}${sub ? ` data-pn-sub="${esc(sub)}"` : ''} ${dataAttr || ''}><span class="pn-k-n">${n}</span><span class="pn-k-r">${esc(rot)}</span></button>`; }
+
+// ---------- fontes de dados ----------
+function atividadesHoje(){ const h = typeof todayStr === 'function' ? todayStr() : ''; return (typeof services !== 'undefined' ? services : []).filter(s => s.date === h); }
+function pedidosObras(){
+  const A = O(); if(!A.registros) return [];
+  const out = [];
+  A.registros().forEach(r => { A.pedidosDe(r).filter(p => !p.cancelado).forEach(p => out.push({ r, p, i: A.internoDe(r, p.id), o: A.obraDe(r, p.id) })); });
+  return out;
+}
+function resumoEstoque(){
+  if(typeof estoqueMateriaisAtivos !== 'function') return { rep: [], aten: [] };
+  const todos = estoqueMateriaisAtivos(); return { rep: todos.filter(i => estoqueStatusDoMaterial(i) === 'REPOSIÇÃO'), aten: todos.filter(i => estoqueStatusDoMaterial(i) === 'ATENÇÃO') };
+}
+function blocoEstoque(){
+  const { rep, aten } = resumoEstoque();
+  const lin = (i, c) => `<div class="pn-lin"><span class="pn-lin-t">${esc(i.name)}</span><span class="pn-lin-m">${esc(typeof estoqueCategoriaDoItem === 'function' ? estoqueCategoriaDoItem(i) : '')}</span><span class="pn-pill pn-p-${c}">${num(i.quantity)} / mín. ${num(i.minimumQuantity)} ${esc(i.unit || '')}</span></div>`;
+  const corpo = (rep.length || aten.length)
+    ? `<div class="pn-kpis">${kpi(rep.length, 'Reposição necessária', 'red', 'estoque')}${kpi(aten.length, 'Atenção (no mínimo)', 'amber', 'estoque')}</div>${rep.slice(0, 8).map(i => lin(i, 'red')).join('')}${rep.length > 8 ? `<div class="pn-mais">+ ${rep.length - 8} itens em reposição</div>` : ''}`
+    : '<div class="pn-vazio">Nenhum item abaixo do mínimo. ✓</div>';
+  return bloco('Alertas de estoque', 'estoque', corpo);
+}
+function blocoCadastrosOS(){
+  const pend = (typeof groupPaired === 'function' ? groupPaired((typeof services !== 'undefined' ? services : []).filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido)).length : 0);
+  const qd = window.QUADROS_API ? num(QUADROS_API.pendentesOS()) : 0, eq = window.OSOF_API ? num(OSOF_API.pendentesOS()) : 0;
+  const todas = window.OS_API && osPronto ? OS_API.todas() : []; const c = (st) => todas.filter(o => o.status === st).length;
+  const corpo = `<div class="pn-kpis">${kpi(pend + qd + eq, 'Aguardando cadastro de OS', 'red', 'os', 'prvOsTabAguardando')}${kpi(osPronto ? c('decidir') : '…', 'OS a definir', 'amber', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('aguardando') : '…', 'OS aguardando', 'blue', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('cobrar') : '…', 'OS cobradas', 'green', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('nao_cobrar') : '…', 'Não cobrar', 'gray', 'os', 'prvOsTabDecisao')}</div>
+    ${(pend || qd || eq) ? `<div class="pn-nota">Para cadastrar: ${[pend ? pend + (pend === 1 ? ' atividade' : ' atividades') : '', qd ? qd + (qd === 1 ? ' quadro de comando' : ' quadros de comando') : '', eq ? eq + (eq === 1 ? ' equipamento da oficina' : ' equipamentos da oficina') : ''].filter(Boolean).join(' · ')}</div>` : ''}`;
+  return bloco('Cadastros e OS', 'os', corpo);
+}
+function tilesInterna(ped, clicavel){
+  const A = O(); const fases = A.FASE_INTERNA || [];
+  return `<div class="pn-kpis">${fases.map(k => { const n = ped.filter(x => x.i === k).length; const cl = new Set(ped.filter(x => x.i === k).map(x => x.r.clienteId || fold(x.r.cliente))).size;
+    return `<button type="button" class="pn-k obr-sp-${k} pn-vars ${clicavel && ui.alexEtapa === k ? 'on' : ''}" ${clicavel ? `data-pn-etapa="${k}"` : `data-pn-go="obras"`}><span class="pn-k-n">${n}</span><span class="pn-k-r">${esc(A.rotObra(k))}</span><span class="pn-k-s">${cl} ${cl === 1 ? 'cliente' : 'clientes'}</span></button>`; }).join('')}</div>`;
+}
+
+// ---------- PAINEL GESTOR ----------
+function renderGestor(){
+  const box = document.getElementById('tabPGestor'); if(!box || box.style.display === 'none') return;
+  const A = O();
+  // atividades de hoje
+  const ativ = atividadesHoje(); const cont = (st) => ativ.filter(s => s.status === st).length;
+  const ord = { em_andamento: 0, atribuido: 1, aguardando: 2, concluido: 3 };
+  const linhasAtiv = ativ.slice().sort((a, b) => (ord[a.status] ?? 9) - (ord[b.status] ?? 9) || String(a.client).localeCompare(String(b.client), 'pt-BR')).slice(0, 12).map(s => {
+    const tec = typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s).filter(Boolean).join(' e ') : (s.technician || '');
+    return `<div class="pn-lin pn-click" data-pn-svc="${esc(s.id)}"><span class="pn-lin-t">${esc(s.client)}${s.description ? `<small>${esc(s.description)}</small>` : ''}</span><span class="pn-lin-m">${esc(tec || 'Sem técnico')}</span><span class="status-tag ${esc(s.status)}">${esc(typeof statusLabelOf === 'function' ? statusLabelOf(s.status) : s.status)}</span></div>`; }).join('');
+  const bAtiv = bloco('Atividades de hoje', 'agenda', ativ.length
+    ? `<div class="pn-kpis">${kpi(ativ.length, 'No dia', 'gray', 'agenda')}${kpi(cont('em_andamento'), 'Em andamento', 'blue', 'agenda')}${kpi(cont('atribuido'), 'Atribuídas', 'amber', 'agenda')}${kpi(cont('aguardando'), 'Sem técnico', 'red', 'agenda')}${kpi(cont('concluido'), 'Concluídas', 'green', 'agenda')}</div>${linhasAtiv}${ativ.length > 12 ? `<div class="pn-mais">+ ${ativ.length - 12} atividades — veja todas na Agenda</div>` : ''}`
+    : '<div class="pn-vazio">Nenhuma atividade agendada para hoje.</div>');
+  // obras
+  const ped = pedidosObras();
+  const tilesObra = (A.STATUS_OBRA ? A.STATUS_OBRA.filter(([k]) => !(A.FASE_INTERNA || []).includes(k)) : []).map(([k, n]) => { const q = ped.filter(x => x.o === k).length; return `<button type="button" class="pn-k obr-sp-${k} pn-vars" data-pn-go="obras"><span class="pn-k-n">${q}</span><span class="pn-k-r">${esc(n)}</span></button>`; }).join('');
+  const bObras = bloco('Etapas das obras', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : `<div class="pn-fase">Etapa interna · compras</div>${tilesInterna(ped, false)}<div class="pn-fase">Etapa obra</div><div class="pn-kpis">${tilesObra}</div><div class="pn-nota">${ped.length} ${ped.length === 1 ? 'pedido' : 'pedidos'} em andamento nas obras</div>`);
+  // oficina
+  const eqs = typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []; const rotG = typeof OE_GRUPO_LABEL !== 'undefined' ? OE_GRUPO_LABEL : {};
+  const tomG = { vistoria: 'red', manutencao: 'amber', teste: 'blue', reinstalacao: 'green' };
+  const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
+  const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
+  const bOf = bloco('Oficina', 'oficinagestor', `<div class="pn-kpis">${Object.keys(rotG).map(g => kpi(nG(g), rotG[g], tomG[g] || 'gray', 'oficinagestor')).join('')}${kpi(parados, 'Parados além do limite', parados ? 'red' : 'gray', 'oficinagestor')}</div>`);
+  box.innerHTML = cab('Painel Gestor', dataHoje()) + `<div class="pn-grade">${bAtiv}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS()}</div>`;
+}
+
+// ---------- PAINEL ALEX ----------
+function renderAlex(){
+  const box = document.getElementById('tabPAlex'); if(!box || box.style.display === 'none') return;
+  const A = O(); const foco = document.activeElement; const focoBusca = foco && foco.id === 'pnAlexBusca'; const caret = focoBusca ? foco.selectionStart : null;
+  const ped = pedidosObras().filter(x => x.o !== 'finalizado');           // obra finalizada sai da lista
+  const termo = fold(ui.alexBusca);
+  let vis = ped.filter(x => (!ui.alexEtapa || x.i === ui.alexEtapa) && (!termo || fold((A.nomeCliente ? A.nomeCliente(x.r) : x.r.cliente) + ' ' + x.p.numero + ' ' + (x.p.descricao || '')).includes(termo)));
+  const grupos = new Map(); vis.forEach(x => { const nome = A.nomeCliente ? A.nomeCliente(x.r) : x.r.cliente; const k = fold(nome); if(!grupos.has(k)) grupos.set(k, { nome, itens: [] }); grupos.get(k).itens.push(x); });
+  const lista = [...grupos.values()].sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  const opts = (atual) => (A.FASE_INTERNA || []).map(k => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(A.rotObra(k))}</option>`).join('');
+  const bLista = !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : lista.length ? lista.map(g => `<div class="pn-obra"><div class="pn-obra-n">${esc(g.nome)}</div>${g.itens.map(x => `<div class="pn-ped"><div class="pn-ped-t"><span class="obr-ped-num pn-num">Pedido ${esc(x.p.numero)}</span><span class="pn-ped-d">${esc(x.p.descricao || '')}</span></div><select class="pn-sel obr-sp obr-sp-${x.i}" data-pn-st="${esc(x.r.id)}|${esc(x.p.id)}" aria-label="Etapa interna do pedido ${esc(x.p.numero)}">${opts(x.i)}</select></div>`).join('')}</div>`).join('') : `<div class="pn-vazio">${ui.alexEtapa || termo ? 'Nenhum pedido com esse filtro.' : 'Nenhum pedido em andamento.'}</div>`;
+  const bEtapas = bloco('Resumo das etapas internas', '', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : tilesInterna(ped, true) + (ui.alexEtapa ? '<div class="pn-nota">Filtrando por uma etapa. <button type="button" class="pn-link" data-pn-etapa="">Mostrar todas</button></div>' : ''));
+  const bObras = `<section class="pn-bloco pn-largo"><div class="pn-bloco-h"><h3>Obras e etapas internas</h3><span class="pn-cont">${vis.length} ${vis.length === 1 ? 'pedido' : 'pedidos'}</span></div><div class="pn-busca"><input type="search" id="pnAlexBusca" placeholder="Buscar cliente, nº do pedido ou descrição…" value="${esc(ui.alexBusca)}" autocomplete="off"></div>${bLista}</section>`;
+  box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS()}${blocoEstoque()}${bObras}</div>`;
+  if(focoBusca){ const b = document.getElementById('pnAlexBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
+}
+
+// ---------- ligação ----------
+function carregar(){
+  if(window.OBR_API && !obrasPronto) OBR_API.garantirCarregado().then(() => { obrasPronto = true; renderTudo(); }).catch(e => console.error('painel: obras', e));
+  if(window.OS_API && !osPronto) OS_API.garantirCarregado().then(() => { osPronto = true; renderTudo(); }).catch(e => console.error('painel: os', e));
+}
+function renderTudo(){ renderGestor(); renderAlex(); }
+function abrir(){ carregar(); renderTudo(); }
+function ligar(){
+  ['tabPGestor', 'tabPAlex'].forEach(id => { const box = document.getElementById(id); if(!box || box._pnLigado) return; box._pnLigado = true;
+    box.addEventListener('click', (e) => {
+      const g = e.target.closest('[data-pn-go]'); if(g){ ir(g.dataset.pnGo, g.dataset.pnSub); return; }
+      const et = e.target.closest('[data-pn-etapa]'); if(et){ const k = et.dataset.pnEtapa; ui.alexEtapa = (k && ui.alexEtapa === k) ? '' : k; renderAlex(); return; }
+      const sv = e.target.closest('[data-pn-svc]'); if(sv && typeof openServiceDetails === 'function'){ const s = (typeof services !== 'undefined' ? services : []).find(x => String(x.id) === sv.dataset.pnSvc); if(s) openServiceDetails(s.id); }
+    });
+    box.addEventListener('input', (e) => { if(e.target.id === 'pnAlexBusca'){ ui.alexBusca = e.target.value; renderAlex(); } });
+    box.addEventListener('change', async (e) => { const sel = e.target.closest('[data-pn-st]'); if(!sel) return; const [rid, pid] = sel.dataset.pnSt.split('|');
+      try{ await OBR_API.mudarAndamento(rid, pid, 'i', sel.value); }catch(err){ console.error(err); try{ avisoNaoBloqueante('Não foi possível salvar a etapa. Tente de novo.', 5000); }catch(_){} }
+      renderTudo(); });
+  });
+}
+document.addEventListener('DOMContentLoaded', ligar); ligar();
+setInterval(() => { try{ const a = document.activeElement; if(a && (a.tagName === 'SELECT' || a.id === 'pnAlexBusca')) return; renderTudo(); }catch(e){} }, 20000);   // mantém os números em dia enquanto o painel está aberto
+window.PAINEIS_API = { abrir, renderTudo, renderGestor, renderAlex };
+})();
+
 
 init();
 </script>
