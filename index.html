@@ -9287,7 +9287,12 @@ function renderManutencoes(){
     });
     listBox.querySelectorAll('[data-delcontract]').forEach(btn => {
       btn.addEventListener('click', (e) => {
+        if(!isCurrentUserMaster()){
+          alert('Esta ação só pode ser executada por um gestor master.');
+          return;
+        }
         customConfirm('Tem certeza que deseja excluir esta manutenção preventiva? O histórico de atividades já realizadas não será apagado.', async () => {
+          if(!isCurrentUserMaster()) return; // checagem repetida no momento de executar
           const rawId = e.target.dataset.delcontract;
           const alvo = findMaintenanceContractByRawId(rawId);
           if(!alvo) return;
