@@ -32,6 +32,9 @@
     --accent-soft: rgba(217,26,34,0.08);
     --accent-line: rgba(217,26,34,0.25);
     /* Status "Atribuído" continua azul (identidade própria de status, não é o acento geral) */
+    /* Cores da situação da ATIVIDADE: Atribuído = amarelo, Em andamento = azul (as variáveis --status-atribuido/--progress seguem azul/marrom para os outros usos) */
+    --st-attr: #F2B705; --st-attr-tx: #7A5B00; --st-attr-soft: rgba(242,183,5,0.20); --st-attr-line: rgba(201,154,18,0.50);
+    --st-prog: #3D84B0; --st-prog-tx: #2B6A92; --st-prog-soft: rgba(61,132,176,0.12); --st-prog-line: rgba(61,132,176,0.34);
     --status-atribuido: #3D84B0;
     --status-atribuido-soft: rgba(61,132,176,0.12);
     --status-atribuido-line: rgba(61,132,176,0.32);
@@ -210,8 +213,8 @@
   }
   .mini-card:hover{ box-shadow: var(--shadow-md); transform: translateY(-1px); }
   .mini-card:last-child{ margin-bottom:0; }
-  .mini-card.status-atribuido{ border-left-color: var(--status-atribuido); }
-  .mini-card.status-em_andamento{ border-left-color: var(--status-progress); }
+  .mini-card.status-atribuido{ border-left-color: var(--st-attr); }
+  .mini-card.status-em_andamento{ border-left-color: var(--st-prog); }
   .mini-card.status-concluido{ border-left-color: var(--success); opacity:0.7; }
   .mini-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .mini-client{ font-size: 14px; font-weight:700; }
@@ -256,8 +259,8 @@
     color: var(--amber);
     border: 1px solid var(--warning-line);
   }
-  .mini-tag.atribuido{ background: var(--status-atribuido-soft); color: var(--status-atribuido); border-color: var(--status-atribuido-line); }
-  .mini-tag.em_andamento{ background: var(--progress-soft); color: var(--status-progress); border-color: var(--progress-line); }
+  .mini-tag.atribuido{ background: var(--st-attr-soft); color: var(--st-attr-tx); border-color: var(--st-attr-line); }
+  .mini-tag.em_andamento{ background: var(--st-prog-soft); color: var(--st-prog-tx); border-color: var(--st-prog-line); }
   .mini-tag.concluido{ background: var(--success-soft); color: var(--success-dark); border-color: var(--success-line); }
 
   .tabs{
@@ -346,7 +349,7 @@
   }
   .painel-kpi-icon svg{ width:18px; height:18px; }
   .painel-kpi-icon.is-success{ background: var(--success-soft); color: var(--success-dark); }
-  .painel-kpi-icon.is-progress{ background: var(--progress-soft); color: var(--status-progress); }
+  .painel-kpi-icon.is-progress{ background: var(--st-prog-soft); color: var(--st-prog-tx); }
   .painel-kpi-icon.is-warning{ background: var(--warning-soft); color: var(--warning); }
   .painel-kpi-icon.is-neutral{ background: var(--surface); color: var(--text-dim); border:1px solid var(--line); }
   .painel-kpi-value{ font-size: 26px; font-weight:700; font-family: var(--sans); color: var(--ink); line-height:1; }
@@ -515,8 +518,8 @@
   .week-client-bar:hover:not(.sortable-chosen):not(.sortable-ghost){ box-shadow: var(--shadow-md); transform: translateY(-1px); }
   .week-client-bar:active{ cursor: grabbing; }
   .week-client-bar:last-child{ margin-bottom:0; }
-  .week-client-bar.status-atribuido{ border-left-color: var(--status-atribuido); }
-  .week-client-bar.status-em_andamento{ border-left-color: var(--status-progress); }
+  .week-client-bar.status-atribuido{ border-left-color: var(--st-attr); }
+  .week-client-bar.status-em_andamento{ border-left-color: var(--st-prog); }
   .week-client-bar.status-concluido{ border-left-color: var(--success); opacity:0.7; }
   .week-day-list{ min-height: 40px; flex: 1; }
   /* Enquanto um cartão da semana está sendo arrastado (classe posta no body em onStart/onEnd):
@@ -634,8 +637,8 @@
     transition: box-shadow 0.15s, transform 0.15s;
   }
   .service-card:hover{ box-shadow: var(--shadow-md); transform: translateY(-1px); }
-  .service-card.status-atribuido{ border-left-color: var(--status-atribuido); }
-  .service-card.status-em_andamento{ border-left-color: var(--status-progress); }
+  .service-card.status-atribuido{ border-left-color: var(--st-attr); }
+  .service-card.status-em_andamento{ border-left-color: var(--st-prog); }
   .service-card.status-concluido{ border-left-color: var(--success); opacity:0.72; }
 
   .service-top{
@@ -655,8 +658,8 @@
     color: var(--amber);
     border: 1px solid var(--warning-line);
   }
-  .status-tag.atribuido{ background: var(--status-atribuido-soft); color: var(--status-atribuido); border-color: var(--status-atribuido-line); }
-  .status-tag.em_andamento{ background: var(--progress-soft); color: var(--status-progress); border-color: var(--progress-line); }
+  .status-tag.atribuido{ background: var(--st-attr-soft); color: var(--st-attr-tx); border-color: var(--st-attr-line); }
+  .status-tag.em_andamento{ background: var(--st-prog-soft); color: var(--st-prog-tx); border-color: var(--st-prog-line); }
   .status-tag.concluido{ background: var(--success-soft); color: var(--success-dark); border-color: var(--success-line); }
 
   .service-controls{
@@ -1794,9 +1797,9 @@
   .pn-head{ display:flex; align-items:flex-end; justify-content:space-between; margin:6px 2px 14px; }
   .pn-title{ font-size:24px; font-weight:800; letter-spacing:-.4px; color:var(--text); }
   .pn-sub{ font-size:13px; color:var(--text-dim); margin-top:2px; }
-  .pn-grade{ display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:14px; align-items:start; }
-  .pn-bloco{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px 16px 14px; box-shadow:0 1px 2px rgba(20,20,22,.04), 0 8px 22px rgba(20,20,22,.04); min-width:0; }
-  .pn-largo{ grid-column:1 / -1; }
+  .pn-grade{ column-count:2; column-gap:14px; }     /* colunas corridas: os blocos se encaixam sem deixar vãos */
+  .pn-bloco{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:16px 16px 14px; box-shadow:0 1px 2px rgba(20,20,22,.04), 0 8px 22px rgba(20,20,22,.04); min-width:0; break-inside:avoid; -webkit-column-break-inside:avoid; display:inline-block; width:100%; box-sizing:border-box; margin:0 0 14px; }
+  .pn-largo{ column-span:all; }
   .pn-bloco-h{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
   .pn-bloco-h h3{ margin:0; font-size:15px; font-weight:750; letter-spacing:-.1px; color:var(--text); }
   .pn-ver{ border:0; background:var(--panel-2); color:var(--text-dim); font:inherit; font-size:12px; font-weight:650; padding:5px 11px; border-radius:999px; cursor:pointer; }
@@ -1832,7 +1835,7 @@
   .pn-ped:first-of-type{ border-top:0; }
   .pn-ped-t{ display:flex; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; } .pn-ped-d{ font-size:13px; color:var(--text); font-weight:600; }
   .pn-sel{ appearance:none; -webkit-appearance:none; font:inherit; font-size:12.5px; font-weight:700; padding:6px 26px 6px 12px; border-radius:999px; cursor:pointer; border:1px solid var(--c-line, var(--line)); background-color:var(--c-bg, var(--panel-2)); color:var(--c-tx, var(--text)); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23666' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
-  @media (max-width:760px){ .pn-grade{ grid-template-columns:1fr; } .pn-title{ font-size:21px; } .pn-ped{ flex-direction:column; align-items:flex-start; } }
+  @media (max-width:860px){ .pn-grade{ column-count:1; } .pn-title{ font-size:21px; } .pn-ped{ flex-direction:column; align-items:flex-start; } }
   .os-secao{ margin:14px 0; } .os-secao > summary{ cursor:pointer; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin-bottom:8px; }
   .os-linhas{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
   .os-linhas td{ padding:5px 6px; border-top:1px dashed var(--line); vertical-align:top; }
@@ -3504,8 +3507,8 @@
   <div class="tech-strip" id="techList"></div>
   <div class="legend">
     <div class="legend-item"><div class="legend-swatch" style="background:var(--amber)"></div> Aguardando técnico</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:var(--status-atribuido)"></div> Atribuído</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:var(--status-progress)"></div> Em andamento</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--st-attr)"></div> Atribuído</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:var(--st-prog)"></div> Em andamento</div>
     <div class="legend-item"><div class="legend-swatch" style="background:var(--success)"></div> Concluído</div>
   </div>
 </div>
@@ -5741,8 +5744,8 @@ function renderCalendar(){
     let dotsHtml = '';
     dayServices.slice(0,8).forEach(s => {
       let color = 'var(--amber)';
-      if(s.status === 'atribuido') color = 'var(--status-atribuido)';
-      if(s.status === 'em_andamento') color = 'var(--status-progress)';
+      if(s.status === 'atribuido') color = 'var(--st-attr)';
+      if(s.status === 'em_andamento') color = 'var(--st-prog)';
       if(s.status === 'concluido') color = 'var(--success)';
       dotsHtml += `<div class="cal-dot" style="background:${color}"></div>`;
     });
