@@ -8161,7 +8161,7 @@ function createEstoqueStore(nodeName, alertMsg){
       if(has){ await rtdb.ref().update(updates); Object.keys(sent).forEach(id => { store.snapshot[id] = Object.assign({}, store.snapshot[id], sent[id]); }); }
       return true;
     }catch(e){
-      console.error('Falha ao salvar ' + nodeName + ' (tentativa ' + attempt + ')', e);
+      store.lastError = e; console.error('Falha ao salvar ' + nodeName + ' (tentativa ' + attempt + ')', e);
       if(attempt < 3){ await new Promise(r => setTimeout(r, 500 * attempt)); return store.writeDiff(attempt + 1); }
       return false;
     }
@@ -22287,7 +22287,8 @@ async function decidir(id, status, motivo, texto){
   else if(status === 'nao_cobrar'){ os.motivoNaoCobrar = motivo || null; os.motivoTexto = texto || null; hist(os, 'Decisão: NÃO COBRAR (' + (MOTIVOS.find(m => m[0] === motivo) || ['', motivo])[1] + (texto ? ' — ' + texto : '') + ')'); }
   else if(status === 'aguardando'){ hist(os, 'Decisão: AGUARDAR mais atividades'); }
   else { os.motivoNaoCobrar = null; os.motivoTexto = null; if(os.fin && os.fin.status === 'a_cobrar') os.fin = Object.assign({}, os.fin, { status: null }); hist(os, 'Voltou para decisão'); }
-  renderAba(); await store.save(true);
+  renderAba(); const salvou = await store.save(true);
+  if(!salvou){ const er = store.lastError || {}; alert('⚠️ A decisão sobre a OS ' + os.numero + ' NÃO foi gravada no servidor — por isso ela volta ao reabrir o app.\n\nMotivo: ' + (er.code || er.message || 'sem conexão ou sem permissão') + '\n\nSe aparecer PERMISSION_DENIED, a regra do Firebase para "ordensServico" precisa permitir gravação.'); return; }
   try{ avisoNaoBloqueante(status === 'cobrar' ? 'OS ' + os.numero + ' enviada ao Financeiro.' : status === 'nao_cobrar' ? 'OS ' + os.numero + ' registrada como "não cobrar".' : status === 'aguardando' ? 'OS ' + os.numero + ' aguardando mais atividades.' : 'OS ' + os.numero + ' voltou para a decisão.', 5000); }catch(e){}
 }
 function abrirNaoCobrar(id){
