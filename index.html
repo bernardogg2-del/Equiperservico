@@ -2121,6 +2121,9 @@
      ===================================================================================================== */
   .obr-sp-aguardando_compra, .obr-sp-aguardando_inicio, .obi-st-nao_liberado, .obrg-k-aguardando_compra, .obrg-k-aguardando_inicio, .obrg-dot-aguardando_compra, .obrg-dot-aguardando_inicio
     { --c:#C0392B; --c-num:#B3261E; --c-bg:rgba(192,57,43,.12); --c-line:rgba(192,57,43,.32); --c-tx:#96281D; }
+  .obr-sp-comprado, .obrg-k-comprado, .obrg-dot-comprado
+    { --c:#E67E22; --c-num:#B85F0F; --c-bg:rgba(230,126,34,.15); --c-line:rgba(230,126,34,.42); --c-tx:#9A4F0A; }
+  .obr-sp-liberado_inicio, .obrg-k-liberado_inicio, .obrg-dot-liberado_inicio,
   .obr-sp-liberado_entrega, .obi-st-liberado, .obrg-k-liberado_entrega, .obrg-dot-liberado_entrega
     { --c:#F2B705; --c-num:#9A7400; --c-bg:rgba(242,183,5,.20); --c-line:rgba(201,154,18,.50); --c-tx:#7A5B00; }
   .obr-sp-entregue, .obrg-k-entregue, .obrg-dot-entregue
@@ -22684,16 +22687,16 @@ const STATUS_PARC = [['nao_liberado', 'Não liberado'], ['a_cobrar', 'A cobrar']
 const stDe = (p) => p.status || (p.pago ? 'recebido' : 'a_cobrar');          // registros da 1ª versão tinham só "pago"
 // Andamento de cada PEDIDO (quem muda é o Gestor, na aba "Obras e Pedidos" dele; o Financeiro só vê). Fica em `statusPedidos`, um campo à parte do registro,
 // para o Gestor nunca regravar pedidos/parcelas do Financeiro (e vice-versa).
-const STATUS_OBRA = [['aguardando_compra', 'Aguardando compra de equipamentos'], ['liberado_entrega', 'Liberado para entrega'], ['entregue', 'Entregue'], ['aguardando_inicio', 'Aguardando liberação para início'], ['iniciado', 'Iniciado'], ['aguardando_testes', 'Aguardando testes finais'], ['finalizado', 'Finalizado']];
+const STATUS_OBRA = [['aguardando_compra', 'Aguardando compra'], ['comprado', 'Comprado'], ['liberado_entrega', 'Liberado para entrega'], ['entregue', 'Entregue'], ['aguardando_inicio', 'Aguardando liberação para início'], ['liberado_inicio', 'Liberado para iniciar'], ['iniciado', 'Iniciado'], ['aguardando_testes', 'Aguardando testes finais'], ['finalizado', 'Finalizado']];
 // Duas fases: a INTERNA (nossa: compras e entrega do equipamento) e a da OBRA (instalação no cliente)
-const FASE_INTERNA = ['aguardando_compra', 'liberado_entrega', 'entregue'];
+const FASE_INTERNA = ['aguardando_compra', 'comprado', 'liberado_entrega', 'entregue'];
 const FASES_OBRA = [['interna', 'Etapa interna · compras'], ['obra', 'Etapa obra']];
 const faseDe = (k) => FASE_INTERNA.includes(k) ? 'interna' : 'obra';
 const opcoesAndamento = (atual) => FASES_OBRA.map(([f, n]) => `<optgroup label="${esc(n)}">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(([k, nome]) => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(nome)}</option>`).join('')}</optgroup>`).join('');
 const rotObra = (k) => (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];
-// O pedido tem DUAS trilhas que andam juntas: a INTERNA (compras → liberado para entrega → entregue) e a da OBRA (aguardando liberação → iniciado → aguardando testes → finalizado).
+// O pedido tem DUAS trilhas que andam juntas: a INTERNA (compras → comprado → liberado para entrega → entregue) e a da OBRA (aguardando liberação → liberado para iniciar → iniciado → aguardando testes → finalizado).
 // `statusPedidos[pid] = { i: interna, o: obra, s: a mais avançada (compatível), em, por, auto }`. Registro antigo (só com `s`) é lido assim: s interna → interna = s; s da obra → interna = entregue e obra = s.
-const OBRA_ST = ['aguardando_inicio', 'iniciado', 'aguardando_testes', 'finalizado'];
+const OBRA_ST = ['aguardando_inicio', 'liberado_inicio', 'iniciado', 'aguardando_testes', 'finalizado'];
 const entradaSt = (r, pid) => (r && r.statusPedidos && r.statusPedidos[pid]) || {};
 function internoDe(r, pid){ const e = entradaSt(r, pid); if(e.i && FASE_INTERNA.includes(e.i)) return e.i; if(e.s && FASE_INTERNA.includes(e.s)) return e.s; return e.s || e.o ? 'entregue' : 'aguardando_compra'; }
 function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
