@@ -826,6 +826,40 @@
   .btn-admin-action:hover{ background: var(--line); }
   .btn-admin-action:active{ transform: translateY(1px); }
   .btn-admin-action:focus-visible{ outline: 2px solid var(--ink); outline-offset: 1px; }
+  .btn-destaque{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:11px 18px; border-radius:12px; font-family:var(--sans); font-weight:700; font-size:14px;
+    border:1.5px solid var(--ink); background:#fff; color:var(--ink); cursor:pointer; white-space:nowrap;
+    box-shadow:0 2px 0 rgba(0,0,0,.14), 0 6px 14px rgba(0,0,0,.08); transition:transform .1s, box-shadow .1s, background .15s;
+  }
+  .btn-destaque:hover{ background:var(--surface-2); }
+  .btn-destaque:active{ transform:translateY(2px); box-shadow:0 0 0 rgba(0,0,0,.14); }
+  .btn-destaque.escuro{ background:var(--ink); color:#fff; }
+  .btn-destaque.escuro:hover{ background:#2a2a2e; }
+  .btn-destaque.perigo{ background:var(--red); border-color:var(--red); color:#fff; }
+  .btn-destaque.perigo:hover{ filter:brightness(.92); }
+  .btn-destaque:disabled{ opacity:.38; cursor:not-allowed; box-shadow:none; transform:none; }
+  .rel-btns{ display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; margin-top:12px; }
+  .rel-btn{
+    text-align:left; display:flex; flex-direction:column; gap:3px; padding:14px 16px; border-radius:14px; cursor:pointer;
+    border:1.5px solid var(--ink); background:#fff; color:var(--ink); font-family:var(--sans);
+    box-shadow:0 2px 0 rgba(0,0,0,.14), 0 6px 14px rgba(0,0,0,.08); transition:transform .1s, box-shadow .1s;
+  }
+  .rel-btn:active{ transform:translateY(2px); box-shadow:none; }
+  .rel-btn .t{ font-weight:800; font-size:14px; }
+  .rel-btn .d{ font-size:12px; opacity:.75; }
+  .rel-btn.escuro{ background:var(--ink); color:#fff; }
+  .rel-btn.escuro .d{ opacity:.8; }
+  .rel-btn:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; transform:none; border-style:dashed; }
+  .rel-sec{ font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px; padding:7px 10px; border-radius:8px; }
+  .rel-sec.baixo{ background:#fdecec; color:#D91A22; border-left:4px solid #D91A22; }
+  .rel-sec.compl{ background:var(--surface-2); color:var(--text); border-left:4px solid var(--line); }
+  .rel-item{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 10px; border-bottom:1px solid var(--line); font-size:13px; }
+  .rel-item.baixo{ background:#fff6f6; }
+  .rel-item .n{ font-weight:600; }
+  .rel-item .m{ font-size:11.5px; color:var(--text-dim); }
+  .rel-item .q{ font-weight:800; white-space:nowrap; }
+  .rel-chip{ display:inline-block; font-size:10.5px; padding:1px 7px; border-radius:99px; background:var(--surface-2); border:1px solid var(--line); margin-left:6px; }
   .btn-text-danger{
     background:none; border:none; color: var(--text-dim); font-size:12px; cursor:pointer;
     font-family: var(--sans); padding: 4px;
@@ -2592,8 +2626,8 @@
         <button type="button" class="btn-primary" id="estoqueNewItemBtn" style="display:none;">+ Novo material</button>
       </div>
       <div style="padding:0 20px 14px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button type="button" class="btn-admin-action" id="estoqueGerenciarCategoriasBtn" style="display:none;">Gerenciar categorias</button>
-        <button type="button" class="btn-admin-action" id="estoqueVerRelatorioBtn" style="display:none;">Relatório de compra</button>
+        <button type="button" class="btn-destaque" id="estoqueGerenciarCategoriasBtn" style="display:none;">🗂️ Gerenciar categorias</button>
+        <button type="button" class="btn-destaque escuro" id="estoqueVerRelatorioBtn" style="display:none;">🧾 Relatório de compra</button>
       </div>
       <div id="estoqueList" style="padding:0 20px 30px;"></div>
     </div>
@@ -2661,10 +2695,10 @@
       <div style="padding:0 20px 16px; color:var(--text-dim); font-size:12.5px;">Corrija o saldo físico de um material e registre o motivo do ajuste.</div>
 
       <div style="padding:0 20px 16px;">
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-          <button type="button" class="btn-admin-action" id="estoqueUltimaCompraBtn" style="display:none;">Adicionar última compra ao estoque</button>
-          <button type="button" class="btn-ghost" id="estoqueUltimaCompraDescartarBtn" style="display:none; color:var(--red);">Descartar último relatório</button>
-        </div>
+        <div style="font-weight:800; font-size:13px; margin-bottom:2px;">Dar entrada de uma compra</div>
+        <div style="font-size:12px; color:var(--text-dim);">Cada categoria tem o seu botão. Só fica ativo quando existe um relatório de compra daquela categoria ainda sem entrada.</div>
+        <div class="rel-btns" id="estoqueUltimaCompraCats"></div>
+        <div style="margin-top:14px;"><button type="button" class="btn-destaque perigo" id="estoqueUltimaCompraDescartarBtn" disabled>🗑️ Excluir último relatório de compra</button></div>
         <div class="sub" id="estoqueUltimaCompraInfo" style="color:var(--text-dim); font-size:12px; margin-top:6px;"></div>
       </div>
 
@@ -2730,15 +2764,10 @@
         <div class="tech-day-title">Relatório de compra</div>
       </div>
       <div style="padding:0 20px 12px;">
-        <div id="estoqueRelatorioStatus" style="font-size:13px; color:var(--text-dim); margin-bottom:10px;"></div>
-        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-          <select id="estoqueRelatorioCategoria"><option value="">Todas as categorias</option></select>
-          <button type="button" class="btn-primary" id="estoqueRelatorioPdfBtn">Exportar PDF</button>
-          <button type="button" class="btn-admin-action" id="estoqueRelatorioExcelBtn">Exportar Excel</button>
-        </div>
-        <div class="field-error" id="estoqueRelatorioExportErr" style="margin-top:8px;"></div>
+        <div id="estoqueRelatorioStatus" style="font-size:13px; color:var(--text-dim);"></div>
+        <div class="rel-btns" id="estoqueRelatorioBotoes"></div>
       </div>
-      <div id="estoqueRelatorioPreview" style="padding:0 20px 30px;"></div>
+      <div style="height:30px;"></div>
     </div>
 
     <!-- ===== REGISTRAR RETIRADA (Técnico) ===== -->
@@ -2781,18 +2810,34 @@
 </div>
 
 
+<!-- Relatório de compra: resumo dos itens antes de gerar PDF/Excel -->
+<div class="overlay" id="estoqueRelCompraOverlay">
+  <div class="modal" style="max-width:640px; max-height:88vh; overflow-y:auto;">
+    <h3 id="estoqueRelCompraTitulo">Relatório de compra</h3>
+    <p class="modal-sub" id="estoqueRelCompraSub"></p>
+    <div id="estoqueRelCompraLista"></div>
+    <div class="field-error" id="estoqueRelCompraErr"></div>
+    <div class="modal-actions" style="flex-wrap:wrap;">
+      <button type="button" class="btn-ghost" id="estoqueRelCompraFecharBtn">Fechar</button>
+      <button type="button" class="btn-destaque" id="estoqueRelCompraExcelBtn">📊 Gerar Excel</button>
+      <button type="button" class="btn-destaque escuro" id="estoqueRelCompraPdfBtn">📄 Gerar PDF de compra</button>
+    </div>
+  </div>
+</div>
+
 <!-- Adicionar última compra ao estoque (Ajuste de estoque): conferência/edição pontual dos itens
      do último relatório de compra gerado, antes de dar entrada. Mesmo padrão de dois passos já
      usado em "Registrar devolução" — conferência aqui, confirmação dupla no modal seguinte. -->
 <div class="overlay" id="estoqueUltimaCompraOverlay">
   <div class="modal" style="max-width:640px; max-height:88vh; overflow-y:auto;">
-    <h3>Adicionar última compra ao estoque</h3>
+    <h3 id="estoqueUltimaCompraTitulo">Entrar com a compra</h3>
     <p class="modal-sub" id="estoqueUltimaCompraSub"></p>
     <div id="estoqueUltimaCompraLista"></div>
     <div class="field-error" id="estoqueUltimaCompraErr"></div>
     <div class="modal-actions">
       <button type="button" class="btn-ghost" id="estoqueUltimaCompraCancelBtn">Cancelar</button>
-      <button type="button" class="btn-primary" id="estoqueUltimaCompraEnviarBtn">Dar entrada em tudo</button>
+      <button type="button" class="btn-destaque perigo" id="estoqueUltimaCompraDescartarCatBtn">🗑️ Excluir este relatório</button>
+      <button type="button" class="btn-destaque escuro" id="estoqueUltimaCompraEnviarBtn">Dar entrada neste relatório</button>
     </div>
   </div>
 </div>
@@ -8571,48 +8616,105 @@ function relatorioCompraFileNameBase(categoria){
 // Mesma fonte de dados/agrupamento já usados por renderEstoqueRelatorio()/buildRelatorioCompraHtml()
 // (estoqueMateriaisAtivos() + quantidadeParaComprar(), mesmo critério de categoria/ordenação) —
 // usada só pela exportação Excel (melhoria 5), sem duplicar a lógica de CÁLCULO em si.
+// Seleção do relatório: "alerta" = no mínimo ou abaixo (estoque baixo); "complemento" = normais que
+// ainda têm quantidade a comprar só pra completar o máximo.
+function relatorioCompraSelecao(categoria){
+  const alerta = [], complemento = [];
+  estoqueMateriaisDoRelatorio(categoria || null).forEach(it => {
+    const st = estoqueStatusDoMaterial(it), buy = quantidadeParaComprar(it);
+    const r = { it, st, buy, cat: estoqueCategoriaDoItem(it) };
+    if(st !== 'NORMAL') alerta.push(r); else if(buy > 0) complemento.push(r);
+  });
+  const cmp = (x, y) => x.cat.localeCompare(y.cat, 'pt-BR') || ((x.it.name || '') + (x.it.unit || '')).localeCompare((y.it.name || '') + (y.it.unit || ''), 'pt-BR');
+  alerta.sort(cmp); complemento.sort(cmp);
+  return { alerta, complemento };
+}
 function relatorioCompraAgrupado(categoria){
+  const sel = relatorioCompraSelecao(categoria || null);
   const cats = {};
-  estoqueMateriaisDoRelatorio(categoria || null).forEach(it => { const cn = estoqueCategoriaDoItem(it); (cats[cn] = cats[cn] || []).push(it); });
+  sel.alerta.concat(sel.complemento).forEach(r => { (cats[r.cat] = cats[r.cat] || []).push(r); });
   return Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR')).map(cn => ({
     categoria: cn,
-    itens: cats[cn].slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR')).map(it => ({ nome: it.name, medida: it.unit || '', comprar: quantidadeParaComprar(it) }))
+    itens: cats[cn].slice().sort((x, y) => ((x.st !== 'NORMAL') ? 0 : 1) - ((y.st !== 'NORMAL') ? 0 : 1) || (x.it.name || '').localeCompare(y.it.name || '', 'pt-BR'))
+      .map(r => ({ nome: r.it.name, medida: r.it.unit || '', situacao: r.st === 'NORMAL' ? 'Complemento' : r.st, comprar: r.buy }))
   }));
 }
+// PDF no padrão visual dos orçamentos Equiper: logo, título centralizado, linha vermelha, faixas por
+// categoria, tabela com cabeçalho escuro e rodapé com empresa + página X de Y.
 function buildRelatorioCompraHtml(categoria){
-  const cats = {}; estoqueMateriaisDoRelatorio(categoria || null).forEach(it => { const cn = estoqueCategoriaDoItem(it); (cats[cn] = cats[cn] || []).push(it); });
-  const catNames = Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  let total = 0; let rows = '';
-  // Melhoria 3: cada linha de material mostra somente descrição + quantidade a comprar — os
-  // agrupamentos por categoria (organização já existente) continuam, só as colunas
-  // atual/mínimo/máximo somem. Cálculo de quantidadeParaComprar() inalterado. O destaque
-  // "alerta" (item que disparou reposição) é mantido — é status visual, não um dos 3 campos
-  // numéricos que esta melhoria pede pra remover.
-  catNames.forEach(cn => {
-    const list = cats[cn].slice().sort((a, b) => (a.name + a.unit).localeCompare(b.name + b.unit, 'pt-BR'));
-    rows += `<tr class="cat"><td colspan="3">${escapeHtml(cn)}</td></tr>`;
-    list.forEach(it => {
-      const st = estoqueStatusDoMaterial(it), buy = quantidadeParaComprar(it); total += buy;
-      rows += `<tr class="${st !== 'NORMAL' ? 'alerta' : ''}"><td>${escapeHtml(it.name)}</td><td>${escapeHtml(it.unit || '—')}</td><td class="n"><b>${buy}</b></td></tr>`;
-    });
-  });
+  const sel = relatorioCompraSelecao(categoria || null);
+  const grupos = relatorioCompraAgrupado(categoria || null);
+  const logoEl = document.querySelector('.brand-logo'); const logo = logoEl ? logoEl.src : '';
   const when = new Date().toLocaleString('pt-BR');
+  let totalGeral = 0, nItens = 0;
+  const blocos = grupos.map(g => {
+    let tot = 0;
+    const linhas = g.itens.map((r, i) => {
+      tot += r.comprar; nItens++;
+      const cls = r.situacao === 'REPOSIÇÃO' ? 'rep' : r.situacao === 'ATENÇÃO' ? 'aten' : 'comp';
+      return `<tr class="${i % 2 ? 'alt' : ''}"><td class="nm">${escapeHtml(r.nome)}</td><td>${escapeHtml(r.medida || '—')}</td><td class="c"><span class="pill ${cls}">${escapeHtml(r.situacao)}</span></td><td class="n">${r.comprar}</td></tr>`;
+    }).join('');
+    totalGeral += tot;
+    return `<div class="cat"><div class="catbar"><span class="lbl">CATEGORIA</span><span class="catname">${escapeHtml(g.categoria)}</span><span class="cnt">${g.itens.length} ${g.itens.length === 1 ? 'item' : 'itens'}</span></div>
+<table><thead><tr><th>Item</th><th>Medida</th><th class="c">Situação</th><th class="n">A comprar</th></tr></thead><tbody>${linhas}</tbody>
+<tfoot><tr><td colspan="3">TOTAL DA CATEGORIA</td><td class="n">${tot}</td></tr></tfoot></table></div>`;
+  }).join('');
+  const titulo = categoria ? escapeHtml(categoria) : 'Geral — todas as categorias';
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${relatorioCompraFileNameBase(categoria || null)}</title>
-<style>body{font-family:Inter,-apple-system,Arial,sans-serif;color:#141416;margin:24px;} h1{font-size:22px;margin:0 0 4px;} .sub{color:#666;font-size:12px;margin-bottom:16px;}
-table{width:100%;border-collapse:collapse;font-size:12px;} th,td{border-bottom:1px solid #e3e3e6;padding:6px 8px;text-align:left;} th{background:#f4f4f6;font-weight:700;}
-td.n,th.n{text-align:right;} tr.cat td{background:#141416;color:#fff;font-weight:700;letter-spacing:.3px;} tr.alerta td{background:#fdecec;} tr.alerta td:first-child{color:#D91A22;font-weight:700;}
-tfoot td{font-weight:700;border-top:2px solid #141416;} .legend{font-size:11px;color:#666;margin-top:10px;} @media print{body{margin:10mm;}}</style></head><body>
-<h1>Relatório de Compra${categoria ? ' — ' + escapeHtml(categoria) : ''}</h1><div class="sub">Equiper · gerado em ${when}</div>
-<table><thead><tr><th>Descrição do item</th><th>Medida</th><th class="n">Quantidade a comprar</th></tr></thead>
-<tbody>${rows}</tbody><tfoot><tr><td colspan="2">Total geral a comprar</td><td class="n">${total}</td></tr></tfoot></table>
-<div class="legend">Linhas destacadas em vermelho: materiais no mínimo ou abaixo (dispararam reposição).</div>
-<scr'+'ipt>window.addEventListener('load', () => { setTimeout(() => window.print(), 300); });<\/scr'+'ipt></body></html>`;
+<style>
+@page{ size:A4 landscape; margin:12mm 12mm 16mm;
+  @bottom-left{ content:"Equiper Projetos e Instalações"; font:600 9px Helvetica,Arial,sans-serif; color:#555; border-top:2px solid #D91A22; padding-top:4px; }
+  @bottom-right{ content:"Página " counter(page) " de " counter(pages); font:600 9px Helvetica,Arial,sans-serif; color:#555; border-top:2px solid #D91A22; padding-top:4px; } }
+*{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+body{ font-family:Helvetica,Arial,sans-serif; color:#141416; margin:0; font-size:11px; }
+.head{ display:flex; align-items:center; gap:16px; padding-bottom:10px; border-bottom:3px solid #D91A22; margin-bottom:14px; }
+.head img{ height:46px; width:auto; }
+.head .mid{ flex:1; text-align:center; }
+.head h1{ margin:0; font-size:20px; letter-spacing:.12em; font-weight:800; }
+.head .sub{ font-size:11px; color:#555; margin-top:3px; }
+.head .emp{ text-align:right; font-size:10px; color:#555; line-height:1.4; }
+.head .emp b{ color:#141416; font-size:11px; }
+.cat{ margin-bottom:14px; }
+.catbar{ display:flex; align-items:center; gap:0; background:#f1f1f3; border-radius:4px; overflow:hidden; margin-bottom:4px; break-after:avoid; }
+.catbar .lbl{ background:#D91A22; color:#fff; font-weight:800; font-size:9px; letter-spacing:.12em; padding:7px 10px; }
+.catbar .catname{ flex:1; font-weight:800; font-size:12px; padding:7px 10px; }
+.catbar .cnt{ font-size:10px; color:#555; padding:7px 10px; }
+table{ width:100%; border-collapse:collapse; }
+thead{ display:table-header-group; }
+th{ background:#141416; color:#fff; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; text-align:left; padding:7px 9px; }
+td{ padding:6px 9px; border-bottom:1px solid #e6e6e9; }
+tr{ break-inside:avoid; }
+tr.alt td{ background:#f8f8fa; }
+td.nm{ font-weight:600; }
+.c{ text-align:center; } .n{ text-align:right; }
+td.n{ font-weight:800; font-size:12px; }
+.pill{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:9px; font-weight:800; letter-spacing:.04em; }
+.pill.rep{ background:#D91A22; color:#fff; } .pill.aten{ background:#f5b301; color:#141416; } .pill.comp{ background:#e3e3e7; color:#444; }
+tfoot td{ background:#ececef; font-weight:800; border-top:2px solid #D91A22; border-bottom:none; }
+.resumo{ display:flex; gap:10px; margin-top:16px; break-inside:avoid; }
+.resumo div{ flex:1; background:#141416; color:#fff; border-radius:6px; padding:10px 12px; }
+.resumo div.red{ background:#D91A22; }
+.resumo b{ display:block; font-size:20px; margin-top:2px; }
+.resumo span{ font-size:9px; letter-spacing:.1em; text-transform:uppercase; opacity:.85; }
+.vazio{ text-align:center; color:#777; padding:30px; }
+</style></head><body>
+<div class="head">${logo ? `<img src="${logo}" alt="Equiper">` : ''}
+<div class="mid"><h1>RELATÓRIO DE COMPRA</h1><div class="sub">${titulo} · gerado em ${when}</div></div>
+<div class="emp"><b>Equiper</b><br>Projetos e Instalações</div></div>
+${blocos || '<div class="vazio">Nenhum item para comprar.</div>'}
+<div class="resumo">
+<div class="red"><span>Itens com estoque baixo</span><b>${sel.alerta.length}</b></div>
+<div><span>Itens de complemento</span><b>${sel.complemento.length}</b></div>
+<div><span>Total de itens</span><b>${nItens}</b></div>
+<div class="red"><span>Total a comprar</span><b>${totalGeral}</b></div></div>
+</body></html>`;
 }
 function abrirRelatorioCompraPdf(categoria){
   const html = buildRelatorioCompraHtml(categoria || null);
   const w = window.open('', '_blank');
   if(!w){ alert('O navegador bloqueou a abertura do relatório. Permita pop-ups para este site e tente de novo.'); return null; }
   w.document.open(); w.document.write(html); w.document.close();
+  setTimeout(() => { try{ w.focus(); w.print(); }catch(e){} }, 700);
   salvarUltimoRelatorioCompra(categoria || null);
   return w;
 }
@@ -16367,30 +16469,45 @@ async function carregarUltimoRelatorioCompra(){
   catch(e){ ultimoRelatorioCompraCache = null; }
   atualizarBotaoUltimaCompra();
 }
+function ultimaCompraItensDaCat(cat){
+  return ((ultimoRelatorioCompraCache && ultimoRelatorioCompraCache.itens) || []).filter(it => ultimaCompraCategoriaDe(it) === cat);
+}
+// Dupla confirmação para apagar: duas perguntas seguidas, a ação só roda se as duas forem confirmadas.
+function confirmarDuplo(msg1, msg2, onConfirm, label){
+  customConfirm(msg1, () => { setTimeout(() => customConfirm(msg2, onConfirm, label), 0); }, 'Continuar');
+}
 function atualizarBotaoUltimaCompra(){
-  const btn = document.getElementById('estoqueUltimaCompraBtn');
+  const box = document.getElementById('estoqueUltimaCompraCats');
   const info = document.getElementById('estoqueUltimaCompraInfo');
-  if(!btn || !info) return;
-  const temItens = !!(ultimoRelatorioCompraCache && Array.isArray(ultimoRelatorioCompraCache.itens) && ultimoRelatorioCompraCache.itens.length);
-  btn.style.display = (canEditEstoque() && temItens) ? '' : 'none';
   const descartarBtn = document.getElementById('estoqueUltimaCompraDescartarBtn');
-  if(descartarBtn) descartarBtn.style.display = btn.style.display;
+  if(!box || !info) return;
+  const itens = (ultimoRelatorioCompraCache && Array.isArray(ultimoRelatorioCompraCache.itens)) ? ultimoRelatorioCompraCache.itens : [];
+  const temItens = itens.length > 0;
+  const pode = canEditEstoque();
+  const porCat = {};
+  itens.forEach(it => { const c = ultimaCompraCategoriaDe(it); porCat[c] = (porCat[c] || 0) + 1; });
+  const nomes = new Set(Object.keys(porCat));
+  estoqueCategoriasStore.items.filter(c => c.active !== false).forEach(c => nomes.add((c.name || '').trim() || 'Sem categoria'));
+  box.innerHTML = [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(cn => {
+    const n = porCat[cn] || 0;
+    return `<button type="button" class="rel-btn${n ? ' escuro' : ''}" data-entrarcat="${escapeHtml(cn)}" ${(n && pode) ? '' : 'disabled'}><span class="t">Entrar com a compra de ${escapeHtml(cn)}</span><span class="d">${n ? n + (n === 1 ? ' item aguardando entrada' : ' itens aguardando entrada') : 'Sem relatório pendente'}</span></button>`;
+  }).join('');
+  box.querySelectorAll('[data-entrarcat]').forEach(b => b.addEventListener('click', () => abrirUltimaCompraModal(b.dataset.entrarcat)));
+  if(descartarBtn) descartarBtn.disabled = !(temItens && pode);
   if(temItens){
     const d = ultimoRelatorioCompraCache.generatedAt ? new Date(ultimoRelatorioCompraCache.generatedAt).toLocaleString('pt-BR') : '—';
-    // Lista as categorias (listas de fornecedor) que ainda aguardam entrada, com a contagem —
-    // assim dá pra ver de cara qual compra acabou de ser gerada/entregue sem abrir o modal.
-    const porCat = {};
-    ultimoRelatorioCompraCache.itens.forEach(it => { const c = ultimaCompraCategoriaDe(it); porCat[c] = (porCat[c] || 0) + 1; });
-    const pendentes = Object.keys(porCat).sort((a, b) => a.localeCompare(b, 'pt-BR')).map(c => `${c} (${porCat[c]})`).join(', ');
-    info.textContent = `Último relatório de compra: ${d}${ultimoRelatorioCompraCache.generatedBy ? ' · ' + ultimoRelatorioCompraCache.generatedBy : ''}. Aguardando entrada: ${pendentes}.`;
-  } else info.textContent = '';
+    info.textContent = `Último relatório de compra: ${d}${ultimoRelatorioCompraCache.generatedBy ? ' · ' + ultimoRelatorioCompraCache.generatedBy : ''}.`;
+  } else info.textContent = 'Nenhum relatório de compra aguardando entrada.';
 }
 
 let estoqueUltimaCompraRowState = {}; // estoqueItemId -> string digitada (quantidade a dar entrada)
-function abrirUltimaCompraModal(){
-  if(!ultimoRelatorioCompraCache || !Array.isArray(ultimoRelatorioCompraCache.itens) || !ultimoRelatorioCompraCache.itens.length) return;
+let estoqueUltimaCompraModalCat = null;
+function abrirUltimaCompraModal(cat){
+  if(!cat || !ultimaCompraItensDaCat(cat).length) return;
+  estoqueUltimaCompraModalCat = cat;
+  document.getElementById('estoqueUltimaCompraTitulo').textContent = 'Entrar com a compra de ' + cat;
   estoqueUltimaCompraRowState = {};
-  ultimoRelatorioCompraCache.itens.forEach(it => { estoqueUltimaCompraRowState[it.estoqueItemId] = String(it.comprar); });
+  ultimaCompraItensDaCat(cat).forEach(it => { estoqueUltimaCompraRowState[it.estoqueItemId] = String(it.comprar); });
   document.getElementById('estoqueUltimaCompraSub').textContent = ultimoRelatorioCompraCache.generatedAt
     ? `Relatório gerado em ${new Date(ultimoRelatorioCompraCache.generatedAt).toLocaleString('pt-BR')}${ultimoRelatorioCompraCache.generatedBy ? ' por ' + ultimoRelatorioCompraCache.generatedBy : ''}. Ajuste as quantidades se precisar antes de dar entrada.`
     : 'Ajuste as quantidades se precisar antes de dar entrada.';
@@ -16401,7 +16518,7 @@ function abrirUltimaCompraModal(){
 function ultimaCompraCategoriaDe(it){ return (it.category || '').trim() || 'Sem categoria'; }
 function renderUltimaCompraLista(){
   const box = document.getElementById('estoqueUltimaCompraLista'); if(!box) return;
-  const itens = (ultimoRelatorioCompraCache && ultimoRelatorioCompraCache.itens) || [];
+  const itens = ultimaCompraItensDaCat(estoqueUltimaCompraModalCat);
   // Agrupado por categoria (cada lista vai pra um fornecedor diferente), na mesma ordem do
   // relatório impresso; cada categoria tem seu próprio botão de entrada.
   const cats = {};
@@ -16424,13 +16541,7 @@ function renderUltimaCompraLista(){
     </div>`;
   };
   box.innerHTML = nomes.map(cn => `
-    <div class="ultima-compra-cat">
-      <span class="titulo">${escapeHtml(cn)} (${cats[cn].length})</span>
-      <span style="display:flex; gap:6px;">
-        <button type="button" class="btn-ghost" data-descartarcategoria="${escapeHtml(cn)}" style="color:var(--red);">Descartar</button>
-        <button type="button" class="btn-ghost" data-entradacategoria="${escapeHtml(cn)}">Dar entrada desta lista</button>
-      </span>
-    </div>
+    <div class="ultima-compra-cat"><span class="titulo">${escapeHtml(cn)} (${cats[cn].length})</span></div>
     ${cats[cn].map(linhaItem).join('')}`).join('');
   box.querySelectorAll('[data-ultimacompra]').forEach(row => {
     const id = row.dataset.ultimacompra;
@@ -16438,21 +16549,6 @@ function renderUltimaCompraLista(){
     wireEstoqueQtyStepper(row, () => estoqueUltimaCompraAtualizarLinha(id));
     estoqueUltimaCompraAtualizarLinha(id);
   });
-  box.querySelectorAll('[data-entradacategoria]').forEach(b => b.addEventListener('click', () => abrirConfirmacaoUltimaCompra(b.dataset.entradacategoria)));
-  // Descartar SÓ esta lista (gerada por engano, compra cancelada etc.) — as outras ficam, e nada
-  // do estoque é alterado. Mesmo mecanismo usado depois de dar entrada (removerDoRetratoUltimaCompra).
-  box.querySelectorAll('[data-descartarcategoria]').forEach(b => b.addEventListener('click', () => {
-    const cat = b.dataset.descartarcategoria;
-    customConfirm(`Descartar a lista ${cat}? Ela some do "Adicionar última compra" — as outras listas ficam, e nenhum saldo do estoque é alterado.`, async () => {
-      const ids = ((ultimoRelatorioCompraCache && ultimoRelatorioCompraCache.itens) || [])
-        .filter(it => ultimaCompraCategoriaDe(it) === cat).map(it => it.estoqueItemId);
-      ids.forEach(id => delete estoqueUltimaCompraRowState[id]);
-      await removerDoRetratoUltimaCompra(ids);
-      const restam = !!(ultimoRelatorioCompraCache && ultimoRelatorioCompraCache.itens && ultimoRelatorioCompraCache.itens.length);
-      if(restam) renderUltimaCompraLista();
-      else document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open');
-    }, 'Descartar lista');
-  }));
 }
 function estoqueUltimaCompraAtualizarLinha(idStr){
   const it = estoqueItens.find(x => String(x.id) === String(idStr));
@@ -16465,21 +16561,30 @@ function estoqueUltimaCompraAtualizarLinha(idStr){
   const novoLabel = document.querySelector(`[data-ultimacompranovolabel="${idStr}"]`);
   if(novoLabel) novoLabel.innerHTML = `Novo saldo: <b>${(!Number.isFinite(qtd) || qtd <= 0) ? atual : atual + qtd}</b>`;
 }
-document.getElementById('estoqueUltimaCompraBtn').addEventListener('click', abrirUltimaCompraModal);
 document.getElementById('estoqueUltimaCompraDescartarBtn').addEventListener('click', () => {
-  customConfirm('Descartar o último relatório de compra? O botão "Adicionar última compra ao estoque" some até você gerar um novo relatório. Nenhum material ou saldo do estoque é alterado.', async () => {
+  confirmarDuplo('Excluir o último relatório de compra? Todas as categorias aguardando entrada somem. Nenhum material ou saldo do estoque é alterado.',
+    'Tem certeza? Esta exclusão não pode ser desfeita.', async () => {
     const btn = document.getElementById('estoqueUltimaCompraDescartarBtn');
-    const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Descartando...';
+    const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Excluindo...';
     try{
-      await dbSetRaw('estoqueUltimoRelatorioCompra', null); // set(null) remove o nó no Realtime Database
+      await dbSetRaw('estoqueUltimoRelatorioCompra', null);
       ultimoRelatorioCompraCache = null;
-      atualizarBotaoUltimaCompra();
     }catch(e){
       console.error('Falha ao descartar o último relatório de compra:', e);
-      alert('⚠️ Não foi possível descartar. Verifique sua internet e tente novamente.');
+      alert('⚠️ Não foi possível excluir. Verifique sua internet e tente novamente.');
     }
-    btn.disabled = false; btn.textContent = lbl;
-  }, 'Descartar');
+    btn.textContent = lbl; atualizarBotaoUltimaCompra();
+  }, 'Excluir');
+});
+document.getElementById('estoqueUltimaCompraDescartarCatBtn').addEventListener('click', () => {
+  const cat = estoqueUltimaCompraModalCat; if(!cat) return;
+  confirmarDuplo(`Excluir o relatório de ${cat}? Ele some da lista de entradas — as outras categorias ficam e nenhum saldo é alterado.`,
+    'Tem certeza? Esta exclusão não pode ser desfeita.', async () => {
+    const ids = ultimaCompraItensDaCat(cat).map(it => it.estoqueItemId);
+    ids.forEach(id => delete estoqueUltimaCompraRowState[id]);
+    await removerDoRetratoUltimaCompra(ids);
+    document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open');
+  }, 'Excluir');
 });
 document.getElementById('estoqueUltimaCompraCancelBtn').addEventListener('click', () => document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open'));
 document.getElementById('estoqueUltimaCompraOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open'); });
@@ -16514,7 +16619,7 @@ function abrirConfirmacaoUltimaCompra(categoria){
   document.getElementById('estoqueUltimaCompraConfirmErr').textContent = '';
   document.getElementById('estoqueUltimaCompraConfirmOverlay').classList.add('open');
 }
-document.getElementById('estoqueUltimaCompraEnviarBtn').addEventListener('click', () => abrirConfirmacaoUltimaCompra(null));
+document.getElementById('estoqueUltimaCompraEnviarBtn').addEventListener('click', () => abrirConfirmacaoUltimaCompra(estoqueUltimaCompraModalCat));
 document.getElementById('estoqueUltimaCompraConfirmCancelBtn').addEventListener('click', () => document.getElementById('estoqueUltimaCompraConfirmOverlay').classList.remove('open'));
 
 let estoqueUltimaCompraEnvioInFlight = false;
@@ -16545,7 +16650,7 @@ document.getElementById('estoqueUltimaCompraConfirmBtn').addEventListener('click
   if(!pedido.length){ errBox.textContent = 'Nenhum item.'; return; }
   // Confirmação dupla: este clique só monta o resumo; a gravação em si só roda se a pessoa
   // confirmar de novo no diálogo nativo do app (customConfirm, já usado em todo o Estoque).
-  customConfirm(`Confirma a entrada ${escopo ? 'da lista ' + escopo : 'destes itens'} no estoque? Esta ação não pode ser desfeita.`, async () => {
+  customConfirm(`Segunda confirmação: dar entrada ${escopo ? 'da compra de ' + escopo : 'destes itens'} no estoque? Esta ação não pode ser desfeita.`, async () => {
     if(estoqueUltimaCompraEnvioInFlight) return;
     estoqueUltimaCompraEnvioInFlight = true;
     const btn = document.getElementById('estoqueUltimaCompraConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
@@ -16567,9 +16672,9 @@ document.getElementById('estoqueUltimaCompraConfirmBtn').addEventListener('click
       return;
     }
     document.getElementById('estoqueUltimaCompraConfirmOverlay').classList.remove('open');
-    const restam = !!(ultimoRelatorioCompraCache && ultimoRelatorioCompraCache.itens && ultimoRelatorioCompraCache.itens.length);
+    const restam = ultimaCompraItensDaCat(estoqueUltimaCompraModalCat).length > 0;
     if(restam){
-      renderUltimaCompraLista(); // outras listas continuam abertas pra dar entrada depois
+      renderUltimaCompraLista();
     } else {
       document.getElementById('estoqueUltimaCompraOverlay').classList.remove('open');
     }
@@ -17027,65 +17132,41 @@ function abrirDetalheRetirada(id){
 document.getElementById('estoqueRetiradaDetalheFecharBtn').addEventListener('click', () => document.getElementById('estoqueRetiradaDetalheOverlay').classList.remove('open'));
 
 // ---------- RELATÓRIO DE COMPRA (Gestor) ----------
-function estoqueRelatorioCategoriaSelecionada(){
-  const sel = document.getElementById('estoqueRelatorioCategoria');
-  return (sel && sel.value) || null;
-}
 function renderEstoqueRelatorio(){
-  // Seletor "gerar por categoria" (cada lista vai pra um fornecedor): mostra cada categoria com a
-  // contagem de itens em alerta; mantém a seleção atual ao redesenhar.
-  const sel = document.getElementById('estoqueRelatorioCategoria');
-  if(sel){
-    const anterior = sel.value;
-    const porCat = {};
-    estoqueMateriaisAtivos().forEach(it => {
-      const cn = estoqueCategoriaDoItem(it);
-      porCat[cn] = porCat[cn] || { total: 0, alerta: 0 };
-      porCat[cn].total++;
-      if(estoqueStatusDoMaterial(it) !== 'NORMAL') porCat[cn].alerta++;
-    });
-    sel.innerHTML = '<option value="">Todas as categorias</option>' +
-      Object.keys(porCat).sort((a, b) => a.localeCompare(b, 'pt-BR'))
-        .map(cn => `<option value="${escapeHtml(cn)}">${escapeHtml(cn)} (${porCat[cn].alerta} em alerta)</option>`).join('');
-    sel.value = [...sel.options].some(o => o.value === anterior) ? anterior : '';
-  }
-  const categoria = estoqueRelatorioCategoriaSelecionada();
-  const disponivel = relatorioCompraDisponivel(categoria);
-  const n = estoqueMateriaisDoRelatorio(categoria).filter(it => estoqueStatusDoMaterial(it) !== 'NORMAL').length;
-  document.getElementById('estoqueRelatorioStatus').textContent = disponivel
-    ? `${n} material(is) no mínimo ou abaixo${categoria ? ' em ' + categoria : ''} — relatório disponível (inclui ${categoria ? 'todos os materiais de ' + categoria : 'TODOS os materiais'}).`
-    : (categoria ? `Nenhum material no mínimo ou abaixo em ${categoria} — escolha outra categoria ou "Todas".` : 'Nenhum material no mínimo ou abaixo — o relatório fica disponível quando houver ao menos um.');
-  document.getElementById('estoqueRelatorioPdfBtn').disabled = !disponivel;
-  document.getElementById('estoqueRelatorioExcelBtn').disabled = !disponivel;
-  const box = document.getElementById('estoqueRelatorioPreview');
-  // Melhoria 4: agrupamento visual por categoria (bloco/seção) — reaproveita a MESMA categoria já
-  // cadastrada em cada material (eq.category), sem campo novo. Mesma ordenação de sempre: só
-  // "categoria depois nome" (idêntica à combinação usada antes de agrupar), agora com um
-  // cabeçalho por categoria em vez de uma lista corrida.
-  const cats = {};
-  estoqueMateriaisDoRelatorio(categoria).forEach(it => { const cn = estoqueCategoriaDoItem(it); (cats[cn] = cats[cn] || []).push(it); });
-  const catNames = Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-  let total = 0; let html = '';
-  // Melhoria 3: relatório de compra mostra somente descrição + quantidade a comprar (sem
-  // atual/mínimo/máximo) — o cálculo de quantidadeParaComprar() continua o mesmo de sempre.
-  // O destaque vermelho de "disparou reposição" é mantido: é um indicador visual de status, não
-  // uma das 3 informações numéricas que esta melhoria pede pra remover da apresentação.
-  catNames.forEach(cn => {
-    const list = cats[cn].slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
-    html += `<div class="estoque-relatorio-cat-header">${escapeHtml(cn)}</div>`;
-    list.forEach(it => {
-      const st = estoqueStatusDoMaterial(it), buy = quantidadeParaComprar(it); total += buy;
-      html += `<div class="painel-stat-row" style="${st !== 'NORMAL' ? 'border-left:4px solid var(--red); padding-left:10px;' : ''}"><div class="painel-stat-label">${escapeHtml(it.name)}</div><div class="painel-stat-value mono"><b>${buy}</b></div></div>`;
-    });
+  const box = document.getElementById('estoqueRelatorioBotoes'); if(!box) return;
+  const porCat = {};
+  estoqueMateriaisAtivos().forEach(it => {
+    const cn = estoqueCategoriaDoItem(it);
+    porCat[cn] = porCat[cn] || { alerta: 0, compl: 0 };
+    if(estoqueStatusDoMaterial(it) !== 'NORMAL') porCat[cn].alerta++;
+    else if(quantidadeParaComprar(it) > 0) porCat[cn].compl++;
   });
-  html += `<div class="painel-stat-row" style="margin-top:6px;"><div class="painel-stat-label"><b>Total geral a comprar</b></div><div class="painel-stat-value mono"><b>${total}</b></div></div>`;
-  box.innerHTML = html;
+  const nomes = Object.keys(porCat).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const totA = nomes.reduce((n, c) => n + porCat[c].alerta, 0), totC = nomes.reduce((n, c) => n + porCat[c].compl, 0);
+  document.getElementById('estoqueRelatorioStatus').textContent = totA
+    ? 'Escolha o relatório: você vê o resumo dos itens antes de gerar o PDF ou o Excel.'
+    : 'Nenhum material no mínimo ou abaixo — os relatórios ficam disponíveis quando houver ao menos um.';
+  const desc = (a, c) => a || c ? `${a} com estoque baixo · ${c} de complemento` : 'Nada a comprar';
+  box.innerHTML = `<button type="button" class="rel-btn escuro" data-relcat="" ${totA ? '' : 'disabled'}><span class="t">🧾 Relatório de compra geral</span><span class="d">${desc(totA, totC)}</span></button>` +
+    nomes.map(cn => `<button type="button" class="rel-btn" data-relcat="${escapeHtml(cn)}" ${porCat[cn].alerta ? '' : 'disabled'}><span class="t">${escapeHtml(cn)}</span><span class="d">${desc(porCat[cn].alerta, porCat[cn].compl)}</span></button>`).join('');
+  box.querySelectorAll('[data-relcat]').forEach(b => b.addEventListener('click', () => abrirRelCompraModal(b.dataset.relcat || null)));
 }
-document.getElementById('estoqueRelatorioPdfBtn').addEventListener('click', () => {
-  const categoria = estoqueRelatorioCategoriaSelecionada();
-  if(relatorioCompraDisponivel(categoria)) abrirRelatorioCompraPdf(categoria);
-});
-document.getElementById('estoqueRelatorioCategoria').addEventListener('change', renderEstoqueRelatorio);
+let relCompraModalCat = null;
+function abrirRelCompraModal(categoria){
+  relCompraModalCat = categoria || null;
+  const sel = relatorioCompraSelecao(relCompraModalCat);
+  const linha = (r, baixo) => `<div class="rel-item${baixo ? ' baixo' : ''}"><div><div class="n">${escapeHtml(r.it.name)}${r.it.unit ? ' — ' + escapeHtml(r.it.unit) : ''}${relCompraModalCat ? '' : `<span class="rel-chip">${escapeHtml(r.cat)}</span>`}</div><div class="m">Em estoque: ${Number(r.it.quantity) || 0} · mínimo: ${Number(r.it.minimumQuantity) || 0}${baixo ? ' · ' + r.st : ''}</div></div><div class="q" ${baixo ? 'style="color:#D91A22;"' : ''}>Comprar ${r.buy}</div></div>`;
+  document.getElementById('estoqueRelCompraTitulo').textContent = 'Relatório de compra — ' + (relCompraModalCat || 'Geral');
+  document.getElementById('estoqueRelCompraSub').textContent = `${sel.alerta.length} item(ns) com estoque baixo e ${sel.complemento.length} só complementando o estoque entram neste relatório.`;
+  document.getElementById('estoqueRelCompraLista').innerHTML =
+    `<div class="rel-sec baixo">⚠️ Estoque baixo (${sel.alerta.length})</div>` + (sel.alerta.length ? sel.alerta.map(r => linha(r, true)).join('') : '<div class="painel-block-empty">Nenhum.</div>') +
+    `<div class="rel-sec compl">Complemento de estoque (${sel.complemento.length})</div>` + (sel.complemento.length ? sel.complemento.map(r => linha(r, false)).join('') : '<div class="painel-block-empty">Nenhum.</div>');
+  document.getElementById('estoqueRelCompraErr').textContent = '';
+  document.getElementById('estoqueRelCompraOverlay').classList.add('open');
+}
+document.getElementById('estoqueRelCompraFecharBtn').addEventListener('click', () => document.getElementById('estoqueRelCompraOverlay').classList.remove('open'));
+document.getElementById('estoqueRelCompraPdfBtn').addEventListener('click', () => { if(relatorioCompraDisponivel(relCompraModalCat)) abrirRelatorioCompraPdf(relCompraModalCat); });
+document.getElementById('estoqueRelCompraExcelBtn').addEventListener('click', () => exportarRelatorioCompraExcel(relCompraModalCat));
 
 // ---- Exportação Excel do Relatório de compra (melhoria 5) ----
 // Biblioteca carregada SOB DEMANDA (só no primeiro clique em "Exportar Excel"), não no bootstrap —
@@ -17104,24 +17185,22 @@ function ensureXlsxLib(){
   return xlsxLibLoadPromise;
 }
 let estoqueRelatorioExcelInFlight = false;
-async function exportarRelatorioCompraExcel(){
-  const categoria = estoqueRelatorioCategoriaSelecionada();
+async function exportarRelatorioCompraExcel(categoria){
   if(estoqueRelatorioExcelInFlight || !relatorioCompraDisponivel(categoria)) return;
   estoqueRelatorioExcelInFlight = true;
-  const btn = document.getElementById('estoqueRelatorioExcelBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Gerando...';
-  const errBox = document.getElementById('estoqueRelatorioExportErr'); errBox.textContent = '';
+  const btn = document.getElementById('estoqueRelCompraExcelBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Gerando...';
+  const errBox = document.getElementById('estoqueRelCompraErr'); errBox.textContent = '';
   try{
     await ensureXlsxLib();
-    // Só leitura: mesma fonte de dados/cálculo já usada pelo relatório (nenhuma consulta Firebase
-    // nova, nenhuma escrita).
     const grupos = relatorioCompraAgrupado(categoria);
-    const aoa = [['Descrição do item', 'Medida', 'Quantidade a comprar']];
+    const aoa = [['Descrição do item', 'Medida', 'Situação', 'Quantidade a comprar']];
     grupos.forEach(g => {
       aoa.push([g.categoria.toUpperCase()]);
-      g.itens.forEach(it => aoa.push([it.nome, it.medida || '—', it.comprar]));
+      g.itens.forEach(it => aoa.push([it.nome, it.medida || '—', it.situacao, it.comprar]));
+      aoa.push(['Total da categoria', '', '', g.itens.reduce((n, i) => n + i.comprar, 0)]);
     });
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 20 }];
+    ws['!cols'] = [{ wch: 40 }, { wch: 16 }, { wch: 14 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Relatório de compra');
     XLSX.writeFile(wb, relatorioCompraFileNameBase(categoria) + '.xlsx');
@@ -17129,10 +17208,9 @@ async function exportarRelatorioCompraExcel(){
   }catch(e){
     errBox.textContent = 'Não foi possível gerar o Excel. Verifique sua internet e tente novamente.';
   }finally{
-    btn.disabled = !relatorioCompraDisponivel(estoqueRelatorioCategoriaSelecionada()); btn.textContent = lbl; estoqueRelatorioExcelInFlight = false;
+    btn.disabled = false; btn.textContent = lbl; estoqueRelatorioExcelInFlight = false;
   }
 }
-document.getElementById('estoqueRelatorioExcelBtn').addEventListener('click', exportarRelatorioCompraExcel);
 
 // ---------- REGISTRAR RETIRADA (Técnico) ----------
 let estoqueRetiradaQtds = {}; // { itemId: quantidade digitada }
