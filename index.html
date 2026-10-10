@@ -2135,6 +2135,11 @@
     #finBottomNav .bottom-nav-btn.active{ color:var(--accent); font-weight:600; }
     #financeiroView .page{ padding-bottom:84px; }
   }
+  .obrg-sub{ display:flex; gap:8px; margin:0 0 12px; }
+  .obrg-sec-h{ font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px; padding:7px 12px; border-radius:8px; background:var(--surface-2); border-left:4px solid var(--line); display:flex; justify-content:space-between; gap:10px; }
+  .obrg-sec-h.g1{ background:var(--st-prog-bg, #e8f0fe); border-left-color:var(--st-prog, #1a56db); }
+  .obrg-sec-h.g2{ background:var(--st-attr-bg, #fff6d6); border-left-color:var(--st-attr, #e0a800); }
+  .obrg-sec-h.gf{ border-left-color:#1f6b45; }
   .obrg-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 6px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
   .obrg-cli{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; margin-bottom:4px; }
  .obrg-prog{ margin-left:auto; font-size:11.5px; color:var(--text-dim); font-weight:600; }
@@ -23485,7 +23490,7 @@ function exportarCsv(){
 // O que ele muda aqui aparece no Financeiro: o andamento de cada pedido e a "situação da obra" do registro (derivada dos pedidos).
 // Usa o MESMO armazenamento do Financeiro (nó obrasPedidos); grava só `statusPedidos` e `situacao` — nunca pedidos/parcelas.
 // =====================================================================================
-const uiG = { busca: '', empresa: '', status: '', montado: false, aba: 'pedidos', sisBusca: '', abertos: new Set(), clientes: new Set(), chaves: [] };      // clientes = linhas abertas (cartão completo); chaves = clientes listados agora
+const uiG = { busca: '', empresa: '', status: '', sub: 'andamento', montado: false, aba: 'pedidos', sisBusca: '', abertos: new Set(), clientes: new Set(), chaves: [] };      // clientes = linhas abertas (cartão completo); chaves = clientes listados agora
 function situacaoDerivada(r){
   const ativos = pedidosDe(r).filter(p => !p.cancelado); if(!ativos.length) return null; const ss = ativos.map(p => statusObraDe(r, p.id));
   if(ss.every(x => x === 'finalizado')) return 'finalizada';
@@ -23497,6 +23502,7 @@ function montarGestor(){
   v.innerHTML = `<div class="tecnicos-head"><div><div class="tecnicos-title">Obras e Pedidos</div><div class="tecnicos-date mono" id="obrgContagem"></div></div></div>
     <div class="portal-tabs" id="obrgAbas" style="padding:0 0 12px;"><button type="button" class="portal-tab active" data-obrg-aba="pedidos">Pedidos</button><button type="button" class="portal-tab" data-obrg-aba="sistemas">Sistemas<span class="obr-tab-n" id="obrgSisN"></span></button></div>
     <div id="obrgPanePedidos">
+    <div class="portal-tabs obrg-sub" id="obrgSubAbas"><button type="button" class="portal-tab active" data-obrg-sub="andamento">Em andamento<span class="obr-tab-n" id="obrgSubN1"></span></button><button type="button" class="portal-tab" data-obrg-sub="finalizados">Finalizados<span class="obr-tab-n" id="obrgSubN2"></span></button></div>
     <div class="obrg-painel" id="obrgChips"></div>
     <div class="fin-filtros" style="padding:0 0 12px;">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrgBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
@@ -23526,6 +23532,7 @@ function montarGestor(){
     const cl = e.target.closest('[data-obrg-cli]'); if(cl){ const k = cl.dataset.obrgCli; if(uiG.clientes.has(k)) uiG.clientes.delete(k); else uiG.clientes.add(k); renderGestor(); return; }
     const c = e.target.closest('[data-obrg-chip]'); if(c){ uiG.status = uiG.status === c.dataset.obrgChip ? '' : c.dataset.obrgChip; document.getElementById('obrgStatus').value = uiG.status; renderGestor(); return; }
     const a = e.target.closest('[data-obrg-ativ]'); if(a){ const [rid, pid] = a.dataset.obrgAtiv.split('|'); criarAtividade(rid, pid); return; }
+    const sb2 = e.target.closest('[data-obrg-sub]'); if(sb2){ uiG.sub = sb2.dataset.obrgSub; renderGestor(); return; }
     const ab = e.target.closest('[data-obrg-aba]'); if(ab){ mostrarAbaGestor(ab.dataset.obrgAba); return; }
     const ss = e.target.closest('[data-obrg-sis]'); if(ss){ const k = ss.dataset.obrgSis; if(k === 'novo') abrirSistema(null); else if(k === 'importar') importarDaPreventiva(); else if(k === 'abrir') abrirSistema(ss.dataset.id); }
   });
@@ -23561,13 +23568,31 @@ function renderGestor(){
   const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => temStatus(x.r, p.id, uiG.status)) : x.peds })).filter(x => x.peds.length);
   // UM cartão por cliente: os pedidos do mesmo cliente nas duas empresas (Equiper e Eqp) ficam juntos
   const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { chave: k, nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
-  const lista_ = [...grupos.values()].map(g => ({ chave: g.chave, nome: g.nome, itens: g.itens.sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.r.empresa) - EMPRESAS.findIndex(e => e[0] === b.r.empresa)) })).sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  let lista_ = [...grupos.values()].map(g => ({ chave: g.chave, nome: g.nome, itens: g.itens.sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.r.empresa) - EMPRESAS.findIndex(e => e[0] === b.r.empresa)) })).sort((a, b) => fold(a.nome).localeCompare(fold(b.nome)));
+  // Duas abas: FINALIZADOS = clientes cujos pedidos estão TODOS entregues (etapa interna) e finalizados (obra); o resto fica em ANDAMENTO.
+  // Em andamento, a ordem é por estágio: obra em curso (iniciado / aguardando testes) no topo, depois os liberados para iniciar, depois o restante.
+  const ordemSt = (k) => STATUS_OBRA.findIndex(x => x[0] === k);
+  lista_.forEach(g => {
+    const todos = g.itens.flatMap(({ r }) => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
+    const completo = todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado');
+    const obras = todos.map(x => obraDe(x.r, x.p.id));
+    g.grp = completo ? 'f' : obras.some(k => k === 'iniciado' || k === 'aguardando_testes') ? 1 : obras.some(k => k === 'liberado_inicio') ? 2 : 3;
+    g.rankPrin = g.grp === 3 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
+  });
+  const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
+  document.getElementById('obrgSubN1').textContent = nAnd; document.getElementById('obrgSubN2').textContent = nFin;
+  document.querySelectorAll('#obrgSubAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgSub === uiG.sub));
+  lista_ = lista_.filter(g => (g.grp === 'f') === (uiG.sub === 'finalizados'));
+  if(uiG.sub !== 'finalizados') lista_.sort((a, b) => (a.grp - b.grp) || (a.rankPrin - b.rankPrin) || fold(a.nome).localeCompare(fold(b.nome)));
   uiG.chaves = lista_.map(g => g.chave);
   const nPed = filtrados.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista_.length + (lista_.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  box.innerHTML = lista_.length ? lista_.map(({ chave, nome, itens }) => {
+  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Liberados para iniciar', 3: 'Aguardando compra, entrega ou liberação' };
+  let grpAnt = null;
+  const cabGrp = (g) => { if(uiG.sub === 'finalizados' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
+  box.innerHTML = lista_.length ? lista_.map((g_) => { const { chave, nome, itens } = g_; const cab = cabGrp(g_);
     const regs = itens.map(x => x.r); const varias = regs.length > 1; const aberto = uiG.clientes.has(chave);        // o cliente tem registros nas duas empresas
     const pares = itens.flatMap(({ r, peds }) => peds.map(p => ({ r, p })));
     const todosPeds = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
@@ -23576,7 +23601,7 @@ function renderGestor(){
     const rotOutros = [...new Set(outros.map(x => rotObra(statusObraDe(x.r, x.p.id))))].join(', ');
     const pontos = pares.slice(0, 14).map(x => `<i class="obrg-dot obrg-dot-${statusObraDe(x.r, x.p.id)}" title="Pedido ${esc(x.p.numero)} · ${esc(rotObra(statusObraDe(x.r, x.p.id)))}"></i>`).join('') + (pares.length > 14 ? `<small class="obrg-mais">+${pares.length - 14}</small>` : '');
     const acoes = `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
-    return `<div class="obrg-card obrg-cliente${aberto ? ' obrg-aberto' : ''}">
+    return cab + `<div class="obrg-card obrg-cliente${aberto ? ' obrg-aberto' : ''}">
       <div class="obrg-resumo" role="button" tabindex="0" aria-expanded="${aberto}" data-obrg-cli="${esc(chave)}" title="${aberto ? 'Recolher' : 'Abrir o cartão completo'}"><span class="obrg-seta">${aberto ? '▾' : '▸'}</span>
         <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}</span>
         <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.length ? `<span class="obrg-outros" title="${outros.length} ${outros.length === 1 ? 'pedido em outro andamento' : 'pedidos em outros andamentos'}: ${esc(rotOutros)}">+${outros.length}</span>` : ''}</span>
@@ -23590,7 +23615,7 @@ function renderGestor(){
           <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
     </div>`; }).join('')
-    : `<div class="empty-state">${registros().length ? 'Nenhum pedido com esses filtros.' : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
+    : `<div class="empty-state">${registros().length ? (uiG.sub === 'finalizados' ? 'Nenhum cliente com todos os pedidos entregues e finalizados.' : 'Nenhum pedido em andamento com esses filtros.') : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
 }
 function gravarEntradaSt(r, pid, i, o, extra){          // grava as duas trilhas (e a mais avançada em `s`, para compatibilidade), sem campos vazios
   const antigo = entradaSt(r, pid); const entrada = { i, s: o || i, em: new Date().toISOString(), por: quem() }; if(o) entrada.o = o; if(antigo.auto) entrada.auto = antigo.auto; Object.assign(entrada, extra || {});
