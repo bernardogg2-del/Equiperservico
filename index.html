@@ -2135,6 +2135,11 @@
     #finBottomNav .bottom-nav-btn.active{ color:var(--accent); font-weight:600; }
     #financeiroView .page{ padding-bottom:84px; }
   }
+  .obrg-resumo4{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:12px; }
+  @media (min-width:700px){ .obrg-resumo4{ grid-template-columns:repeat(4,1fr); } }
+  .obrg-t4{ background:var(--panel); border:1px solid var(--line); border-left:5px solid var(--ink); border-radius:var(--radius); padding:10px 14px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; }
+  .obrg-t4 b{ font-size:28px; line-height:1.1; font-weight:800; }
+  .obrg-t4 span{ font-size:12.5px; color:var(--text-dim); font-weight:600; }
   .obrg-sub{ display:flex; gap:8px; margin:0 0 12px; }
   .obrg-sec-h{ font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px; padding:7px 12px; border-radius:8px; background:var(--surface-2); border-left:4px solid var(--line); display:flex; justify-content:space-between; gap:10px; }
   .obrg-sec-h.g1{ background:var(--st-prog-bg, #e8f0fe); border-left-color:var(--st-prog, #1a56db); }
@@ -23556,15 +23561,9 @@ function renderGestor(){
   const q = fold(uiG.busca);
   const base = registros().filter(r => (!uiG.empresa || r.empresa === uiG.empresa)).map(r => ({ r, peds: pedidosDe(r).filter(p => !p.cancelado) })).filter(x => x.peds.length)
     .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
-  // painel de cima: um cartão por andamento (pedidos e clientes); tocar filtra
-  const cont = {}, cli = {}; STATUS_OBRA.forEach(([k]) => { cont[k] = 0; cli[k] = new Set(); });          // cada pedido conta na trilha interna E, se já existe, na da obra
-  base.forEach(x => x.peds.forEach(p => { const ks = [internoDe(x.r, p.id), obraDe(x.r, p.id)].filter(Boolean); ks.forEach(k => { cont[k]++; cli[k].add(fold(nomeCliente(x.r))); }); }));
-  const cartao = ([k, n]) => `<div class="obrg-chip obrg-pc obrg-k obrg-k-${k} ${uiG.status === k ? 'obrg-chip-on' : ''} ${cont[k] ? '' : 'obrg-pc-zero'}" role="button" tabindex="0" data-obrg-chip="${k}" aria-pressed="${uiG.status === k}"><b class="obrg-pc-n">${cont[k]}</b><span class="obrg-pc-r">${esc(n)}</span><small>${cli[k].size} ${cli[k].size === 1 ? 'cliente' : 'clientes'}</small></div>`;
   // marcador-resumo de cada etapa: quantos CLIENTES estão nela (interna = ainda tem pedido por entregar; obra = tem pedido na obra, ainda não finalizado)
   const cliFase = { interna: new Set(), obra: new Set() }, pedFase = { interna: 0, obra: 0 };
   base.forEach(x => x.peds.forEach(p => { const nm = fold(nomeCliente(x.r)); if(internoDe(x.r, p.id) !== 'entregue'){ cliFase.interna.add(nm); pedFase.interna++; } const o = obraDe(x.r, p.id); if(o && o !== 'finalizado'){ cliFase.obra.add(nm); pedFase.obra++; } }));
-  const totalFase = (f) => `<div class="obrg-pc obrg-k obrg-k-total" title="${f === 'interna' ? 'Clientes com pelo menos um pedido ainda na etapa interna (antes de entregue)' : 'Clientes com pelo menos um pedido na etapa obra (ainda não finalizado)'}"><b class="obrg-pc-n">${cliFase[f].size}</b><span class="obrg-pc-r">${f === 'interna' ? 'Clientes na etapa interna' : 'Clientes na etapa obra'}</span><small>${pedFase[f]} ${pedFase[f] === 1 ? 'pedido' : 'pedidos'}</small></div>`;
-  document.getElementById('obrgChips').innerHTML = FASES_OBRA.map(([f, nome]) => `<div class="obrg-fase"><div class="obrg-fase-t">${esc(nome)}</div><div class="obrg-fase-c">${totalFase(f)}${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(cartao).join('')}</div></div>`).join('');
   const filtrados = base.map(x => ({ r: x.r, peds: uiG.status ? x.peds.filter(p => temStatus(x.r, p.id, uiG.status)) : x.peds })).filter(x => x.peds.length);
   // UM cartão por cliente: os pedidos do mesmo cliente nas duas empresas (Equiper e Eqp) ficam juntos
   const grupos = new Map(); filtrados.forEach(x => { const k = fold(nomeCliente(x.r)); if(!grupos.has(k)) grupos.set(k, { chave: k, nome: nomeCliente(x.r), itens: [] }); grupos.get(k).itens.push(x); });
@@ -23580,6 +23579,8 @@ function renderGestor(){
     g.rankPrin = g.grp === 3 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
   });
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
+  const tile = (n, rot, cor) => `<div class="obrg-t4" style="border-left-color:${cor};"><b style="color:${cor};">${n}</b><span>${esc(rot)}</span></div>`;
+  document.getElementById('obrgChips').innerHTML = `<div class="obrg-resumo4">${tile(nAnd + nFin, 'Clientes registrados', 'var(--ink)')}${tile(cliFase.interna.size, 'Na etapa interna', '#b45309')}${tile(cliFase.obra.size, 'Na etapa obra', '#1a56db')}${tile(nFin, 'Finalizados', '#1f6b45')}</div>`;
   document.getElementById('obrgSubN1').textContent = nAnd; document.getElementById('obrgSubN2').textContent = nFin;
   document.querySelectorAll('#obrgSubAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgSub === uiG.sub));
   lista_ = lista_.filter(g => (g.grp === 'f') === (uiG.sub === 'finalizados'));
