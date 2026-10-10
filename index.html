@@ -23507,7 +23507,6 @@ function montarGestor(){
   v.innerHTML = `<div class="tecnicos-head"><div><div class="tecnicos-title">Obras e Pedidos</div><div class="tecnicos-date mono" id="obrgContagem"></div></div></div>
     <div class="portal-tabs" id="obrgAbas" style="padding:0 0 12px;"><button type="button" class="portal-tab active" data-obrg-aba="pedidos">Pedidos</button><button type="button" class="portal-tab" data-obrg-aba="sistemas">Sistemas<span class="obr-tab-n" id="obrgSisN"></span></button></div>
     <div id="obrgPanePedidos">
-    <div class="portal-tabs obrg-sub" id="obrgSubAbas"><button type="button" class="portal-tab active" data-obrg-sub="andamento">Em andamento<span class="obr-tab-n" id="obrgSubN1"></span></button><button type="button" class="portal-tab" data-obrg-sub="finalizados">Finalizados<span class="obr-tab-n" id="obrgSubN2"></span></button></div>
     <div class="obrg-painel" id="obrgChips"></div>
     <div class="fin-filtros" style="padding:0 0 12px;">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrgBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
@@ -23515,6 +23514,7 @@ function montarGestor(){
       <select id="obrgStatus"><option value="">Qualquer andamento</option>${opcoesAndamento('')}</select>
       <span class="obrg-exp"><button type="button" class="btn-ghost oe-mini" data-obrg-exp="todos">Expandir tudo</button><button type="button" class="btn-ghost oe-mini" data-obrg-exp="nenhum">Recolher tudo</button></span>
     </div>
+    <div class="portal-tabs obrg-sub" id="obrgSubAbas"><button type="button" class="portal-tab active" data-obrg-sub="andamento">Em andamento<span class="obr-tab-n" id="obrgSubN1"></span></button><button type="button" class="portal-tab" data-obrg-sub="finalizados">Finalizados<span class="obr-tab-n" id="obrgSubN2"></span></button></div>
     <div id="obrgLista"></div>
     </div>
     <div id="obrgPaneSistemas" style="display:none;">
