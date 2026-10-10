@@ -7718,6 +7718,10 @@ let maintenanceContractsSnapshot = {}; // { [id]: { [campo]: jsonDoValorConfirma
 // futuro) não tem mais nenhum poder de apagar contratos no Firebase — só uma exclusão
 // explícita, marcada aqui, tem.
 let maintenanceContractsExplicitDeletes = new Set();
+// Trilha de auditoria/recuperação das exclusões: id -> { registro, excluidoPor, excluidoEm }.
+// Gravada em maintenanceContractsExcluidos/<id> no MESMO update atômico que remove o contrato —
+// ou a exclusão e o registro entram juntos, ou nenhum dos dois entra.
+let maintenanceContractsDeleteInfo = {};
 
 // ===== Galeria — fotos adicionadas diretamente (módulo Galeria) =====
 // Estrutura mínima, um nó por foto: { id, client, photo, addedBy, addedAt }. Mesmo padrão já
@@ -9001,6 +9005,8 @@ async function writeMaintenanceContractsDiff(attempt){
     maintenanceContractsExplicitDeletes.forEach(id => {
       if(!currentIds.has(String(id))){
         updates['maintenanceContracts/' + id] = null; // remove o contrato inteiro
+        const auditoria = maintenanceContractsDeleteInfo[String(id)];
+        if(auditoria) updates['maintenanceContractsExcluidos/' + id] = auditoria; // registro de quem/quando + cópia do contrato, no mesmo update atômico
         removedIds.push(id);
         hasChanges = true;
       }
@@ -9013,7 +9019,7 @@ async function writeMaintenanceContractsDiff(attempt){
       Object.keys(sentFieldSnapshots).forEach(id => {
         maintenanceContractsSnapshot[id] = Object.assign({}, maintenanceContractsSnapshot[id], sentFieldSnapshots[id]);
       });
-      removedIds.forEach(id => { delete maintenanceContractsSnapshot[id]; maintenanceContractsExplicitDeletes.delete(String(id)); });
+      removedIds.forEach(id => { delete maintenanceContractsSnapshot[id]; maintenanceContractsExplicitDeletes.delete(String(id)); delete maintenanceContractsDeleteInfo[String(id)]; });
     }
     return true;
   }catch(e){
@@ -9291,18 +9297,28 @@ function renderManutencoes(){
           alert('Esta ação só pode ser executada por um gestor master.');
           return;
         }
-        customConfirm('Tem certeza que deseja excluir esta manutenção preventiva? O histórico de atividades já realizadas não será apagado.', async () => {
+        const rawId = e.target.dataset.delcontract;
+        const previa = findMaintenanceContractByRawId(rawId);
+        confirmarDuplo(`Tem certeza que deseja excluir a manutenção preventiva${previa ? ' de ' + previa.client : ''}? O histórico de atividades já realizadas não será apagado.`,
+          'Segunda confirmação: excluir este contrato para todos os aparelhos? Fica guardado um registro de quem excluiu, quando, e uma cópia do contrato para recuperação.', async () => {
           if(!isCurrentUserMaster()) return; // checagem repetida no momento de executar
-          const rawId = e.target.dataset.delcontract;
           const alvo = findMaintenanceContractByRawId(rawId);
           if(!alvo) return;
+          // Registro de auditoria/recuperação, enviado no MESMO update atômico da exclusão
+          // (ver writeMaintenanceContractsDiff). JSON.parse(JSON.stringify()) tira campos undefined,
+          // que o update() do Firebase rejeita.
+          try{
+            maintenanceContractsDeleteInfo[String(alvo.id)] = { registro: JSON.parse(JSON.stringify(alvo)), excluidoPor: currentActingName() || null, excluidoEm: new Date().toISOString() };
+          }catch(err){
+            maintenanceContractsDeleteInfo[String(alvo.id)] = { excluidoPor: currentActingName() || null, excluidoEm: new Date().toISOString() };
+          }
           // Marca a exclusão como EXPLÍCITA (única forma de virar remoção real no Firebase) antes
           // de tirar o contrato do array local.
           maintenanceContractsExplicitDeletes.add(String(alvo.id));
           maintenanceContracts = maintenanceContracts.filter(c => c !== alvo);
           await saveMaintenanceContracts();
           renderManutencoes();
-        });
+        }, 'Excluir');
       });
     });
   }
