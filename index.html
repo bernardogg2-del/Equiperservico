@@ -2141,6 +2141,8 @@
   .obrg-t4{ background:var(--panel); border:1px solid var(--line); border-left:5px solid var(--ink); border-radius:var(--radius); padding:10px 14px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; }
   .obrg-t4 b{ font-size:28px; line-height:1.1; font-weight:800; }
   .obrg-t4 span{ font-size:12.5px; color:var(--text-dim); font-weight:600; }
+  .obr-lg{ display:inline-flex; align-items:center; gap:5px; white-space:nowrap; margin-right:6px; }
+  .obr-leg{ font-size:10.5px; font-weight:800; color:var(--text-dim); text-transform:uppercase; letter-spacing:.05em; }
   .obrg-sub{ display:flex; gap:8px; margin:0 0 12px; }
   .obrg-sec-h{ font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px; padding:7px 12px; border-radius:8px; background:var(--surface-2); border-left:4px solid var(--line); display:flex; justify-content:space-between; gap:10px; }
   .obrg-sec-h.g1{ background:var(--st-prog-bg, #e8f0fe); border-left-color:var(--st-prog, #1a56db); }
@@ -23033,7 +23035,7 @@ const entradaSt = (r, pid) => (r && r.statusPedidos && r.statusPedidos[pid]) || 
 function internoDe(r, pid){ const e = entradaSt(r, pid); if(e.i && FASE_INTERNA.includes(e.i)) return e.i; if(e.s && FASE_INTERNA.includes(e.s)) return e.s; return e.s || e.o ? 'entregue' : 'aguardando_compra'; }
 function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
 const statusObraDe = (r, pid) => obraDe(r, pid) || internoDe(r, pid);          // situação "principal" do pedido = a mais avançada
-const chipObra = (r, p) => { const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span>${o ? ` <span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span>` : ''}`; };
+const chipObra = (r, p) => { const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-lg"><span class="obr-leg">Interno</span><span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span></span>${o ? `<span class="obr-lg"><span class="obr-leg">Obra</span><span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span></span>` : ''}`; };
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
 const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
 const fmtPct = (x) => String(Math.round(Number(x) * 100) / 100).replace('.', ',');
@@ -24240,6 +24242,17 @@ function blocoEstoque(){
     : '<div class="pn-vazio">Nenhum item abaixo do mínimo. ✓</div>';
   return bloco('Alertas de estoque', 'estoque', corpo);
 }
+// Manutenção preventiva: os MESMOS quatro números do quadro de resumo da aba Manutenções (total, em dia, próximos de vencer em até 15 dias, atrasados).
+function blocoManutencao(){
+  const lista = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+  const rows = lista.map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, dias: daysUntil(prox) }; }).sort((a, b) => a.prox.localeCompare(b.prox));
+  const atrasados = rows.filter(r => r.dias < 0), proximos = rows.filter(r => r.dias >= 0 && r.dias <= 15), emDia = rows.length - atrasados.length - proximos.length;
+  const lin = (r) => `<div class="pn-lin pn-click" data-pn-go="manutencoes"><span class="pn-lin-t">${esc(r.c.client)}</span><span class="pn-lin-m">${r.c.scheduledFor ? 'Agendado' : 'Sem visita agendada'}</span><span class="pn-pill pn-p-${r.dias < 0 ? 'red' : 'amber'}">${r.dias < 0 ? 'Atrasada há ' + Math.abs(r.dias) + (Math.abs(r.dias) === 1 ? ' dia' : ' dias') : r.dias === 0 ? 'Vence hoje' : 'Vence em ' + r.dias + (r.dias === 1 ? ' dia' : ' dias')}</span></div>`;
+  const urgentes = atrasados.concat(proximos);
+  const corpo = `<div class="pn-kpis">${kpi(rows.length, 'Total de contratos', 'gray', 'manutencoes')}${kpi(emDia, 'Contratos em dia', 'green', 'manutencoes')}${kpi(proximos.length, 'Próximos de vencer', 'amber', 'manutencoes')}${kpi(atrasados.length, 'Atrasados', 'red', 'manutencoes')}</div>
+    ${urgentes.slice(0, 6).map(lin).join('')}${urgentes.length > 6 ? `<div class="pn-mais">+ ${urgentes.length - 6} contratos — veja todos em Manutenções</div>` : ''}`;
+  return bloco('Manutenção preventiva', 'manutencoes', corpo);
+}
 function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): sem os contadores de OS cobradas e Não cobrar
   const pend = (typeof groupPaired === 'function' ? groupPaired((typeof services !== 'undefined' ? services : []).filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido)).length : 0);
   const qd = window.QUADROS_API ? num(QUADROS_API.pendentesOS()) : 0, eq = window.OSOF_API ? num(OSOF_API.pendentesOS()) : 0;
@@ -24251,7 +24264,7 @@ function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): s
 function tilesInterna(ped, clicavel, extra){
   const A = O(); const fases = A.FASE_INTERNA || [];
   return `<div class="pn-kpis">${extra || ''}${fases.map(k => { const n = ped.filter(x => x.i === k).length; const cl = new Set(ped.filter(x => x.i === k).map(x => x.r.clienteId || fold(x.r.cliente))).size;
-    return `<button type="button" class="pn-k obr-sp-${k} pn-vars ${clicavel && ui.alexEtapa === k ? 'on' : ''}" ${clicavel ? `data-pn-etapa="${k}"` : `data-pn-go="obras"`}><span class="pn-k-n">${n}</span><span class="pn-k-r">${esc(A.rotObra(k))}</span><span class="pn-k-s">${cl} ${cl === 1 ? 'cliente' : 'clientes'}</span></button>`; }).join('')}</div>`;
+    return `<button type="button" class="pn-k obr-sp-${k} pn-vars ${clicavel && ui.alexEtapa === k ? 'on' : ''}" ${clicavel ? `data-pn-etapa="${k}"` : `data-pn-go="obras"`}><span class="pn-k-n">${cl}</span><span class="pn-k-r">${esc(A.rotObra(k))}</span><span class="pn-k-s">${n} ${n === 1 ? 'pedido' : 'pedidos'}</span></button>`; }).join('')}</div>`;
 }
 
 // ---------- PAINEL GESTOR ----------
@@ -24273,7 +24286,7 @@ function renderGestor(){
   const nPI = ped.filter(x => x.i !== 'entregue').length, nPO = ped.filter(x => x.o && x.o !== 'finalizado').length;
   const totalI = `<button type="button" class="pn-k pn-t-ink" data-pn-go="obras"><span class="pn-k-n">${cliI.size}</span><span class="pn-k-r">Clientes na etapa interna</span><span class="pn-k-s">${nPI} ${nPI === 1 ? 'pedido' : 'pedidos'}</span></button>`;
   const totalO = `<button type="button" class="pn-k pn-t-ink" data-pn-go="obras"><span class="pn-k-n">${cliO.size}</span><span class="pn-k-r">Clientes na etapa obra</span><span class="pn-k-s">${nPO} ${nPO === 1 ? 'pedido' : 'pedidos'}</span></button>`;
-  const tilesObra = (A.STATUS_OBRA ? A.STATUS_OBRA.filter(([k]) => !(A.FASE_INTERNA || []).includes(k)) : []).map(([k, n]) => { const q = ped.filter(x => x.o === k).length; return `<button type="button" class="pn-k obr-sp-${k} pn-vars" data-pn-go="obras"><span class="pn-k-n">${q}</span><span class="pn-k-r">${esc(n)}</span></button>`; }).join('');
+  const tilesObra = (A.STATUS_OBRA ? A.STATUS_OBRA.filter(([k]) => !(A.FASE_INTERNA || []).includes(k)) : []).map(([k, n]) => { const sel = ped.filter(x => x.o === k); const q = sel.length; const cl = new Set(sel.map(x => x.r.clienteId || fold(x.r.cliente))).size; return `<button type="button" class="pn-k obr-sp-${k} pn-vars" data-pn-go="obras"><span class="pn-k-n">${cl}</span><span class="pn-k-r">${esc(n)}</span><span class="pn-k-s">${q} ${q === 1 ? 'pedido' : 'pedidos'}</span></button>`; }).join('');
   const bObras = bloco('Etapas das obras', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : `<div class="pn-fase">Etapa interna · compras</div>${tilesInterna(ped, false, totalI)}<div class="pn-fase">Etapa obra</div><div class="pn-kpis">${totalO}${tilesObra}</div><div class="pn-nota">${ped.length} ${ped.length === 1 ? 'pedido' : 'pedidos'} em andamento nas obras</div>`);
   // oficina
   const eqs = typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []; const rotG = typeof OE_GRUPO_LABEL !== 'undefined' ? OE_GRUPO_LABEL : {};
@@ -24281,7 +24294,7 @@ function renderGestor(){
   const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
   const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
   const bOf = bloco('Oficina', 'oficinagestor', `<div class="pn-kpis">${Object.keys(rotG).map(g => kpi(nG(g), rotG[g], tomG[g] || 'gray', 'oficinagestor')).join('')}${kpi(parados, 'Parados além do limite', parados ? 'red' : 'gray', 'oficinagestor')}</div>`);
-  box.innerHTML = cab('Painel Gestor', dataHoje()) + `<div class="pn-grade">${bAtiv}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS(true)}</div>`;
+  box.innerHTML = cab('Painel Gestor', dataHoje()) + `<div class="pn-grade">${bAtiv}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS(true)}${blocoManutencao()}</div>`;
 }
 
 // ---------- PAINEL ALEX ----------
@@ -24316,7 +24329,7 @@ function renderAlex(){
   const bEtapas = bloco('Resumo das etapas internas', '', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : tiles + (ui.alexEtapa ? '<div class="pn-nota">Filtrando por uma etapa. <button type="button" class="pn-link" data-pn-etapa="">Mostrar todas</button></div>' : '<div class="pn-nota">A etapa do cliente é a do pedido menos avançado.</div>'));
   const abas = `<div class="os-abas pn-abas" role="tablist"><button type="button" role="tab" aria-selected="${ui.alexAba !== 'entregues'}" class="os-aba ${ui.alexAba !== 'entregues' ? 'on' : ''}" data-pn-aba="compras">Compras<span class="os-aba-n">${compras.length}</span></button><button type="button" role="tab" aria-selected="${ui.alexAba === 'entregues'}" class="os-aba ${ui.alexAba === 'entregues' ? 'on' : ''}" data-pn-aba="entregues">Entregues<span class="os-aba-n">${entregues.length}</span></button></div>`;
   const bObras = `<section class="pn-bloco pn-largo pn-obras"><div class="pn-bloco-h"><h3>Obras e etapas internas</h3></div><div class="pn-barra">${abas}<div class="pn-busca"><input type="search" id="pnAlexBusca" placeholder="Buscar cliente, nº do pedido ou descrição…" value="${esc(ui.alexBusca)}" autocomplete="off"></div></div>${corpo}</section>`;
-  box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS(true)}${blocoEstoque()}</div>${bObras}`;
+  box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS(true)}${blocoEstoque()}${blocoManutencao()}</div>${bObras}`;
   if(focoBusca){ const b = document.getElementById('pnAlexBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
 }
 
