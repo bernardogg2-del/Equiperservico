@@ -750,10 +750,16 @@
     color: var(--text); letter-spacing:0.02em;
   }
   .sf-time .lbl{ display:block; font-family: var(--sans); font-size:10.5px; font-weight:600; color: var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:1px; }
-  .equip-withdraw-btn{
-    width:100%; padding: 10px 8px; font-size: 13.5px; font-weight:600;
-    display:flex; align-items:center; justify-content:center; gap:6px;
+  .btn-ghost.equip-withdraw-btn, .equip-withdraw-btn{
+    width:100%; padding: 10px 8px; font-size: 13.5px; font-weight:600; font-family: var(--sans); line-height:1.25; box-sizing:border-box;
+    display:flex; align-items:center; justify-content:center; gap:6px; border-style:dashed; border-width:1.5px;
   }
+  .btn-ghost.equip-withdraw-btn{ padding:10px 8px; font-size:13.5px; font-weight:600; border-style:dashed; border-width:1.5px; }
+  .return-checkbox-label{ font-family: var(--sans); line-height:1.25; }
+  .service-controls:has(.equip-lista){ flex-direction:column; align-items:stretch; gap:8px; }
+  .equip-lista{ width:100%; display:flex; flex-direction:column; gap:6px; }
+  .equip-lista-t{ font-size:11.5px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
+  .equip-lista .equip-tag{ border-radius:var(--radius-sm); justify-content:flex-start; }
   .return-section{ margin-top: 8px; }
   .return-checkbox-label{
     display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; width:100%; box-sizing:border-box;
@@ -14695,9 +14701,13 @@ function renderTechView(){
     // "Retirar equipamento" liberado mesmo com a atividade já concluída (ex.: técnico esqueceu
     // de registrar antes de finalizar) — uma única vez por atividade, inclusive para os dois
     // membros de uma dupla antiga (mesmo pairId).
-    const equipActionHtml = hasEquipmentWithdrawal(s)
-      ? `<div class="equip-tag">🔧 Equipamento retirado para manutenção</div>`
-      : `<button type="button" class="btn-ghost equip-withdraw-btn" data-withdrawequip="${s.id}">🔧 Retirar equipamento para manutenção</button>`;
+    // Vários equipamentos por atividade: lista o que já foi retirado e mantém o botão para adicionar mais um.
+    const idsRetirada = equipmentWithdrawalOriginIds(s);
+    const retirados = oficinaEquipamentos.filter(eq => idsRetirada.includes(eq.originServiceId));
+    const equipActionHtml = (retirados.length
+        ? `<div class="equip-lista"><div class="equip-lista-t">Equipamentos retirados (${retirados.length})</div>${retirados.map(eq => `<div class="equip-tag">🔧 ${escapeHtml(eq.equipment || '')}</div>`).join('')}</div>`
+        : '')
+      + `<button type="button" class="btn-ghost equip-withdraw-btn" data-withdrawequip="${s.id}">${retirados.length ? '＋ Retirar outro equipamento' : '🔧 Retirar equipamento para manutenção'}</button>`;
 
     const duplaPartners = getDuplaPartnerNames(s, currentTechName);
     const duplaLabelHtml = duplaPartners.length > 0
@@ -16105,7 +16115,6 @@ document.getElementById('equipWithdrawConfirmBtn').addEventListener('click', asy
     return;
   }
   if(equipWithdrawInFlight) return; // já processando um clique anterior
-  if(hasEquipmentWithdrawal(svc)){ closeEquipWithdrawModal(); renderTechView(); return; } // já retirado nesse meio-tempo
 
   equipWithdrawInFlight = true;
   const btn = document.getElementById('equipWithdrawConfirmBtn');
