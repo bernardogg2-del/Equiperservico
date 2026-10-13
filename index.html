@@ -11944,30 +11944,40 @@ function buildAgendaMessage(t){
   if(tasks.length === 0){
     msg += 'Nenhum serviço agendado por enquanto.';
   } else {
+    // Cada serviço: títulos em negrito (*texto* no WhatsApp), um por linha, e uma linha em branco entre os clientes.
     tasks.forEach((s, i) => {
-      msg += `${i + 1}. ${s.client}${s.description ? ' — ' + s.description : ''}\n`;
+      const bloco = [];
+      bloco.push(`*${i + 1}. Cliente:* ${s.client}`);
+      if(s.description) bloco.push(`*Serviço:* ${s.description}`);
+      let dupla = '';
       if(s.pairId){
         const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id);
-        if(partner) msg += `   👥 Em dupla com ${partner.technician}\n`;
+        if(partner) dupla = partner.technician;
       } else if(isMultiTechRecord(s)){
         const others = s.technicians.filter(n => n !== t.name);
-        if(others.length) msg += `   👥 Em dupla com ${others.join(', ')}\n`;
+        if(others.length) dupla = others.join(', ');
       }
-      if(s.address) msg += `   📍 ${s.address}\n   🧭 Abrir rota no Waze: ${wazeLink(s.address)}\n`;
+      if(dupla) bloco.push(`*Dupla:* ${dupla}`);
       // Orientações do gestor (só quando existem): texto entra na mensagem; fotos/áudios não cabem
       // numa URL do WhatsApp — vão pelo compartilhamento de anexos logo depois do envio.
       if(hasInstructions(s)){
         const ins = getInstructions(s);
-        if(ins.text) msg += `   📝 Orientação: ${ins.text}\n`;
+        if(ins.text) bloco.push(`*Orientação:* ${String(ins.text).trim()}`);
         const nF = ins.photos.length, nA = ins.audios.length;
         if(nF || nA){
           const parts = [];
           if(nF) parts.push(`${nF} foto${nF > 1 ? 's' : ''}`);
           if(nA) parts.push(`${nA} áudio${nA > 1 ? 's' : ''}`);
-          msg += `   📎 Orientação com ${parts.join(' e ')} — enviados em seguida\n`;
+          bloco.push(`*Anexos:* ${parts.join(' e ')} — enviados em seguida`);
         }
       }
+      if(s.address){
+        bloco.push(`*Endereço:* ${s.address}`);
+        bloco.push(`*Rota Waze:* ${wazeLink(s.address)}`);
+      }
+      msg += bloco.join('\n') + '\n\n';
     });
+    msg = msg.replace(/\n+$/, '\n');
   }
   return msg;
 }
