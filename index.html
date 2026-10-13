@@ -23574,8 +23574,8 @@ function renderGestor(){
   lista_.forEach(g => {
     const todos = g.itens.flatMap(({ r }) => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const completo = todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado');
-    const obras = todos.map(x => obraDe(x.r, x.p.id));
-    g.grp = completo ? 'f' : obras.some(k => k === 'iniciado' || k === 'aguardando_testes') ? 1 : obras.some(k => k === 'liberado_inicio') ? 2 : 3;
+    const prinG = todos.length ? andamentoPrincipal(todos) : null;          // o MESMO andamento principal mostrado no cartão (o que segura a obra)
+    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes') ? 1 : prinG === 'liberado_inicio' ? 2 : 3;
     g.rankPrin = g.grp === 3 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
   });
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
@@ -23590,7 +23590,7 @@ function renderGestor(){
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Liberados para iniciar', 3: 'Aguardando compra, entrega ou liberação' };
+  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Liberados para iniciar', 3: 'Ainda na etapa interna ou aguardando liberação' };
   let grpAnt = null;
   const cabGrp = (g) => { if(uiG.sub === 'finalizados' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
   box.innerHTML = lista_.length ? lista_.map((g_) => { const { chave, nome, itens } = g_; const cab = cabGrp(g_);
@@ -24139,11 +24139,11 @@ function blocoEstoque(){
     : '<div class="pn-vazio">Nenhum item abaixo do mínimo. ✓</div>';
   return bloco('Alertas de estoque', 'estoque', corpo);
 }
-function blocoCadastrosOS(){
+function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): sem os contadores de OS cobradas e Não cobrar
   const pend = (typeof groupPaired === 'function' ? groupPaired((typeof services !== 'undefined' ? services : []).filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido)).length : 0);
   const qd = window.QUADROS_API ? num(QUADROS_API.pendentesOS()) : 0, eq = window.OSOF_API ? num(OSOF_API.pendentesOS()) : 0;
   const todas = window.OS_API && osPronto ? OS_API.todas() : []; const c = (st) => todas.filter(o => o.status === st).length;
-  const corpo = `<div class="pn-kpis">${kpi(pend + qd + eq, 'Aguardando cadastro de OS', 'red', 'os', 'prvOsTabAguardando')}${kpi(osPronto ? c('decidir') : '…', 'OS a definir', 'amber', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('aguardando') : '…', 'OS aguardando', 'blue', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('cobrar') : '…', 'OS cobradas', 'green', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('nao_cobrar') : '…', 'Não cobrar', 'gray', 'os', 'prvOsTabDecisao')}</div>
+  const corpo = `<div class="pn-kpis">${kpi(pend + qd + eq, 'Aguardando cadastro de OS', 'red', 'os', 'prvOsTabAguardando')}${kpi(osPronto ? c('decidir') : '…', 'OS a definir', 'amber', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('aguardando') : '…', 'OS aguardando', 'blue', 'os', 'prvOsTabDecisao')}${semCobranca ? '' : kpi(osPronto ? c('cobrar') : '…', 'OS cobradas', 'green', 'os', 'prvOsTabDecisao') + kpi(osPronto ? c('nao_cobrar') : '…', 'Não cobrar', 'gray', 'os', 'prvOsTabDecisao')}</div>
     ${(pend || qd || eq) ? `<div class="pn-nota">Para cadastrar: ${[pend ? pend + (pend === 1 ? ' atividade' : ' atividades') : '', qd ? qd + (qd === 1 ? ' quadro de comando' : ' quadros de comando') : '', eq ? eq + (eq === 1 ? ' equipamento da oficina' : ' equipamentos da oficina') : ''].filter(Boolean).join(' · ')}</div>` : ''}`;
   return bloco('Cadastros e OS', 'os', corpo);
 }
@@ -24180,7 +24180,7 @@ function renderGestor(){
   const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
   const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
   const bOf = bloco('Oficina', 'oficinagestor', `<div class="pn-kpis">${Object.keys(rotG).map(g => kpi(nG(g), rotG[g], tomG[g] || 'gray', 'oficinagestor')).join('')}${kpi(parados, 'Parados além do limite', parados ? 'red' : 'gray', 'oficinagestor')}</div>`);
-  box.innerHTML = cab('Painel Gestor', dataHoje()) + `<div class="pn-grade">${bAtiv}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS()}</div>`;
+  box.innerHTML = cab('Painel Gestor', dataHoje()) + `<div class="pn-grade">${bAtiv}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS(true)}</div>`;
 }
 
 // ---------- PAINEL ALEX ----------
@@ -24211,11 +24211,11 @@ function renderAlex(){
     const etapas = FASES.filter(k => k !== 'entregue').filter(k => !ui.alexEtapa || ui.alexEtapa === k);
     corpo = etapas.map(k => { const l = compras.filter(c => c.etapa === k); return `<div class="pn-sec obr-sp-${k}"><div class="pn-sec-h"><span class="pn-sec-t">${esc(A.rotObra(k))}</span><span class="pn-sec-n">${l.length} ${l.length === 1 ? 'cliente' : 'clientes'}</span></div>${l.length ? l.map(c => cartaoCli(c, false)).join('') : '<div class="pn-vazio pn-vazio-s">Nenhum cliente nesta etapa.</div>'}</div>`; }).join('');
   }
-  const tiles = `<div class="pn-kpis">${FASES.map(k => { const cs = todos.filter(c => c.etapa === k); const np = cs.reduce((n, c) => n + c.peds.length, 0); return `<button type="button" class="pn-k obr-sp-${k} pn-vars ${ui.alexEtapa === k ? 'on' : ''}" data-pn-etapa="${k}"><span class="pn-k-n">${cs.length}</span><span class="pn-k-r">${esc(A.rotObra(k))}</span><span class="pn-k-s">${cs.length === 1 ? 'cliente' : 'clientes'} · ${np} ${np === 1 ? 'pedido' : 'pedidos'}</span></button>`; }).join('')}</div>`;
+  const tiles = `<div class="pn-kpis">${FASES.filter(k => k !== 'entregue').map(k => { const cs = todos.filter(c => c.etapa === k); const np = cs.reduce((n, c) => n + c.peds.length, 0); return `<button type="button" class="pn-k obr-sp-${k} pn-vars ${ui.alexEtapa === k ? 'on' : ''}" data-pn-etapa="${k}"><span class="pn-k-n">${cs.length}</span><span class="pn-k-r">${esc(A.rotObra(k))}</span><span class="pn-k-s">${cs.length === 1 ? 'cliente' : 'clientes'} · ${np} ${np === 1 ? 'pedido' : 'pedidos'}</span></button>`; }).join('')}</div>`;
   const bEtapas = bloco('Resumo das etapas internas', '', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : tiles + (ui.alexEtapa ? '<div class="pn-nota">Filtrando por uma etapa. <button type="button" class="pn-link" data-pn-etapa="">Mostrar todas</button></div>' : '<div class="pn-nota">A etapa do cliente é a do pedido menos avançado.</div>'));
   const abas = `<div class="os-abas pn-abas" role="tablist"><button type="button" role="tab" aria-selected="${ui.alexAba !== 'entregues'}" class="os-aba ${ui.alexAba !== 'entregues' ? 'on' : ''}" data-pn-aba="compras">Compras<span class="os-aba-n">${compras.length}</span></button><button type="button" role="tab" aria-selected="${ui.alexAba === 'entregues'}" class="os-aba ${ui.alexAba === 'entregues' ? 'on' : ''}" data-pn-aba="entregues">Entregues<span class="os-aba-n">${entregues.length}</span></button></div>`;
   const bObras = `<section class="pn-bloco pn-largo pn-obras"><div class="pn-bloco-h"><h3>Obras e etapas internas</h3></div><div class="pn-barra">${abas}<div class="pn-busca"><input type="search" id="pnAlexBusca" placeholder="Buscar cliente, nº do pedido ou descrição…" value="${esc(ui.alexBusca)}" autocomplete="off"></div></div>${corpo}</section>`;
-  box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS()}${blocoEstoque()}</div>${bObras}`;
+  box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS(true)}${blocoEstoque()}</div>${bObras}`;
   if(focoBusca){ const b = document.getElementById('pnAlexBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
 }
 
