@@ -764,8 +764,14 @@
   .return-checkbox-label:hover{ border-color: var(--text-dim); color: var(--text); }
   .return-checkbox-label input[type="checkbox"]{ position:absolute; opacity:0; width:0; height:0; pointer-events:none; }
   .return-checkbox-label .ret-ico::before{ content:'↩'; }
-  .return-checkbox-label:has(input:checked){ background: var(--panel-2); border-color: var(--text); color: var(--text); }
-  .return-checkbox-label:has(input:checked) .ret-ico::before{ content:'✓'; }
+  .return-checkbox-label{ border-style:dashed; border-width:1.5px; }
+  .return-checkbox-label .ret-t-on{ display:none; }
+  /* Marcado: vermelho Equiper cheio com texto branco — bem diferente do estado desmarcado (tracejado, apagado) */
+  .return-checkbox-label:has(input:checked){ background:#D91A22; border-style:solid; border-color:#D91A22; color:#fff; box-shadow:0 2px 8px rgba(217,26,34,.28); }
+  .return-checkbox-label:has(input:checked):hover{ border-color:#B3141B; color:#fff; }
+  .return-checkbox-label:has(input:checked) .ret-t-off{ display:none; }
+  .return-checkbox-label:has(input:checked) .ret-t-on{ display:inline; }
+  .return-checkbox-label:has(input:checked) .ret-ico::before{ content:'✓'; font-weight:800; }
   .return-checkbox-label:has(input:focus-visible){ outline:2px solid var(--text-dim); outline-offset:2px; }
   .return-reason-field{ margin-top:12px; }
   .return-reason-field label{ display:block; font-size:11.5px; color: var(--text-dim); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.03em; }
@@ -2309,6 +2315,12 @@
   .obrg-pontos{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; max-width:150px; } .obrg-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; background:var(--c); } .obrg-mais{ font-size:10px; font-weight:600; color:var(--text-secondary); }
   .obrg-resumo .obrg-prog{ margin-left:0; min-width:34px; text-align:right; font-size:13px; font-weight:600; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
   .obrg-detalhe{ border-top:1px solid var(--border); padding:6px 16px 10px; background:#FCFCFD; }
+  /* Anel de progresso do cliente: % de pedidos finalizados */
+  .obrg-anel{ --p:0; flex:none; width:42px; height:42px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; position:relative;
+    background:conic-gradient(#2E7D4F calc(var(--p) * 1%), var(--line, #e3e4e6) 0); }
+  .obrg-anel::before{ content:''; position:absolute; inset:5px; border-radius:50%; background:var(--surface, #fff); }
+  .obrg-anel b{ position:relative; font-size:10.5px; font-weight:800; letter-spacing:-.3px; color:var(--text); font-variant-numeric:tabular-nums; }
+  .obrg-anel.cheio{ background:#2E7D4F; } .obrg-anel.cheio::before{ background:#2E7D4F; } .obrg-anel.cheio b{ color:#fff; }
   @media (max-width:640px){ .obrg-fase-c{ grid-template-columns:repeat(2, 1fr); } .obrg-pontos{ max-width:none; } .obrg-resumo{ gap:6px 10px; } .obrg-princ{ flex:1 1 100%; padding-left:26px; } }
 
   /* ---------- equipamentos no painel do Gestor ---------- */
@@ -14711,7 +14723,7 @@ function renderTechView(){
       <div class="return-section">
         <label class="return-checkbox-label">
           <input type="checkbox" data-needsreturn="${s.id}" ${s.needsReturn ? 'checked' : ''}>
-          <span class="ret-ico"></span><span>Precisa retornar</span>
+          <span class="ret-ico"></span><span class="ret-t-off">Precisa retornar</span><span class="ret-t-on">Retorno solicitado · toque para desmarcar</span>
         </label>
         <div class="return-reason-field" data-returnreasonwrap="${s.id}" style="display:${s.needsReturn ? 'block' : 'none'};">
           <label>Motivo do retorno</label>
@@ -14800,10 +14812,22 @@ function renderTechView(){
       const wrap = document.querySelector(`[data-returnreasonwrap="${id}"]`);
       if(wrap) wrap.style.display = e.target.checked ? 'block' : 'none';
       if(svc){
-        svc.needsReturn = e.target.checked;
-        if(svc.needsReturn) await garantirRetornoAposConclusao(svc);      // atividade já concluída: o retorno nasce agora
-        await saveServices();
-        if(svc.needsReturn && svc.retornoCriado) renderAll();
+        const aplicar = async (urgente) => {
+          svc.needsReturn = e.target.checked;
+          if(svc.needsReturn){ if(typeof urgente === 'boolean') svc.returnUrgent = urgente; }
+          else delete svc.returnUrgent;
+          if(svc.needsReturn) await garantirRetornoAposConclusao(svc);      // atividade já concluída: o retorno nasce agora
+          await saveServices();
+          if(svc.needsReturn && svc.retornoCriado) renderAll();
+          if(window.PREV_API && PREV_API.alertaUrgentes) PREV_API.alertaUrgentes();
+        };
+        if(e.target.checked && window.PREV_API && PREV_API.perguntarUrgenciaRetorno){
+          // ao marcar "Precisa retornar": pergunta se é urgente (urgente = alerta vermelho na Agenda para marcar o dia)
+          PREV_API.perguntarUrgenciaRetorno(svc.client, (urg) => {
+            if(urg === null){ e.target.checked = false; if(wrap) wrap.style.display = 'none'; return; }   // voltou: desmarca
+            aplicar(urg);
+          });
+        } else aplicar();
       }
     });
   });
@@ -21896,6 +21920,32 @@ function pendenciasClique(el, repintar){
     } else { pendDefinirStatus(id, novo).then(fim); }
   }
 }
+// "Precisa retornar" marcado pelo técnico: urgente ou não? (urg = true | false | null se voltou sem responder)
+function perguntarUrgenciaRetorno(cliente, aoResponder){
+  let ov = document.getElementById('prvUrgRetOverlay');
+  if(!ov){
+    ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'prvUrgRetOverlay';
+    ov.innerHTML = '<div class="modal" style="max-width:440px;"><h3>Retorno urgente?</h3><div id="prvUrgRetCorpo"></div>'
+      + '<div class="modal-actions" style="justify-content:flex-end; flex-wrap:wrap; margin-top:16px; gap:8px;"><button type="button" class="btn-ghost" id="prvUrgRetVoltar">Voltar</button><button type="button" class="btn-ghost" id="prvUrgRetNao">Não</button><button type="button" class="btn-primary" id="prvUrgRetSim">Sim, é urgente</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  document.getElementById('prvUrgRetCorpo').innerHTML = '<p style="margin:0;">O retorno ' + (cliente ? 'em <b>' + esc(cliente) + '</b> ' : '') + 'precisa ser feito com urgência?</p>';
+  const fechar = (v) => { ov.classList.remove('open'); aoResponder(v); };
+  document.getElementById('prvUrgRetVoltar').onclick = () => fechar(null);
+  document.getElementById('prvUrgRetNao').onclick = () => fechar(false);
+  document.getElementById('prvUrgRetSim').onclick = () => fechar(true);
+  ov.onclick = (e) => { if(e.target === ov) fechar(null); };
+  ov.classList.add('open');
+}
+// retornos URGENTES ainda sem dia (a atividade de origem foi marcada como urgente; o retorno é criado ao concluir)
+function retornosUrgentes(){
+  const lista = (typeof services !== 'undefined' && services) || [];
+  return lista.filter(r => r.isRetorno && r.status === 'aguardando' && !r.date).map(r => {
+    const o = lista.find(x => x.id === r.retornoDeId);
+    const urg = o && (o.returnUrgent === true || (o.pairId && lista.some(x => x.pairId === o.pairId && x.returnUrgent === true)));
+    return urg ? { r, o } : null;
+  }).filter(Boolean);
+}
 // ---------- alerta na Agenda: pendência URGENTE ainda sem dia marcado ----------
 let alertaLigado = false;
 function alertaUrgentes(){
@@ -21903,6 +21953,16 @@ function alertaUrgentes(){
   if(!alertaLigado){
     alertaLigado = true;
     box.addEventListener('click', async (e) => {
+      const br = e.target.closest('[data-pv-agret]');
+      if(br){
+        const rid = br.dataset.pvAgret; const inp = box.querySelector('input[data-pv-dia="ret' + rid.replace(/"/g, '') + '"]');
+        const dia = inp && inp.value; if(!dia){ aviso('Escolha o dia do retorno.', 3500); return; }
+        const ret = services.find(x => String(x.id) === rid); if(!ret) return;
+        br.disabled = true; ret.date = dia;
+        if(!(await saveServices())){ ret.date = ''; br.disabled = false; aviso('Não foi possível agendar agora. Tente de novo.', 5000); return; }
+        aviso('Retorno agendado para ' + dBR(dia) + '. Falta só atribuir o técnico.', 6000);
+        try{ renderAll(); }catch(err){} alertaUrgentes(); return;
+      }
       const b = e.target.closest('[data-pv-agendar]'); if(!b) return;
       const id = b.dataset.pvAgendar; const inp = box.querySelector('input[data-pv-dia="' + id.replace(/"/g, '') + '"]');
       const dia = inp && inp.value; if(!dia){ aviso('Escolha o dia da visita.', 3500); return; }
@@ -21914,13 +21974,18 @@ function alertaUrgentes(){
     });
   }
   const urg = estado.relatoriosOk ? pendLista().filter(p => p.urgente && !(p.at && p.at.date)) : [];
-  if(!urg.length){ box.innerHTML = ''; return; }
+  const rets = retornosUrgentes();
+  if(!urg.length && !rets.length){ box.innerHTML = ''; return; }
   const hoje = typeof todayStr === 'function' ? todayStr() : '';
   const focado = document.activeElement && box.contains(document.activeElement);
   if(focado) return;                                   // não derruba o seletor de data enquanto a pessoa escolhe
-  box.innerHTML = '<div class="pv-alerta" role="alert"><div class="pv-alerta-h"><span class="pv-alerta-ic">!</span><b>Pendência urgente de manutenção preventiva — agendar</b></div>'
+  const htmlRet = rets.length ? '<div class="pv-alerta" role="alert"><div class="pv-alerta-h"><span class="pv-alerta-ic">!</span><b>Retorno urgente — agendar</b></div>'
+    + rets.map(({ r, o }) => '<div class="pv-alerta-l"><span class="pv-alerta-c">' + esc(r.client) + '<small>' + esc(((o && o.returnReason) || '').trim() || r.description || 'Retorno solicitado pelo técnico') + (o && o.date ? ' · atendimento de ' + esc(dBR(o.date)) : '') + '</small></span>'
+      + '<input type="date" data-pv-dia="ret' + esc(r.id) + '" min="' + esc(hoje) + '"><button type="button" class="btn-primary" data-pv-agret="' + esc(r.id) + '">Agendar</button></div>').join('') + '</div>' : '';
+  const htmlPend = !urg.length ? '' : '<div class="pv-alerta" role="alert"><div class="pv-alerta-h"><span class="pv-alerta-ic">!</span><b>Pendência urgente de manutenção preventiva — agendar</b></div>'
     + urg.map(p => '<div class="pv-alerta-l"><span class="pv-alerta-c">' + esc(p.r.cliente) + '<small>' + p.itens.length + (p.itens.length === 1 ? ' pendência' : ' pendências') + ' · visita de ' + esc(dBR(p.r.dataVisita)) + ' · ' + esc(PEND_ROT[p.status]) + '</small></span>'
       + '<input type="date" data-pv-dia="' + esc(p.id) + '" min="' + esc(hoje) + '"><button type="button" class="btn-primary" data-pv-agendar="' + esc(p.id) + '">Agendar</button></div>').join('') + '</div>';
+  box.innerHTML = htmlRet + htmlPend;
 }
 
 window.PREV_API = {
@@ -21947,6 +22012,7 @@ window.PREV_API = {
   pendenciasClique,
   pendenciasContagem,
   alertaUrgentes,
+  perguntarUrgenciaRetorno,
 };
 })();
 
@@ -23961,7 +24027,7 @@ function renderGestor(){
       <div class="obrg-resumo" role="button" tabindex="0" aria-expanded="${aberto}" data-obrg-cli="${esc(chave)}" title="${aberto ? 'Recolher' : 'Abrir o cartão completo'}"><span class="obrg-seta">${aberto ? '▾' : '▸'}</span>
         <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}</span>
         <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.length ? `<span class="obrg-outros" title="${outros.length} ${outros.length === 1 ? 'pedido em outro andamento' : 'pedidos em outros andamentos'}: ${esc(rotOutros)}">+${outros.length}</span>` : ''}</span>
-        <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-prog" title="${fin} de ${todosPeds.length} finalizados">${fin}/${todosPeds.length}</span></div>
+        <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-anel${fin && fin === todosPeds.length ? ' cheio' : ''}" style="--p:${todosPeds.length ? Math.round(fin / todosPeds.length * 100) : 0}" role="img" aria-label="${todosPeds.length ? Math.round(fin / todosPeds.length * 100) : 0}% concluído" title="${fin} de ${todosPeds.length} finalizados"><b>${todosPeds.length ? Math.round(fin / todosPeds.length * 100) : 0}%</b></span></div>
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
       ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const ki = internoDe(r, p.id), ko = obraDe(r, p.id); const e = entradaSt(r, p.id); const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
         const quando = e.em ? 'Alterado' + (e.por ? ' por ' + e.por : '') + ' em ' + new Date(e.em).toLocaleDateString('pt-BR') : '';
