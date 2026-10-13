@@ -1897,6 +1897,26 @@
   .pn-ped:first-of-type{ border-top:0; }
   .pn-ped-t{ display:flex; align-items:center; gap:8px; min-width:0; flex-wrap:wrap; } .pn-ped-d{ font-size:13px; color:var(--text); font-weight:600; }
   .pn-sel{ appearance:none; -webkit-appearance:none; font:inherit; font-size:12.5px; font-weight:700; padding:6px 26px 6px 12px; border-radius:999px; cursor:pointer; border:1px solid var(--c-line, var(--line)); background-color:var(--c-bg, var(--panel-2)); color:var(--c-tx, var(--text)); background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23666' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; }
+  .pn-pags{ max-width:460px; margin:0 0 14px; }
+  .pv-st{ background:var(--panel-2, #f1f1f2); color:var(--text); }
+  .pv-st-novo{ background:rgba(192,57,43,.12); color:#96281D; } .pv-st-feito{ background:rgba(242,183,5,.2); color:#7A5B00; } .pv-st-enviado{ background:rgba(61,132,176,.16); color:#2B6A92; } .pv-st-aprovado{ background:rgba(46,125,79,.16); color:#1F5A38; }
+  .pv-reg{ padding:12px 14px; margin:10px 0 0; }
+  .pv-reg-h{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:4px; } .pv-reg-t{ font-weight:800; font-size:14px; }
+  .pv-urg{ font:inherit; font-size:12px; font-weight:700; padding:5px 11px; border-radius:999px; border:1px solid var(--line); background:transparent; color:var(--text); cursor:pointer; }
+  .pv-urg.on{ background:#D91A22; border-color:#D91A22; color:#fff; }
+  .pv-itens{ list-style:none; margin:6px 0 10px; padding:0; } .pv-itens li{ padding:7px 0; border-top:1px solid var(--line); font-size:13px; display:flex; flex-direction:column; gap:2px; } .pv-itens li span{ color:var(--text-dim); } .pv-itens li em{ font-style:normal; color:#C0392B; font-weight:700; }
+  .pv-orc-t{ font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); margin-bottom:6px; }
+  .pv-passos{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pv-passo{ flex:1 1 150px; font:inherit; font-size:13px; font-weight:700; padding:10px 12px; border-radius:12px; border:1.5px solid var(--line); background:transparent; color:var(--text); cursor:pointer; }
+  .pv-passo.ok{ border-color:#2E7D4F; color:#2E7D4F; } .pv-passo.on{ background:#1D1D1F; border-color:#1D1D1F; color:#fff; } .pv-passo:disabled{ opacity:.75; cursor:default; }
+  .pv-ativ{ margin-top:10px; font-size:13px; } .pv-ativ-aviso{ color:#B3261E; font-weight:600; }
+  .pv-alerta{ margin:14px 0; padding:14px 16px; border-radius:14px; border:2px solid #D91A22; background:rgba(217,26,34,.09); }
+  .pv-alerta-h{ display:flex; align-items:center; gap:10px; color:#B3261E; font-size:15px; margin-bottom:6px; }
+  .pv-alerta-ic{ width:24px; height:24px; border-radius:50%; background:#D91A22; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-weight:900; flex:none; }
+  .pv-alerta-l{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:9px 0; border-top:1px solid rgba(217,26,34,.25); }
+  .pv-alerta-c{ flex:1 1 200px; font-weight:700; color:var(--text); } .pv-alerta-c small{ display:block; font-weight:400; color:var(--text-dim); font-size:12px; }
+  .pv-alerta-l input[type=date]{ font:inherit; padding:8px 10px; border-radius:10px; border:1px solid var(--line); background:var(--surface, #fff); color:var(--text); }
+  :root[data-theme="dark"] .pv-alerta-h{ color:#FF8A80; } :root[data-theme="dark"] .pv-passo.on{ background:#f2f2f3; border-color:#f2f2f3; color:#1D1D1F; }
   @media (max-width:860px){ .pn-grade{ column-count:1; } .pn-title{ font-size:21px; } .pn-ped{ flex-direction:column; align-items:flex-start; } }
   .os-secao{ margin:14px 0; } .os-secao > summary{ cursor:pointer; font-size:11.5px; text-transform:uppercase; letter-spacing:.4px; font-weight:700; color:var(--text-dim); margin-bottom:8px; }
   .os-linhas{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
@@ -3140,6 +3160,8 @@
       <button class="week-day-add" id="addTomorrowBtn">+ Adicionar</button>
     </div>
   </div>
+
+  <div id="agendaUrgPrev"></div>
 
   <div class="pending-section" id="todayIncompleteSection" style="display:none;">
     <div class="pending-header">
@@ -5915,7 +5937,7 @@ function renderDayBoxes(){
   document.getElementById('tomorrowBoxTitle').textContent = nwd.isTomorrow ? 'Amanhã' : capitalize(DOW_FULL[nwd.dowIdx]);
   renderTodayByTechnician();
   renderMiniBox('tomorrowServices', tmr);
-  if(window.PREV_API) PREV_API.resumoAgenda();   // quadro de resumo da Agenda (atividades de hoje)
+  if(window.PREV_API){ PREV_API.resumoAgenda(); if(PREV_API.alertaUrgentes) PREV_API.alertaUrgentes(); }   // quadro de resumo da Agenda + alerta de pendência urgente de preventiva
 }
 
 function renderCalendar(){
@@ -14805,9 +14827,12 @@ function renderTechView(){
       const svc = services.find(x => x.id === id);
       if(!svc) return;
       if(svc.status === 'concluido') return; // idempotente: já foi concluída, não repete nada
-      const pendRel = window.PREV_API ? PREV_API.pendenciasRelatorio(svc) : null;   // relatório de manutenção preventiva com campos por preencher?
-      if(pendRel){ PREV_API.avisarPendencias(svc, pendRel, () => executarConclusaoAtividade(id)); return; }
-      customConfirm('Finalizar esta atividade? O horário de conclusão será registrado.', () => executarConclusaoAtividade(id), 'Concluir atividade');
+      const seguir = () => {
+        const pendRel = window.PREV_API ? PREV_API.pendenciasRelatorio(svc) : null;   // relatório de manutenção preventiva com campos por preencher?
+        if(pendRel){ PREV_API.avisarPendencias(svc, pendRel, () => executarConclusaoAtividade(id)); return; }
+        customConfirm('Finalizar esta atividade? O horário de conclusão será registrado.', () => executarConclusaoAtividade(id), 'Concluir atividade');
+      };
+      if(window.PREV_API && PREV_API.perguntarUrgencia) PREV_API.perguntarUrgencia(svc, seguir); else seguir();   // preventiva com itens vermelhos: pergunta se há urgência antes de enviar
     });
   });
   window.executarConclusaoAtividade = (id) => executarConclusaoAtividade(id);   // usado pelo botão "Enviar relatório final" do relatório preventivo
@@ -19978,6 +20003,7 @@ async function gerarRelatorioAoConcluir(svc){
       escrever(NOS.relatorios + '/' + id + '/' + campo, v === undefined || v === '' ? null : v);
     });
     estado.relatorios[id] = Object.assign({}, estado.relatorios[id] || {}, JSON.parse(JSON.stringify(rel)));
+    registrarPendencia(id, rel, svc);
     atualizarTelasRelatorios();
   }catch(e){ console.error('prev: falha ao gerar o relatório ao concluir (a conclusão da atividade não foi afetada)', e); }
 }
@@ -20027,6 +20053,7 @@ async function atualizarRelatorioPosConclusao(svc){
     escrever(NOS.relatorios + '/' + id + '/atualizadoPosConclusaoEm', agora);
     escrever(NOS.relatorios + '/' + id + '/atualizadoPosConclusaoPor', (typeof currentActingName === 'function' && currentActingName()) || null);
     if(estado.relatorios[id]) estado.relatorios[id] = Object.assign({}, estado.relatorios[id], JSON.parse(JSON.stringify(rel)), { atualizadoPosConclusaoEm: agora });
+    registrarPendencia(id, estado.relatorios[id] || rel, svc);
     atualizarTelasRelatorios();
   }catch(e){ console.error('prev: falha ao atualizar o relatório depois de concluir (o que o técnico marcou continua salvo no rascunho)', e); }
 }
@@ -20048,10 +20075,13 @@ function htmlEnviarFinal(svc, units, r, travado){
 function enviarRelatorioFinal(sid){
   const svc = services.find(s => String(s.id) === String(sid)); if(!svc || svc.status === 'concluido') return;
   if(!svc.checkIn){ aviso('Toque em "▶ Iniciar serviço" antes de enviar o relatório.', 5000); return; }
-  const pend = pendenciasRelatorio(svc);
-  const concluir = () => { if(typeof window.executarConclusaoAtividade === 'function') window.executarConclusaoAtividade(svc.id); };
-  if(pend) avisarPendencias(svc, pend, concluir, { titulo: 'Existem marcações pendentes', continuar: 'Enviar mesmo assim', voltar: 'Voltar e completar' });
-  else customConfirm('Enviar o relatório final e concluir o serviço? O horário de conclusão será registrado.', concluir, 'Enviar relatório');
+  const seguir = () => {
+    const pend = pendenciasRelatorio(svc);
+    const concluir = () => { if(typeof window.executarConclusaoAtividade === 'function') window.executarConclusaoAtividade(svc.id); };
+    if(pend) avisarPendencias(svc, pend, concluir, { titulo: 'Existem marcações pendentes', continuar: 'Enviar mesmo assim', voltar: 'Voltar e completar' });
+    else customConfirm('Enviar o relatório final e concluir o serviço? O horário de conclusão será registrado.', concluir, 'Enviar relatório');
+  };
+  perguntarUrgencia(svc, seguir);   // se o técnico marcou itens em vermelho: "alguma pendência é urgente?" antes de confirmar o envio
 }
 // ====================================================================================
 // AVISO DE PENDÊNCIAS ao tocar em "Concluir atividade": voltar para o relatório ou continuar com a conclusão.
@@ -21075,7 +21105,7 @@ function renderHistorico(){
 }
 function atualizarTelasRelatorios(){
   try{
-    renderOsRelatorios(); renderHistorico();
+    renderOsRelatorios(); renderHistorico(); repintarPendencias();
     if(relAbertoId){ const r = achaRel(relAbertoId); const c = document.getElementById('prvModalChips'); if(r && c) c.innerHTML = chipsStatus(r); }
   }catch(e){ console.error(e); }
 }
@@ -21427,6 +21457,7 @@ async function gerarRelatorioGestor(sidOuSvc, opts){
   rel.geradoPeloGestorEm = new Date().toISOString(); rel.geradoPeloGestorPor = (typeof currentManagerName !== 'undefined' && currentManagerName) || null;
   Object.keys(rel).forEach(campo => { const v = rel[campo]; escrever(NOS.relatorios + '/' + id + '/' + campo, v === undefined || v === '' ? null : v); });
   estado.relatorios[id] = JSON.parse(JSON.stringify(rel));
+  registrarPendencia(id, rel, svc);
   atualizarTelasRelatorios();
   return true;
 }
@@ -21676,6 +21707,222 @@ window.CAT_API = { carregar, salvar, restaurarPadrao, render, ligar, botaoEditar
 // ---------------- Inicialização e API mínima que o restante do app chama ----------------
 (function(){ const st = document.createElement('style'); st.id = 'prvCssRelatorio'; st.textContent = CSS_RELATORIO; document.head.appendChild(st); })();
 ligarAbas();
+// ====================================================================================
+// PENDÊNCIAS PREVENTIVAS (13/10) — itens VERMELHOS do relatório que viram trabalho de reparo.
+// Fluxo: técnico envia o relatório (e diz se há urgência) → cliente entra na lista "Pendências preventivas" (Painel Alex/Gestor)
+// → orçamento feito / enviado / aprovado → ao APROVAR nasce uma atividade "aguardando" na Agenda → atividade concluída = sai da lista.
+// Nenhum nó novo no Firebase: tudo fica em campos do próprio relatório (preventivoRelatorios/rel_X/pend*), que o Gestor já lê.
+//   pendRegistradaEm  quando entrou na lista (só relatórios novos entram; os antigos não viram pendência de uma vez)
+//   pendStatus        novo | feito | enviado | aprovado        pendUrgente  true | false | (vazio = não informado)
+//   pendAtividadeId   atividade criada na Agenda (a atividade também guarda pendenciaRelId)
+// A saída da lista é calculada: some quando a atividade ligada está 'concluido' (ou quando não restam itens vermelhos).
+// ====================================================================================
+estado.urgencia = {};
+const PEND_PASSOS = [['feito', 'Orçamento feito'], ['enviado', 'Orçamento enviado'], ['aprovado', 'Orçamento aprovado']];
+const PEND_ROT = { novo: 'Aguardando orçamento', feito: 'Orçamento feito', enviado: 'Orçamento enviado', aprovado: 'Orçamento aprovado' };
+const pendUI = { aberto: '', filtro: '' };
+const pendEmCurso = {};
+const foldP = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const dBR = (d) => { const p = String(d || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; };
+
+function reparosDoRascunho(svc){
+  try{
+    if(!ehPreventiva(svc)) return [];
+    const units = unidadesDoCliente(svc.client); if(!units.length) return [];
+    const r = estado.rascunhos[svc.id]; if(!r || !r.carregado) return [];
+    return resumoRelatorio(construirRelatorio(svc, units, r)).atencao;
+  }catch(e){ console.error('prev: itens vermelhos do rascunho', e); return []; }
+}
+function perguntarUrgencia(svc, depois){
+  const itens = reparosDoRascunho(svc);
+  if(!itens.length){ delete estado.urgencia[svc.id]; depois(); return; }
+  let ov = document.getElementById('prvUrgOverlay');
+  if(!ov){
+    ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'prvUrgOverlay';
+    ov.innerHTML = '<div class="modal" style="max-width:460px;"><h3>Pendências registradas</h3><div id="prvUrgCorpo"></div>'
+      + '<div class="modal-actions" style="justify-content:flex-end; flex-wrap:wrap; margin-top:16px; gap:8px;"><button type="button" class="btn-ghost" id="prvUrgVoltar">Voltar</button><button type="button" class="btn-ghost" id="prvUrgNao">Não</button><button type="button" class="btn-primary" id="prvUrgSim">Sim, tem urgência</button></div></div>';
+    document.body.appendChild(ov);
+  }
+  const lista = itens.slice(0, 8).map(i => '<li><b>' + esc(i.unidadeTipo || '') + (i.unidade ? ' — ' + esc(i.unidade) : '') + '</b> · ' + esc(i.campo) + ': ' + esc(i.texto) + '</li>').join('')
+    + (itens.length > 8 ? '<li>…e mais ' + (itens.length - 8) + '</li>' : '');
+  document.getElementById('prvUrgCorpo').innerHTML = '<p style="margin:0 0 8px;">Você registrou <b>' + itens.length + (itens.length === 1 ? ' pendência' : ' pendências') + '</b> neste relatório:</p>'
+    + '<ul style="margin:0 0 10px; padding-left:18px; font-size:13px;">' + lista + '</ul>'
+    + '<p style="margin:0; font-weight:700;">Entre as pendências que você registrou, alguma precisa ser resolvida com urgência?</p>';
+  const fechar = () => ov.classList.remove('open');
+  document.getElementById('prvUrgVoltar').onclick = fechar;
+  document.getElementById('prvUrgNao').onclick = () => { estado.urgencia[svc.id] = false; fechar(); depois(); };
+  document.getElementById('prvUrgSim').onclick = () => { estado.urgencia[svc.id] = true; fechar(); depois(); };
+  ov.onclick = (e) => { if(e.target === ov) fechar(); };
+  ov.classList.add('open');
+}
+// Entra na lista de pendências (uma vez só; depois disso o status e a urgência não são mexidos pelo relatório).
+function registrarPendencia(id, rel, svc){
+  try{
+    if(!rel || !resumoRelatorio(rel).atencao.length) return;
+    const atual = estado.relatorios[id] || {};
+    if(atual.pendRegistradaEm) return;
+    const u = svc ? estado.urgencia[svc.id] : undefined;
+    setRelCampo(id, 'pendRegistradaEm', new Date().toISOString());
+    setRelCampo(id, 'pendStatus', 'novo');
+    setRelCampo(id, 'pendUrgente', typeof u === 'boolean' ? u : null);
+  }catch(e){ console.error('prev: não foi possível registrar a pendência (o relatório não foi afetado)', e); }
+}
+function atividadeDaPend(id, r){
+  const lista = (typeof services !== 'undefined' && services) || [];
+  return lista.find(s => s.pendenciaRelId === id) || (r && r.pendAtividadeId != null ? lista.find(s => String(s.id) === String(r.pendAtividadeId)) : null) || null;
+}
+function pendLista(){
+  const out = [];
+  Object.keys(estado.relatorios).forEach(id => {
+    const r = estado.relatorios[id]; if(!r || !r.pendRegistradaEm || !r.cliente) return;
+    const itens = resumoRelatorio(r).atencao; if(!itens.length) return;
+    const at = atividadeDaPend(id, r);
+    if(at && at.status === 'concluido') return;                       // visita feita → sai da lista
+    const ativSumiu = !at && r.pendAtividadeId != null && ((typeof services !== 'undefined' && services.length) > 0);
+    out.push({ id, r, itens, at, ativSumiu, status: at ? 'aprovado' : (r.pendStatus || 'novo'), urgente: r.pendUrgente === true });
+  });
+  return out;
+}
+function pendClientes(){
+  const m = new Map();
+  pendLista().forEach(p => { const k = foldP(p.r.cliente); if(!m.has(k)) m.set(k, { key: k, nome: p.r.cliente, regs: [] }); m.get(k).regs.push(p); });
+  const arr = [...m.values()];
+  const ordem = { novo: 0, feito: 1, enviado: 2, aprovado: 3 };
+  arr.forEach(c => {
+    c.regs.sort((a, b) => String(a.r.dataVisita || '').localeCompare(String(b.r.dataVisita || '')));
+    c.urgente = c.regs.some(p => p.urgente);
+    c.nItens = c.regs.reduce((n, p) => n + p.itens.length, 0);
+    c.status = c.regs.map(p => p.status).sort((a, b) => ordem[a] - ordem[b])[0];
+  });
+  return arr.sort((a, b) => (b.urgente - a.urgente) || foldP(a.nome).localeCompare(foldP(b.nome)));
+}
+function pendenciasContagem(){ return estado.relatoriosOk ? pendClientes().length : null; }
+function repintarPendencias(){
+  try{ if(window.PAINEIS_API) PAINEIS_API.renderTudo(); }catch(e){ console.error(e); }
+  try{ alertaUrgentes(); }catch(e){ console.error(e); }
+}
+function pillStatus(st){ return '<span class="pn-pill pv-st pv-st-' + st + '">' + esc(PEND_ROT[st]) + '</span>'; }
+function pendenciasHtml(){
+  if(!estado.relatoriosOk){ garantirRelatorios().then(repintarPendencias).catch(() => {}); return '<div class="pn-vazio">Carregando…</div>'; }
+  const cs = pendClientes();
+  if(pendUI.aberto){ const c = cs.find(x => x.key === pendUI.aberto); if(c) return pendDetalheHtml(c); pendUI.aberto = ''; }
+  const regs = cs.reduce((a, c) => a.concat(c.regs), []);
+  const n = (st) => regs.filter(p => p.status === st).length;
+  const kp = (st, rot, tom) => '<button type="button" class="pn-k pn-t-' + tom + ' ' + (pendUI.filtro === st ? 'on' : '') + '" data-pv="filtro" data-st="' + st + '"><span class="pn-k-n">' + n(st) + '</span><span class="pn-k-r">' + rot + '</span></button>';
+  const vis = pendUI.filtro ? cs.filter(c => c.regs.some(p => p.status === pendUI.filtro)) : cs;
+  const lin = vis.map(c => '<div class="pn-lin pn-click" data-pv="abrir" data-k="' + esc(c.key) + '"><span class="pn-lin-t">' + esc(c.nome) + '<small>' + c.nItens + (c.nItens === 1 ? ' pendência' : ' pendências') + ' · visita de ' + esc(dBR(c.regs[0].r.dataVisita)) + '</small></span>'
+    + (c.urgente ? '<span class="pn-pill pn-p-red">⚠ Urgente</span>' : '') + pillStatus(c.status) + '</div>').join('');
+  return '<section class="pn-bloco pn-largo"><div class="pn-bloco-h"><h3>Pendências preventivas</h3></div>'
+    + '<div class="pn-kpis">' + kp('novo', 'Aguardando orçamento', 'red') + kp('feito', 'Orçamento feito', 'amber') + kp('enviado', 'Orçamento enviado', 'blue') + kp('aprovado', 'Aprovado · a visitar', 'green') + '</div>'
+    + (pendUI.filtro ? '<div class="pn-nota">Filtrando por “' + esc(PEND_ROT[pendUI.filtro]) + '”. <button type="button" class="pn-link" data-pv="filtro" data-st="' + pendUI.filtro + '">Mostrar todos</button></div>' : '')
+    + (lin || '<div class="pn-vazio">' + (cs.length ? 'Nenhum cliente neste status.' : 'Nenhuma pendência preventiva em aberto. ✓') + '</div>')
+    + '<div class="pn-nota">Entram aqui os relatórios enviados com itens em vermelho. O cliente sai da lista quando a visita de reparo é concluída na Agenda.</div></section>';
+}
+function pendDetalheHtml(c){
+  const regs = c.regs.map(p => {
+    const r = p.r; const idx = PEND_PASSOS.findIndex(x => x[0] === p.status);
+    const passos = PEND_PASSOS.map(([st, rot], i) => '<button type="button" class="pv-passo ' + (st === p.status ? 'on' : (idx > i ? 'ok' : '')) + '" data-pv="status" data-id="' + esc(p.id) + '" data-st="' + st + '"' + (p.status === 'aprovado' ? ' disabled' : '') + '>' + (idx > i || st === p.status ? '✓ ' : '') + esc(rot) + '</button>').join('');
+    const urgInfo = r.pendUrgente === true ? 'O técnico indicou urgência.' : r.pendUrgente === false ? 'O técnico indicou que não há urgência.' : 'Urgência não informada.';
+    let ativ;
+    if(p.at){
+      const rotSt = typeof statusLabelOf === 'function' ? statusLabelOf(p.at.status) : p.at.status;
+      ativ = '<div class="pv-ativ">Atividade na Agenda: <span class="status-tag ' + esc(p.at.status) + '">' + esc(rotSt) + '</span>' + (p.at.date ? ' · ' + esc(dBR(p.at.date)) : ' · sem data') + ' <button type="button" class="pn-link" data-pv="ativ" data-aid="' + esc(p.at.id) + '">Abrir atividade</button></div>';
+    } else if(p.ativSumiu || r.pendStatus === 'aprovado'){
+      ativ = '<div class="pv-ativ pv-ativ-aviso">A atividade desta pendência não foi encontrada na Agenda. <button type="button" class="pn-link" data-pv="criarativ" data-id="' + esc(p.id) + '">Criar atividade de novo</button></div>';
+    } else {
+      ativ = '<div class="pn-nota">Ao marcar “Orçamento aprovado”, a visita entra na Agenda como atividade pendente de agendamento.</div>';
+    }
+    return '<div class="pn-cli pv-reg"><div class="pv-reg-h"><span class="pv-reg-t">Visita de ' + esc(dBR(r.dataVisita)) + (r.tecnico ? ' · ' + esc(r.tecnico) : '') + '</span>'
+      + '<button type="button" class="pv-urg ' + (p.urgente ? 'on' : '') + '" data-pv="urg" data-id="' + esc(p.id) + '">' + (p.urgente ? '⚠ Urgente (desmarcar)' : 'Marcar como urgente') + '</button></div>'
+      + '<div class="pn-nota" style="margin:0 0 6px;">' + esc(urgInfo) + '</div>'
+      + '<ul class="pv-itens">' + p.itens.map(i => '<li><b>' + esc(i.unidadeTipo || '') + (i.unidade ? ' — ' + esc(i.unidade) : '') + '</b><span>' + esc(i.grupo || '') + ' · ' + esc(i.campo) + ': <em>' + esc(i.texto) + '</em></span></li>').join('') + '</ul>'
+      + '<div class="pv-orc"><div class="pv-orc-t">Orçamento</div><div class="pv-passos">' + passos + '</div></div>' + ativ + '</div>';
+  }).join('');
+  return '<section class="pn-bloco pn-largo"><div class="pn-bloco-h"><button type="button" class="pn-link" data-pv="voltar">‹ Voltar à lista</button></div>'
+    + '<div class="pn-cli-h"><span class="pn-cli-n">' + esc(c.nome) + '</span><span class="pn-cli-s">' + c.nItens + (c.nItens === 1 ? ' pendência' : ' pendências') + '</span>' + (c.urgente ? '<span class="pn-pill pn-p-red">⚠ Urgente</span>' : '') + '</div>' + regs + '</section>';
+}
+// Cria (uma única vez por pendência) a atividade "aguardando" na Agenda — a mesma forma de atividade sem data/técnico usada em outros fluxos.
+async function garantirAtividadePend(id, data){
+  const r = estado.relatorios[id]; if(!r) return null;
+  if(pendEmCurso[id]) return null;
+  pendEmCurso[id] = true;
+  try{
+    let at = services.find(s => s.pendenciaRelId === id);
+    if(at){ if(data && !at.date){ at.date = data; if(!(await saveServices())) { at.date = ''; return null; } } }
+    else {
+      const itens = resumoRelatorio(r).atencao; const n = itens.length;
+      at = {
+        id: Date.now() + 9000 + Math.floor(Math.random() * 1000),
+        date: data || '', client: r.cliente,
+        description: 'Reparo das pendências da manutenção preventiva (' + n + (n === 1 ? ' pendência)' : ' pendências)'),
+        address: r.endereco || (typeof findClientAddress === 'function' ? findClientAddress(r.cliente) : '') || '',
+        technician: null, status: 'aguardando', checkIn: '', checkOut: '', observations: '',
+        technicianInstructionText: 'Pendências registradas na visita de ' + dBR(r.dataVisita) + ':\n' + itens.map(i => '• ' + (i.unidadeTipo || '') + (i.unidade ? ' — ' + i.unidade : '') + ' · ' + i.campo + ': ' + i.texto).join('\n'),
+        pendenciaRelId: id, pendenciaPreventiva: true,
+      };
+      services.push(at);
+      const ok = await saveServices();
+      if(!ok){ services = services.filter(x => x !== at); return null; }
+    }
+    setRelCampo(id, 'pendAtividadeId', at.id);
+    return at;
+  }catch(e){ console.error('prev: falha ao criar a atividade da pendência', e); return null; }
+  finally{ pendEmCurso[id] = false; }
+}
+async function pendDefinirStatus(id, novo){
+  const r = estado.relatorios[id]; if(!r) return false;
+  if(novo === 'aprovado'){ const at = await garantirAtividadePend(id); if(!at){ aviso('Não foi possível criar a atividade na Agenda. O status não foi alterado — tente de novo.', 6000); return false; } }
+  const agora = new Date().toISOString(); const por = (typeof currentActingName === 'function' && currentActingName()) || null;
+  setRelCampo(id, 'pendStatus', novo); setRelCampo(id, 'pendStatusEm', agora); setRelCampo(id, 'pendStatusPor', por);
+  if(novo === 'feito' || novo === 'enviado' || novo === 'aprovado') setRelCampo(id, 'pend' + novo.charAt(0).toUpperCase() + novo.slice(1) + 'Em', agora);
+  return true;
+}
+function pendenciasClique(el, repintar){
+  const a = el.dataset.pv; const id = el.dataset.id;
+  const fim = () => { try{ repintar && repintar(); }catch(e){} try{ alertaUrgentes(); }catch(e){} };
+  if(a === 'abrir'){ pendUI.aberto = el.dataset.k; fim(); }
+  else if(a === 'voltar'){ pendUI.aberto = ''; fim(); }
+  else if(a === 'filtro'){ pendUI.filtro = pendUI.filtro === el.dataset.st ? '' : el.dataset.st; fim(); }
+  else if(a === 'urg'){ const r = estado.relatorios[id]; if(r){ setRelCampo(id, 'pendUrgente', r.pendUrgente !== true); } fim(); }
+  else if(a === 'ativ'){ if(typeof openServiceDetails === 'function') openServiceDetails(Number(el.dataset.aid) || el.dataset.aid); }
+  else if(a === 'criarativ'){ garantirAtividadePend(id).then(at => { if(!at) aviso('Não foi possível criar a atividade agora.', 5000); fim(); try{ renderAll(); }catch(e){} }); }
+  else if(a === 'status'){
+    const r = estado.relatorios[id]; if(!r) return;
+    const atual = r.pendStatus || 'novo'; let novo = el.dataset.st;
+    if(novo === atual) novo = atual === 'enviado' ? 'feito' : 'novo';          // tocar no passo atual desfaz
+    if(novo === 'aprovado'){
+      customConfirm('Marcar como “Orçamento aprovado”? Isso cria na Agenda uma atividade pendente de agendamento para “' + (r.cliente || '') + '”.',
+        async () => { if(await pendDefinirStatus(id, 'aprovado')){ aviso('Atividade criada na Agenda, aguardando agendamento.', 5000); try{ renderAll(); }catch(e){} } fim(); }, 'Aprovar orçamento');
+    } else { pendDefinirStatus(id, novo).then(fim); }
+  }
+}
+// ---------- alerta na Agenda: pendência URGENTE ainda sem dia marcado ----------
+let alertaLigado = false;
+function alertaUrgentes(){
+  const box = document.getElementById('agendaUrgPrev'); if(!box) return;
+  if(!alertaLigado){
+    alertaLigado = true;
+    box.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-pv-agendar]'); if(!b) return;
+      const id = b.dataset.pvAgendar; const inp = box.querySelector('input[data-pv-dia="' + id.replace(/"/g, '') + '"]');
+      const dia = inp && inp.value; if(!dia){ aviso('Escolha o dia da visita.', 3500); return; }
+      b.disabled = true;
+      const at = await garantirAtividadePend(id, dia);
+      if(!at){ b.disabled = false; aviso('Não foi possível agendar agora. Tente de novo.', 5000); return; }
+      aviso('Visita agendada para ' + dBR(dia) + '. Falta só atribuir o técnico.', 6000);
+      try{ renderAll(); }catch(err){} repintarPendencias();
+    });
+  }
+  const urg = estado.relatoriosOk ? pendLista().filter(p => p.urgente && !(p.at && p.at.date)) : [];
+  if(!urg.length){ box.innerHTML = ''; return; }
+  const hoje = typeof todayStr === 'function' ? todayStr() : '';
+  const focado = document.activeElement && box.contains(document.activeElement);
+  if(focado) return;                                   // não derruba o seletor de data enquanto a pessoa escolhe
+  box.innerHTML = '<div class="pv-alerta" role="alert"><div class="pv-alerta-h"><span class="pv-alerta-ic">!</span><b>Pendência urgente de manutenção preventiva — agendar</b></div>'
+    + urg.map(p => '<div class="pv-alerta-l"><span class="pv-alerta-c">' + esc(p.r.cliente) + '<small>' + p.itens.length + (p.itens.length === 1 ? ' pendência' : ' pendências') + ' · visita de ' + esc(dBR(p.r.dataVisita)) + ' · ' + esc(PEND_ROT[p.status]) + '</small></span>'
+      + '<input type="date" data-pv-dia="' + esc(p.id) + '" min="' + esc(hoje) + '"><button type="button" class="btn-primary" data-pv-agendar="' + esc(p.id) + '">Agendar</button></div>').join('') + '</div>';
+}
+
 window.PREV_API = {
   montarSlot,
   gerarRelatorioAoConcluir,
@@ -21695,6 +21942,11 @@ window.PREV_API = {
   kpiCards,
   resumoManutencoes,
   resumoAgenda,
+  perguntarUrgencia,
+  pendenciasHtml,
+  pendenciasClique,
+  pendenciasContagem,
+  alertaUrgentes,
 };
 })();
 
@@ -24213,7 +24465,7 @@ const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&a
 const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const num = (n) => Number(n) || 0;
 const O = () => window.OBR_API || {};
-const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras' };
+const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo' };
 let obrasPronto = false, osPronto = false;
 
 function dataHoje(){ try{ const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }catch(e){ return ''; } }
@@ -24261,6 +24513,11 @@ function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): s
     ${(pend || qd || eq) ? `<div class="pn-nota">Para cadastrar: ${[pend ? pend + (pend === 1 ? ' atividade' : ' atividades') : '', qd ? qd + (qd === 1 ? ' quadro de comando' : ' quadros de comando') : '', eq ? eq + (eq === 1 ? ' equipamento da oficina' : ' equipamentos da oficina') : ''].filter(Boolean).join(' · ')}</div>` : ''}`;
   return bloco('Cadastros e OS', 'os', corpo);
 }
+function pagBar(quem){
+  const atual = quem === 'alex' ? ui.pagAlex : ui.pagGestor; const n = window.PREV_API ? PREV_API.pendenciasContagem() : null;
+  const b = (k, t, cont) => `<button type="button" role="tab" aria-selected="${atual === k}" class="os-aba ${atual === k ? 'on' : ''}" data-pn-pag="${quem}:${k}">${t}${cont != null ? `<span class="os-aba-n">${cont}</span>` : ''}</button>`;
+  return `<div class="os-abas pn-abas pn-pags" role="tablist">${b('resumo', 'Painel')}${b('pend', 'Pendências preventivas', n == null ? '…' : n)}</div>`;
+}
 function tilesInterna(ped, clicavel, extra){
   const A = O(); const fases = A.FASE_INTERNA || [];
   return `<div class="pn-kpis">${extra || ''}${fases.map(k => { const n = ped.filter(x => x.i === k).length; const cl = new Set(ped.filter(x => x.i === k).map(x => x.r.clienteId || fold(x.r.cliente))).size;
@@ -24294,7 +24551,7 @@ function renderGestor(){
   const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
   const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
   const bOf = bloco('Oficina', 'oficinagestor', `<div class="pn-kpis">${Object.keys(rotG).map(g => kpi(nG(g), rotG[g], tomG[g] || 'gray', 'oficinagestor')).join('')}${kpi(parados, 'Parados além do limite', parados ? 'red' : 'gray', 'oficinagestor')}</div>`);
-  box.innerHTML = cab('Painel Gestor', dataHoje()) + `<div class="pn-grade">${bAtiv}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS(true)}${blocoManutencao()}</div>`;
+  box.innerHTML = cab('Painel Gestor', dataHoje()) + pagBar('gestor') + (ui.pagGestor === 'pend' && window.PREV_API ? PREV_API.pendenciasHtml() : `<div class="pn-grade">${bAtiv}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS(true)}${blocoManutencao()}</div>`);
 }
 
 // ---------- PAINEL ALEX ----------
@@ -24329,7 +24586,7 @@ function renderAlex(){
   const bEtapas = bloco('Resumo das etapas internas', '', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : tiles + (ui.alexEtapa ? '<div class="pn-nota">Filtrando por uma etapa. <button type="button" class="pn-link" data-pn-etapa="">Mostrar todas</button></div>' : '<div class="pn-nota">A etapa do cliente é a do pedido menos avançado.</div>'));
   const abas = `<div class="os-abas pn-abas" role="tablist"><button type="button" role="tab" aria-selected="${ui.alexAba !== 'entregues'}" class="os-aba ${ui.alexAba !== 'entregues' ? 'on' : ''}" data-pn-aba="compras">Compras<span class="os-aba-n">${compras.length}</span></button><button type="button" role="tab" aria-selected="${ui.alexAba === 'entregues'}" class="os-aba ${ui.alexAba === 'entregues' ? 'on' : ''}" data-pn-aba="entregues">Entregues<span class="os-aba-n">${entregues.length}</span></button></div>`;
   const bObras = `<section class="pn-bloco pn-largo pn-obras"><div class="pn-bloco-h"><h3>Obras e etapas internas</h3></div><div class="pn-barra">${abas}<div class="pn-busca"><input type="search" id="pnAlexBusca" placeholder="Buscar cliente, nº do pedido ou descrição…" value="${esc(ui.alexBusca)}" autocomplete="off"></div></div>${corpo}</section>`;
-  box.innerHTML = cab('Painel Alex', dataHoje()) + `<div class="pn-grade">${bEtapas}${blocoCadastrosOS(true)}${blocoEstoque()}${blocoManutencao()}</div>${bObras}`;
+  box.innerHTML = cab('Painel Alex', dataHoje()) + pagBar('alex') + (ui.pagAlex === 'pend' && window.PREV_API ? PREV_API.pendenciasHtml() : `<div class="pn-grade">${bEtapas}${blocoCadastrosOS(true)}${blocoEstoque()}${blocoManutencao()}</div>${bObras}`);
   if(focoBusca){ const b = document.getElementById('pnAlexBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
 }
 
@@ -24343,6 +24600,8 @@ function abrir(){ carregar(); renderTudo(); }
 function ligar(){
   ['tabPGestor', 'tabPAlex'].forEach(id => { const box = document.getElementById(id); if(!box || box._pnLigado) return; box._pnLigado = true;
     box.addEventListener('click', (e) => {
+      const pg = e.target.closest('[data-pn-pag]'); if(pg){ const [q, k] = pg.dataset.pnPag.split(':'); if(q === 'alex') ui.pagAlex = k; else ui.pagGestor = k; renderTudo(); return; }
+      const pv = e.target.closest('[data-pv]'); if(pv && window.PREV_API){ PREV_API.pendenciasClique(pv, renderTudo); return; }
       const g = e.target.closest('[data-pn-go]'); if(g){ ir(g.dataset.pnGo, g.dataset.pnSub); return; }
       const ab = e.target.closest('[data-pn-aba]'); if(ab){ ui.alexAba = ab.dataset.pnAba; renderAlex(); return; }
       const et = e.target.closest('[data-pn-etapa]'); if(et){ const k = et.dataset.pnEtapa; ui.alexEtapa = (k && ui.alexEtapa === k) ? '' : k; if(k === 'entregue') ui.alexAba = 'entregues'; else if(k) ui.alexAba = 'compras'; renderAlex(); return; }
