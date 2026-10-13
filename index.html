@@ -16,6 +16,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem("equiperTema");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
   :root{
     /* ===== Identidade EquipER — preto, branco, cinza + vermelho como destaque ===== */
@@ -2342,11 +2343,109 @@
   .obrg-btn-eq{ display:inline-flex; align-items:center; gap:8px; } .obrg-pontos-eq{ display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap; max-width:170px; } .obrg-seta-eq{ font-size:10px; color:var(--text-secondary); }
   .obi-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); }
   .obi-dot-nao_liberado{ --c:#C0392B; } .obi-dot-liberado{ --c:#F2B705; } .obi-dot-iniciado{ --c:#3D84B0; } .obi-dot-finalizado{ --c:#5FBF85; } .obi-dot-testado{ --c:#1F5A38; }
+
+  /* ===== TEMA ESCURO (escolhido na tela de login; lembrado neste aparelho) ===== */
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --ink:#ECECEE; --ink-2:#D3D4D8; --text:#EDEDEF; --text-secondary:#A3A8AF;
+    --background:#0F1012; --surface:#1A1B1E; --surface-2:#25272B; --border:#34363B;
+    --accent:#F0444C; --accent-dark:#D91A22; --accent-soft:rgba(240,68,76,0.16); --accent-line:rgba(240,68,76,0.40);
+    --st-attr:#F2B705; --st-attr-tx:#F2CB55; --st-attr-soft:rgba(242,183,5,0.20); --st-attr-line:rgba(242,183,5,0.50);
+    --st-prog:#4E97C6; --st-prog-tx:#86BCE0; --st-prog-soft:rgba(78,151,198,0.20); --st-prog-line:rgba(78,151,198,0.45);
+    --status-atribuido:#4E97C6; --status-atribuido-soft:rgba(78,151,198,0.20); --status-atribuido-line:rgba(78,151,198,0.45);
+    --success:#4FB27A; --success-dark:#86D6A6; --warning:#E0A44A; --status-progress:#E39A5C; --danger:#F26B60; --danger-dark:#F7A29B;
+    --success-soft:rgba(79,178,122,0.18); --success-line:rgba(79,178,122,0.45);
+    --progress-soft:rgba(227,154,92,0.20); --progress-line:rgba(227,154,92,0.45);
+    --warning-soft:rgba(224,164,74,0.20); --warning-line:rgba(224,164,74,0.45);
+    --danger-soft:rgba(242,107,96,0.18); --danger-line:rgba(242,107,96,0.45);
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.4); --shadow-md:0 4px 16px rgba(0,0,0,0.45); --shadow-lg:0 12px 32px rgba(0,0,0,0.55);
+  }
+  :root[data-theme="dark"] .btn-primary,
+  :root[data-theme="dark"] .portal-tabs .portal-tab.active,
+  :root[data-theme="dark"] .btn-destaque.escuro,
+  :root[data-theme="dark"] .rel-btn.escuro,
+  :root[data-theme="dark"] .qd-tipo,
+  :root[data-theme="dark"] .obr-ped-num{ background:var(--ink) !important; color:#17181A !important; }
+  :root[data-theme="dark"] .btn-destaque.perigo{ background:var(--danger) !important; border-color:var(--danger) !important; color:#fff !important; }
+  :root[data-theme="dark"] .brand-logo, :root[data-theme="dark"] .brand-logo-lg{ filter:invert(1) hue-rotate(180deg) saturate(2.6) brightness(.95); }
+  :root[data-theme="dark"] .rel-btn, :root[data-theme="dark"] .btn-destaque{ border-color:var(--border); }
+  /* seletor de tema (tela de login) */
+  .tema-toggle{ position:absolute; top:14px; right:14px; display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; z-index:5; }
+  .tema-toggle button{ border:none; background:transparent; color:var(--text-secondary); font-family:var(--sans); font-weight:700; font-size:12.5px; padding:7px 13px; border-radius:999px; cursor:pointer; }
+  .tema-toggle button[aria-pressed="true"]{ background:var(--ink); color:#fff; }
+  :root[data-theme="dark"] .tema-toggle button[aria-pressed="true"]{ color:#17181A; }
+
+  :root[data-theme="dark"] .btn-whatsapp{color:#85e0aa !important}
+  :root[data-theme="dark"] .btn-destaque{background:var(--surface) !important}
+  :root[data-theme="dark"] .rel-btn{background:var(--surface) !important}
+  :root[data-theme="dark"] .rel-sec.baixo{background:#3a1d1d !important;color:#ef767b !important}
+  :root[data-theme="dark"] .rel-item.baixo{background:#3a1d1d !important}
+  :root[data-theme="dark"] .instr-share-list .btn-primary{background:var(--surface) !important}
+  :root[data-theme="dark"] .prv-grupo{border:1.5px solid var(--border) !important}
+  :root[data-theme="dark"] .prv-grupo-t{border-bottom:1.5px solid var(--border) !important}
+  :root[data-theme="dark"] .prv-modal{background:var(--surface) !important}
+  :root[data-theme="dark"] .prv-modal-bar{background:var(--surface) !important}
+  :root[data-theme="dark"] .prv-sugestao{background:var(--surface) !important}
+  :root[data-theme="dark"] .maint-add-form{border:1.5px solid var(--border) !important}
+  :root[data-theme="dark"] .prv-unit-fim{border-top:1.5px dashed var(--border) !important}
+  :root[data-theme="dark"] .oe-secao-blue .oe-secao-n{color:#86b2df !important}
+  :root[data-theme="dark"] .qd-form{border:1.5px solid var(--border) !important}
+  :root[data-theme="dark"] .os-aba.on{background:var(--surface) !important}
+  :root[data-theme="dark"] .pn-bloco{background:var(--surface) !important}
+  :root[data-theme="dark"] .pn-k{background:var(--surface) !important}
+  :root[data-theme="dark"] .pn-p-red{color:#e6887f !important}
+  :root[data-theme="dark"] .pn-p-amber{color:#ffd866 !important}
+  :root[data-theme="dark"] .pn-cli{background:var(--surface) !important}
+  :root[data-theme="dark"] .pn-obra{background:var(--surface) !important}
+  :root[data-theme="dark"] .obr-st-enviado{color:#86b2df !important}
+  :root[data-theme="dark"] .obr-emp-eqp{color:#86b2df !important}
+  :root[data-theme="dark"] .obr-st-agendado{color:#a792d3 !important}
+  :root[data-theme="dark"] .obr-pc-d{color:#a792d3 !important}
+  :root[data-theme="dark"] .obr-obs-prev b{color:#a792d3 !important}
+  :root[data-theme="dark"] .pgag-dia-tot{color:#a792d3 !important}
+  :root[data-theme="dark"] .obr-sp-finalizado::before,:root[data-theme="dark"] .obi-st-testado::before{background:var(--surface) !important}
+  :root[data-theme="dark"] select.obr-sp option,:root[data-theme="dark"] select.obr-sp optgroup{background:var(--surface) !important;color:var(--text) !important}
+  :root[data-theme="dark"] .obrg-resumo:hover{background:var(--surface) !important}
+  :root[data-theme="dark"] .obrg-detalhe{background:#272730 !important}
+  :root[data-theme="dark"] .obi-falta{color:#88c0dd !important}
+  :root[data-theme="dark"] .obi-seg{background:var(--surface-2) !important}
+  :root[data-theme="dark"] .obi-seg-b{color:var(--text-secondary) !important}
+  :root[data-theme="dark"] .obi-seg-nao_comecou.obi-seg-on{background:var(--surface) !important}
+  :root[data-theme="dark"] bottom-left{color:var(--text-secondary) !important}
+  :root[data-theme="dark"] bottom-right{color:var(--text-secondary) !important}
+  :root[data-theme="dark"] body{color:var(--text) !important}
+  :root[data-theme="dark"] .head .sub{color:var(--text-secondary) !important}
+  :root[data-theme="dark"] .head .emp{color:var(--text-secondary) !important}
+  :root[data-theme="dark"] .head .emp b{color:var(--text) !important}
+  :root[data-theme="dark"] .catbar{background:var(--surface-2) !important}
+  :root[data-theme="dark"] .catbar .cnt{color:var(--text-secondary) !important}
+  :root[data-theme="dark"] td{border-bottom:1px solid var(--border) !important}
+  :root[data-theme="dark"] tr.alt td{background:var(--surface) !important}
+  :root[data-theme="dark"] .pill.aten{color:var(--text) !important}
+  :root[data-theme="dark"] .pill.comp{background:var(--surface-2) !important;color:var(--text) !important}
+  :root[data-theme="dark"] tfoot td{background:var(--surface-2) !important}
+  :root[data-theme="dark"] .vazio{color:var(--text-secondary) !important}
+  :root[data-theme="dark"] body{background:var(--surface) !important}
 </style>
 </head>
 <body>
 
 <div id="loginView" class="login-wrap">
+  <div class="tema-toggle" id="temaToggle" role="group" aria-label="Tema"><button type="button" data-tema="light" aria-pressed="true">☀️ Claro</button><button type="button" data-tema="dark" aria-pressed="false">🌙 Escuro</button></div>
+  <script>
+  (function(){
+    var meta = document.querySelector('meta[name="theme-color"]');
+    function atual(){ return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'; }
+    function aplicar(t, salvar){
+      document.documentElement.setAttribute('data-theme', t);
+      if(meta) meta.setAttribute('content', t === 'dark' ? '#0F1012' : '#FFFFFF');
+      if(salvar){ try{ localStorage.setItem('equiperTema', t); }catch(e){} }
+      document.querySelectorAll('#temaToggle button').forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.tema === t ? 'true' : 'false'); });
+    }
+    aplicar(atual(), false);
+    document.getElementById('temaToggle').addEventListener('click', function(e){ var b = e.target.closest('[data-tema]'); if(b) aplicar(b.dataset.tema, true); });
+  })();
+  </script>
   <div class="app-load-status" id="appLoadStatus">Carregando dados...</div>
   <div class="app-load-error" id="appLoadError" style="display:none;">
     <p>⚠️ Não foi possível carregar os dados. Verifique sua internet.</p>
