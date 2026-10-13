@@ -11947,8 +11947,8 @@ function buildAgendaMessage(t){
     // Cada serviço: títulos em negrito (*texto* no WhatsApp), um por linha, e uma linha em branco entre os clientes.
     tasks.forEach((s, i) => {
       const bloco = [];
-      bloco.push(`*${i + 1}. Cliente:* ${s.client}`);
-      if(s.description) bloco.push(`*Serviço:* ${s.description}`);
+      bloco.push(`${i + 1}. 👤 *Cliente:* ${s.client}`);
+      if(s.description) bloco.push(`🛠️ *Serviço:* ${s.description}`);
       let dupla = '';
       if(s.pairId){
         const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id);
@@ -11957,23 +11957,23 @@ function buildAgendaMessage(t){
         const others = s.technicians.filter(n => n !== t.name);
         if(others.length) dupla = others.join(', ');
       }
-      if(dupla) bloco.push(`*Dupla:* ${dupla}`);
+      if(dupla) bloco.push(`👥 *Dupla:* ${dupla}`);
       // Orientações do gestor (só quando existem): texto entra na mensagem; fotos/áudios não cabem
       // numa URL do WhatsApp — vão pelo compartilhamento de anexos logo depois do envio.
       if(hasInstructions(s)){
         const ins = getInstructions(s);
-        if(ins.text) bloco.push(`*Orientação:* ${String(ins.text).trim()}`);
+        if(ins.text) bloco.push(`📝 *Orientação:* ${String(ins.text).trim()}`);
         const nF = ins.photos.length, nA = ins.audios.length;
         if(nF || nA){
           const parts = [];
           if(nF) parts.push(`${nF} foto${nF > 1 ? 's' : ''}`);
           if(nA) parts.push(`${nA} áudio${nA > 1 ? 's' : ''}`);
-          bloco.push(`*Anexos:* ${parts.join(' e ')} — enviados em seguida`);
+          bloco.push(`📎 *Anexos:* ${parts.join(' e ')} — enviados em seguida`);
         }
       }
       if(s.address){
-        bloco.push(`*Endereço:* ${s.address}`);
-        bloco.push(`*Rota Waze:* ${wazeLink(s.address)}`);
+        bloco.push(`📍 *Endereço:* ${s.address}`);
+        bloco.push(`🧭 *Rota Waze:* ${wazeLink(s.address)}`);
       }
       msg += bloco.join('\n') + '\n\n';
     });
