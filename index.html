@@ -757,6 +757,7 @@
   .btn-ghost.equip-withdraw-btn{ padding:10px 8px; font-size:13.5px; font-weight:600; border-style:dashed; border-width:1.5px; }
   .return-checkbox-label{ font-family: var(--sans); line-height:1.25; }
   .service-controls:has(.equip-lista){ flex-direction:column; align-items:stretch; gap:8px; }
+  .agint{ margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:flex-start; } .agint-lin{ font-size:12.5px; color:var(--text-dim); } .agint-lin b{ color:var(--text); }
   .equip-lista{ width:100%; display:flex; flex-direction:column; gap:6px; }
   .equip-lista-t{ font-size:11.5px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
   .equip-lista .equip-tag{ border-radius:var(--radius-sm); justify-content:flex-start; }
@@ -2178,7 +2179,8 @@
   .obrg-sub{ display:flex; gap:8px; margin:0 0 12px; }
   .obrg-sec-h{ font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px; padding:7px 12px; border-radius:8px; background:var(--surface-2); border-left:4px solid var(--line); display:flex; justify-content:space-between; gap:10px; }
   .obrg-sec-h.g1{ background:var(--st-prog-bg, #e8f0fe); border-left-color:var(--st-prog, #1a56db); }
-  .obrg-sec-h.g2{ background:var(--st-attr-bg, #fff6d6); border-left-color:var(--st-attr, #e0a800); }
+  .obrg-sec-h.g2{ background:#fdf0d5; border-left-color:#E0A800; }
+  .obrg-sec-h.g3{ background:var(--st-attr-bg, #fff6d6); border-left-color:var(--st-attr, #e0a800); }
   .obrg-sec-h.gf{ border-left-color:#1f6b45; }
   .obrg-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 6px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
   .obrg-cli{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; margin-bottom:4px; }
@@ -11300,7 +11302,7 @@ function renderOficinaGestorTab(){
         : `<button type="button" class="btn-primary oe-mini" data-agendarreinstalacao="${eq.id}">Agendar reinstalação</button>${svcVinculado ? '' : `<button type="button" class="btn-ghost oe-mini" data-reinstvincular="${eq.id}">Vincular a atividade</button>`}`;
       return `<div class="oe-compact-row">${orc}${info}<span class="oe-compact-acoes">${acoes}</span></div>`;
     }
-    return '';
+    return agendaInternaHtml('equip', eq.id, eq.client, 'Manutenção do equipamento — ' + eq.equipment);   // técnico fixo na oficina para este equipamento
   };
   const renderGrupo = (grupo, boxId, countId, vazioMsg) => {
     const lista = gruposEquip[grupo];
@@ -16088,6 +16090,77 @@ document.getElementById('photoSourceOverlay').addEventListener('click', (e) => {
 // ===== Modal "Retirar equipamento para manutenção" =====
 let equipWithdrawTargetServiceId = null;
 let equipWithdrawInFlight = false; // trava contra duplo clique no botão de confirmar
+// ===== Agendar técnico em trabalho INTERNO (oficina) — 13/10 =====
+// Do cartão de um equipamento da Oficina (manutenção de bomba etc.) ou de um quadro de comando (montagem), o Gestor escolhe
+// técnico + dia e cria uma atividade na agenda dele. É uma atividade comum (aparece na Agenda e no celular do técnico);
+// guarda internoTipo/internoRefId só para o cartão mostrar quem está agendado. Não gera cadastro de OS ao concluir (osExcluido).
+function agendaInternaHtml(tipo, id, cliente, titulo){
+  const ligadas = services.filter(x => x.internoTipo === tipo && String(x.internoRefId) === String(id))
+    .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+  const linhas = ligadas.map(x => `<div class="agint-lin">📅 <b>${x.date ? escapeHtml(shortLabel(x.date)) : 'sem data'}</b> · ${escapeHtml(getServiceTechnicians(x).join(' e ') || 'sem técnico')} <span class="status-tag ${escapeHtml(x.status)}">${escapeHtml(statusLabelOf(x.status))}</span></div>`).join('');
+  return `<div class="agint" data-agint-wrap data-agint-t="${escapeHtml(tipo)}" data-agint-id="${escapeHtml(id)}" data-agint-c="${escapeHtml(cliente || '')}" data-agint-d="${escapeHtml(titulo || '')}">${linhas}<button type="button" class="btn-ghost oe-mini" data-agint-btn>📅 ${ligadas.length ? 'Agendar outro dia / técnico' : 'Agendar técnico'}</button></div>`;
+}
+function atualizarAgendaInterna(){
+  document.querySelectorAll('[data-agint-wrap]').forEach(w => { const d = w.dataset; w.outerHTML = agendaInternaHtml(d.agintT, d.agintId, d.agintC, d.agintD); });
+}
+let agendaInternaCtx = null;
+function abrirAgendaInterna(ctx){
+  agendaInternaCtx = ctx;
+  let ov = document.getElementById('agintOverlay');
+  if(!ov){
+    ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'agintOverlay';
+    ov.innerHTML = '<div class="modal" style="max-width:440px;"><h3>Agendar técnico</h3><div id="agintResumo" style="font-size:13px; color:var(--text-dim); margin-bottom:12px;"></div>'
+      + '<div class="field"><label for="agintTec">Técnico</label><select id="agintTec"></select></div>'
+      + '<div class="field"><label for="agintData">Dia</label><input type="date" id="agintData"></div>'
+      + '<div class="field"><label for="agintObs">Observação (opcional)</label><textarea id="agintObs" rows="2" maxlength="400" placeholder="Ex.: ficar na oficina para montar o quadro"></textarea></div>'
+      + '<div class="field-error" id="agintErr"></div>'
+      + '<div class="modal-actions" style="justify-content:flex-end; gap:8px; margin-top:12px;"><button type="button" class="btn-ghost" id="agintCancel">Cancelar</button><button type="button" class="btn-primary" id="agintOk">Agendar</button></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', (e) => { if(e.target === ov) ov.classList.remove('open'); });
+    document.getElementById('agintCancel').onclick = () => ov.classList.remove('open');
+    document.getElementById('agintOk').onclick = confirmarAgendaInterna;
+  }
+  document.body.appendChild(ov);                      // fica por cima de qualquer outra janela aberta (ex.: detalhe do quadro)
+  const nomes = tecnicosAtuaisOrdenados();
+  document.getElementById('agintTec').innerHTML = nomes.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+  document.getElementById('agintData').value = todayStr();
+  document.getElementById('agintObs').value = '';
+  document.getElementById('agintErr').textContent = '';
+  document.getElementById('agintResumo').innerHTML = '<b>' + escapeHtml(ctx.titulo) + '</b>' + (ctx.cliente ? '<br>' + escapeHtml(ctx.cliente) : '');
+  ov.classList.add('open');
+}
+let agendaInternaEmCurso = false;
+async function confirmarAgendaInterna(){
+  const c = agendaInternaCtx; if(!c || agendaInternaEmCurso) return;
+  const tec = document.getElementById('agintTec').value, dia = document.getElementById('agintData').value, obs = document.getElementById('agintObs').value.trim();
+  const err = document.getElementById('agintErr');
+  if(!tec){ err.textContent = 'Escolha o técnico.'; return; }
+  if(!dia){ err.textContent = 'Escolha o dia.'; return; }
+  agendaInternaEmCurso = true;
+  const btn = document.getElementById('agintOk'); btn.disabled = true;
+  const svc = {
+    id: Date.now() + 6000 + Math.floor(Math.random() * 1000),
+    date: dia, client: c.cliente || 'Oficina', description: c.titulo, address: 'Oficina Equiper',
+    technician: tec, status: 'atribuido', checkIn: '', checkOut: '', observations: '',
+    internoTipo: c.tipo, internoRefId: c.id, osExcluido: true, osExcluidoBy: 'trabalho interno da oficina', osExcluidoAt: new Date().toISOString(),
+  };
+  if(obs) svc.technicianInstructionText = obs;
+  services.push(svc);
+  const ok = await saveServices();
+  agendaInternaEmCurso = false; btn.disabled = false;
+  if(!ok){ services = services.filter(x => x !== svc); err.textContent = 'Não foi possível salvar agora. Tente de novo.'; return; }
+  document.getElementById('agintOverlay').classList.remove('open');
+  try{ renderAll(); }catch(e){}
+  atualizarAgendaInterna();
+  try{ avisoNaoBloqueante('Agendado para ' + tec + ' em ' + shortLabel(dia) + '.', 4500); }catch(e){}
+}
+document.addEventListener('click', (e) => {            // captura: o botão não abre o cartão/detalhe que está por baixo
+  const b = e.target.closest && e.target.closest('[data-agint-btn]'); if(!b) return;
+  e.stopPropagation(); e.preventDefault();
+  const w = b.closest('[data-agint-wrap]'); if(!w) return;
+  abrirAgendaInterna({ tipo: w.dataset.agintT, id: w.dataset.agintId, cliente: w.dataset.agintC, titulo: w.dataset.agintD });
+}, true);
+
 function openEquipWithdrawModal(svcId){
   const svc = services.find(x => x.id === svcId);
   if(!svc) return;
@@ -22123,6 +22196,7 @@ function renderDetalhe(){
       ${gestor ? `<textarea id="qdObsGestor" rows="3" maxlength="600" placeholder="Explique aqui o que o montador precisa saber sobre este quadro">${esc(q.obsGestor || '')}</textarea>` : `<div class="qd-obs-lida">${q.obsGestor ? esc(q.obsGestor) : '<span style="color:var(--text-dim);">Sem observação.</span>'}</div>`}
       ${(fotosG.length || gestor) ? `<div class="qd-fotos" style="margin-top:8px;">${fotosG.map(k => `<div class="qd-foto"><img src="${esc(q.fotosGestor[k])}" alt="Foto do Gestor">${gestor ? `<button type="button" data-qdd="rmfoto-gestor" data-k="${esc(k)}" aria-label="Remover foto">✕</button>` : ''}</div>`).join('')}</div>` : ''}
       ${gestor ? (fotosG.length < MAX_FOTOS_QD ? `<div class="prv-foto-acoes"><button type="button" class="btn-ghost oe-mini" data-qdd="foto-gestor-cam">📷 Tirar foto</button><button type="button" class="btn-ghost oe-mini" data-qdd="foto-gestor-gal">🖼 Da galeria</button><span class="qd-hist" style="align-self:center;">Fotos da observação (${fotosG.length} de ${MAX_FOTOS_QD}) — o montador vê</span></div>` : '<div class="qd-hist">Limite de fotos da observação atingido.</div>') + '<input type="file" id="qdFotoGestorInput" accept="image/*" style="display:none;">' : ''}</div>
+    ${gestor && window.agendaInternaHtml ? `<div class="field" style="margin-top:12px;"><label>Técnico na oficina</label>${window.agendaInternaHtml('quadro', q.id, q.cliente, 'Montagem de quadro de comando — ' + nomeDoTipo(q))}</div>` : ''}
     <div class="qd-det-acoes">
       ${et.proxima ? `<button type="button" class="btn-primary" data-qdd="avancar">${esc(et.proxima.rotulo)}</button>` : '<span class="qd-chip tom-verde">Montado e testado ✓</span>'}
       ${gestor && et.voltar && !q.processedForOS ? `<button type="button" class="btn-ghost" data-qdd="voltar">↩ Voltar etapa</button>` : ''}
@@ -24005,8 +24079,8 @@ function renderGestor(){
     const todos = g.itens.flatMap(({ r }) => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const completo = todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado');
     const prinG = todos.length ? andamentoPrincipal(todos) : null;          // o MESMO andamento principal mostrado no cartão (o que segura a obra)
-    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes') ? 1 : prinG === 'liberado_inicio' ? 2 : 3;
-    g.rankPrin = g.grp === 3 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
+    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes') ? 1 : prinG === 'liberado_entrega' ? 2 : prinG === 'liberado_inicio' ? 3 : 4;
+    g.rankPrin = g.grp === 4 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
   });
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
   const tile = (n, rot, cor) => `<div class="obrg-t4" style="border-left-color:${cor};"><b style="color:${cor};">${n}</b><span>${esc(rot)}</span></div>`;
@@ -24020,7 +24094,7 @@ function renderGestor(){
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Liberados para iniciar', 3: 'Ainda na etapa interna ou aguardando liberação' };
+  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Liberados para entrega', 3: 'Liberados para iniciar', 4: 'Ainda na etapa interna ou aguardando liberação' };
   let grpAnt = null;
   const cabGrp = (g) => { if(uiG.sub === 'finalizados' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
   box.innerHTML = lista_.length ? lista_.map((g_) => { const { chave, nome, itens } = g_; const cab = cabGrp(g_);
