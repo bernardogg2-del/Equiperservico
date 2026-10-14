@@ -7770,6 +7770,7 @@ function upsertClient(name, address){
   name = (name || '').trim();
   if(!name) return;
   const existing = clients.find(c => c.name.toLowerCase() === name.toLowerCase());
+  if(/^oficina equiper$/i.test((address || '').trim())) return;     // "Oficina Equiper" é o local do trabalho interno, nunca o endereço do cliente
   if(existing){
     const cleanAddress = (address || '').trim();
     if(cleanAddress && cleanAddress !== existing.address){
@@ -7777,7 +7778,7 @@ function upsertClient(name, address){
       // Propaga o endereço corrigido pras outras atividades desse cliente ainda não concluídas
       let touched = false;
       services.forEach(s => {
-        if(serviceMatchesClient(s.client, name) && s.status !== 'concluido' && s.address !== cleanAddress){
+        if(serviceMatchesClient(s.client, name) && s.status !== 'concluido' && !s.internoTipo && s.address !== cleanAddress){
           s.address = cleanAddress;
           touched = true;
         }
@@ -12062,7 +12063,7 @@ document.getElementById('confirmAddressSend').addEventListener('click', async ()
     if(svc){
       const val = inp.value.trim();
       svc.address = val;
-      if(val) upsertClient(svc.client, val);
+      if(val && !svc.internoTipo) upsertClient(svc.client, val);     // atividade interna da Oficina não mexe no endereço do cliente
     }
   });
 
@@ -12611,7 +12612,7 @@ async function updateClientRecord(id, newNameRaw, newAddressRaw){
   }
   // Atividades ainda não concluídas usam o endereço atualizado (o histórico de concluídas não é alterado)
   services.forEach(s => {
-    if(serviceMatchesClient(s.client, newName) && s.status !== 'concluido'){
+    if(serviceMatchesClient(s.client, newName) && s.status !== 'concluido' && !s.internoTipo){
       s.address = newAddress;
     }
   });
