@@ -3344,7 +3344,7 @@
       <button type="button" class="portal-tab active" data-prvos="aguardando">Aguardando cadastro de OS</button>
       <button type="button" class="portal-tab" data-prvos="relatorios" id="prvOsTabRel">Relatórios de manutenção</button>
       <button type="button" class="portal-tab" data-prvos="oficina" id="prvOsTabOficina">Equipamentos da Oficina</button>
-      <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao" style="display:none;">OS aguardando</button>
+      <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao">Não finalizados</button>
     </div>
     <div id="prvOsAguardando">
     <div class="tecnicos-head">
@@ -23142,7 +23142,7 @@ function abrirMigracao(){
 }
 
 // ---------- tela (Cadastros e OS → "Cobrar / Não cobrar"): por enquanto só a listagem agrupada ----------
-const ROT_STATUS = { decidir: 'A decidir', aguardando: 'Aguardando mais atividades', cobrar: 'Cobradas (no Financeiro)', nao_cobrar: 'Não cobrar' };
+const ROT_STATUS = { decidir: 'A definir (OS antigas)', aguardando: 'Não finalizados', cobrar: 'Cobradas (no Financeiro)', nao_cobrar: 'Não cobrar' };
 const ROT_FIN = { a_cobrar: 'a cobrar', cobrada: 'cobrada', recebida: 'recebida', cancelada: 'cancelada' };
 function cartao(os){
   const linhas = itensDe(os).sort((a, b) => String(a.data).localeCompare(String(b.data)));
@@ -23173,7 +23173,7 @@ function renderAba(){
   const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const termo = fold(buscaDecisao);
   const lista = termo ? todasOs.filter(o => fold(o.numero + ' ' + o.cliente + ' ' + itensDe(o).map(l => l.descricao + ' ' + (l.tecnicos || []).join(' ')).join(' ')).includes(termo)) : todasOs;
-  const aba = document.getElementById('prvOsTabDecisao'); if(aba){ aba.textContent = 'OS aguardando' + (n ? ' (' + n + ')' : ''); aba.style.display = n ? '' : 'none'; }   // a decisão agora é feita no próprio card; a aba só aparece enquanto sobrar OS antiga sem decisão
+  const aba = document.getElementById('prvOsTabDecisao'); if(aba){ aba.textContent = 'Não finalizados' + (n ? ' (' + n + ')' : ''); aba.style.display = ''; }   // a decisão agora é feita no próprio card; a aba só aparece enquanto sobrar OS antiga sem decisão
   if(box.style.display === 'none') return;
   const nDe = (f) => lista.filter(f).length;
   const ABAS_DEC = [['decidir', 'A definir', nDe(o => o.status === 'decidir')], ['definidas', 'Definidas', nDe(o => o.status === 'cobrar' || o.status === 'nao_cobrar')], ['aguardando', 'Aguardando', nDe(o => o.status === 'aguardando')]];
@@ -23182,7 +23182,7 @@ function renderAba(){
   const foco = document.activeElement; const focoBusca = foco && foco.id === 'osDecisaoBusca'; const caret = focoBusca ? foco.selectionStart : null;
   box.innerHTML = `<div class="prv-linha" style="margin:0 0 10px; align-items:center;"><div class="search-clear-wrap" style="flex:1; min-width:220px; max-width:460px;"><input type="search" id="osDecisaoBusca" placeholder="Buscar por cliente, número da OS, descrição ou técnico…" value="${esc(buscaDecisao)}" autocomplete="off"><button type="button" class="search-clear-btn" data-os-act="limpar-busca">✕</button></div>${termo ? `<span class="prv-hint" style="margin:0; font-size:12px;">${lista.length ? lista.length + (lista.length === 1 ? ' OS encontrada' : ' OS encontradas') : 'Nenhuma OS encontrada'}</span>` : ''}</div>
 `
-    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? barraAbas + ((abaDecisao === 'decidir' ? sec('decidir', true) : abaDecisao === 'aguardando' ? sec('aguardando', true) : sec('cobrar', true) + sec('nao_cobrar', true)) || '<div class="empty-state">Nenhuma OS nesta aba' + (termo ? ' com esse texto' : '') + '.</div>') : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Cadastre uma OS numa atividade e ela aparece aqui.</div>')));
+    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? ((sec('aguardando', true) + sec('decidir', true)) || '<div class="empty-state">' + (termo ? 'Nenhuma OS com esse texto.' : 'Nenhum registro não finalizado. Quando uma atividade for marcada como "Não finalizado" em Aguardando cadastro de OS, ela aparece aqui.') + '</div>') : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Cadastre uma OS numa atividade e ela aparece aqui.</div>')));
   if(focoBusca){ const b = document.getElementById('osDecisaoBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
   if(!box._osLigado){ box._osLigado = true;
     box.addEventListener('input', (e) => { if(e.target.id === 'osDecisaoBusca'){ buscaDecisao = e.target.value; renderAba(); } });
