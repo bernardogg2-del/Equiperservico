@@ -760,7 +760,11 @@
   .tec-interno{ margin:12px 0 4px; } .tec-interno .qd-card{ margin:0 0 8px; } .tec-interno .tec-qd-av{ width:100%; padding:11px 8px; font-size:14px; }
   .os-dec-btns{ display:flex; gap:8px; } .os-dec-b{ flex:1; padding:11px 8px; border-radius:12px; border:1.5px solid var(--border,#d9d9de); background:var(--card,#fff); color:inherit; font:inherit; font-weight:700; font-size:14px; cursor:pointer; }
   .os-dec-b.on-cobrar{ background:#1c7a3f; border-color:#1c7a3f; color:#fff; } .os-dec-b.on-nao{ background:#4a4a52; border-color:#4a4a52; color:#fff; }
+  .os-dec-b.on-ag{ background:#b36b00; border-color:#b36b00; color:#fff; }
   .os-dec-b.on-ped{ background:#b4232a; border-color:#b4232a; color:#fff; } .os-dec-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .os-dec-2 input{ width:100%; }
+  .obr-aprov{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; margin-right:6px; } .obr-aprov-aguardando{ background:#fff3d6; color:#8a5a00; } .obr-aprov-aprovado{ background:#dff3e6; color:#1c7a3f; } .obr-aprov-nao_aprovado{ background:#fdecea; color:#b4232a; }
+  .obr-manut-ctl{ margin-top:8px; } .obr-manut-ctl label{ display:block; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; } .obr-manut-et{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .obr-emp-definir{ background:#fdecea; color:#b4232a; border:1px solid #f3b9b4; } .obr-tab-alerta{ color:#b4232a; font-weight:800; }
   .os-dec-extra{ margin-top:10px; } .os-dec-extra input,.os-dec-extra select{ width:100%; }
   .btn-primary:disabled{ opacity:.4; cursor:not-allowed; }
   .tec-int-row{ display:flex; gap:8px; margin-top:8px; } .tec-int-row .tec-int-b{ flex:1; padding:12px 6px; font-size:14px; font-weight:700; }
@@ -3340,7 +3344,7 @@
       <button type="button" class="portal-tab active" data-prvos="aguardando">Aguardando cadastro de OS</button>
       <button type="button" class="portal-tab" data-prvos="relatorios" id="prvOsTabRel">Relatórios de manutenção</button>
       <button type="button" class="portal-tab" data-prvos="oficina" id="prvOsTabOficina">Equipamentos da Oficina</button>
-      <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao" style="display:none;">OS a definir</button>
+      <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao" style="display:none;">OS aguardando</button>
     </div>
     <div id="prvOsAguardando">
     <div class="tecnicos-head">
@@ -21521,7 +21525,7 @@ function ligarAbas(){
       document.getElementById('prvOsRelatorios').style.display = tab === 'relatorios' ? '' : 'none';
       const po = document.getElementById('prvOsOficina'); if(po) po.style.display = tab === 'oficina' ? '' : 'none';
       const pd = document.getElementById('prvOsDecisao'); if(pd) pd.style.display = tab === 'decisao' ? '' : 'none';
-      if(tab === 'decisao' && window.OS_API) OS_API.renderAba();
+      if(tab === 'decisao' && window.OS_API){ OS_API.preAba(); OS_API.renderAba(); }
       if(tab === 'relatorios'){ renderOsRelatorios(); garantirRelatorios(); }
       if(tab === 'oficina' && window.OSOF_API) OSOF_API.renderAba();
     });
@@ -22985,6 +22989,9 @@ function aplicarDecisao(os, dec, agora){
     os.status = 'cobrar'; os.motivoNaoCobrar = null; os.motivoTexto = null;
     os.fin = Object.assign({}, os.fin || {}, { status: finSt, valor: Math.round((antes + v) * 100) / 100, enviadaAoFinanceiroEm: agora });
     hist(os, 'Cobrar ' + v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' (enviada ao Financeiro)' + (antes ? ' — somado ao valor já lançado' : ''));
+  } else if(dec.tipo === 'aguardando'){
+    if(os.status === 'cobrar' || os.status === 'nao_cobrar') hist(os, 'Atividade marcada como "não finalizado" — a OS mantém a decisão anterior');
+    else { os.status = 'aguardando'; hist(os, 'Decisão: AGUARDAR — atividade não finalizada'); }
   } else if(os.status === 'cobrar'){
     hist(os, 'Atividade marcada como "não cobrar" — a OS segue como cobrar por causa de outra atividade');
   } else {
@@ -23020,12 +23027,13 @@ function decHtml(k){
   const d = decRasc[k] || {};
   return `<div class="field os-dec" data-dec-box="${esc(k)}"><label>Cobrança</label>
     <div class="os-dec-btns"><button type="button" class="os-dec-b ${d.tipo === 'cobrar' ? 'on-cobrar' : ''}" data-dec="cobrar" data-dec-k="${esc(k)}">💲 Cobrar</button><button type="button" class="os-dec-b ${d.tipo === 'nao_cobrar' ? 'on-nao' : ''}" data-dec="nao_cobrar" data-dec-k="${esc(k)}">🚫 Não cobrar</button></div>
+    <div class="os-dec-btns" style="margin-top:8px;"><button type="button" class="os-dec-b ${d.tipo === 'aguardando' ? 'on-ag' : ''}" data-dec="aguardando" data-dec-k="${esc(k)}" title="O trabalho desta OS ainda não terminou: o registro vai para a aba OS aguardando">⏳ Não finalizado</button></div>
     <div class="os-dec-extra" data-dec-valor-wrap style="display:${d.tipo === 'cobrar' ? '' : 'none'};"><label>Valor a cobrar</label><input type="text" inputmode="decimal" data-dec-valor="${esc(k)}" value="${esc(d.valor || '')}" placeholder="R$ 0,00" autocomplete="off"></div>
     <div class="os-dec-extra" data-dec-motivo-wrap style="display:${d.tipo === 'nao_cobrar' ? '' : 'none'};"><label>Motivo (opcional)</label><select data-dec-motivo="${esc(k)}"><option value="">Selecionar motivo...</option>${MOTIVOS.filter(m => m[0] !== 'pedido_manutencao').map(m => `<option value="${m[0]}" ${d.motivo === m[0] ? 'selected' : ''}>${esc(m[1])}</option>`).join('')}</select></div>
     <div class="os-dec-btns" style="margin-top:8px;"><button type="button" class="os-dec-b ${d.ped ? 'on-ped' : ''}" data-dec-ped="${esc(k)}">🧰 Gerar pedido de manutenção</button></div>
     <div class="os-dec-extra os-dec-ped" data-dec-ped-wrap style="display:${d.ped ? '' : 'none'};"><div class="os-dec-2"><div><label>Nº do pedido</label><input type="text" data-dec-pednum="${esc(k)}" value="${esc(d.pedNumero || '')}" placeholder="Nº do pedido" autocomplete="off"></div><div><label>Valor do pedido</label><input type="text" inputmode="decimal" data-dec-pedval="${esc(k)}" value="${esc(d.pedValor || '')}" placeholder="R$ 0,00" autocomplete="off"></div></div></div></div>`;
 }
-function decisaoDe(k){ const d = decRasc[k]; if(!d) return null; if(!d.tipo) return d.ped ? { tipo: 'nao_cobrar', motivo: 'pedido_manutencao' } : null; return d.tipo === 'cobrar' ? { tipo: 'cobrar', valor: valorNum(d.valor) } : { tipo: 'nao_cobrar', motivo: d.motivo || '' }; }
+function decisaoDe(k){ const d = decRasc[k]; if(!d) return null; if(!d.tipo) return d.ped ? { tipo: 'nao_cobrar', motivo: 'pedido_manutencao' } : null; if(d.tipo === 'aguardando') return { tipo: 'aguardando' }; return d.tipo === 'cobrar' ? { tipo: 'cobrar', valor: valorNum(d.valor) } : { tipo: 'nao_cobrar', motivo: d.motivo || '' }; }
 function pedidoDe(k){ const d = decRasc[k]; return d && d.ped ? { numero: String(d.pedNumero || '').trim(), valor: valorNum(d.pedValor) } : null; }
 function decValida(k){ const d = decisaoDe(k), pd = pedidoDe(k); return !!d && (d.tipo !== 'cobrar' || d.valor != null) && (!pd || (!!pd.numero && pd.valor != null)); }
 // "Gerar pedido de manutenção" sozinho vale como decisão (a OS fica como "não cobrar — gerou pedido de manutenção")
@@ -23049,7 +23057,7 @@ if(!window._osDecLigado){
     const b = e.target.closest('[data-dec]'); if(!b) return;
     const k = b.dataset.decK; const d = decRasc[k] = decRasc[k] || {}; d.tipo = b.dataset.dec;
     const box = b.closest('[data-dec-box]');
-    box.querySelectorAll('[data-dec]').forEach(x => { x.classList.toggle('on-cobrar', x.dataset.dec === 'cobrar' && d.tipo === 'cobrar'); x.classList.toggle('on-nao', x.dataset.dec === 'nao_cobrar' && d.tipo === 'nao_cobrar'); });
+    box.querySelectorAll('[data-dec]').forEach(x => { x.classList.toggle('on-cobrar', x.dataset.dec === 'cobrar' && d.tipo === 'cobrar'); x.classList.toggle('on-nao', x.dataset.dec === 'nao_cobrar' && d.tipo === 'nao_cobrar'); x.classList.toggle('on-ag', x.dataset.dec === 'aguardando' && d.tipo === 'aguardando'); });
     box.querySelector('[data-dec-valor-wrap]').style.display = d.tipo === 'cobrar' ? '' : 'none';
     box.querySelector('[data-dec-motivo-wrap]').style.display = d.tipo === 'nao_cobrar' ? '' : 'none';
     atualizarCard(b.closest('.os-row'));
@@ -23158,13 +23166,14 @@ function cartao(os){
 }
 let buscaDecisao = ''; let abaDecisao = 'decidir';   // sub-abas: decidir (A definir) · definidas (Cobrar / Não cobrar) · aguardando
 try{ const sv = localStorage.getItem('osAbaDecisao'); if(['decidir', 'definidas', 'aguardando'].includes(sv)) abaDecisao = sv; }catch(e){}
+function preAba(){ const t = todas(); abaDecisao = t.some(o => o.status === 'aguardando') ? 'aguardando' : 'decidir'; }
 function renderAba(){
   const box = document.getElementById('prvOsDecisao'); if(!box) return;
   const todasOs = todas(); const n = todasOs.filter(o => o.status === 'decidir' || o.status === 'aguardando').length;
   const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const termo = fold(buscaDecisao);
   const lista = termo ? todasOs.filter(o => fold(o.numero + ' ' + o.cliente + ' ' + itensDe(o).map(l => l.descricao + ' ' + (l.tecnicos || []).join(' ')).join(' ')).includes(termo)) : todasOs;
-  const aba = document.getElementById('prvOsTabDecisao'); if(aba){ aba.textContent = 'OS a definir' + (n ? ' (' + n + ')' : ''); aba.style.display = n ? '' : 'none'; }   // a decisão agora é feita no próprio card; a aba só aparece enquanto sobrar OS antiga sem decisão
+  const aba = document.getElementById('prvOsTabDecisao'); if(aba){ aba.textContent = 'OS aguardando' + (n ? ' (' + n + ')' : ''); aba.style.display = n ? '' : 'none'; }   // a decisão agora é feita no próprio card; a aba só aparece enquanto sobrar OS antiga sem decisão
   if(box.style.display === 'none') return;
   const nDe = (f) => lista.filter(f).length;
   const ABAS_DEC = [['decidir', 'A definir', nDe(o => o.status === 'decidir')], ['definidas', 'Definidas', nDe(o => o.status === 'cobrar' || o.status === 'nao_cobrar')], ['aguardando', 'Aguardando', nDe(o => o.status === 'aguardando')]];
@@ -23251,7 +23260,7 @@ function abrirNaoCobrar(id){
   ov.classList.add('open');
 }
 function iniciar(){ garantirCarregado().then(renderAba).catch(e => console.error('os: falha ao carregar', e)); }
-window.OS_API = { decHtml, decisaoDe, pedidoDe, decValida, decLimpar, atualizarTodos, iniciar, renderAba, decidir, abrirMigracao, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
+window.OS_API = { preAba, decHtml, decisaoDe, pedidoDe, decValida, decLimpar, atualizarTodos, iniciar, renderAba, decidir, abrirMigracao, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
 })();
 
 
@@ -23600,7 +23609,7 @@ const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
 // Abas: Equiper | Eqp | Geral (o que ainda tem a receber) · Agendados (calendário de pagamentos) · Finalizados (tudo recebido = quitado, das duas empresas)
 const ABAS_OBR = EMPRESAS.concat([['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);
 const ehFinalizado = (r) => totais(r).fin === 'quitado';          // tudo recebido: o registro vai para Finalizados (e volta sozinho se surgir um novo valor a receber)
-function registrosDaAba(k, modo){ const m = modo || ui.modo; const todos = todosRegistros().filter(r => ehManut(r) === (m === 'manut')); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
+function registrosDaAba(k, modo){ const m = modo || ui.modo; const todos = todosRegistros().filter(r => ehManut(r) === (m === 'manut')); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); if(k === 'definir') return ativos.filter(r => !r.empresa); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
 const rotAba = (k) => (ABAS_OBR.find(e => e[0] === k) || ['', k])[1];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
@@ -23625,7 +23634,12 @@ const entradaSt = (r, pid) => (r && r.statusPedidos && r.statusPedidos[pid]) || 
 function internoDe(r, pid){ const e = entradaSt(r, pid); if(e.i && FASE_INTERNA.includes(e.i)) return e.i; if(e.s && FASE_INTERNA.includes(e.s)) return e.s; return e.s || e.o ? 'entregue' : 'aguardando_compra'; }
 function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
 const statusObraDe = (r, pid) => obraDe(r, pid) || internoDe(r, pid);          // situação "principal" do pedido = a mais avançada
-const chipObra = (r, p) => { if(ehManut(r)) return ''; const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-lg"><span class="obr-leg">Interno</span><span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span></span>${o ? `<span class="obr-lg"><span class="obr-leg">Obra</span><span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span></span>` : ''}`; };
+const APROVACAO = [['aguardando', 'Aguardando aprovação'], ['aprovado', 'Aprovado'], ['nao_aprovado', 'Não aprovado']];
+const aprovDe = (p) => (p && p.aprovacao) || 'aguardando';
+const rotAprov = (k) => (APROVACAO.find(x => x[0] === k) || APROVACAO[0])[1];
+const chipAprov = (p) => `<span class="obr-aprov obr-aprov-${aprovDe(p)}">${esc(rotAprov(aprovDe(p)))}</span>`;
+const chipObra = (r, p) => { if(ehManut(r)){ const ap = aprovDe(p); return chipAprov(p) + (ap === 'aprovado' ? chipEtapas(r, p) : ''); } return chipEtapas(r, p); };
+const chipEtapas = (r, p) => { const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-lg"><span class="obr-leg">Interno</span><span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span></span>${o ? `<span class="obr-lg"><span class="obr-leg">Obra</span><span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span></span>` : ''}`; };
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
 const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
 const fmtPct = (x) => String(Math.round(Number(x) * 100) / 100).replace('.', ',');
@@ -23640,7 +23654,7 @@ const ui = { modo: 'obras', empresaObras: 'equiper', empresa: 'equiper', busca: 
 const ehManut = (r) => !!r && r.tipo === 'manutencao';           // pedidos de manutenção (vindos de Cadastros e OS) vivem no mesmo nó, marcados com tipo:'manutencao'
 const todosRegistros = () => store.items.filter(r => r && r.id && r.active !== false);
 const registros = () => todosRegistros().filter(r => !ehManut(r));      // obras (o Gestor e os painéis só enxergam estas)
-const ABAS_MANUT = [['geral', 'A receber'], ['finalizados', 'Finalizados']];
+const ABAS_MANUT = [['definir', 'Definir empresa']].concat(EMPRESAS, [['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);   // pedido vindo de Cadastros e OS chega sem empresa: o Financeiro escolhe Equiper ou Eqp
 const abasDoModo = () => ui.modo === 'manut' ? ABAS_MANUT : ABAS_OBR;
 const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
 const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
@@ -23698,7 +23712,7 @@ function montar(){
       <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="agendado">Com parcela Agendada</option><option value="quitado">Quitados</option></select>
       ${ui.modo === 'manut' ? '' : `<select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>`}
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
-      ${ui.modo === 'manut' ? '' : '<button type="button" class="btn-primary" data-obr="novo">+ Novo registro</button>'}
+      <button type="button" class="btn-primary" data-obr="novo">${ui.modo === 'manut' ? '+ Novo pedido' : '+ Novo registro'}</button>
     </div>
     <div id="obrLista" style="padding:0 20px 30px;"></div>
     <div id="obrAgendados" style="display:none; padding:0 20px 30px;"></div>
@@ -23713,9 +23727,9 @@ function montar(){
   v.addEventListener('click', (e) => {
     const b = e.target.closest('[data-obr]'); if(!b) return; const a = b.dataset.obr;
     if(a === 'empresa'){ ui.empresa = b.dataset.emp; v.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); renderLista(); }
-    else if(a === 'novo'){ if(ui.modo === 'manut') avisar('Os pedidos de manutenção chegam de Cadastros e OS, ao marcar "Gerar pedido de manutenção".'); else abrirNovo({ cliente: ui.busca.trim() }); }
+    else if(a === 'novo') abrirNovo({ cliente: ui.busca.trim() });
     else if(a === 'abrir') abrirDetalhe(b.dataset.id);
-    else if(a === 'criar-busca'){ if(ui.modo !== 'manut') abrirNovo({ cliente: b.dataset.nome }); }
+    else if(a === 'criar-busca') abrirNovo({ cliente: b.dataset.nome });
     else if(a === 'csv') exportarCsv();
   });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
@@ -23745,7 +23759,7 @@ function linhaPedido(r, p, parcelas){
 }
 function cartao(r){
   const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
-  const chips = [(ui.modo !== 'manut' && (ui.empresa === 'geral' || ui.empresa === 'finalizados')) ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : '', ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+  const chips = [(!r.empresa && ehManut(r)) ? '<span class="obr-emp obr-emp-definir">⚠ Definir empresa</span>' : ((ui.empresa === 'geral' || ui.empresa === 'finalizados' || ui.empresa === 'definir') ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : ''), ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''].join('');
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   const mostrar = ped.slice(0, 5);
@@ -23761,7 +23775,10 @@ function cartao(r){
 function renderLista(){
   const box = document.getElementById('obrLista'); if(!box) return;
   abasDoModo().forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
-  if(ui.modo === 'manut' && ui.empresa !== 'geral' && ui.empresa !== 'finalizados') ui.empresa = 'geral';
+  if(ui.modo === 'manut'){
+    const nDef = registrosDaAba('definir').length; const tDef = document.querySelector('#obrTabs [data-emp="definir"]'); if(tDef){ tDef.style.display = (nDef || ui.empresa === 'definir') ? '' : 'none'; if(tDef.firstElementChild) tDef.firstElementChild.className = 'obr-tab-n' + (nDef ? ' obr-tab-alerta' : ''); }
+    if(carregado && ui.empresa === 'definir' && !nDef){ ui.empresa = 'equiper'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); }
+  }
   const ag = ui.empresa === 'agendados'; document.getElementById('obrBarra').style.display = ag ? 'none' : ''; box.style.display = ag ? 'none' : ''; const bag = document.getElementById('obrAgendados'); if(bag) bag.style.display = ag ? '' : 'none';
   if(ag){ montarAgendados(); renderAgendados(); document.getElementById('obrContagem').textContent = previstosTodos().length + (previstosTodos().length === 1 ? ' pagamento previsto' : ' pagamentos previstos'); return; }
   const todos = registrosDaAba(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
@@ -23772,7 +23789,7 @@ function renderLista(){
   document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   box.innerHTML = l.length ? l.map(cartao).join('')
-    : (todos.length === 0 ? (ui.modo === 'manut' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhum pedido de manutenção a receber.<br>Eles chegam de <b>Cadastros e OS</b> quando você marca "Gerar pedido de manutenção".</div>' : ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
+    : (todos.length === 0 ? (ui.modo === 'manut' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhum pedido de manutenção a receber.<br>Eles chegam de <b>Cadastros e OS</b> ("Gerar pedido de manutenção") ou você cria com <b>+ Novo pedido</b>.</div>' : ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
       : `<div class="empty-state">Nenhum registro encontrado${q ? ' para "' + esc(ui.busca.trim()) + '"' : ''}.${q ? `<br><br><button type="button" class="btn-primary" data-obr="criar-busca" data-nome="${esc(ui.busca.trim())}">+ Criar registro para "${esc(ui.busca.trim())}"</button>` : ''}</div>`);
 }
 
@@ -23811,7 +23828,7 @@ function garantirDetalhe(){
   ov.innerHTML = '<div class="modal obr-modal"><div id="obrDetCab"></div><div id="obrDetDados"></div><div id="obrDetPed"></div><div id="obrDetPag"></div><div id="obrDetRodape"></div></div>';
   document.body.appendChild(ov);
   ov.addEventListener('click', (e) => { if(e.target === ov){ fecharDetalhe(); return; } const b = e.target.closest('[data-obr-d]'); if(b) acaoDetalhe(b.dataset.obrD, b.dataset); });
-  ov.addEventListener('change', (e) => { const c = e.target.closest('[data-obr-campo]'); if(c){ salvarCampo(c.dataset.obrCampo, c.value); return; } const st = e.target.closest('[data-obr-st]'); if(st) mudarStatus(st.dataset.obrSt, st.value); });
+  ov.addEventListener('change', (e) => { const c = e.target.closest('[data-obr-campo]'); if(c){ salvarCampo(c.dataset.obrCampo, c.value); return; } const st = e.target.closest('[data-obr-st]'); if(st){ mudarStatus(st.dataset.obrSt, st.value); return; } const ap = e.target.closest('[data-obr-aprov]'); if(ap){ mudarAprovacao(ap.dataset.obrAprov, ap.value); return; } const et = e.target.closest('[data-obr-etapa]'); if(et){ const r = atual(); if(r) mudarAndamento(r.id, et.dataset.id, et.dataset.obrEtapa, et.value).then(() => renderDetalheSecoes()); } });
   return ov;
 }
 function abrirDetalhe(id){ const r = porId(id); if(!r) return; ui.abertoId = id; const ov = garantirDetalhe(); renderDetalheTudo(); ov.classList.add('open'); ov.querySelector('.modal').scrollTop = 0; }
@@ -23823,7 +23840,7 @@ function renderCab(){
   const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; const t = totais(r);
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
   el.innerHTML = `<div class="qd-det-head"><div><h3 style="margin:0;">${esc(nomeCliente(r))}</h3>
-      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${ehManut(r) ? 'Manutenção' : esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>${ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`}${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
+      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${ehManut(r) ? 'Manutenção · ' + (r.empresa ? esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1]) : '⚠ definir empresa') : esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>${ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`}${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
       ${cli && cli.address ? `<div class="prv-hint" style="margin:6px 0 0;">📍 ${esc(cli.address)}</div>` : ''}</div>
       <button type="button" class="btn-ghost" data-obr-d="fechar">Fechar</button></div>`;
 }
@@ -23831,17 +23848,31 @@ function renderDados(){
   const r = atual(); const el = document.getElementById('obrDetDados'); if(!r || !el) return;
   const wa = r.fone && typeof phoneDigits === 'function' && phoneDigits(r.fone).length >= 10;
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Dados do registro</div><div class="obr-grid2">
-    ${ehManut(r) ? '' : `<div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`}
+    ${ehManut(r) ? `<div class="field"><label>Empresa *</label><select data-obr-campo="empresa" ${r.empresa ? '' : 'style="border-color:#b4232a;"'}><option value="">— Definir —</option>${EMPRESAS.map(([k, n]) => `<option value="${k}" ${r.empresa === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>` : `<div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`}
     <div class="field"><label>Pessoa de contato</label><input type="text" data-obr-campo="contato" value="${esc(r.contato || '')}" placeholder="Nome (cargo)"></div>
     <div class="field"><label>WhatsApp / telefone ${wa ? '<a href="#" data-obr-d="whats" style="font-weight:600;">· abrir conversa</a>' : ''}</label><input type="text" data-obr-campo="fone" value="${esc(r.fone || '')}" placeholder="+55 24 90000-0000"></div>
     <div class="field"><label>Forma de pagamento</label><select data-obr-campo="formaPagamento"><option value="">—</option>${FORMAS.map(f => `<option ${r.formaPagamento === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
     <div class="field obr-largo"><label>Anotação sobre o pagamento (opcional)</label><input type="text" data-obr-campo="condicoes" value="${esc(r.condicoes || '')}" placeholder="Ex.: cliente pediu boletos; combinado por e-mail em 12/08"></div>
     <div class="field obr-largo"><label>Observações</label><textarea data-obr-campo="obs" rows="2" placeholder="Anotações internas do financeiro">${esc(r.obs || '')}</textarea></div></div></div>`;
 }
+function controlesManut(r, p){
+  const ap = aprovDe(p); const i = internoDe(r, p.id), o = obraDe(r, p.id);
+  const sel = (attr, opts, atual) => `<select class="obr-st" ${attr}>${opts}</select>`;
+  const optsI = FASE_INTERNA.map(k => `<option value="${k}" ${k === i ? 'selected' : ''}>${esc(rotObra(k))}</option>`).join('');
+  const optsO = OBRA_ST.map(k => `<option value="${k}" ${k === o ? 'selected' : ''}>${esc(rotObra(k))}</option>`).join('');
+  return `<div class="obr-manut-ctl"><label>Situação do pedido</label><select class="obr-st obr-aprov-sel obr-aprov-${ap}" data-obr-aprov="${esc(p.id)}">${APROVACAO.map(([k, n]) => `<option value="${k}" ${k === ap ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    ${ap === 'aprovado' ? `<div class="obr-manut-et"><div><label>Etapa interna</label><select class="obr-st" data-obr-etapa="i" data-id="${esc(p.id)}">${optsI}</select></div>
+      <div><label>Etapa obra</label>${o ? `<select class="obr-st" data-obr-etapa="o" data-id="${esc(p.id)}">${optsO}</select>` : '<div class="obr-sub-i">abre quando o equipamento for entregue</div>'}</div></div>` : ''}</div>`;
+}
+async function mudarAprovacao(pid, novo){
+  const r = atual(); if(!r || !r.pedidos || !r.pedidos[pid] || !APROVACAO.some(a => a[0] === novo)) return; const p = r.pedidos[pid]; if(aprovDe(p) === novo) return;
+  p.aprovacao = novo; p.aprovacaoEm = new Date().toISOString(); p.aprovacaoPor = quem() || null; r.pedidos = Object.assign({}, r.pedidos);
+  await gravar(r); renderDetalheSecoes();
+}
 function renderPed(){
   const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; const ped = pedidosDe(r); const t = totais(r);
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Pedidos <span class="obr-sec-n">${t.nPedidos}</span><span class="obr-sec-tot">Total ${esc(brl(t.contratado))}</span></div>
-    ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}<div style="margin-top:3px;">${chipObra(r, p)}</div></td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
+    ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}<div style="margin-top:3px;">${chipObra(r, p)}</div>${ehManut(r) ? controlesManut(r, p) : ''}</td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
     <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">+ Adicionar pedido</button></div></div>`;
 }
 function infoStatus(p){
@@ -23897,7 +23928,7 @@ async function criarPedidoManutencao(d){
   const agora = new Date().toISOString(); const pid = uid('p');
   if(r && lista(r.pedidos).some(p => fold(p.numero) === fold(numero))) return r;      // o mesmo pedido já está neste registro: não duplica
   const cl = (typeof clientePorNome === 'function' ? clientePorNome(d.cliente) : null);
-  if(!r){ r = { id: uid('mn_'), tipo: 'manutencao', empresa: 'equiper', cliente: cl ? cl.name : d.cliente, clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
+  if(!r){ r = { id: uid('mn_'), tipo: 'manutencao', empresa: null, cliente: cl ? cl.name : d.cliente, clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
   r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero, descricao: d.descricao || null, valor, osNumero: d.osNumero || null, origem: d.origem || null, origemId: d.refId != null ? String(d.refId) : null } });
   r.atualizadoEm = agora; r.atualizadoPor = quem() || null;
   renderLista(); await store.save(true);
@@ -24112,7 +24143,7 @@ async function aplicarCondicao(r, c, modo){
 function abrirNovo(pre){
   pre = pre || {}; let ov = document.getElementById('obrNovoOverlay'); if(ov) ov.remove();
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrNovoOverlay';
-  ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">Novo registro de obra</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, pedidos (quantos forem, cada um com seu valor) e a condição de pagamento: o valor de cada pedido é dividido nas parcelas.</p>
+  ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">${ui.modo === 'manut' ? 'Novo pedido de manutenção' : 'Novo registro de obra'}</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, pedidos (quantos forem, cada um com seu valor) e a condição de pagamento: o valor de cada pedido é dividido nas parcelas.</p>
     <div class="obr-grid2">
       <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || (EMPRESAS.some(e => e[0] === ui.empresa) ? ui.empresa : 'equiper')) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="field"><label>Cliente *</label><input type="text" id="obrNCli" value="${esc(pre.cliente || '')}" placeholder="Digite para buscar os clientes cadastrados" autocomplete="off"></div>
@@ -24122,7 +24153,7 @@ function abrirNovo(pre){
       <div class="field"><label>Pessoa de contato</label><input type="text" id="obrNContato" placeholder="Nome (cargo)"></div>
       <div class="field"><label>WhatsApp / telefone</label><input type="text" id="obrNFone" placeholder="+55 24 90000-0000"></div>
       <div class="field"><label>Forma de pagamento</label><select id="obrNForma"><option value="">—</option>${FORMAS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div>
-      <div class="field"><label>Situação da obra</label><select id="obrNSit">${SITUACOES.slice(0, 3).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div>
+      ${ui.modo === 'manut' ? '' : `<div class="field"><label>Situação da obra</label><select id="obrNSit">${SITUACOES.slice(0, 3).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div>`}
     </div>
     <div class="obr-sec" style="margin-top:6px;"><div class="obr-sec-t">Pedidos <span class="obr-sec-tot" id="obrNTotal">Total R$ 0,00</span></div>
       <div id="obrNPedidos"></div><div class="prv-linha" style="margin-top:6px;"><button type="button" class="btn-ghost oe-mini" id="obrNAddPed">+ Adicionar outro pedido</button></div></div>
@@ -24184,7 +24215,8 @@ async function criarRegistro(ov, cond, datasFn){
     if(!cl){ const ok = await createNewClient(nome, end); if(!ok){ btn.disabled = false; btn.textContent = 'Criar registro'; return; } cl = clientePorNome(nome); }
     if(cl){ let mudou = false; if(contato && !cl.contato){ cl.contato = contato; mudou = true; } if(fone && !cl.fone){ cl.fone = fone; mudou = true; } if(mudou) await saveClients(); }     // não sobrescreve o que já estava no cadastro
     const agora = new Date().toISOString(); const id = uid('ob_');
-    const rec = { id, empresa: $('obrNEmp').value, cliente: cl ? cl.name : nome, clienteId: cl ? cl.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, cond: c.n ? { pcts: c.pcts } : null, situacao: $('obrNSit').value, obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {}, parcelas: {} };
+    const rec = { id, empresa: $('obrNEmp').value, cliente: cl ? cl.name : nome, clienteId: cl ? cl.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, cond: c.n ? { pcts: c.pcts } : null, situacao: $('obrNSit') ? $('obrNSit').value : 'nao_comecou', obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {}, parcelas: {} };
+    if(ui.modo === 'manut') rec.tipo = 'manutencao';
     ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor }; });
     const boleto = $('obrNForma').value === 'Boleto'; const datas = boleto && datasFn ? datasFn().slice(0, c.n) : []; const nDatas = datas.filter(Boolean).length;
     if(c.n) Object.values(rec.pedidos).forEach(p => { rec.parcelas = Object.assign({}, rec.parcelas, gerarParcelas(rec, p, c.pcts, { datas, forma: boleto ? 'Boleto' : null })); });
@@ -24716,7 +24748,7 @@ const segundaDe = (x) => { const [y, m, d] = partesD(x); const dt = new Date(y, 
 const dowDe = (x) => { const [y, m, d] = partesD(x); return new Date(y, m - 1, d).getDay(); };
 function coletarEventos(op){
   op = op || {}; const out = [];
-  registros().filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
+  todosRegistros().filter(r => ehManut(r) === (op.modo === 'manut')).filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
     const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
     parcelasDe(r).forEach(p => {
       const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && ped.cancelado && st !== 'recebido') return;      // parcela de pedido cancelado não conta
@@ -24727,8 +24759,8 @@ function coletarEventos(op){
   });
   return out.sort((a, b) => a.data.localeCompare(b.data) || a.cliente.localeCompare(b.cliente, 'pt-BR'));
 }
-const eventosCal = () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos });
-const previstosTodos = () => coletarEventos({ recebidos: false });
+const eventosCal = () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: ui.modo });
+const previstosTodos = () => coletarEventos({ recebidos: false, modo: ui.modo });
 function htmlEvento(e, hoje, comEmpresa){
   const passou = e.ev === 'previsto' && e.data < hoje;
   return `<div class="pgc-ev pgc-ev-${e.ev} ${passou ? 'pgc-ev-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><div class="pgc-ev-h"><b>${esc(e.cliente)}</b>${comEmpresa ? `<span class="obr-emp obr-emp-${esc(e.empresa)}">${esc((EMPRESAS.find(x => x[0] === e.empresa) || [0, ''])[1])}</span>` : ''}<span class="pgc-ev-v">${esc(brl(e.valor))}</span></div><div class="pgc-ev-s">${e.pedido ? 'Pedido ' + esc(e.pedido) + (e.desc ? ' · ' + esc(e.desc) : '') + ' · ' : ''}${esc(e.tipo)}</div><div class="pgc-ev-c"><span class="obr-st obr-st-${esc(e.status)}">${esc(rotuloStatus(e.status))}</span>${e.forma ? `<span class="obr-ped-tag">${esc(e.forma)}</span>` : ''}<span class="pgc-ev-t">${e.ev === 'recebido' ? 'recebido em ' + esc(fmtData(e.data)) : passou ? '<b class="obr-verm">a data passou</b> · ' + esc(fmtData(e.data)) : 'previsto para ' + esc(fmtData(e.data))}</span></div></div>`;
@@ -24805,7 +24837,7 @@ function mostrarSecao(s){
   [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
   if(s === 'obras' || s === 'manut'){
     const modo = s === 'manut' ? 'manut' : 'obras';
-    if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo === 'manut' ? 'geral' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
+    if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo === 'manut' ? 'definir' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
     montar(); renderLista(); garantirCarregado().then(() => { renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
   else if(window.FIN_API) FIN_API.render();
 }
@@ -24815,7 +24847,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
