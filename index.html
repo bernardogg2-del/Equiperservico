@@ -760,6 +760,7 @@
   .tec-interno{ margin:12px 0 4px; } .tec-interno .qd-card{ margin:0 0 8px; } .tec-interno .tec-qd-av{ width:100%; padding:11px 8px; font-size:14px; }
   .os-dec-btns{ display:flex; gap:8px; } .os-dec-b{ flex:1; padding:11px 8px; border-radius:12px; border:1.5px solid var(--border,#d9d9de); background:var(--card,#fff); color:inherit; font:inherit; font-weight:700; font-size:14px; cursor:pointer; }
   .os-dec-b.on-cobrar{ background:#1c7a3f; border-color:#1c7a3f; color:#fff; } .os-dec-b.on-nao{ background:#4a4a52; border-color:#4a4a52; color:#fff; }
+  .os-dec-b.on-ped{ background:#b4232a; border-color:#b4232a; color:#fff; } .os-dec-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .os-dec-2 input{ width:100%; }
   .os-dec-extra{ margin-top:10px; } .os-dec-extra input,.os-dec-extra select{ width:100%; }
   .btn-primary:disabled{ opacity:.4; cursor:not-allowed; }
   .tec-int-row{ display:flex; gap:8px; margin-top:8px; } .tec-int-row .tec-int-b{ flex:1; padding:12px 6px; font-size:14px; font-weight:700; }
@@ -2614,6 +2615,7 @@
     <nav class="sidebar-nav">
       <button type="button" class="sidebar-nav-btn active" id="finNavOS"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Ordens de serviço</button>
       <button type="button" class="sidebar-nav-btn" id="finNavObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Obras e Pedidos</button>
+      <button type="button" class="sidebar-nav-btn" id="finNavManut"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Pedidos de manutenção</button>
     </nav>
     <div class="sidebar-footer"><div class="sidebar-user" id="finSidebarUser"></div><button type="button" class="sidebar-logout-btn" id="finSidebarLogout">Sair</button></div>
   </aside>
@@ -2667,6 +2669,7 @@
   <nav class="bottom-nav" id="finBottomNav">
     <button type="button" class="bottom-nav-btn active" id="finBnOS"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span>Ordens de serviço</span></button>
     <button type="button" class="bottom-nav-btn" id="finBnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
+    <button type="button" class="bottom-nav-btn" id="finBnManut"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Manutenção</span></button>
   </nav>
 </div>
 
@@ -12382,7 +12385,7 @@ function renderOS(){
             return;
           }
           if(window.OS_API && !OS_API.decValida('a' + id)){ alert('Escolha Cobrar ou Não cobrar (e informe o valor, se for cobrar).'); return; }
-          const decisao = window.OS_API ? OS_API.decisaoDe('a' + id) : null;
+          const decisao = window.OS_API ? OS_API.decisaoDe('a' + id) : null; const pedido = window.OS_API ? OS_API.pedidoDe('a' + id) : null;
           if(window.OS_API) OS_API.decLimpar('a' + id);
           // Se for uma dupla no formato antigo (2 registros ligados por pairId), marca os dois
           // juntos — pra não sobrar um "fantasma" pendente na fila.
@@ -12399,7 +12402,7 @@ function renderOS(){
           });
           await saveServices();
           renderOS();
-          if(window.OS_API) targets.forEach((t, i) => OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeAtividade(t), { decisao: i === 0 ? decisao : null })).catch(err => console.error('os: atividade', err)));   // a OS reúne tudo que tem esse número
+          if(window.OS_API) targets.forEach((t, i) => OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeAtividade(t), { decisao: i === 0 ? decisao : null, pedido: i === 0 ? pedido : null })).catch(err => console.error('os: atividade', err)));   // a OS reúne tudo que tem esse número
         }
       });
     });
@@ -22599,14 +22602,14 @@ async function concluirOS(id){
   if(!numero){ alert('Preencha o número da OS antes de marcar como feito.'); if(inp) inp.focus(); return; }
   if(q.processedForOS || etapaDe(q).id !== 'testado' || q.active === false){ aviso('Este quadro acabou de ser atualizado por outra pessoa. A lista foi atualizada.'); refrescarOS(); return; }
   if(window.OS_API && !OS_API.decValida('q' + id)){ alert('Escolha Cobrar ou Não cobrar (e informe o valor, se for cobrar).'); return; }
-  const decisao = window.OS_API ? OS_API.decisaoDe('q' + id) : null; if(window.OS_API) OS_API.decLimpar('q' + id);
+  const decisao = window.OS_API ? OS_API.decisaoDe('q' + id) : null; const pedido = window.OS_API ? OS_API.pedidoDe('q' + id) : null; if(window.OS_API) OS_API.decLimpar('q' + id);
   delete osRascunho[id];
   q.numeroOS = numero; q.processedForOS = true;
   q.processedForOSBy = (typeof currentManagerName !== 'undefined' && currentManagerName) || quem() || null;
   q.processedForOSAt = new Date().toISOString();
   renderListas();
   await quadrosStore.save();
-  if(window.OS_API) OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeQuadro(q, nomeDoTipo(q)), { decisao })).catch(e => console.error('os: quadro', e));   // a OS reúne tudo que tem esse número
+  if(window.OS_API) OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeQuadro(q, nomeDoTipo(q)), { decisao, pedido })).catch(e => console.error('os: quadro', e));   // a OS reúne tudo que tem esse número
 }
 // Chamado no login do Gestor: carrega os quadros em segundo plano para o contador de "Cadastros e OS" já aparecer.
 function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => console.error('quadros: falha ao carregar', e)); }
@@ -22851,7 +22854,7 @@ async function concluir(id){
   if(!numero){ alert('Preencha o número da OS antes de marcar como feito.'); if(inp) inp.focus(); return; }
   if(eq.processedForOS || !naFila(eq)){ try{ avisoNaoBloqueante('Este equipamento acabou de ser atualizado por outra pessoa. A lista foi atualizada.', 5000); }catch(e){} refrescar(); return; }
   if(window.OS_API && !OS_API.decValida('e' + id)){ alert('Escolha Cobrar ou Não cobrar (e informe o valor, se for cobrar).'); return; }
-  const decisao = window.OS_API ? OS_API.decisaoDe('e' + id) : null; if(window.OS_API) OS_API.decLimpar('e' + id);
+  const decisao = window.OS_API ? OS_API.decisaoDe('e' + id) : null; const pedido = window.OS_API ? OS_API.pedidoDe('e' + id) : null; if(window.OS_API) OS_API.decLimpar('e' + id);
   delete osRascunho[id];
   eq.numeroOS = numero; eq.processedForOS = true;
   eq.processedForOSBy = (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
@@ -22859,7 +22862,7 @@ async function concluir(id){
   if(!eq.osFila) eq.osFila = eq.testeCompletedAt || eq.processedForOSAt;
   refrescar();
   await saveOficinaEquipamentos(true);
-  if(window.OS_API) OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeEquipamento(eq), { decisao })).catch(e => console.error('os: equipamento', e));
+  if(window.OS_API) OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeEquipamento(eq), { decisao, pedido })).catch(e => console.error('os: equipamento', e));
 }
 window.OSOF_API = { pendentesOS, renderAba, agendar, marcarFila };
 })();
@@ -22948,7 +22951,7 @@ function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&
 function fmtD(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
 function fmtDH(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }catch(e){ return ''; } }
 function quem(){ return (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || ''; }
-const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['preventiva', 'Cliente Preventiva'], ['visita_orcamento', 'Visita Orçamento'], ['outro', 'Outro']];
+const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['preventiva', 'Cliente Preventiva'], ['visita_orcamento', 'Visita Orçamento'], ['pedido_manutencao', 'Gerou pedido de manutenção'], ['outro', 'Outro']];
 const store = createEstoqueStore('ordensServico', '⚠️ Não foi possível salvar a ordem de serviço. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null;
 
@@ -23018,10 +23021,14 @@ function decHtml(k){
   return `<div class="field os-dec" data-dec-box="${esc(k)}"><label>Cobrança</label>
     <div class="os-dec-btns"><button type="button" class="os-dec-b ${d.tipo === 'cobrar' ? 'on-cobrar' : ''}" data-dec="cobrar" data-dec-k="${esc(k)}">💲 Cobrar</button><button type="button" class="os-dec-b ${d.tipo === 'nao_cobrar' ? 'on-nao' : ''}" data-dec="nao_cobrar" data-dec-k="${esc(k)}">🚫 Não cobrar</button></div>
     <div class="os-dec-extra" data-dec-valor-wrap style="display:${d.tipo === 'cobrar' ? '' : 'none'};"><label>Valor a cobrar</label><input type="text" inputmode="decimal" data-dec-valor="${esc(k)}" value="${esc(d.valor || '')}" placeholder="R$ 0,00" autocomplete="off"></div>
-    <div class="os-dec-extra" data-dec-motivo-wrap style="display:${d.tipo === 'nao_cobrar' ? '' : 'none'};"><label>Motivo (opcional)</label><select data-dec-motivo="${esc(k)}"><option value="">Selecionar motivo...</option>${MOTIVOS.map(m => `<option value="${m[0]}" ${d.motivo === m[0] ? 'selected' : ''}>${esc(m[1])}</option>`).join('')}</select></div></div>`;
+    <div class="os-dec-extra" data-dec-motivo-wrap style="display:${d.tipo === 'nao_cobrar' ? '' : 'none'};"><label>Motivo (opcional)</label><select data-dec-motivo="${esc(k)}"><option value="">Selecionar motivo...</option>${MOTIVOS.filter(m => m[0] !== 'pedido_manutencao').map(m => `<option value="${m[0]}" ${d.motivo === m[0] ? 'selected' : ''}>${esc(m[1])}</option>`).join('')}</select></div>
+    <div class="os-dec-btns" style="margin-top:8px;"><button type="button" class="os-dec-b ${d.ped ? 'on-ped' : ''}" data-dec-ped="${esc(k)}">🧰 Gerar pedido de manutenção</button></div>
+    <div class="os-dec-extra os-dec-ped" data-dec-ped-wrap style="display:${d.ped ? '' : 'none'};"><div class="os-dec-2"><div><label>Nº do pedido</label><input type="text" data-dec-pednum="${esc(k)}" value="${esc(d.pedNumero || '')}" placeholder="Nº do pedido" autocomplete="off"></div><div><label>Valor do pedido</label><input type="text" inputmode="decimal" data-dec-pedval="${esc(k)}" value="${esc(d.pedValor || '')}" placeholder="R$ 0,00" autocomplete="off"></div></div></div></div>`;
 }
-function decisaoDe(k){ const d = decRasc[k]; if(!d || !d.tipo) return null; return d.tipo === 'cobrar' ? { tipo: 'cobrar', valor: valorNum(d.valor) } : { tipo: 'nao_cobrar', motivo: d.motivo || '' }; }
-function decValida(k){ const d = decisaoDe(k); return !!d && (d.tipo !== 'cobrar' || d.valor != null); }
+function decisaoDe(k){ const d = decRasc[k]; if(!d) return null; if(!d.tipo) return d.ped ? { tipo: 'nao_cobrar', motivo: 'pedido_manutencao' } : null; return d.tipo === 'cobrar' ? { tipo: 'cobrar', valor: valorNum(d.valor) } : { tipo: 'nao_cobrar', motivo: d.motivo || '' }; }
+function pedidoDe(k){ const d = decRasc[k]; return d && d.ped ? { numero: String(d.pedNumero || '').trim(), valor: valorNum(d.pedValor) } : null; }
+function decValida(k){ const d = decisaoDe(k), pd = pedidoDe(k); return !!d && (d.tipo !== 'cobrar' || d.valor != null) && (!pd || (!!pd.numero && pd.valor != null)); }
+// "Gerar pedido de manutenção" sozinho vale como decisão (a OS fica como "não cobrar — gerou pedido de manutenção")
 function decLimpar(k){ delete decRasc[k]; }
 // habilita "Cadastro/OS realizado" só com número de OS preenchido + Cobrar/Não cobrar escolhido (e valor, se for cobrar)
 function atualizarCard(card){
@@ -23030,12 +23037,15 @@ function atualizarCard(card){
   const bt = card.querySelector('[data-osdone],[data-qd-osdone],[data-osof-feito]'); if(!bt) return;
   const okNum = !!(num && num.value.trim()), okDec = decValida(k);
   bt.disabled = !(okNum && okDec);
-  bt.title = bt.disabled ? (!okNum ? 'Digite o número da OS' : !decisaoDe(k) ? 'Escolha Cobrar ou Não cobrar' : 'Informe o valor a cobrar') : '';
+  const pd = pedidoDe(k);
+  bt.title = bt.disabled ? (!okNum ? 'Digite o número da OS' : !decisaoDe(k) ? 'Escolha Cobrar, Não cobrar ou Gerar pedido de manutenção' : (pd && (!pd.numero || pd.valor == null)) ? 'Informe o número e o valor do pedido de manutenção' : 'Informe o valor a cobrar') : '';
 }
 function atualizarTodos(){ document.querySelectorAll('.os-row').forEach(atualizarCard); }
 if(!window._osDecLigado){
   window._osDecLigado = true;
   document.addEventListener('click', (e) => {
+    const pb = e.target.closest('[data-dec-ped]');
+    if(pb){ const k = pb.dataset.decPed; const d = decRasc[k] = decRasc[k] || {}; d.ped = !d.ped; pb.classList.toggle('on-ped', !!d.ped); const box = pb.closest('[data-dec-box]'); box.querySelector('[data-dec-ped-wrap]').style.display = d.ped ? '' : 'none'; atualizarCard(pb.closest('.os-row')); if(d.ped){ const i = box.querySelector('[data-dec-pednum]'); if(i && !i.value) i.focus(); } return; }
     const b = e.target.closest('[data-dec]'); if(!b) return;
     const k = b.dataset.decK; const d = decRasc[k] = decRasc[k] || {}; d.tipo = b.dataset.dec;
     const box = b.closest('[data-dec-box]');
@@ -23049,6 +23059,8 @@ if(!window._osDecLigado){
     const t = e.target; if(!t || !t.dataset) return;
     if(t.dataset.decValor !== undefined){ (decRasc[t.dataset.decValor] = decRasc[t.dataset.decValor] || {}).valor = t.value; }
     else if(t.dataset.decMotivo !== undefined){ (decRasc[t.dataset.decMotivo] = decRasc[t.dataset.decMotivo] || {}).motivo = t.value; }
+    else if(t.dataset.decPednum !== undefined){ (decRasc[t.dataset.decPednum] = decRasc[t.dataset.decPednum] || {}).pedNumero = t.value; }
+    else if(t.dataset.decPedval !== undefined){ (decRasc[t.dataset.decPedval] = decRasc[t.dataset.decPedval] || {}).pedValor = t.value; }
     else if(!(t.dataset.osnumero !== undefined || t.dataset.qdOsnumero !== undefined || t.dataset.osofNumero !== undefined)) return;
     atualizarCard(t.closest('.os-row'));
   };
@@ -23058,6 +23070,7 @@ async function registrarEGravar(numero, item){
   await garantirCarregado();
   const r = registrar(numero, item);
   if(r.os){ await store.save(true); renderAba(); }
+  if(item.pedido && item.pedido.numero && window.OBR_API && OBR_API.criarPedidoManutencao){ try{ await OBR_API.criarPedidoManutencao({ numero: item.pedido.numero, valor: item.pedido.valor, cliente: item.cliente, descricao: item.descricao, osNumero: numero, origem: item.origem, refId: item.refId }); try{ avisoNaoBloqueante('Pedido de manutenção ' + item.pedido.numero + ' enviado ao Financeiro.', 5000); }catch(e){} }catch(err){ console.error('os: pedido de manutenção', err); alert('⚠️ O pedido de manutenção ' + item.pedido.numero + ' NÃO foi gravado. Verifique a internet e a regra do Firebase para "obrasPedidos".'); } }
   if(r.aviso){ try{ customConfirm(r.aviso, () => {}, 'Entendi'); }catch(e){ alert(r.aviso); } }
   return r;
 }
@@ -23238,7 +23251,7 @@ function abrirNaoCobrar(id){
   ov.classList.add('open');
 }
 function iniciar(){ garantirCarregado().then(renderAba).catch(e => console.error('os: falha ao carregar', e)); }
-window.OS_API = { decHtml, decisaoDe, decValida, decLimpar, atualizarTodos, iniciar, renderAba, decidir, abrirMigracao, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
+window.OS_API = { decHtml, decisaoDe, pedidoDe, decValida, decLimpar, atualizarTodos, iniciar, renderAba, decidir, abrirMigracao, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
 })();
 
 
@@ -23587,7 +23600,7 @@ const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
 // Abas: Equiper | Eqp | Geral (o que ainda tem a receber) · Agendados (calendário de pagamentos) · Finalizados (tudo recebido = quitado, das duas empresas)
 const ABAS_OBR = EMPRESAS.concat([['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);
 const ehFinalizado = (r) => totais(r).fin === 'quitado';          // tudo recebido: o registro vai para Finalizados (e volta sozinho se surgir um novo valor a receber)
-function registrosDaAba(k){ const todos = registros(); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
+function registrosDaAba(k, modo){ const m = modo || ui.modo; const todos = todosRegistros().filter(r => ehManut(r) === (m === 'manut')); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
 const rotAba = (k) => (ABAS_OBR.find(e => e[0] === k) || ['', k])[1];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
@@ -23612,7 +23625,7 @@ const entradaSt = (r, pid) => (r && r.statusPedidos && r.statusPedidos[pid]) || 
 function internoDe(r, pid){ const e = entradaSt(r, pid); if(e.i && FASE_INTERNA.includes(e.i)) return e.i; if(e.s && FASE_INTERNA.includes(e.s)) return e.s; return e.s || e.o ? 'entregue' : 'aguardando_compra'; }
 function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
 const statusObraDe = (r, pid) => obraDe(r, pid) || internoDe(r, pid);          // situação "principal" do pedido = a mais avançada
-const chipObra = (r, p) => { const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-lg"><span class="obr-leg">Interno</span><span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span></span>${o ? `<span class="obr-lg"><span class="obr-leg">Obra</span><span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span></span>` : ''}`; };
+const chipObra = (r, p) => { if(ehManut(r)) return ''; const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-lg"><span class="obr-leg">Interno</span><span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span></span>${o ? `<span class="obr-lg"><span class="obr-leg">Obra</span><span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span></span>` : ''}`; };
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
 const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
 const fmtPct = (x) => String(Math.round(Number(x) * 100) / 100).replace('.', ',');
@@ -23621,10 +23634,14 @@ function dividirValor(V, pcts){ let acum = 0; return pcts.map((pc, i) => { const
 const pctsDe = (r) => { const c = r && r.cond; if(!c) return []; const a = Array.isArray(c.pcts) ? c.pcts : Object.values(c.pcts || {}); return a.map(Number).filter(x => isFinite(x)); };
 const store = createEstoqueStore('obrasPedidos', '⚠️ Não foi possível salvar o registro de obra. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null;
-const ui = { empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, montado: false };
+const ui = { modo: 'obras', empresaObras: 'equiper', empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, montado: false };
 
 // ---------- cálculo ----------
-const registros = () => store.items.filter(r => r && r.id && r.active !== false);
+const ehManut = (r) => !!r && r.tipo === 'manutencao';           // pedidos de manutenção (vindos de Cadastros e OS) vivem no mesmo nó, marcados com tipo:'manutencao'
+const todosRegistros = () => store.items.filter(r => r && r.id && r.active !== false);
+const registros = () => todosRegistros().filter(r => !ehManut(r));      // obras (o Gestor e os painéis só enxergam estas)
+const ABAS_MANUT = [['geral', 'A receber'], ['finalizados', 'Finalizados']];
+const abasDoModo = () => ui.modo === 'manut' ? ABAS_MANUT : ABAS_OBR;
 const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
 const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 function totais(r){
@@ -23659,7 +23676,7 @@ function recalcularPedido(r, ped){            // o valor do pedido mudou: reajus
 function nomeCliente(r){ const c = r.clienteId != null ? (typeof clients !== 'undefined' ? clients : []).find(x => String(x.id) === String(r.clienteId)) : null; return c ? c.name : r.cliente; }
 const clientePorNome = (n) => { const k = fold(n); return k ? (typeof clients !== 'undefined' ? clients : []).find(c => fold(c.name) === k) : null; };
 const porId = (id) => store.items.find(r => r.id === id);
-function pedidoEmUso(numero, exceto){ const k = fold(numero); for(const r of registros()) for(const p of lista(r.pedidos)) if(fold(p.numero) === k && !(exceto && exceto.r === r.id && exceto.p === p.id)) return { r, p }; return null; }
+function pedidoEmUso(numero, exceto){ const k = fold(numero); for(const r of todosRegistros()) for(const p of lista(r.pedidos)) if(fold(p.numero) === k && !(exceto && exceto.r === r.id && exceto.p === p.id)) return { r, p }; return null; }
 
 async function garantirCarregado(){
   if(carregado) return;
@@ -23673,15 +23690,15 @@ async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizad
 function montar(){
   const v = document.getElementById('finObrasView'); if(!v || ui.montado) return; ui.montado = true;
   v.innerHTML = `<div class="tech-day-panel">
-    <div class="tech-day-head"><div class="tech-day-title">Obras e Pedidos</div><div class="tech-day-date mono" id="obrContagem"></div></div>
-    <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${ABAS_OBR.map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
+    <div class="tech-day-head"><div class="tech-day-title">${ui.modo === 'manut' ? 'Pedidos de manutenção' : 'Obras e Pedidos'}</div><div class="tech-day-date mono" id="obrContagem"></div></div>
+    <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${abasDoModo().map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="agendado">Com parcela Agendada</option><option value="quitado">Quitados</option></select>
-      <select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
+      ${ui.modo === 'manut' ? '' : `<select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>`}
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
-      <button type="button" class="btn-primary" data-obr="novo">+ Novo registro</button>
+      ${ui.modo === 'manut' ? '' : '<button type="button" class="btn-primary" data-obr="novo">+ Novo registro</button>'}
     </div>
     <div id="obrLista" style="padding:0 20px 30px;"></div>
     <div id="obrAgendados" style="display:none; padding:0 20px 30px;"></div>
@@ -23691,13 +23708,14 @@ function montar(){
   busca.addEventListener('input', () => { ui.busca = busca.value; renderLista(); });
   busca.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ busca.value = ''; ui.busca = ''; renderLista(); } });
   document.getElementById('obrFiltroFin').addEventListener('change', (e) => { ui.fin = e.target.value; renderLista(); });
-  document.getElementById('obrFiltroSit').addEventListener('change', (e) => { ui.sit = e.target.value; renderLista(); });
+  const fs = document.getElementById('obrFiltroSit'); if(fs) fs.addEventListener('change', (e) => { ui.sit = e.target.value; renderLista(); });
+  if(v._obrLigado) return; v._obrLigado = true;
   v.addEventListener('click', (e) => {
     const b = e.target.closest('[data-obr]'); if(!b) return; const a = b.dataset.obr;
     if(a === 'empresa'){ ui.empresa = b.dataset.emp; v.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); renderLista(); }
-    else if(a === 'novo') abrirNovo({ cliente: ui.busca.trim() });
+    else if(a === 'novo'){ if(ui.modo === 'manut') avisar('Os pedidos de manutenção chegam de Cadastros e OS, ao marcar "Gerar pedido de manutenção".'); else abrirNovo({ cliente: ui.busca.trim() }); }
     else if(a === 'abrir') abrirDetalhe(b.dataset.id);
-    else if(a === 'criar-busca') abrirNovo({ cliente: b.dataset.nome });
+    else if(a === 'criar-busca'){ if(ui.modo !== 'manut') abrirNovo({ cliente: b.dataset.nome }); }
     else if(a === 'csv') exportarCsv();
   });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
@@ -23706,13 +23724,14 @@ function kpis(todos){
   // Ordem do fluxo: Contratado → A cobrar → Enviado → Recebido → A receber (o que ainda falta entrar, incluindo o que não foi liberado).
   const t = todos.map(totais); const contr = soma(t.map(x => x.contratado)), rec = soma(t.map(x => x.recebido)), ac = soma(t.map(x => x.por.a_cobrar)), en = soma(t.map(x => x.por.enviado + x.por.agendado)), nl = soma(t.map(x => x.por.nao_liberado));
   const aRec = soma(t.map(x => Math.max(0, x.saldo))); const nAc = t.reduce((n, x) => n + x.cont.a_cobrar, 0), nEn = t.reduce((n, x) => n + x.cont.enviado + x.cont.agendado, 0), nAg = t.reduce((n, x) => n + x.cont.agendado, 0), nSaldo = t.filter(x => x.saldo > 0.005).length;
-  return PREV_API.kpiCards([
+  const html = PREV_API.kpiCards([
     { tom: 'neutro', icone: 'total', texto: brlCurto(contr), zero: !(contr > 0), rotulo: 'Contratado', sub: todos.length + (todos.length === 1 ? ' obra' : ' obras') + ' · ' + soma(t.map(x => x.nPedidos)) + (soma(t.map(x => x.nPedidos)) === 1 ? ' pedido' : ' pedidos') },
     { tom: 'amarelo', icone: 'relogio', texto: brlCurto(ac), zero: !(ac > 0), rotulo: 'A cobrar', sub: nAc + (nAc === 1 ? ' parcela liberada' : ' parcelas liberadas') },
     { tom: 'azul', icone: 'andamento', texto: brlCurto(en), zero: !(en > 0), rotulo: 'Enviado', sub: nEn + (nEn === 1 ? ' parcela' : ' parcelas') + ' aguardando' + (nAg ? ' · ' + nAg + ' agendada' + (nAg === 1 ? '' : 's') : '') },
     { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
     { tom: 'neutro', icone: 'caixa', texto: brlCurto(aRec), zero: !(aRec > 0), rotulo: 'A receber', sub: nSaldo + (nSaldo === 1 ? ' obra' : ' obras') + ' com saldo' + (nl > 0 ? ' · ' + brlCurto(nl) + ' não liberado' : '') },
   ]);
+  return ui.modo === 'manut' ? String(html).replace(/ obras\b/g, ' clientes').replace(/ obra\b/g, ' cliente') : html;
 }
 const rotuloStatus = (k) => (STATUS_PARC.find(x => x[0] === k) || ['', k])[1];
 // Cartão do cliente: uma linha COMPACTA por pedido (número + descrição + valor) com as parcelas dele lado a lado (nome/% · valor · situação).
@@ -23726,7 +23745,7 @@ function linhaPedido(r, p, parcelas){
 }
 function cartao(r){
   const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
-  const chips = [(ui.empresa === 'geral' || ui.empresa === 'finalizados') ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotAba(r.empresa))}</span>` : '', `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+  const chips = [(ui.modo !== 'manut' && (ui.empresa === 'geral' || ui.empresa === 'finalizados')) ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : '', ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''].join('');
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   const mostrar = ped.slice(0, 5);
@@ -23741,7 +23760,8 @@ function cartao(r){
 }
 function renderLista(){
   const box = document.getElementById('obrLista'); if(!box) return;
-  ABAS_OBR.forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
+  abasDoModo().forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
+  if(ui.modo === 'manut' && ui.empresa !== 'geral' && ui.empresa !== 'finalizados') ui.empresa = 'geral';
   const ag = ui.empresa === 'agendados'; document.getElementById('obrBarra').style.display = ag ? 'none' : ''; box.style.display = ag ? 'none' : ''; const bag = document.getElementById('obrAgendados'); if(bag) bag.style.display = ag ? '' : 'none';
   if(ag){ montarAgendados(); renderAgendados(); document.getElementById('obrContagem').textContent = previstosTodos().length + (previstosTodos().length === 1 ? ' pagamento previsto' : ' pagamentos previstos'); return; }
   const todos = registrosDaAba(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
@@ -23752,7 +23772,7 @@ function renderLista(){
   document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   box.innerHTML = l.length ? l.map(cartao).join('')
-    : (todos.length === 0 ? (ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
+    : (todos.length === 0 ? (ui.modo === 'manut' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhum pedido de manutenção a receber.<br>Eles chegam de <b>Cadastros e OS</b> quando você marca "Gerar pedido de manutenção".</div>' : ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
       : `<div class="empty-state">Nenhum registro encontrado${q ? ' para "' + esc(ui.busca.trim()) + '"' : ''}.${q ? `<br><br><button type="button" class="btn-primary" data-obr="criar-busca" data-nome="${esc(ui.busca.trim())}">+ Criar registro para "${esc(ui.busca.trim())}"</button>` : ''}</div>`);
 }
 
@@ -23803,7 +23823,7 @@ function renderCab(){
   const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; const t = totais(r);
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
   el.innerHTML = `<div class="qd-det-head"><div><h3 style="margin:0;">${esc(nomeCliente(r))}</h3>
-      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span><span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
+      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${ehManut(r) ? 'Manutenção' : esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>${ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`}${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
       ${cli && cli.address ? `<div class="prv-hint" style="margin:6px 0 0;">📍 ${esc(cli.address)}</div>` : ''}</div>
       <button type="button" class="btn-ghost" data-obr-d="fechar">Fechar</button></div>`;
 }
@@ -23811,7 +23831,7 @@ function renderDados(){
   const r = atual(); const el = document.getElementById('obrDetDados'); if(!r || !el) return;
   const wa = r.fone && typeof phoneDigits === 'function' && phoneDigits(r.fone).length >= 10;
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Dados do registro</div><div class="obr-grid2">
-    <div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    ${ehManut(r) ? '' : `<div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`}
     <div class="field"><label>Pessoa de contato</label><input type="text" data-obr-campo="contato" value="${esc(r.contato || '')}" placeholder="Nome (cargo)"></div>
     <div class="field"><label>WhatsApp / telefone ${wa ? '<a href="#" data-obr-d="whats" style="font-weight:600;">· abrir conversa</a>' : ''}</label><input type="text" data-obr-campo="fone" value="${esc(r.fone || '')}" placeholder="+55 24 90000-0000"></div>
     <div class="field"><label>Forma de pagamento</label><select data-obr-campo="formaPagamento"><option value="">—</option>${FORMAS.map(f => `<option ${r.formaPagamento === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
@@ -23866,6 +23886,22 @@ function renderRodape(){
 async function salvarCampo(campo, valor){
   const r = atual(); if(!r) return; const v = String(valor || '').trim(); if((r[campo] || '') === v) return;
   r[campo] = v || null; await gravar(r); renderCab();
+}
+// Chamado por Cadastros e OS quando o card marca "Gerar pedido de manutenção": entra no registro de manutenção do cliente (ou cria um) como um pedido novo.
+async function criarPedidoManutencao(d){
+  await garantirCarregado();
+  const numero = String(d.numero || '').trim(), valor = Number(d.valor);
+  if(!numero || !(valor > 0)) return null;
+  const chave = fold(d.cliente || '');
+  let r = todosRegistros().find(x => ehManut(x) && fold(nomeCliente(x)) === chave);
+  const agora = new Date().toISOString(); const pid = uid('p');
+  if(r && lista(r.pedidos).some(p => fold(p.numero) === fold(numero))) return r;      // o mesmo pedido já está neste registro: não duplica
+  const cl = (typeof clientePorNome === 'function' ? clientePorNome(d.cliente) : null);
+  if(!r){ r = { id: uid('mn_'), tipo: 'manutencao', empresa: 'equiper', cliente: cl ? cl.name : d.cliente, clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
+  r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero, descricao: d.descricao || null, valor, osNumero: d.osNumero || null, origem: d.origem || null, origemId: d.refId != null ? String(d.refId) : null } });
+  r.atualizadoEm = agora; r.atualizadoPor = quem() || null;
+  renderLista(); await store.save(true);
+  return r;
 }
 function nomeCampoPedidos(r){ return [['', 'Nenhum (parcela avulsa)']].concat(pedidosDe(r).filter(p => !p.cancelado).map(p => [p.numero, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '')])); }
 async function mudarStatus(id, novo){
@@ -24765,18 +24801,21 @@ function renderAgendados(){
 let secao = 'os';
 function mostrarSecao(s){
   secao = s; const os = document.getElementById('finPaneOS'), ob = document.getElementById('finObrasView'); if(!os || !ob) return;
-  os.style.display = s === 'os' ? '' : 'none'; ob.style.display = s === 'obras' ? '' : 'none';
-  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finBnOS', 'os'], ['finBnObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
-  if(s === 'obras'){ montar(); renderLista(); garantirCarregado().then(() => { renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
+  os.style.display = s === 'os' ? '' : 'none'; ob.style.display = (s === 'obras' || s === 'manut') ? '' : 'none';
+  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
+  if(s === 'obras' || s === 'manut'){
+    const modo = s === 'manut' ? 'manut' : 'obras';
+    if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo === 'manut' ? 'geral' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
+    montar(); renderLista(); garantirCarregado().then(() => { renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
   else if(window.FIN_API) FIN_API.render();
 }
 function ligarNavegacao(){
-  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finBnOS', 'os'], ['finBnObras', 'obras']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
+  [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
   const sair = document.getElementById('finSidebarLogout'); if(sair) sair.addEventListener('click', () => document.getElementById('financeiroLogoutBtn').click());
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba, ehFinalizado, inst, estadoSub, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal, renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
