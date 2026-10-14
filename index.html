@@ -23055,7 +23055,7 @@ if(!window._osDecLigado){
     const pb = e.target.closest('[data-dec-ped]');
     if(pb){ const k = pb.dataset.decPed; const d = decRasc[k] = decRasc[k] || {}; d.ped = !d.ped; pb.classList.toggle('on-ped', !!d.ped); const box = pb.closest('[data-dec-box]'); box.querySelector('[data-dec-ped-wrap]').style.display = d.ped ? '' : 'none'; atualizarCard(pb.closest('.os-row')); if(d.ped){ const i = box.querySelector('[data-dec-pednum]'); if(i && !i.value) i.focus(); } return; }
     const b = e.target.closest('[data-dec]'); if(!b) return;
-    const k = b.dataset.decK; const d = decRasc[k] = decRasc[k] || {}; d.tipo = b.dataset.dec;
+    const k = b.dataset.decK; const d = decRasc[k] = decRasc[k] || {}; d.tipo = (d.tipo === b.dataset.dec) ? '' : b.dataset.dec;      // clicar de novo no botão marcado desmarca (clique acidental)
     const box = b.closest('[data-dec-box]');
     box.querySelectorAll('[data-dec]').forEach(x => { x.classList.toggle('on-cobrar', x.dataset.dec === 'cobrar' && d.tipo === 'cobrar'); x.classList.toggle('on-nao', x.dataset.dec === 'nao_cobrar' && d.tipo === 'nao_cobrar'); x.classList.toggle('on-ag', x.dataset.dec === 'aguardando' && d.tipo === 'aguardando'); });
     box.querySelector('[data-dec-valor-wrap]').style.display = d.tipo === 'cobrar' ? '' : 'none';
