@@ -757,6 +757,7 @@
   .btn-ghost.equip-withdraw-btn{ padding:10px 8px; font-size:13.5px; font-weight:600; border-style:dashed; border-width:1.5px; }
   .return-checkbox-label{ font-family: var(--sans); line-height:1.25; }
   .service-controls:has(.equip-lista){ flex-direction:column; align-items:stretch; gap:8px; }
+  .tec-interno{ margin:12px 0 4px; cursor:pointer; } .tec-interno .qd-card{ margin:0; }
   .agint{ margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:flex-start; } .agint-lin{ font-size:12.5px; color:var(--text-dim); } .agint-lin b{ color:var(--text); }
   .equip-lista{ width:100%; display:flex; flex-direction:column; gap:6px; }
   .equip-lista-t{ font-size:11.5px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
@@ -1866,6 +1867,9 @@
   .pn-k-s{ font-size:11px; color:var(--text-dim); }
   .pn-t-ink{ --c:#1D1D1F; --c-num:#1D1D1F; background:var(--panel-2, #f4f4f5); }
   .pn-t-red{ --c:#C0392B; --c-num:#B3261E; } .pn-t-amber{ --c:#F2B705; --c-num:#9A7400; } .pn-t-blue{ --c:#3D84B0; --c-num:#2B6A92; } .pn-t-green{ --c:#2E7D4F; --c-num:#2E7D4F; } .pn-t-gray{ --c:#9aa0a6; --c-num:#555a60; }
+  .pn-tec-h{ display:flex; justify-content:space-between; align-items:baseline; margin-top:14px; padding:0 2px 4px; font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--text); border-bottom:2px solid var(--line); }
+  .pn-tec-n{ font-weight:600; color:var(--text-dim); text-transform:none; letter-spacing:0; }
+  .pn-tec-h + .pn-lin{ border-top:0; }
   .pn-lin{ display:flex; align-items:center; gap:10px; padding:9px 2px; border-top:1px solid var(--line); font-size:13px; }
   .pn-lin:first-of-type{ margin-top:10px; }
   .pn-kpis + .pn-lin{ margin-top:12px; }
@@ -14721,6 +14725,20 @@ function renderTechView(){
         : '')
       + `<button type="button" class="btn-ghost equip-withdraw-btn" data-withdrawequip="${s.id}">${retirados.length ? '＋ Retirar outro equipamento' : '🔧 Retirar equipamento para manutenção'}</button>`;
 
+    // Atividade INTERNA da oficina (agendada pelo Gestor a partir de um equipamento ou quadro): o técnico vê o MESMO cartão
+    // da Oficina (status colorido) e toca nele para abrir a ficha com as etapas — em vez de "retirar equipamento"/"precisa retornar".
+    let internoHtml = '';
+    if(s.internoTipo === 'equip'){
+      const eqI = oficinaEquipamentos.find(x => String(x.id) === String(s.internoRefId));
+      internoHtml = eqI
+        ? `<div class="oe-card tec-interno" data-tec-oe="${eqI.id}"><div class="oe-card-row"><div><div><b>${escapeHtml(eqI.equipment)}</b> — ${escapeHtml(eqI.client)}</div><div style="font-size:12.5px; color:var(--text-dim); margin-top:2px;">Toque para abrir a ficha da Oficina (vistoria, manutenção e teste)</div></div>${oficinaBadgeHtml(eqI.status)}</div></div>`
+        : `<div class="oe-card tec-interno"><div style="font-size:13px; color:var(--text-dim);">Equipamento não encontrado na Oficina (pode ter sido removido).</div></div>`;
+    } else if(s.internoTipo === 'quadro' && window.QUADROS_API && QUADROS_API.cartaoHtml){
+      if(!QUADROS_API.pronto()){ QUADROS_API.garantir().then(() => { try{ renderTechView(); }catch(e){} }).catch(() => {}); internoHtml = '<div class="oe-card tec-interno"><div style="font-size:13px; color:var(--text-dim);">Carregando o quadro…</div></div>'; }
+      else internoHtml = `<div class="tec-interno" data-tec-qd="${escapeHtml(String(s.internoRefId))}">${QUADROS_API.cartaoHtml(s.internoRefId) || '<div class="oe-card"><div style="font-size:13px; color:var(--text-dim);">Quadro não encontrado (pode ter sido removido).</div></div>'}</div>`;
+    }
+    const interno = !!(s.internoTipo && internoHtml);
+
     const duplaPartners = getDuplaPartnerNames(s, currentTechName);
     const duplaLabelHtml = duplaPartners.length > 0
       ? `<div class="pair-label" style="display:inline-block; margin-top:6px;">👥 Dupla com ${escapeHtml(duplaPartners.join(' e '))}</div>`
@@ -14741,8 +14759,9 @@ function renderTechView(){
       ${(idsPendentesOutbox.has(String(s.id)) || serviceMediaPending.has(s.id)) ? `<div class="sync-pendente-chip" style="margin:0 0 10px;">⏳ Aguardando envio — guardado neste aparelho</div>` : ''}
       ${renderInstructionViewHtml(s)}
       ${actionHtml}
-      ${equipActionHtml ? `<div class="service-controls">${equipActionHtml}</div>` : ''}
-      <div class="return-section">
+      ${internoHtml}
+      ${equipActionHtml ? `<div class="service-controls"${interno ? ' style="display:none;"' : ''}>${equipActionHtml}</div>` : ''}
+      <div class="return-section"${interno ? ' style="display:none;"' : ''}>
         <label class="return-checkbox-label">
           <input type="checkbox" data-needsreturn="${s.id}" ${s.needsReturn ? 'checked' : ''}>
           <span class="ret-ico"></span><span class="ret-t-off">Precisa retornar</span><span class="ret-t-on">Retorno solicitado · toque para desmarcar</span>
@@ -14771,6 +14790,8 @@ function renderTechView(){
       </div>
     `;
     list.appendChild(card);
+    card.querySelectorAll('[data-tec-oe]').forEach(el => el.addEventListener('click', () => openOficinaEquipDetalhe(Number(el.dataset.tecOe))));
+    card.querySelectorAll('[data-tec-qd]').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); QUADROS_API.abrirDetalhe(el.dataset.tecQd, 'oficina'); }));
     if(window.PREV_API) PREV_API.montarSlot(card, s); // relatório preventivo (só em atividade preventiva com unidades configuradas)
     if(window.OBR_API) OBR_API.montarSlotTecnico(card, s); // checklist de instalação (só em atividade criada a partir de um pedido/obra)
   });
@@ -22508,7 +22529,7 @@ async function concluirOS(id){
 }
 // Chamado no login do Gestor: carrega os quadros em segundo plano para o contador de "Cadastros e OS" já aparecer.
 function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => console.error('quadros: falha ao carregar', e)); }
-window.QUADROS_API = { abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
+window.QUADROS_API = { pronto: () => carregado, garantir: () => garantirCarregado(), cartaoHtml: (id) => { const q = porId(quadrosStore, id); return q ? cartaoQuadro(q, 'oficina') : ''; }, abrirDetalhe: (id, modo) => abrirDetalhe(id, modo || 'oficina'), abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
 })();
 
 
@@ -24690,11 +24711,17 @@ function renderGestor(){
   // atividades de hoje
   const ativ = atividadesHoje(); const cont = (st) => ativ.filter(s => s.status === st).length;
   const ord = { em_andamento: 0, atribuido: 1, aguardando: 2, concluido: 3 };
-  const linhasAtiv = ativ.slice().sort((a, b) => (ord[a.status] ?? 9) - (ord[b.status] ?? 9) || String(a.client).localeCompare(String(b.client), 'pt-BR')).slice(0, 12).map(s => {
-    const tec = typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s).filter(Boolean).join(' e ') : (s.technician || '');
-    return `<div class="pn-lin pn-click" data-pn-svc="${esc(s.id)}"><span class="pn-lin-t">${esc(s.client)}${s.description ? `<small>${esc(s.description)}</small>` : ''}</span><span class="pn-lin-m">${esc(tec || 'Sem técnico')}</span><span class="status-tag ${esc(s.status)}">${esc(typeof statusLabelOf === 'function' ? statusLabelOf(s.status) : s.status)}</span></div>`; }).join('');
+  // Lista agrupada por técnico (dupla aparece sob cada um dos dois); sem técnico por último; dentro do técnico, em andamento primeiro.
+  const porTec = new Map();
+  ativ.forEach(s => { const nomes = (typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician]).filter(Boolean); (nomes.length ? nomes : ['']).forEach(n => { if(!porTec.has(n)) porTec.set(n, []); porTec.get(n).push(s); }); });
+  const tecs = [...porTec.keys()].sort((a, b) => (a === '') - (b === '') || a.localeCompare(b, 'pt-BR'));
+  const linhasAtiv = tecs.map(n => {
+    const lista = porTec.get(n).slice().sort((a, b) => (ord[a.status] ?? 9) - (ord[b.status] ?? 9) || String(a.client).localeCompare(String(b.client), 'pt-BR'));
+    return `<div class="pn-tec-h"><span>${esc(n || 'Sem técnico')}</span><span class="pn-tec-n">${lista.length} ${lista.length === 1 ? 'atividade' : 'atividades'}</span></div>`
+      + lista.map(s => `<div class="pn-lin pn-click" data-pn-svc="${esc(s.id)}"><span class="pn-lin-t">${esc(s.client)}${s.description ? `<small>${esc(s.description)}</small>` : ''}</span><span class="status-tag ${esc(s.status)}">${esc(typeof statusLabelOf === 'function' ? statusLabelOf(s.status) : s.status)}</span></div>`).join('');
+  }).join('');
   const bAtiv = bloco('Atividades de hoje', 'agenda', ativ.length
-    ? `<div class="pn-kpis">${kpi(ativ.length, 'No dia', 'gray', 'agenda')}${kpi(cont('em_andamento'), 'Em andamento', 'blue', 'agenda')}${kpi(cont('atribuido'), 'Atribuídas', 'amber', 'agenda')}${kpi(cont('aguardando'), 'Sem técnico', 'red', 'agenda')}${kpi(cont('concluido'), 'Concluídas', 'green', 'agenda')}</div>${linhasAtiv}${ativ.length > 12 ? `<div class="pn-mais">+ ${ativ.length - 12} atividades — veja todas na Agenda</div>` : ''}`
+    ? `<div class="pn-kpis">${kpi(ativ.length, 'No dia', 'gray', 'agenda')}${kpi(cont('em_andamento'), 'Em andamento', 'blue', 'agenda')}${kpi(cont('atribuido'), 'Atribuídas', 'amber', 'agenda')}${kpi(cont('aguardando'), 'Sem técnico', 'red', 'agenda')}${kpi(cont('concluido'), 'Concluídas', 'green', 'agenda')}</div>${linhasAtiv}`
     : '<div class="pn-vazio">Nenhuma atividade agendada para hoje.</div>');
   // obras
   const ped = pedidosObras();
