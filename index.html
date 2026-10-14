@@ -758,8 +758,8 @@
   .return-checkbox-label{ font-family: var(--sans); line-height:1.25; }
   .service-controls:has(.equip-lista){ flex-direction:column; align-items:stretch; gap:8px; }
   .tec-interno{ margin:12px 0 4px; } .tec-interno .qd-card{ margin:0 0 8px; } .tec-interno .tec-qd-av{ width:100%; padding:11px 8px; font-size:14px; }
+  .tec-int-row{ display:flex; gap:8px; margin-top:8px; } .tec-int-row .tec-int-b{ flex:1; padding:12px 6px; font-size:14px; font-weight:700; }
   .tec-etapa{ margin-top:10px; } .tec-int-ok{ margin-top:8px; font-size:13px; font-weight:700; color:#2E7D4F; } .tec-sessoes{ font-size:12px; color:var(--text-dim); margin:10px 0 0; }
-  .equip-withdraw-btn.tec-continuar{ margin-top:8px; border-style:solid; }
   .agint{ margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:flex-start; } .agint-lin{ font-size:12.5px; color:var(--text-dim); } .agint-lin b{ color:var(--text); }
   .equip-lista{ width:100%; display:flex; flex-direction:column; gap:6px; }
   .equip-lista-t{ font-size:11.5px; font-weight:600; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.03em; }
@@ -14727,38 +14727,48 @@ function renderTechView(){
         : '')
       + `<button type="button" class="btn-ghost equip-withdraw-btn" data-withdrawequip="${s.id}">${retirados.length ? '＋ Retirar outro equipamento' : '🔧 Retirar equipamento para manutenção'}</button>`;
 
-    // Atividade INTERNA da oficina (agendada pelo Gestor a partir de um equipamento ou quadro): o técnico vê o cartão da Oficina
-    // COM os botões da etapa atual (iniciar/concluir), no mesmo padrão da tela da Oficina; "Retirar equipamento"/"Precisa retornar" não se aplicam.
-    // "Continua outro dia" encerra a sessão de hoje e leva a atividade para o próximo dia útil, onde o "Iniciar" volta a ficar disponível.
-    let internoHtml = '', continuarHtml = '';
-    const sessoesHtml = (s.sessoes && s.sessoes.length) ? `<div class="tec-sessoes">Trabalhado em: ${s.sessoes.map(x => `${escapeHtml(shortLabel(x.data))}${x.inicio ? ' ' + escapeHtml(x.inicio) : ''}${x.fim ? '–' + escapeHtml(x.fim) : ''}`).join(' · ')}</div>` : '';
+    // Atividade INTERNA da oficina: o andamento da atividade da agenda fica VINCULADO aos botões do equipamento/quadro.
+    // Sem "Iniciar/Concluir serviço" genéricos: "Iniciar <etapa>" inicia a etapa e a atividade; em andamento aparecem lado a lado
+    // "Concluir <etapa>" (conclui a etapa e a atividade) e "Continua outro dia" (encerra só a atividade de hoje; a etapa segue em andamento).
+    let internoHtml = '';
+    const sessoesHtml = (s.sessoes && s.sessoes.length) ? `<div class="tec-sessoes">Já trabalhado em: ${s.sessoes.map(x => `${escapeHtml(shortLabel(x.data))}${x.inicio ? ' ' + escapeHtml(x.inicio) : ''}${x.fim ? '–' + escapeHtml(x.fim) : ''}`).join(' · ')}</div>` : '';
+    const emAnd = s.status === 'em_andamento' && !!s.checkIn;
+    const btnCont = `<button type="button" class="btn-ghost tec-int-b" data-continuar="${s.id}">↻ Continua outro dia</button>`;
+    const linhaBt = (rotuloPrincipal, acao, andamento) => s.status === 'concluido'
+      ? `<div class="tec-int-ok">✓ Atividade concluída${s.checkOut ? ' às ' + escapeHtml(s.checkOut) : ''}</div>`
+      : `<div class="tec-int-row"><button type="button" class="btn-primary tec-int-b" data-tec-act="${acao}" data-svc="${s.id}">${andamento ? '✓' : '▶'} ${escapeHtml(rotuloPrincipal)}</button>${emAnd ? btnCont : ''}</div>${emAnd ? `<div class="tec-sessoes">Iniciada hoje às ${escapeHtml(s.checkIn)}</div>` : ''}`;
     if(s.internoTipo === 'equip'){
       const eqI = oficinaEquipamentos.find(x => String(x.id) === String(s.internoRefId));
       if(!eqI) internoHtml = `<div class="oe-card tec-interno"><div style="font-size:13px; color:var(--text-dim);">Equipamento não encontrado na Oficina (pode ter sido removido).</div></div>`;
       else {
         const atualK = ['vistoria', 'manutencao', 'teste'].find(k => oeStageState(eqI, k) !== 'completed');
-        let corpo;
-        if(!atualK) corpo = `<div class="tec-int-ok">✓ Vistoria, manutenção e teste concluídos</div>`;
+        let bt;
+        if(!atualK) bt = `<div class="tec-int-ok">✓ Vistoria, manutenção e teste concluídos</div>`;
         else {
-          const cfg = OE_STAGES[atualK], st = oeStageState(eqI, atualK), ref = `${eqI.id}|${atualK}`;
-          const botoes = st === 'ready' ? `<button type="button" class="btn-primary" data-tec-oe-start="${ref}">▶ ${cfg.startLabel}</button><button type="button" class="btn-ghost" disabled>✓ ${cfg.completeLabel}</button>`
-            : st === 'in_progress' ? `<button type="button" class="btn-ghost" disabled>✓ ${cfg.startedLabel}</button><button type="button" class="btn-primary" data-tec-oe-complete="${ref}">✓ ${cfg.completeLabel}</button>`
-            : `<button type="button" class="btn-ghost" disabled>${cfg.startLabel}</button><button type="button" class="btn-ghost" disabled>${cfg.completeLabel}</button>`;
-          corpo = `<div class="oe-stage tec-etapa"><div class="oe-stage-head"><div class="oe-stage-title">${cfg.icon} ${cfg.title}</div></div><div class="oe-stage-actions">${botoes}</div></div>`;
+          const cfg = OE_STAGES[atualK], st = oeStageState(eqI, atualK);
+          if(st === 'locked') bt = `<div class="tec-sessoes">Aguardando a etapa anterior na Oficina.</div>`;
+          else if(st === 'in_progress' && emAnd) bt = linhaBt(cfg.completeLabel, 'conc', true);
+          else if(st === 'in_progress') bt = linhaBt('Retomar ' + cfg.title.toLowerCase(), 'ini', false);
+          else bt = linhaBt(cfg.startLabel, 'ini', false);
         }
-        internoHtml = `<div class="oe-card tec-interno"><div class="oe-card-row"><div><div><b>${escapeHtml(eqI.equipment)}</b> — ${escapeHtml(eqI.client)}</div></div>${oficinaBadgeHtml(eqI.status)}</div>${corpo}<button type="button" class="btn-ghost oe-mini" data-tec-oe="${eqI.id}" style="margin-top:8px;">📋 Abrir ficha completa (observações, fotos, peças)</button></div>`;
+        internoHtml = `<div class="oe-card tec-interno"><div class="oe-card-row"><div><b>${escapeHtml(eqI.equipment)}</b> — ${escapeHtml(eqI.client)}</div>${oficinaBadgeHtml(eqI.status)}</div><button type="button" class="btn-ghost oe-mini" data-tec-oe="${eqI.id}" style="margin:8px 0 0;">📋 Abrir ficha completa (observações, fotos, peças)</button></div>${bt}`;
       }
     } else if(s.internoTipo === 'quadro' && window.QUADROS_API && QUADROS_API.cartaoHtml){
       if(!QUADROS_API.pronto()){ QUADROS_API.garantir().then(() => { try{ renderTechView(); }catch(e){} }).catch(() => {}); internoHtml = '<div class="oe-card tec-interno"><div style="font-size:13px; color:var(--text-dim);">Carregando o quadro…</div></div>'; }
       else {
         const et = QUADROS_API.etapa(s.internoRefId);
-        internoHtml = et
-          ? `<div class="tec-interno"><div data-tec-qd="${escapeHtml(String(s.internoRefId))}">${QUADROS_API.cartaoHtml(s.internoRefId)}</div>${et.proxima ? `<button type="button" class="btn-primary tec-qd-av" data-tec-qd-av="${escapeHtml(String(s.internoRefId))}">${escapeHtml(et.proxima)}</button>` : '<div class="tec-int-ok">✓ Montado e testado</div>'}</div>`
-          : `<div class="oe-card tec-interno"><div style="font-size:13px; color:var(--text-dim);">Quadro não encontrado (pode ter sido removido).</div></div>`;
+        if(!et) internoHtml = `<div class="oe-card tec-interno"><div style="font-size:13px; color:var(--text-dim);">Quadro não encontrado (pode ter sido removido).</div></div>`;
+        else {
+          let bt;
+          if(!et.proxima) bt = '<div class="tec-int-ok">✓ Montado e testado</div>';
+          else if(et.andamento && emAnd) bt = linhaBt(et.proxima, 'conc', true);
+          else if(et.andamento) bt = linhaBt('Retomar ' + (et.id === 'testando' ? 'testes' : 'montagem'), 'ini', false);
+          else bt = linhaBt(et.proxima, 'ini', false);
+          internoHtml = `<div class="tec-interno"><div data-tec-qd="${escapeHtml(String(s.internoRefId))}">${QUADROS_API.cartaoHtml(s.internoRefId)}</div>${bt}</div>`;
+        }
       }
     }
     if(internoHtml) internoHtml = sessoesHtml + internoHtml;
-    if(s.internoTipo && s.checkIn && s.status === 'em_andamento') continuarHtml = `<button type="button" class="btn-ghost equip-withdraw-btn tec-continuar" data-continuar="${s.id}">↻ Continua outro dia</button>`;
     const interno = !!(s.internoTipo && internoHtml);
 
     const duplaPartners = getDuplaPartnerNames(s, currentTechName);
@@ -14780,8 +14790,7 @@ function renderTechView(){
       </div>
       ${(idsPendentesOutbox.has(String(s.id)) || serviceMediaPending.has(s.id)) ? `<div class="sync-pendente-chip" style="margin:0 0 10px;">⏳ Aguardando envio — guardado neste aparelho</div>` : ''}
       ${renderInstructionViewHtml(s)}
-      ${actionHtml}
-      ${continuarHtml}
+      ${(s.internoTipo && internoHtml) ? '' : actionHtml}
       ${internoHtml}
       ${equipActionHtml ? `<div class="service-controls"${interno ? ' style="display:none;"' : ''}>${equipActionHtml}</div>` : ''}
       <div class="return-section"${interno ? ' style="display:none;"' : ''}>
@@ -14815,13 +14824,28 @@ function renderTechView(){
     list.appendChild(card);
     card.querySelectorAll('[data-tec-oe]').forEach(el => el.addEventListener('click', () => openOficinaEquipDetalhe(Number(el.dataset.tecOe))));
     card.querySelectorAll('[data-tec-qd]').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); QUADROS_API.abrirDetalhe(el.dataset.tecQd, 'oficina'); }));
-    card.querySelectorAll('[data-tec-qd-av]').forEach(b => b.addEventListener('click', () => QUADROS_API.avancar(b.dataset.tecQdAv, () => { try{ renderTechView(); }catch(e){} })));
-    card.querySelectorAll('[data-tec-oe-start]').forEach(b => b.addEventListener('click', async () => { const [id, k] = b.dataset.tecOeStart.split('|'); b.disabled = true; try{ await OE_STAGES[k].startFn(Number(id), b); }catch(e){ console.error(e); } renderTechView(); }));
-    card.querySelectorAll('[data-tec-oe-complete]').forEach(b => b.addEventListener('click', async () => {
-      const [id, k] = b.dataset.tecOeComplete.split('|'); const eid = Number(id); b.disabled = true;
+    card.querySelectorAll('[data-tec-act]').forEach(b => b.addEventListener('click', async () => {
+      if(b.disabled) return; b.disabled = true;
+      const sv = services.find(x => x.id === Number(b.dataset.svc)); const acao = b.dataset.tecAct;
+      if(!sv){ b.disabled = false; return; }
+      const iniAtv = async () => { if(sv.checkIn) return true; const a = { checkIn: sv.checkIn, status: sv.status }; sv.checkIn = nowTime(); sv.status = 'em_andamento'; const ok = await saveServices(); if(!ok) Object.assign(sv, a); return ok; };
+      const fimAtv = async () => { const a = { checkOut: sv.checkOut, status: sv.status, completedAt: sv.completedAt }; sv.checkOut = nowTime(); sv.status = 'concluido'; sv.completedAt = new Date().toISOString(); const ok = await saveServices(); if(!ok){ Object.assign(sv, a); if(a.completedAt === undefined) delete sv.completedAt; } return ok; };
       try{
-        if(k === 'vistoria'){ const cur = oficinaEquipamentos.find(x => x.id === eid); if(cur) await completeVistoria(eid, cur.vistoriaObservation || '', (cur.vistoriaPhotos || []).slice(), (cur.vistoriaAudios || []).slice(), b); }
-        else await OE_STAGES[k].completeFn(eid, b);
+        if(sv.internoTipo === 'equip'){
+          const eid = Number(sv.internoRefId); let eq = oficinaEquipamentos.find(x => x.id === eid); if(!eq) return;
+          const k = ['vistoria', 'manutencao', 'teste'].find(kk => oeStageState(eq, kk) !== 'completed'); if(!k) return;
+          if(acao === 'ini'){ if(oeStageState(eq, k) === 'ready') await OE_STAGES[k].startFn(eid, b); await iniAtv(); }
+          else {
+            if(k === 'vistoria') await completeVistoria(eid, eq.vistoriaObservation || '', (eq.vistoriaPhotos || []).slice(), (eq.vistoriaAudios || []).slice(), b);
+            else await OE_STAGES[k].completeFn(eid, b);
+            eq = oficinaEquipamentos.find(x => x.id === eid);
+            if(eq && oeStageState(eq, k) === 'completed') await fimAtv();
+          }
+        } else if(sv.internoTipo === 'quadro'){
+          const et = QUADROS_API.etapa(sv.internoRefId); if(!et || !et.proxima) return;
+          if(acao === 'ini' && et.andamento){ await iniAtv(); }
+          else { QUADROS_API.avancar(sv.internoRefId, async () => { if(acao === 'ini') await iniAtv(); else await fimAtv(); try{ renderTechView(); }catch(e){} }); }
+        }
       }catch(e){ console.error(e); }
       renderTechView();
     }));
@@ -22573,7 +22597,7 @@ async function concluirOS(id){
 }
 // Chamado no login do Gestor: carrega os quadros em segundo plano para o contador de "Cadastros e OS" já aparecer.
 function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => console.error('quadros: falha ao carregar', e)); }
-window.QUADROS_API = { avancar, etapa: (id) => { const q = porId(quadrosStore, id); if(!q) return null; const et = etapaDe(q); return { chip: et.chip, proxima: et.proxima ? et.proxima.rotulo : null }; }, pronto: () => carregado, garantir: () => garantirCarregado(), cartaoHtml: (id) => { const q = porId(quadrosStore, id); return q ? cartaoQuadro(q, 'oficina') : ''; }, abrirDetalhe: (id, modo) => abrirDetalhe(id, modo || 'oficina'), abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
+window.QUADROS_API = { avancar, etapa: (id) => { const q = porId(quadrosStore, id); if(!q) return null; const et = etapaDe(q); return { id: et.id, chip: et.chip, proxima: et.proxima ? et.proxima.rotulo : null, andamento: et.id === 'montando' || et.id === 'testando' }; }, pronto: () => carregado, garantir: () => garantirCarregado(), cartaoHtml: (id) => { const q = porId(quadrosStore, id); return q ? cartaoQuadro(q, 'oficina') : ''; }, abrirDetalhe: (id, modo) => abrirDetalhe(id, modo || 'oficina'), abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
 })();
 
 
