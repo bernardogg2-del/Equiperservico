@@ -758,6 +758,10 @@
   .return-checkbox-label{ font-family: var(--sans); line-height:1.25; }
   .service-controls:has(.equip-lista){ flex-direction:column; align-items:stretch; gap:8px; }
   .tec-interno{ margin:12px 0 4px; } .tec-interno .qd-card{ margin:0 0 8px; } .tec-interno .tec-qd-av{ width:100%; padding:11px 8px; font-size:14px; }
+  .os-dec-btns{ display:flex; gap:8px; } .os-dec-b{ flex:1; padding:11px 8px; border-radius:12px; border:1.5px solid var(--border,#d9d9de); background:var(--card,#fff); color:inherit; font:inherit; font-weight:700; font-size:14px; cursor:pointer; }
+  .os-dec-b.on-cobrar{ background:#1c7a3f; border-color:#1c7a3f; color:#fff; } .os-dec-b.on-nao{ background:#4a4a52; border-color:#4a4a52; color:#fff; }
+  .os-dec-extra{ margin-top:10px; } .os-dec-extra input,.os-dec-extra select{ width:100%; }
+  .btn-primary:disabled{ opacity:.4; cursor:not-allowed; }
   .tec-int-row{ display:flex; gap:8px; margin-top:8px; } .tec-int-row .tec-int-b{ flex:1; padding:12px 6px; font-size:14px; font-weight:700; }
   .tec-etapa{ margin-top:10px; } .tec-int-ok{ margin-top:8px; font-size:13px; font-weight:700; color:#2E7D4F; } .tec-sessoes{ font-size:12px; color:var(--text-dim); margin:10px 0 0; }
   .agint{ margin-top:10px; display:flex; flex-direction:column; gap:6px; align-items:flex-start; } .agint-lin{ font-size:12.5px; color:var(--text-dim); } .agint-lin b{ color:var(--text); }
@@ -3333,7 +3337,7 @@
       <button type="button" class="portal-tab active" data-prvos="aguardando">Aguardando cadastro de OS</button>
       <button type="button" class="portal-tab" data-prvos="relatorios" id="prvOsTabRel">Relatórios de manutenção</button>
       <button type="button" class="portal-tab" data-prvos="oficina" id="prvOsTabOficina">Equipamentos da Oficina</button>
-      <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao">Cobrar / Não cobrar</button>
+      <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao" style="display:none;">OS a definir</button>
     </div>
     <div id="prvOsAguardando">
     <div class="tecnicos-head">
@@ -12329,9 +12333,10 @@ function renderOS(){
             <label>Número de OS</label>
             <input type="text" data-osnumero="${s.id}" value="${escapeHtml(osNumeroRascunho[s.id] !== undefined ? osNumeroRascunho[s.id] : (s.numeroOS || ''))}" placeholder="Digite o número da ordem de serviço">
           </div>
+          ${window.OS_API ? OS_API.decHtml('a' + s.id) : ''}
           <div class="modal-actions" style="justify-content:space-between; margin-top:12px;">
             <button type="button" class="btn-ghost" data-osexcluir="${s.id}" style="color:var(--red);">Excluir</button>
-            <button type="button" class="btn-primary" data-osdone="${s.id}">Cadastro/OS realizado</button>
+            <button type="button" class="btn-primary" data-osdone="${s.id}" disabled>Cadastro/OS realizado</button>
           </div>
         </div>
       `;
@@ -12376,6 +12381,9 @@ function renderOS(){
             if(numeroInput) numeroInput.focus();
             return;
           }
+          if(window.OS_API && !OS_API.decValida('a' + id)){ alert('Escolha Cobrar ou Não cobrar (e informe o valor, se for cobrar).'); return; }
+          const decisao = window.OS_API ? OS_API.decisaoDe('a' + id) : null;
+          if(window.OS_API) OS_API.decLimpar('a' + id);
           // Se for uma dupla no formato antigo (2 registros ligados por pairId), marca os dois
           // juntos — pra não sobrar um "fantasma" pendente na fila.
           const targets = svc.pairId
@@ -12391,7 +12399,7 @@ function renderOS(){
           });
           await saveServices();
           renderOS();
-          if(window.OS_API) targets.forEach(t => OS_API.registrarEGravar(numero, OS_API.linhaDeAtividade(t)).catch(err => console.error('os: atividade', err)));   // a OS reúne tudo que tem esse número
+          if(window.OS_API) targets.forEach((t, i) => OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeAtividade(t), { decisao: i === 0 ? decisao : null })).catch(err => console.error('os: atividade', err)));   // a OS reúne tudo que tem esse número
         }
       });
     });
@@ -12415,6 +12423,7 @@ function renderOS(){
   }
   if(window.QUADROS_API) QUADROS_API.renderOS();   // quadros de comando aguardando OS (seção abaixo das atividades)
   if(window.OSOF_API) OSOF_API.renderAba();        // equipamentos da Oficina aguardando OS (aba própria + contador)
+  if(window.OS_API) OS_API.atualizarTodos();
 }
 
 // Rastreia qual aba principal está visível agora, pra saber se vale a pena recalcular o Painel
@@ -22557,8 +22566,9 @@ function cartaoOS(q){
       <div class="mono">${linhaHorario('Montagem', q.iniciouMontagemEm, q.iniciouMontagemPor, q.montadoEm, q.montadoPor)}<br>${linhaHorario('Testes', q.iniciouTesteEm, q.iniciouTestePor, q.testadoEm, q.testadoPor)}</div></div>
     <div class="field"><label>Número de OS</label>
       <input type="text" data-qd-osnumero="${esc(q.id)}" value="${esc(valor)}" placeholder="Digite o número da ordem de serviço" autocomplete="off"></div>
+    ${window.OS_API ? OS_API.decHtml('q' + q.id) : ''}
     <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;">
-      <button type="button" class="btn-primary" data-qd-osdone="${esc(q.id)}">Cadastro/OS realizado</button>
+      <button type="button" class="btn-primary" data-qd-osdone="${esc(q.id)}" disabled>Cadastro/OS realizado</button>
     </div>
   </div>`;
 }
@@ -22579,6 +22589,7 @@ function renderOSQuadros(){
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-qd-osdone]'); if(b) concluirOS(b.dataset.qdOsdone); });
   }
   if(focoId){ const alvo = box.querySelector(`[data-qd-osnumero="${focoId}"]`); if(alvo){ alvo.focus(); try{ if(caret !== null) alvo.setSelectionRange(caret, caret); }catch(e){} } }
+  if(window.OS_API) OS_API.atualizarTodos();
 }
 async function concluirOS(id){
   const q = porId(quadrosStore, id); if(!q) return;
@@ -22587,13 +22598,15 @@ async function concluirOS(id){
   const numero = inp ? inp.value.trim() : '';
   if(!numero){ alert('Preencha o número da OS antes de marcar como feito.'); if(inp) inp.focus(); return; }
   if(q.processedForOS || etapaDe(q).id !== 'testado' || q.active === false){ aviso('Este quadro acabou de ser atualizado por outra pessoa. A lista foi atualizada.'); refrescarOS(); return; }
+  if(window.OS_API && !OS_API.decValida('q' + id)){ alert('Escolha Cobrar ou Não cobrar (e informe o valor, se for cobrar).'); return; }
+  const decisao = window.OS_API ? OS_API.decisaoDe('q' + id) : null; if(window.OS_API) OS_API.decLimpar('q' + id);
   delete osRascunho[id];
   q.numeroOS = numero; q.processedForOS = true;
   q.processedForOSBy = (typeof currentManagerName !== 'undefined' && currentManagerName) || quem() || null;
   q.processedForOSAt = new Date().toISOString();
   renderListas();
   await quadrosStore.save();
-  if(window.OS_API) OS_API.registrarEGravar(numero, OS_API.linhaDeQuadro(q, nomeDoTipo(q))).catch(e => console.error('os: quadro', e));   // a OS reúne tudo que tem esse número
+  if(window.OS_API) OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeQuadro(q, nomeDoTipo(q)), { decisao })).catch(e => console.error('os: quadro', e));   // a OS reúne tudo que tem esse número
 }
 // Chamado no login do Gestor: carrega os quadros em segundo plano para o contador de "Cadastros e OS" já aparecer.
 function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => console.error('quadros: falha ao carregar', e)); }
@@ -22808,7 +22821,8 @@ function cartao(eq){
     ${eq.orcamentoNumero ? `<div class="field"><label>Orçamento</label><div>nº ${esc(eq.orcamentoNumero)}</div></div>` : ''}
     <div class="field"><label>Número de OS</label>
       <input type="text" data-osof-numero="${esc(eq.id)}" value="${esc(valor)}" placeholder="Digite o número da ordem de serviço" autocomplete="off"></div>
-    <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;"><button type="button" class="btn-primary" data-osof-feito="${esc(eq.id)}">Cadastro/OS realizado</button></div>
+    ${window.OS_API ? OS_API.decHtml('e' + eq.id) : ''}
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:12px;"><button type="button" class="btn-primary" data-osof-feito="${esc(eq.id)}" disabled>Cadastro/OS realizado</button></div>
   </div>`;
 }
 function renderAba(){
@@ -22827,6 +22841,7 @@ function renderAba(){
     box.addEventListener('click', (e) => { const b = e.target.closest('[data-osof-feito]'); if(b) concluir(b.dataset.osofFeito); });
   }
   if(focoId){ const alvo = box.querySelector(`[data-osof-numero="${focoId}"]`); if(alvo){ alvo.focus(); try{ if(caret !== null) alvo.setSelectionRange(caret, caret); }catch(e){} } }
+  if(window.OS_API) OS_API.atualizarTodos();
 }
 async function concluir(id){
   const eq = lista().find(x => String(x.id) === String(id)); if(!eq) return;
@@ -22835,6 +22850,8 @@ async function concluir(id){
   const numero = inp ? inp.value.trim() : '';
   if(!numero){ alert('Preencha o número da OS antes de marcar como feito.'); if(inp) inp.focus(); return; }
   if(eq.processedForOS || !naFila(eq)){ try{ avisoNaoBloqueante('Este equipamento acabou de ser atualizado por outra pessoa. A lista foi atualizada.', 5000); }catch(e){} refrescar(); return; }
+  if(window.OS_API && !OS_API.decValida('e' + id)){ alert('Escolha Cobrar ou Não cobrar (e informe o valor, se for cobrar).'); return; }
+  const decisao = window.OS_API ? OS_API.decisaoDe('e' + id) : null; if(window.OS_API) OS_API.decLimpar('e' + id);
   delete osRascunho[id];
   eq.numeroOS = numero; eq.processedForOS = true;
   eq.processedForOSBy = (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || null;
@@ -22842,7 +22859,7 @@ async function concluir(id){
   if(!eq.osFila) eq.osFila = eq.testeCompletedAt || eq.processedForOSAt;
   refrescar();
   await saveOficinaEquipamentos(true);
-  if(window.OS_API) OS_API.registrarEGravar(numero, OS_API.linhaDeEquipamento(eq)).catch(e => console.error('os: equipamento', e));
+  if(window.OS_API) OS_API.registrarEGravar(numero, Object.assign(OS_API.linhaDeEquipamento(eq), { decisao })).catch(e => console.error('os: equipamento', e));
 }
 window.OSOF_API = { pendentesOS, renderAba, agendar, marcarFila };
 })();
@@ -22955,6 +22972,23 @@ function atualizarTelas(){ try{ renderAba(); if(window.FIN_API) FIN_API.render()
 // ---------- entrada: uma linha recebe número de OS em Cadastros e OS ----------
 // item = { origem:'atividade'|'quadro'|'equipamento', refId, cliente, descricao, data, tecnicos:[], inicio, fim }
 // Devolve { os, aviso } — aviso quando a OS já tinha sido liquidada como cobrada/recebida pelo Financeiro.
+// Decisão tomada no card de Cadastros e OS: { tipo:'cobrar', valor } ou { tipo:'nao_cobrar', motivo }. Cobrar vai direto ao Financeiro.
+function aplicarDecisao(os, dec, agora){
+  os.decididoEm = agora; os.decididoPor = quem() || null;
+  if(dec.tipo === 'cobrar'){
+    const v = Math.round((Number(dec.valor) || 0) * 100) / 100;
+    const antes = (os.status === 'cobrar' && os.fin && os.fin.valor != null && os.fin.valor !== '') ? Number(os.fin.valor) : 0;
+    const finSt = os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida') ? os.fin.status : 'a_cobrar';
+    os.status = 'cobrar'; os.motivoNaoCobrar = null; os.motivoTexto = null;
+    os.fin = Object.assign({}, os.fin || {}, { status: finSt, valor: Math.round((antes + v) * 100) / 100, enviadaAoFinanceiroEm: agora });
+    hist(os, 'Cobrar ' + v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' (enviada ao Financeiro)' + (antes ? ' — somado ao valor já lançado' : ''));
+  } else if(os.status === 'cobrar'){
+    hist(os, 'Atividade marcada como "não cobrar" — a OS segue como cobrar por causa de outra atividade');
+  } else {
+    os.status = 'nao_cobrar'; os.motivoNaoCobrar = dec.motivo || null; os.motivoTexto = null;
+    hist(os, 'Decisão: NÃO COBRAR' + (dec.motivo ? ' (' + ((MOTIVOS.find(m => m[0] === dec.motivo) || ['', dec.motivo])[1]) + ')' : ''));
+  }
+}
 function registrar(numero, item){
   const chave = chaveDe(numero); if(!chave) return { os: null, aviso: '' };
   const agora = new Date().toISOString(); let os = porNumero(numero); let aviso = '';
@@ -22970,12 +23004,55 @@ function registrar(numero, item){
     linha.complemento = true; os.status = 'decidir'; os.complementoEm = agora;
     aviso = 'O número de OS ' + os.numero + ' já foi liquidado como ' + (os.fin.status === 'recebida' ? 'RECEBIDO' : 'COBRADO') + ' pelo Financeiro. A atividade entrou nela como complemento, mas é melhor criar uma nova OS. Ela voltou para a decisão em "Cobrar / Não cobrar".';
     hist(os, 'Atividade entrou DEPOIS de ' + os.fin.status + ' — OS voltou para decisão');
-  } else if(os.status === 'nao_cobrar' || os.status === 'cobrar'){
-    os.status = 'decidir'; hist(os, 'Nova atividade: OS voltou para decisão');
-  } else if(os.status === 'aguardando'){ hist(os, 'Nova atividade adicionada'); }
+  } else if(item.decisao){ aplicarDecisao(os, item.decisao, agora);
+  } else if(os.status === 'nao_cobrar' || os.status === 'cobrar' || os.status === 'aguardando'){ hist(os, 'Nova atividade adicionada'); }
   if(os.cliente && item.cliente && normalizedClientKey(os.cliente) !== normalizedClientKey(item.cliente)){ linha.clienteDiferente = true; hist(os, 'Atenção: cliente diferente nesta linha (' + item.cliente + ')'); }
   os.itens[k] = linha; os.itens = Object.assign({}, os.itens);     // objeto novo: o diff por campo detecta a mudança
   return { os, aviso };
+}
+// ---------- escolha Cobrar / Não cobrar dentro de cada card (atividades, quadros e Oficina) ----------
+const decRasc = {};     // chave do card → { tipo:'cobrar'|'nao_cobrar', valor:'', motivo:'' } (rascunho; sobrevive às atualizações em tempo real)
+function valorNum(t){ const x = String(t == null ? '' : t).trim().replace(/[R$\s]/g, ''); if(!x) return null; const n = Number(x.indexOf(',') >= 0 ? x.replace(/\./g, '').replace(',', '.') : x); return isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null; }
+function decHtml(k){
+  const d = decRasc[k] || {};
+  return `<div class="field os-dec" data-dec-box="${esc(k)}"><label>Cobrança</label>
+    <div class="os-dec-btns"><button type="button" class="os-dec-b ${d.tipo === 'cobrar' ? 'on-cobrar' : ''}" data-dec="cobrar" data-dec-k="${esc(k)}">💲 Cobrar</button><button type="button" class="os-dec-b ${d.tipo === 'nao_cobrar' ? 'on-nao' : ''}" data-dec="nao_cobrar" data-dec-k="${esc(k)}">🚫 Não cobrar</button></div>
+    <div class="os-dec-extra" data-dec-valor-wrap style="display:${d.tipo === 'cobrar' ? '' : 'none'};"><label>Valor a cobrar</label><input type="text" inputmode="decimal" data-dec-valor="${esc(k)}" value="${esc(d.valor || '')}" placeholder="R$ 0,00" autocomplete="off"></div>
+    <div class="os-dec-extra" data-dec-motivo-wrap style="display:${d.tipo === 'nao_cobrar' ? '' : 'none'};"><label>Motivo (opcional)</label><select data-dec-motivo="${esc(k)}"><option value="">Selecionar motivo...</option>${MOTIVOS.map(m => `<option value="${m[0]}" ${d.motivo === m[0] ? 'selected' : ''}>${esc(m[1])}</option>`).join('')}</select></div></div>`;
+}
+function decisaoDe(k){ const d = decRasc[k]; if(!d || !d.tipo) return null; return d.tipo === 'cobrar' ? { tipo: 'cobrar', valor: valorNum(d.valor) } : { tipo: 'nao_cobrar', motivo: d.motivo || '' }; }
+function decValida(k){ const d = decisaoDe(k); return !!d && (d.tipo !== 'cobrar' || d.valor != null); }
+function decLimpar(k){ delete decRasc[k]; }
+// habilita "Cadastro/OS realizado" só com número de OS preenchido + Cobrar/Não cobrar escolhido (e valor, se for cobrar)
+function atualizarCard(card){
+  const box = card && card.querySelector('[data-dec-box]'); if(!box) return;
+  const k = box.dataset.decBox; const num = card.querySelector('[data-osnumero],[data-qd-osnumero],[data-osof-numero]');
+  const bt = card.querySelector('[data-osdone],[data-qd-osdone],[data-osof-feito]'); if(!bt) return;
+  const okNum = !!(num && num.value.trim()), okDec = decValida(k);
+  bt.disabled = !(okNum && okDec);
+  bt.title = bt.disabled ? (!okNum ? 'Digite o número da OS' : !decisaoDe(k) ? 'Escolha Cobrar ou Não cobrar' : 'Informe o valor a cobrar') : '';
+}
+function atualizarTodos(){ document.querySelectorAll('.os-row').forEach(atualizarCard); }
+if(!window._osDecLigado){
+  window._osDecLigado = true;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-dec]'); if(!b) return;
+    const k = b.dataset.decK; const d = decRasc[k] = decRasc[k] || {}; d.tipo = b.dataset.dec;
+    const box = b.closest('[data-dec-box]');
+    box.querySelectorAll('[data-dec]').forEach(x => { x.classList.toggle('on-cobrar', x.dataset.dec === 'cobrar' && d.tipo === 'cobrar'); x.classList.toggle('on-nao', x.dataset.dec === 'nao_cobrar' && d.tipo === 'nao_cobrar'); });
+    box.querySelector('[data-dec-valor-wrap]').style.display = d.tipo === 'cobrar' ? '' : 'none';
+    box.querySelector('[data-dec-motivo-wrap]').style.display = d.tipo === 'nao_cobrar' ? '' : 'none';
+    atualizarCard(b.closest('.os-row'));
+    if(d.tipo === 'cobrar'){ const v = box.querySelector('[data-dec-valor]'); if(v && !v.value) v.focus(); }
+  });
+  const aoDigitar = (e) => {
+    const t = e.target; if(!t || !t.dataset) return;
+    if(t.dataset.decValor !== undefined){ (decRasc[t.dataset.decValor] = decRasc[t.dataset.decValor] || {}).valor = t.value; }
+    else if(t.dataset.decMotivo !== undefined){ (decRasc[t.dataset.decMotivo] = decRasc[t.dataset.decMotivo] || {}).motivo = t.value; }
+    else if(!(t.dataset.osnumero !== undefined || t.dataset.qdOsnumero !== undefined || t.dataset.osofNumero !== undefined)) return;
+    atualizarCard(t.closest('.os-row'));
+  };
+  document.addEventListener('input', aoDigitar); document.addEventListener('change', aoDigitar);
 }
 async function registrarEGravar(numero, item){
   await garantirCarregado();
@@ -23074,7 +23151,7 @@ function renderAba(){
   const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const termo = fold(buscaDecisao);
   const lista = termo ? todasOs.filter(o => fold(o.numero + ' ' + o.cliente + ' ' + itensDe(o).map(l => l.descricao + ' ' + (l.tecnicos || []).join(' ')).join(' ')).includes(termo)) : todasOs;
-  const aba = document.getElementById('prvOsTabDecisao'); if(aba) aba.textContent = 'Cobrar / Não cobrar' + (n ? ' (' + n + ')' : '');
+  const aba = document.getElementById('prvOsTabDecisao'); if(aba){ aba.textContent = 'OS a definir' + (n ? ' (' + n + ')' : ''); aba.style.display = n ? '' : 'none'; }   // a decisão agora é feita no próprio card; a aba só aparece enquanto sobrar OS antiga sem decisão
   if(box.style.display === 'none') return;
   const nDe = (f) => lista.filter(f).length;
   const ABAS_DEC = [['decidir', 'A definir', nDe(o => o.status === 'decidir')], ['definidas', 'Definidas', nDe(o => o.status === 'cobrar' || o.status === 'nao_cobrar')], ['aguardando', 'Aguardando', nDe(o => o.status === 'aguardando')]];
@@ -23161,7 +23238,7 @@ function abrirNaoCobrar(id){
   ov.classList.add('open');
 }
 function iniciar(){ garantirCarregado().then(renderAba).catch(e => console.error('os: falha ao carregar', e)); }
-window.OS_API = { iniciar, renderAba, decidir, abrirMigracao, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
+window.OS_API = { decHtml, decisaoDe, decValida, decLimpar, atualizarTodos, iniciar, renderAba, decidir, abrirMigracao, store, hist, itensDe, fmtD, fmtDH, registrarEGravar, linhaDeAtividade, linhaDeQuadro, linhaDeEquipamento, planoMigracao, executarMigracao, normalizarNumero, chaveDe, porNumero, todas, MOTIVOS, garantirCarregado, atualizarTelas };
 })();
 
 
