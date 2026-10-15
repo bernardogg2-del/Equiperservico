@@ -764,6 +764,7 @@
   .os-dec-b.on-ped{ background:#b4232a; border-color:#b4232a; color:#fff; } .os-dec-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .os-dec-2 input{ width:100%; }
   .obr-aprov{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; margin-right:6px; } .obr-aprov-aguardando{ background:#fff3d6; color:#8a5a00; } .obr-aprov-aprovado{ background:#dff3e6; color:#1c7a3f; } .obr-aprov-nao_aprovado{ background:#fdecea; color:#b4232a; }
   .obr-manut-ctl{ margin-top:8px; } .obr-manut-ctl label{ display:block; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; } .obr-manut-et{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .pending-origem{ margin:6px 0 2px; padding:7px 10px; border-radius:10px; background:#fdecea; color:#b4232a; font-size:13px; font-weight:600; line-height:1.35; }
   .pv-zap{ margin-top:10px; width:100%; padding:11px 10px; border-radius:12px; border:1.5px solid #1c7a3f; background:#fff; color:#1c7a3f; font:inherit; font-weight:700; font-size:14px; cursor:pointer; } .pv-zap:hover{ background:#eef8f1; }
   .obr-emp-definir{ background:#fdecea; color:#b4232a; border:1px solid #f3b9b4; } .obr-tab-alerta{ color:#b4232a; font-weight:800; }
   .os-dec-extra{ margin-top:10px; } .os-dec-extra input,.os-dec-extra select{ width:100%; }
@@ -6826,6 +6827,7 @@ function renderPendingStyleList(containerId, pending){
         <div class="pending-client">${escapeHtml(s.client)}${s.isRetorno ? ' <span class="os-retorno-tag">↩ RETORNO</span>' : ''}</div>
         <div class="pending-meta mono">${shortLabel(s.date)}${techLabel ? ' · ' + escapeHtml(techLabel) : ' · sem técnico'} · ${statusLabelOf(s.status)}</div>
       </div>
+      ${s.pendenciaRelId && window.PREV_API && PREV_API.origemAtividade && PREV_API.origemAtividade(s) ? `<div class="pending-origem">🛠 ${escapeHtml(PREV_API.origemAtividade(s))}</div>` : (s.description ? `<div class="pending-obs">${escapeHtml(s.description)}</div>` : '')}
       ${s.observations ? `<div class="pending-obs">${escapeHtml(s.observations)}</div>` : ''}
       <div class="pending-actions">
         <button class="btn-ghost" data-fillmanual="${s.id}">Preencher conclusão</button>
@@ -21328,7 +21330,7 @@ function renderHistorico(){
 }
 function atualizarTelasRelatorios(){
   try{
-    renderOsRelatorios(); renderHistorico(); repintarPendencias();
+    renderOsRelatorios(); renderHistorico(); repintarPendencias(); migrarDescricoesPend();
     if(relAbertoId){ const r = achaRel(relAbertoId); const c = document.getElementById('prvModalChips'); if(r && c) c.innerHTML = chipsStatus(r); }
   }catch(e){ console.error(e); }
 }
@@ -22077,7 +22079,7 @@ async function garantirAtividadePend(id, data){
       at = {
         id: Date.now() + 9000 + Math.floor(Math.random() * 1000),
         date: data || '', client: r.cliente,
-        description: 'Reparo das pendências da manutenção preventiva (' + n + (n === 1 ? ' pendência)' : ' pendências)'),
+        description: rotuloPendAtividade(r),
         address: r.endereco || (typeof findClientAddress === 'function' ? findClientAddress(r.cliente) : '') || '',
         technician: null, status: 'aguardando', checkIn: '', checkOut: '', observations: '',
         technicianInstructionText: 'Pendências registradas na visita de ' + dBR(r.dataVisita) + ':\n' + itens.map(i => '• ' + (i.unidadeTipo || '') + (i.unidade ? ' — ' + i.unidade : '') + ' · ' + i.campo + ': ' + i.texto).join('\n'),
@@ -22099,6 +22101,22 @@ async function pendDefinirStatus(id, novo){
   setRelCampo(id, 'pendStatus', novo); setRelCampo(id, 'pendStatusEm', agora); setRelCampo(id, 'pendStatusPor', por);
   if(novo === 'feito' || novo === 'enviado' || novo === 'aprovado') setRelCampo(id, 'pend' + novo.charAt(0).toUpperCase() + novo.slice(1) + 'Em', agora);
   return true;
+}
+// Texto que diz de onde veio a atividade: pendência da manutenção preventiva, o que estava com problema e que o orçamento foi aprovado
+function rotuloPendAtividade(r){
+  const it = resumoRelatorio(r).atencao;
+  const nome = (i) => ((i.unidade || i.unidadeTipo || '') + (i.campo ? ': ' + i.campo : '') + (i.texto ? ' (' + i.texto + ')' : '')).trim();
+  const l = it.slice(0, 3).map(nome).filter(Boolean); const mais = it.length > 3 ? ' +' + (it.length - 3) + (it.length - 3 === 1 ? ' item' : ' itens') : '';
+  return 'Pendência de manutenção preventiva — ' + (l.join('; ') || 'itens com problema') + mais + ' · orçamento aprovado';
+}
+function origemAtividade(s){ const r = s && s.pendenciaRelId ? estado.relatorios[s.pendenciaRelId] : null; return r ? rotuloPendAtividade(r) : (s && s.pendenciaPreventiva ? (s.description || '') : ''); }
+// atividades criadas antes deste texto existir ganham a descrição nova (uma vez; só o Gestor grava)
+let pendDescMigrando = false;
+async function migrarDescricoesPend(){
+  if(pendDescMigrando || typeof currentRole === 'undefined' || currentRole !== 'manager') return;
+  const alvo = services.filter(sv => sv.pendenciaRelId && /^Reparo das pendências da manutenção preventiva/.test(sv.description || '') && estado.relatorios[sv.pendenciaRelId]); if(!alvo.length) return;
+  pendDescMigrando = true;
+  try{ alvo.forEach(sv => { sv.description = rotuloPendAtividade(estado.relatorios[sv.pendenciaRelId]); }); await saveServices(); try{ renderAll(); }catch(e){} }catch(e){ console.error(e); } finally{ pendDescMigrando = false; }
 }
 // WhatsApp para a pessoa de contato do contrato de manutenção (ou, se não houver, do cadastro do cliente)
 function pendContato(cliente){
@@ -22235,7 +22253,7 @@ function alertaUrgentes(){
   box.innerHTML = htmlRet + htmlPend;
 }
 
-window.PREV_API = {
+window.PREV_API = { origemAtividade,
   montarSlot,
   gerarRelatorioAoConcluir,
   carregarUnidades,
