@@ -23053,10 +23053,12 @@ function aplicarDecisao(os, dec, agora){
   if(dec.tipo === 'cobrar'){
     const v = Math.round((Number(dec.valor) || 0) * 100) / 100;
     const antes = (os.status === 'cobrar' && os.fin && os.fin.valor != null && os.fin.valor !== '') ? Number(os.fin.valor) : 0;
+    const modo = dec.modo || (antes ? 'manter' : 'somar');       // OS que já foi ao Financeiro: por padrão NÃO soma de novo
     const finSt = os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida') ? os.fin.status : 'a_cobrar';
     os.status = 'cobrar'; os.motivoNaoCobrar = null; os.motivoTexto = null;
-    os.fin = Object.assign({}, os.fin || {}, { status: finSt, valor: Math.round((antes + v) * 100) / 100, enviadaAoFinanceiroEm: agora });
-    hist(os, 'Cobrar ' + v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' (enviada ao Financeiro)' + (antes ? ' — somado ao valor já lançado' : ''));
+    os.fin = Object.assign({}, os.fin || {}, { status: finSt, valor: modo === 'manter' ? antes : modo === 'substituir' ? v : Math.round((antes + v) * 100) / 100, enviadaAoFinanceiroEm: (os.fin && os.fin.enviadaAoFinanceiroEm) || agora });
+    const brl = (x) => Number(x).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    hist(os, modo === 'manter' && antes ? 'OS já estava no Financeiro com ' + brl(antes) + ' — valor mantido (nova atividade informou ' + brl(v) + ')' : modo === 'substituir' && antes ? 'Valor alterado de ' + brl(antes) + ' para ' + brl(v) : 'Cobrar ' + brl(v) + ' (enviada ao Financeiro)' + (antes ? ' — somado ao valor já lançado' : ''));
   } else if(dec.tipo === 'aguardando'){
     if(os.status === 'cobrar' || os.status === 'nao_cobrar') hist(os, 'Atividade marcada como "não finalizado" — a OS mantém a decisão anterior');
     else { os.status = 'aguardando'; hist(os, 'Decisão: AGUARDAR — atividade não finalizada'); }
@@ -23142,8 +23144,24 @@ if(!window._osDecLigado){
   };
   document.addEventListener('input', aoDigitar); document.addEventListener('change', aoDigitar);
 }
+// OS que já foi enviada ao Financeiro por outra atividade: pergunta se mantém o valor, altera ou soma
+function perguntarValorExistente(os, novo){
+  return new Promise((resolve) => {
+    const brl = (x) => Number(x).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const ov = document.createElement('div'); ov.className = 'overlay open'; ov.style.zIndex = 100000;
+    ov.innerHTML = '<div class="modal" style="max-width:440px;"><h3>OS já enviada ao Financeiro</h3><p style="margin:8px 0 14px; line-height:1.45;">A OS <b>' + esc(os.numero) + '</b> já foi enviada ao Financeiro com o valor de <b>' + brl(os.fin.valor) + '</b>. Esta atividade informou <b>' + brl(novo) + '</b>. O que fazer?</p>'
+      + '<div style="display:flex; flex-direction:column; gap:8px;"><button type="button" class="btn-primary" data-r="manter">Manter ' + brl(os.fin.valor) + ' (não duplicar)</button><button type="button" class="btn-ghost" data-r="substituir">Alterar para ' + brl(novo) + '</button><button type="button" class="btn-ghost" data-r="somar">Somar: ' + brl(Number(os.fin.valor) + Number(novo)) + ' (serviços diferentes)</button></div></div>';
+    document.body.appendChild(ov);
+    ov.addEventListener('click', (e) => { const b = e.target.closest('[data-r]'); if(!b) return; ov.remove(); resolve(b.dataset.r); });
+  });
+}
 async function registrarEGravar(numero, item){
   await garantirCarregado();
+  const ex = porNumero(numero);
+  if(ex && item.decisao && item.decisao.tipo === 'cobrar' && ex.status === 'cobrar' && ex.fin && ex.fin.valor != null && ex.fin.valor !== '' && Number(ex.fin.valor) > 0 && !(ex.itens && ex.itens[item.origem + '_' + String(item.refId)])){
+    const modo = await perguntarValorExistente(ex, item.decisao.valor);
+    item = Object.assign({}, item, { decisao: Object.assign({}, item.decisao, { modo }) });
+  }
   const r = registrar(numero, item);
   if(r.os){ await store.save(true); renderAba(); }
   if(item.pedido && item.pedido.numero && window.OBR_API && OBR_API.criarPedidoManutencao){ try{ await OBR_API.criarPedidoManutencao({ numero: item.pedido.numero, valor: item.pedido.valor, cliente: item.cliente, descricao: item.descricao, osNumero: numero, origem: item.origem, refId: item.refId }); try{ avisoNaoBloqueante('Pedido de manutenção ' + item.pedido.numero + ' enviado ao Financeiro.', 5000); }catch(e){} }catch(err){ console.error('os: pedido de manutenção', err); alert('⚠️ O pedido de manutenção ' + item.pedido.numero + ' NÃO foi gravado. Verifique a internet e a regra do Firebase para "obrasPedidos".'); } }
