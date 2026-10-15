@@ -764,7 +764,8 @@
   .os-dec-b.on-ped{ background:#b4232a; border-color:#b4232a; color:#fff; } .os-dec-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .os-dec-2 input{ width:100%; }
   .obr-aprov{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; margin-right:6px; } .obr-aprov-aguardando{ background:#fff3d6; color:#8a5a00; } .obr-aprov-aprovado{ background:#dff3e6; color:#1c7a3f; } .obr-aprov-nao_aprovado{ background:#fdecea; color:#b4232a; }
   .obr-manut-ctl{ margin-top:8px; } .obr-manut-ctl label{ display:block; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; } .obr-manut-et{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
-  .pending-origem{ margin:6px 0 2px; padding:7px 10px; border-radius:10px; background:#fdecea; color:#b4232a; font-size:13px; font-weight:600; line-height:1.35; }
+  .os-apagar{ color:#b4232a !important; border-color:rgba(180,35,42,.35) !important; margin-left:auto; }
+.pending-origem{ margin:6px 0 2px; padding:7px 10px; border-radius:10px; background:#fdecea; color:#b4232a; font-size:13px; font-weight:600; line-height:1.35; }
   .pv-zap{ margin-top:10px; width:100%; padding:11px 10px; border-radius:12px; border:1.5px solid #1c7a3f; background:#fff; color:#1c7a3f; font:inherit; font-weight:700; font-size:14px; cursor:pointer; } .pv-zap:hover{ background:#eef8f1; }
   .obr-emp-definir{ background:#fdecea; color:#b4232a; border:1px solid #f3b9b4; } .obr-tab-alerta{ color:#b4232a; font-weight:800; }
   .os-dec-extra{ margin-top:10px; } .os-dec-extra input,.os-dec-extra select{ width:100%; }
@@ -23244,11 +23245,41 @@ function cartao(os){
     acoes = `<button type="button" class="btn-ghost" data-os-act="voltar" data-id="${esc(os.id)}">↩ Voltar para decisão</button>`;
   }
   const quemDecidiu = os.decididoEm ? `<div class="os-meta">${os.status === 'cobrar' ? 'Cobrar' : os.status === 'nao_cobrar' ? 'Não cobrar' : 'Aguardar'} por ${esc(os.decididoPor || '—')} em ${esc(fmtDH(os.decididoEm))}</div>` : '';
+  if(typeof currentRole !== 'undefined' && currentRole === 'manager') acoes += `<button type="button" class="btn-ghost os-apagar" data-os-act="apagar" data-id="${esc(os.id)}" title="Apaga a OS do sistema (só o Gestor, com dupla confirmação)">🗑 Apagar OS</button>`;
   return `<div class="os-row" data-os="${esc(os.id)}">
     <div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div><div class="os-meta">${linhas.length} ${linhas.length === 1 ? 'linha' : 'linhas'}${os.complementoEm ? ' · ⚠ recebeu atividade depois de cobrada' : ''}</div>${quemDecidiu}</div>${chip}</div>
     ${acoes ? `<div class="os-acoes">${acoes}</div>` : ''}
     <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
   </div>`;
+}
+// Apagar OS: só o Gestor, em duas etapas (confirmação + digitar o número da OS). Remove do Firebase; as atividades/quadros/equipamentos ligados continuam existindo.
+function apagarOs(id){
+  if(typeof currentRole === 'undefined' || currentRole !== 'manager'){ alert('Só o Gestor pode apagar uma OS.'); return; }
+  const os = store.items.find(o => o.id === id); if(!os) return;
+  const brl = (v) => (v == null || v === '' || isNaN(Number(v))) ? '' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const resumo = 'OS ' + os.numero + ' — ' + (os.cliente || 'sem cliente') + (os.fin && os.fin.valor != null && os.fin.valor !== '' ? ' (' + brl(os.fin.valor) + ')' : '');
+  const fs = os.fin && os.fin.status; const extra = fs === 'recebida' ? ' Atenção: esta OS consta como RECEBIDA no Financeiro.' : fs === 'cobrada' ? ' Atenção: esta OS consta como COBRADA no Financeiro.' : os.status === 'cobrar' ? ' Ela está no Financeiro em "a cobrar".' : '';
+  customConfirm('Apagar a ' + resumo + '? Ela some do Cadastro de OS e do Financeiro, com o histórico. Não dá para desfazer.' + extra, () => {
+    let ov = document.getElementById('osApagarOverlay'); if(ov) ov.remove();
+    ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'osApagarOverlay'; ov.style.zIndex = 100000;
+    ov.innerHTML = '<div class="modal" style="max-width:420px;"><h3>Confirmar exclusão</h3><p style="margin:8px 0 12px; line-height:1.45;">Para confirmar, digite o número da OS <b>' + esc(os.numero) + '</b>:</p><div class="field"><input type="text" id="osApagarNum" placeholder="Número da OS" autocomplete="off" inputmode="numeric"></div><div class="modal-actions" style="justify-content:flex-end; margin-top:14px;"><button type="button" class="btn-ghost" id="osApagarCancel">Cancelar</button><button type="button" class="btn-primary" id="osApagarOk" disabled style="background:#b4232a;">Apagar definitivamente</button></div></div>';
+    document.body.appendChild(ov);
+    const inp = ov.querySelector('#osApagarNum'), ok = ov.querySelector('#osApagarOk');
+    const fecha = () => ov.remove();
+    ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'osApagarCancel') fecha(); });
+    inp.addEventListener('input', () => { ok.disabled = normalizarNumero(inp.value) !== normalizarNumero(os.numero); });
+    inp.addEventListener('keydown', (e) => { if(e.key === 'Enter' && !ok.disabled) ok.click(); });
+    ok.addEventListener('click', async () => {
+      ok.disabled = true; ok.textContent = 'Apagando…';
+      try{
+        if(typeof rtdb !== 'undefined' && rtdb) await rtdb.ref('ordensServico/' + os.id).remove();
+        store.items = store.items.filter(o => o.id !== os.id); delete store.snapshot[os.id];
+        fecha(); renderAba(); atualizarTelas();
+        try{ avisoNaoBloqueante(resumo + ' apagada.', 5000); }catch(e){}
+      }catch(err){ console.error('os: apagar', err); alert('⚠️ Não foi possível apagar a OS. Verifique a internet e tente de novo.'); ok.disabled = false; ok.textContent = 'Apagar definitivamente'; }
+    });
+    setTimeout(() => inp.focus(), 50);
+  }, 'Continuar');
 }
 let buscaDecisao = ''; let abaDecisao = 'decidir';   // sub-abas: decidir (A definir) · definidas (Cobrar / Não cobrar) · aguardando
 try{ const sv = localStorage.getItem('osAbaDecisao'); if(['decidir', 'definidas', 'aguardando'].includes(sv)) abaDecisao = sv; }catch(e){}
@@ -23268,14 +23299,14 @@ function renderAba(){
   const foco = document.activeElement; const focoBusca = foco && foco.id === 'osDecisaoBusca'; const caret = focoBusca ? foco.selectionStart : null;
   box.innerHTML = `<div class="prv-linha" style="margin:0 0 10px; align-items:center;"><div class="search-clear-wrap" style="flex:1; min-width:220px; max-width:460px;"><input type="search" id="osDecisaoBusca" placeholder="Buscar por cliente, número da OS, descrição ou técnico…" value="${esc(buscaDecisao)}" autocomplete="off"><button type="button" class="search-clear-btn" data-os-act="limpar-busca">✕</button></div>${termo ? `<span class="prv-hint" style="margin:0; font-size:12px;">${lista.length ? lista.length + (lista.length === 1 ? ' OS encontrada' : ' OS encontradas') : 'Nenhuma OS encontrada'}</span>` : ''}</div>
 `
-    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? ((sec('aguardando', true) + sec('decidir', true)) || '<div class="empty-state">' + (termo ? 'Nenhuma OS com esse texto.' : 'Nenhum registro não finalizado. Quando uma atividade for marcada como "Não finalizado" em Aguardando cadastro de OS, ela aparece aqui.') + '</div>') : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Cadastre uma OS numa atividade e ela aparece aqui.</div>')));
+    + (!carregado ? '<div class="empty-state">Carregando…</div>' : (lista.length ? ((sec('aguardando', true) + sec('decidir', true) + (termo ? sec('cobrar', true) + sec('nao_cobrar', true) : '')) || '<div class="empty-state">' + (termo ? 'Nenhuma OS com esse texto.' : 'Nenhum registro não finalizado. Quando uma atividade for marcada como "Não finalizado" em Aguardando cadastro de OS, ela aparece aqui. Para achar (ou apagar) qualquer OS, inclusive as que já estão no Financeiro, busque pelo número ou cliente.') + '</div>') : (termo ? '<div class="empty-state">Nenhuma OS com esse texto.</div>' : '<div class="empty-state">Nenhuma OS registrada ainda. Cadastre uma OS numa atividade e ela aparece aqui.</div>')));
   if(focoBusca){ const b = document.getElementById('osDecisaoBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
   if(!box._osLigado){ box._osLigado = true;
     box.addEventListener('input', (e) => { if(e.target.id === 'osDecisaoBusca'){ buscaDecisao = e.target.value; renderAba(); } });
     box.addEventListener('keydown', (e) => { if(e.target.id === 'osDecisaoBusca' && e.key === 'Escape'){ buscaDecisao = ''; renderAba(); } });
     box.addEventListener('click', (e) => {
       const b = e.target.closest('[data-os-act]');
-      if(b){ const a = b.dataset.osAct; if(a === 'aba'){ abaDecisao = b.dataset.aba; try{ localStorage.setItem('osAbaDecisao', abaDecisao); }catch(_){} renderAba(); } else if(a === 'migrar') abrirMigracao(); else if(a === 'cobrar') decidir(b.dataset.id, 'cobrar'); else if(a === 'aguardar') decidir(b.dataset.id, 'aguardando'); else if(a === 'voltar') decidir(b.dataset.id, 'decidir'); else if(a === 'nao-cobrar') abrirNaoCobrar(b.dataset.id); else if(a === 'limpar-busca'){ buscaDecisao = ''; renderAba(); const i = document.getElementById('osDecisaoBusca'); if(i) i.focus(); } return; }
+      if(b){ const a = b.dataset.osAct; if(a === 'aba'){ abaDecisao = b.dataset.aba; try{ localStorage.setItem('osAbaDecisao', abaDecisao); }catch(_){} renderAba(); } else if(a === 'migrar') abrirMigracao(); else if(a === 'apagar') apagarOs(b.dataset.id); else if(a === 'cobrar') decidir(b.dataset.id, 'cobrar'); else if(a === 'aguardar') decidir(b.dataset.id, 'aguardando'); else if(a === 'voltar') decidir(b.dataset.id, 'decidir'); else if(a === 'nao-cobrar') abrirNaoCobrar(b.dataset.id); else if(a === 'limpar-busca'){ buscaDecisao = ''; renderAba(); const i = document.getElementById('osDecisaoBusca'); if(i) i.focus(); } return; }
       const tr = e.target.closest('[data-os-linha]'); if(tr) abrirLinha(tr.dataset.osLinha);
     }); }
 }
@@ -23537,7 +23568,7 @@ function render(){
       <input type="search" id="finValor" inputmode="decimal" placeholder="Valor (ex.: 1250 ou 1.250,00)" value="${esc(filtro.valor)}">
       <select id="finStatus"><option value="abertas" ${filtro.status === 'abertas' ? 'selected' : ''}>Em aberto (a cobrar + cobradas)</option><option value="a_cobrar" ${filtro.status === 'a_cobrar' ? 'selected' : ''}>A cobrar</option><option value="cobrada" ${filtro.status === 'cobrada' ? 'selected' : ''}>Cobradas</option><option value="recebida" ${filtro.status === 'recebida' ? 'selected' : ''}>Recebidas</option><option value="todas" ${filtro.status === 'todas' ? 'selected' : ''}>Todas</option></select>
       <label>De <input type="date" id="finDe" value="${esc(filtro.de)}"></label><label>até <input type="date" id="finAte" value="${esc(filtro.ate)}"></label>
-      <button type="button" class="btn-ghost" id="finCsv">⤓ CSV</button>
+      <button type="button" class="btn-ghost" id="finCsv">⤓ CSV</button>${planilhaPendentes().length ? `<button type="button" class="btn-ghost" id="finImpPlan" title="OS em aberto da planilha antiga Controle de OS (linhas amarelas e laranjas)">📥 Importar planilha antiga (${planilhaPendentes().length})</button>` : ''}
     </div>
     ${bv ? `<div class="prv-hint" style="margin:0 20px 8px;">${bv.diretas.length ? bv.diretas.length + ' OS com esse valor (ou que contêm esses dígitos).' : 'Nenhuma OS com esse valor.'}${bv.combos.length ? ' <b>Somas que batem:</b> ' + bv.combos.map(c => c.map(o => 'OS ' + esc(o.numero)).join(' + ') + ' (' + esc(c[0].cliente) + ')').join(' · ') : ''}</div>` : ''}
     <div style="padding:0 20px 30px;">${lista.length ? lista.map(cartao).join('') : '<div class="empty-state">Nenhuma OS nesta lista.</div>'}</div>`;
@@ -23550,7 +23581,39 @@ function ligar(box){
   box.addEventListener('click', (e) => {
     const b = e.target.closest('[data-fin]'); if(b){ const a = b.dataset.fin, id = b.dataset.id; if(a === 'cobrar') abrirCobrar(id); else if(a === 'receber') abrirReceber(id); else if(a === 'cancelar') cancelar(id); else if(a === 'reabrir') reabrir(id); else if(a === 'hist'){ aberto[id] = !aberto[id]; render(); } return; }
     if(e.target.id === 'finCsv') exportarCsv();
+    if(e.target.id === 'finImpPlan') abrirImportPlanilha();
   });
+}
+// ---------- importação única: OS em aberto da planilha antiga "Controle de OS" (linhas amarelas/laranjas, out/2026) ----------
+const PLANILHA_OS = [{"numero": "5571", "cliente": "Luciana Menezes", "valor": 790.0, "data": "2022-10-01", "obs": "enviar para luciana 21 97216-2520", "cor": "laranja"}, {"numero": "5495", "cliente": "Paulo Gouvea", "valor": 245.0, "data": "2022-07-03", "obs": "enviar para bernardo stewart 21 99020-0089", "cor": "laranja"}, {"numero": "6705", "cliente": "NAZARE METSAVAHT", "valor": 437.5, "data": "2024-10-31", "obs": "", "cor": "laranja"}, {"numero": "7044", "cliente": "Marcos Cruz", "valor": 420.0, "data": "2025-07-04", "obs": "", "cor": "laranja"}, {"numero": "7105", "cliente": "Cassia Bomeny", "valor": 1291.65, "data": "2025-08-13", "obs": "Verificar com o Marcelo", "cor": "laranja"}, {"numero": "7171", "cliente": "Luciana Coelho", "valor": 1026.32, "data": "2025-09-22", "obs": "", "cor": "laranja"}, {"numero": "6954.3", "cliente": "Luis Gamboa", "valor": 105.6, "data": "2025-10-07", "obs": "Conserto Sauna - só as peças", "cor": "amarela"}, {"numero": "6827", "cliente": "Bruno Fontes", "valor": 1433.87, "data": "2025-10-02", "obs": "Sem contato", "cor": "amarela"}, {"numero": "7267", "cliente": "Humberto Mota", "valor": 498.16, "data": "2025-11-13", "obs": "Enviado para Humberto", "cor": "laranja"}, {"numero": "7269", "cliente": "Oscar de faria", "valor": 511.8, "data": "2025-11-17", "obs": "", "cor": "laranja"}, {"numero": "7221", "cliente": "Sergio Marques", "valor": 690.0, "data": "2025-11-18", "obs": "", "cor": "laranja"}, {"numero": "7359", "cliente": "Fernando Hargreaves", "valor": 1828.8, "data": "2026-01-30", "obs": "Já enviei para o Carlos Estrela", "cor": "laranja"}, {"numero": "7404", "cliente": "Oscar de faria", "valor": 420.0, "data": "2026-02-24", "obs": "", "cor": "laranja"}, {"numero": "7465", "cliente": "Rodrigo Vezpa", "valor": 985.34, "data": "2026-04-09", "obs": "Marcelo enviou", "cor": "laranja"}, {"numero": "7446", "cliente": "Cassia Bomeny", "valor": 1719.0, "data": "2026-06-09", "obs": "", "cor": "laranja"}, {"numero": "7508", "cliente": "Eduardo Magalhaes", "valor": 712.15, "data": "2026-07-16", "obs": "Aguardando a aprovação do orçamento - falar com Marcelo", "cor": "laranja"}, {"numero": "7614", "cliente": "Marcel Guetta", "valor": 440.0, "data": "2026-07-20", "obs": "Sabrina Guetta", "cor": "laranja"}, {"numero": "7302", "cliente": "Marcio Correia", "valor": 2866.56, "data": "2026-08-12", "obs": "", "cor": "laranja"}, {"numero": "7541", "cliente": "Patricia de alencar", "valor": 440.0, "data": "2026-08-21", "obs": "Francisco - caseiro que pediu", "cor": "laranja"}, {"numero": "7632", "cliente": "Daniel Spilberg", "valor": 440.0, "data": "2026-08-10", "obs": "", "cor": "laranja"}, {"numero": "7247", "cliente": "Isabella Redenschi", "valor": 1587.06, "data": "2026-08-25", "obs": "Mandei para o Marcelo no dia 25/08", "cor": "amarela"}, {"numero": "7513", "cliente": "Celso Colombo", "valor": 1943.4, "data": "2026-09-16", "obs": "Henrique", "cor": "laranja"}, {"numero": "7425", "cliente": "Paulo Rogerio Val", "valor": 1164.87, "data": "2026-09-22", "obs": "Cristiana", "cor": "laranja"}, {"numero": "7675", "cliente": "Cassia Bomeny", "valor": 857.6, "data": "2026-09-22", "obs": "", "cor": "laranja"}, {"numero": "7690", "cliente": "Mario - filho Orlando Soares", "valor": 880.0, "data": "2026-10-07", "obs": "Isabelle Laer", "cor": "laranja"}, {"numero": "7486", "cliente": "Emerson Melo", "valor": 8421.0, "data": "2026-10-05", "obs": "Marcelo enviou (o cliente esta viajando)", "cor": "laranja"}, {"numero": "", "cliente": "Maria Angelica Ancede", "valor": 440.0, "data": "2026-10-07", "obs": "", "cor": "sem cor"}];
+function planilhaPendentes(){ return PLANILHA_OS.filter(p => p.numero ? !OS_API.porNumero(p.numero) : !OS_API.todas().some(o => o.importadaPlanilhaEm && normalizedClientKey(o.cliente || '') === normalizedClientKey(p.cliente) && Number(o.fin && o.fin.valor) === p.valor)); }
+function abrirImportPlanilha(){
+  const pend = planilhaPendentes(); if(!pend.length) return;
+  let ov = document.getElementById('finImpOverlay');
+  if(!ov){ ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'finImpOverlay'; document.body.appendChild(ov); ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'finImpFechar') ov.classList.remove('open'); }); }
+  ov.innerHTML = `<div class="modal" style="max-width:720px; max-height:88vh; overflow-y:auto;"><h3>Importar OS da planilha antiga</h3>
+    <p class="prv-hint" style="margin:6px 0 10px;">Linhas amarelas e laranjas da planilha <b>Controle de OS</b> (as verdes já estão pagas e ficam de fora). Cada uma entra como OS <b>a cobrar</b> com o valor e a observação da planilha. Desmarque o que não quiser importar.</p>
+    <table class="os-linhas"><thead><tr><th></th><th>OS</th><th>Cliente</th><th>Valor</th><th>Finalização</th><th>Observação</th></tr></thead><tbody>${pend.map((p, i) => `<tr><td><input type="checkbox" data-imp-ck="${i}" ${p.numero ? 'checked' : ''}></td><td class="mono">${p.numero ? esc(p.numero) : `<input type="text" data-imp-num="${i}" placeholder="Nº da OS" style="width:90px;" title="Esta linha não tinha número na planilha">`}</td><td>${esc(p.cliente)}</td><td class="mono">${esc(brl(p.valor))}</td><td class="mono">${esc(p.data ? fmtD(p.data + 'T12:00:00') : '—')}</td><td style="font-size:12.5px;">${esc(p.obs || '')}${p.cor === 'amarela' ? ' <span class="prv-chip amber">amarela</span>' : ''}</td></tr>`).join('')}</tbody></table>
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:14px;"><button type="button" class="btn-ghost" id="finImpFechar">Cancelar</button><button type="button" class="btn-primary" id="finImpOk">Importar</button></div></div>`;
+  ov.classList.add('open');
+  ov.querySelector('#finImpOk').onclick = async () => {
+    const agora = new Date().toISOString(); const sel = [];
+    pend.forEach((p, i) => { const ck = ov.querySelector(`[data-imp-ck="${i}"]`); if(!ck || !ck.checked) return; const ni = ov.querySelector(`[data-imp-num="${i}"]`); const numero = p.numero || (ni && ni.value.trim()); if(!numero || OS_API.porNumero(numero)) return; sel.push(Object.assign({}, p, { numero })); });
+    if(!sel.length){ alert('Nenhuma OS selecionada (ou as selecionadas já existem).'); return; }
+    const bt = ov.querySelector('#finImpOk'); bt.disabled = true; bt.textContent = 'Importando…';
+    try{
+      await OS_API.garantirCarregado();
+      sel.forEach(p => {
+        const os = { id: OS_API.chaveDe(p.numero), numero: p.numero, cliente: p.cliente, status: 'cobrar', criadoEm: agora, criadoPor: quem() || null, decididoEm: agora, decididoPor: quem() || null, importadaPlanilhaEm: agora,
+          fin: { status: 'a_cobrar', valor: p.valor, enviadaAoFinanceiroEm: p.data ? p.data + 'T12:00:00.000Z' : agora }, itens: {}, historico: [] };
+        os.itens['planilha_' + os.id] = { origem: 'planilha', refId: os.id, cliente: p.cliente, descricao: 'Planilha antiga Controle de OS' + (p.obs ? ' — ' + p.obs : ''), data: p.data ? p.data + 'T12:00:00.000Z' : '', tecnicos: [], inicio: null, fim: null, adicionadoEm: agora, adicionadoPor: 'importação' };
+        OS_API.hist(os, 'Importada da planilha Controle de OS (linha ' + p.cor + ')' + (p.obs ? ': ' + p.obs : ''));
+        OS_API.store.items.push(os);
+      });
+      await OS_API.store.save(true); ov.classList.remove('open'); OS_API.renderAba(); render();
+      try{ avisoNaoBloqueante(sel.length + ' OS importadas da planilha para "A cobrar".', 6000); }catch(e){}
+    }catch(err){ console.error('fin: importar planilha', err); alert('⚠️ A importação NÃO foi gravada. Verifique a internet e tente de novo.'); bt.disabled = false; bt.textContent = 'Importar'; }
+  };
 }
 function exportarCsv(){
   const linhas = [['Numero', 'Cliente', 'Situacao', 'Valor', 'Enviada ao financeiro', 'Cobrada em', 'Vencimento', 'Recebida em', 'Forma', 'Documento', 'Linhas']];
