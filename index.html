@@ -22117,6 +22117,27 @@ function pendZap(id){
   const msg = 'Olá' + (primeiro ? ', ' + primeiro : '') + '! Segue orçamento para resolução dos problemas encontrados na última manutenção preventiva realizada no dia ' + dBR(r.dataVisita) + '.';
   if(typeof openWhatsapp === 'function' && typeof toWhatsappNumber === 'function') openWhatsapp(toWhatsappNumber(c.fone), msg);
 }
+// Orçamento aprovado: pede o número e o valor do pedido (vão para Financeiro → Pedidos de manutenção)
+function pedirPedidoAprovado(r, aoConfirmar){
+  let ov = document.getElementById('prvPedAprOverlay'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'prvPedAprOverlay';
+  ov.innerHTML = '<div class="modal" style="max-width:440px;"><h3>Orçamento aprovado</h3><p class="modal-sub">Informe o pedido de “' + esc(r.cliente || '') + '”. Ele vai para o Financeiro (Pedidos de manutenção) e a visita entra na Agenda como atividade pendente de agendamento.</p>'
+    + '<div class="field"><label>Nº do pedido *</label><input type="text" id="prvPedNum" autocomplete="off" placeholder="Nº do pedido" value="' + esc(r.pendPedidoNumero || '') + '"></div>'
+    + '<div class="field"><label>Valor do pedido *</label><input type="text" id="prvPedVal" inputmode="decimal" autocomplete="off" placeholder="R$ 0,00" value="' + esc(r.pendPedidoValor != null ? String(r.pendPedidoValor).replace('.', ',') : '') + '"></div>'
+    + '<div class="field-error" id="prvPedErr"></div>'
+    + '<div class="modal-actions" style="justify-content:flex-end; gap:8px;"><button type="button" class="btn-ghost" id="prvPedCancel">Cancelar</button><button type="button" class="btn-primary" id="prvPedOk">Aprovar e enviar ao Financeiro</button></div></div>';
+  document.body.appendChild(ov);
+  const $ = (i) => document.getElementById(i);
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'prvPedCancel') ov.remove(); });
+  $('prvPedOk').onclick = () => {
+    const numero = $('prvPedNum').value.trim(); const t = $('prvPedVal').value.trim().replace(/[R$\s]/g, '');
+    const valor = t ? Number(t.indexOf(',') >= 0 ? t.replace(/\./g, '').replace(',', '.') : t) : NaN;
+    if(!numero) { $('prvPedErr').textContent = 'Informe o número do pedido.'; return; }
+    if(!(valor > 0)) { $('prvPedErr').textContent = 'Informe o valor do pedido.'; return; }
+    ov.remove(); aoConfirmar(numero, Math.round(valor * 100) / 100);
+  };
+  setTimeout(() => $('prvPedNum').focus(), 40);
+}
 function pendenciasClique(el, repintar){
   const a = el.dataset.pv; const id = el.dataset.id;
   const fim = () => { try{ repintar && repintar(); }catch(e){} try{ alertaUrgentes(); }catch(e){} };
@@ -22132,8 +22153,17 @@ function pendenciasClique(el, repintar){
     const atual = r.pendStatus || 'novo'; let novo = el.dataset.st;
     if(novo === atual) novo = atual === 'enviado' ? 'feito' : 'novo';          // tocar no passo atual desfaz
     if(novo === 'aprovado'){
-      customConfirm('Marcar como “Orçamento aprovado”? Isso cria na Agenda uma atividade pendente de agendamento para “' + (r.cliente || '') + '”.',
-        async () => { if(await pendDefinirStatus(id, 'aprovado')){ aviso('Atividade criada na Agenda, aguardando agendamento.', 5000); try{ renderAll(); }catch(e){} } fim(); }, 'Aprovar orçamento');
+      pedirPedidoAprovado(r, async (numero, valor) => {
+        if(await pendDefinirStatus(id, 'aprovado')){
+          setRelCampo(id, 'pendPedidoNumero', numero); setRelCampo(id, 'pendPedidoValor', valor);
+          let msg = 'Atividade criada na Agenda, aguardando agendamento.';
+          try{
+            if(window.OBR_API && OBR_API.criarPedidoManutencao){ await OBR_API.criarPedidoManutencao({ numero, valor, cliente: r.cliente, descricao: 'Reparo das pendências da manutenção preventiva de ' + dBR(r.dataVisita), origem: 'pendencia', refId: id, aprovacao: 'aprovado' }); msg += ' Pedido ' + numero + ' enviado ao Financeiro (Pedidos de manutenção).'; }
+          }catch(e){ console.error('pendências: pedido de manutenção', e); alert('⚠️ O orçamento foi aprovado, mas o pedido ' + numero + ' NÃO foi gravado no Financeiro. Verifique a internet e tente de novo (desfaça e aprove outra vez).'); }
+          aviso(msg, 6000); try{ renderAll(); }catch(e){}
+        }
+        fim();
+      });
     } else { pendDefinirStatus(id, novo).then(fim); }
   }
 }
@@ -23949,7 +23979,7 @@ async function criarPedidoManutencao(d){
   if(r && lista(r.pedidos).some(p => fold(p.numero) === fold(numero))) return r;      // o mesmo pedido já está neste registro: não duplica
   const cl = (typeof clientePorNome === 'function' ? clientePorNome(d.cliente) : null);
   if(!r){ r = { id: uid('mn_'), tipo: 'manutencao', empresa: null, cliente: cl ? cl.name : d.cliente, clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
-  r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero, descricao: d.descricao || null, valor, osNumero: d.osNumero || null, origem: d.origem || null, origemId: d.refId != null ? String(d.refId) : null } });
+  r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero, descricao: d.descricao || null, valor, osNumero: d.osNumero || null, origem: d.origem || null, origemId: d.refId != null ? String(d.refId) : null, aprovacao: d.aprovacao || null, aprovacaoEm: d.aprovacao ? agora : null, aprovacaoPor: d.aprovacao ? (quem() || null) : null } });
   r.atualizadoEm = agora; r.atualizadoPor = quem() || null;
   renderLista(); await store.save(true);
   return r;
