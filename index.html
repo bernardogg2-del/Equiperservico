@@ -24543,8 +24543,18 @@ function mostrarAbaGestor(aba){
 // Andamento principal do cliente = o GARGALO: o menos avançado entre os pedidos que ainda não terminaram (é ele que segura a obra); se todos terminaram, "Finalizado".
 const temStatus = (r, pid, k) => FASE_INTERNA.includes(k) ? internoDe(r, pid) === k : obraDe(r, pid) === k;
 function andamentoPrincipal(pares){
-  const ordem = (k) => STATUS_OBRA.findIndex(x => x[0] === k); const ks = pares.map(x => statusObraDe(x.r, x.p.id)); const abertos = ks.filter(k => k !== 'finalizado');
+  const ordem = (k) => STATUS_OBRA.findIndex(x => x[0] === k);
+  // Obra já começou (algum pedido Iniciado / Aguardando testes): esse é o andamento principal — os outros pedidos (ainda por entregar etc.) aparecem ao lado
+  const emObra = pares.map(x => obraDe(x.r, x.p.id)).filter(k => k === 'iniciado' || k === 'aguardando_testes');
+  if(emObra.length) return emObra.sort((a, b) => ordem(a) - ordem(b))[0];
+  const ks = pares.map(x => statusObraDe(x.r, x.p.id)); const abertos = ks.filter(k => k !== 'finalizado');
   return (abertos.length ? abertos : ks).sort((a, b) => ordem(a) - ordem(b))[0];
+}
+// Os demais andamentos do cliente, para mostrar ao lado do principal: a etapa interna dos pedidos ainda não entregues e a etapa de obra dos outros pedidos
+function outrosAndamentos(pares, prin){
+  const out = []; const add = (k) => { if(k && k !== prin && !out.includes(k)) out.push(k); };
+  pares.forEach(x => { const i = internoDe(x.r, x.p.id), o = obraDe(x.r, x.p.id); if(i !== 'entregue') add(i); if(o && o !== 'finalizado' && !(o === 'aguardando_inicio' && i !== 'entregue')) add(o); else if(!o) add(statusObraDe(x.r, x.p.id)); });
+  return out.sort((a, b) => STATUS_OBRA.findIndex(x => x[0] === a) - STATUS_OBRA.findIndex(x => x[0] === b));
 }
 function renderGestor(){
   const v = document.getElementById('tabObras'); if(!v || !uiG.montado || v.style.display === 'none') return;
@@ -24588,14 +24598,14 @@ function renderGestor(){
     const pares = itens.flatMap(({ r, peds }) => peds.map(p => ({ r, p })));
     const todosPeds = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const fin = todosPeds.filter(x => statusObraDe(x.r, x.p.id) === 'finalizado').length;
-    const prin = andamentoPrincipal(pares); const outros = pares.filter(x => statusObraDe(x.r, x.p.id) !== prin);
-    const rotOutros = [...new Set(outros.map(x => rotObra(statusObraDe(x.r, x.p.id))))].join(', ');
+    const prin = andamentoPrincipal(pares); const outros = outrosAndamentos(pares, prin);
+    const rotOutros = outros.map(rotObra).join(', ');
     const pontos = pares.slice(0, 14).map(x => `<i class="obrg-dot obrg-dot-${statusObraDe(x.r, x.p.id)}" title="Pedido ${esc(x.p.numero)} · ${esc(rotObra(statusObraDe(x.r, x.p.id)))}"></i>`).join('') + (pares.length > 14 ? `<small class="obrg-mais">+${pares.length - 14}</small>` : '');
     const acoes = `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
     return cab + `<div class="obrg-card obrg-cliente${aberto ? ' obrg-aberto' : ''}">
       <div class="obrg-resumo" role="button" tabindex="0" aria-expanded="${aberto}" data-obrg-cli="${esc(chave)}" title="${aberto ? 'Recolher' : 'Abrir o cartão completo'}"><span class="obrg-seta">${aberto ? '▾' : '▸'}</span>
         <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}</span>
-        <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.length ? `<span class="obrg-outros" title="${outros.length} ${outros.length === 1 ? 'pedido em outro andamento' : 'pedidos em outros andamentos'}: ${esc(rotOutros)}">+${outros.length}</span>` : ''}</span>
+        <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.slice(0, 2).map(k => `<span class="obrg-outros obrg-outros-${k}" title="Outros pedidos deste cliente: ${esc(rotOutros)}">${esc(rotObra(k))}</span>`).join('')}${outros.length > 2 ? `<span class="obrg-outros" title="${esc(rotOutros)}">+${outros.length - 2}</span>` : ''}</span>
         <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-anel${fin && fin === todosPeds.length ? ' cheio' : ''}" style="--p:${todosPeds.length ? Math.round(fin / todosPeds.length * 100) : 0}" role="img" aria-label="${todosPeds.length ? Math.round(fin / todosPeds.length * 100) : 0}% concluído" title="${fin} de ${todosPeds.length} finalizados"><b>${todosPeds.length ? Math.round(fin / todosPeds.length * 100) : 0}%</b></span></div>
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
       ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const ki = internoDe(r, p.id), ko = obraDe(r, p.id); const e = entradaSt(r, p.id); const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
