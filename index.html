@@ -764,6 +764,7 @@
   .os-dec-b.on-ped{ background:#b4232a; border-color:#b4232a; color:#fff; } .os-dec-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .os-dec-2 input{ width:100%; }
   .obr-aprov{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; margin-right:6px; } .obr-aprov-aguardando{ background:#fff3d6; color:#8a5a00; } .obr-aprov-aprovado{ background:#dff3e6; color:#1c7a3f; } .obr-aprov-nao_aprovado{ background:#fdecea; color:#b4232a; }
   .obr-manut-ctl{ margin-top:8px; } .obr-manut-ctl label{ display:block; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; } .obr-manut-et{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
+  .pv-zap{ margin-top:10px; width:100%; padding:11px 10px; border-radius:12px; border:1.5px solid #1c7a3f; background:#fff; color:#1c7a3f; font:inherit; font-weight:700; font-size:14px; cursor:pointer; } .pv-zap:hover{ background:#eef8f1; }
   .obr-emp-definir{ background:#fdecea; color:#b4232a; border:1px solid #f3b9b4; } .obr-tab-alerta{ color:#b4232a; font-weight:800; }
   .os-dec-extra{ margin-top:10px; } .os-dec-extra input,.os-dec-extra select{ width:100%; }
   .btn-primary:disabled{ opacity:.4; cursor:not-allowed; }
@@ -22058,7 +22059,7 @@ function pendDetalheHtml(c){
       + '<button type="button" class="pv-urg ' + (p.urgente ? 'on' : '') + '" data-pv="urg" data-id="' + esc(p.id) + '">' + (p.urgente ? '⚠ Urgente (desmarcar)' : 'Marcar como urgente') + '</button></div>'
       + '<div class="pn-nota" style="margin:0 0 6px;">' + esc(urgInfo) + '</div>'
       + '<ul class="pv-itens">' + p.itens.map(i => '<li><b>' + esc(i.unidadeTipo || '') + (i.unidade ? ' — ' + esc(i.unidade) : '') + '</b><span>' + esc(i.grupo || '') + ' · ' + esc(i.campo) + ': <em>' + esc(i.texto) + '</em></span></li>').join('') + '</ul>'
-      + '<div class="pv-orc"><div class="pv-orc-t">Orçamento</div><div class="pv-passos">' + passos + '</div></div>' + ativ + '</div>';
+      + '<div class="pv-orc"><div class="pv-orc-t">Orçamento</div><div class="pv-passos">' + passos + '</div><button type="button" class="pv-zap" data-pv="zap" data-id="' + esc(p.id) + '">💬 Enviar orçamento por WhatsApp</button></div>' + ativ + '</div>';
   }).join('');
   return '<section class="pn-bloco pn-largo"><div class="pn-bloco-h"><button type="button" class="pn-link" data-pv="voltar">‹ Voltar à lista</button></div>'
     + '<div class="pn-cli-h"><span class="pn-cli-n">' + esc(c.nome) + '</span><span class="pn-cli-s">' + c.nItens + (c.nItens === 1 ? ' pendência' : ' pendências') + '</span>' + (c.urgente ? '<span class="pn-pill pn-p-red">⚠ Urgente</span>' : '') + '</div>' + regs + '</section>';
@@ -22099,6 +22100,23 @@ async function pendDefinirStatus(id, novo){
   if(novo === 'feito' || novo === 'enviado' || novo === 'aprovado') setRelCampo(id, 'pend' + novo.charAt(0).toUpperCase() + novo.slice(1) + 'Em', agora);
   return true;
 }
+// WhatsApp para a pessoa de contato do contrato de manutenção (ou, se não houver, do cadastro do cliente)
+function pendContato(cliente){
+  const k = normalizedClientKey(cliente || '');
+  const okFone = (f) => typeof phoneDigits === 'function' && phoneDigits(f).length >= 10;
+  const ct = (typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []).find(c => normalizedClientKey(c.client || '') === k && okFone(c.contact));
+  if(ct) return { nome: ct.contactName || cliente, fone: ct.contact };
+  const cl = (typeof clients !== 'undefined' ? clients : []).find(c => normalizedClientKey(c.name || '') === k && okFone(c.fone));
+  return cl ? { nome: cl.contato || cl.name, fone: cl.fone } : null;
+}
+function pendZap(id){
+  const r = estado.relatorios[id]; if(!r) return;
+  const c = pendContato(r.cliente);
+  if(!c){ aviso('Não encontrei telefone da pessoa de contato de ' + (r.cliente || 'este cliente') + '. Cadastre em Manutenções (contrato) ou em Clientes.', 6000); return; }
+  const primeiro = String(c.nome || '').split('(')[0].trim().split(/\s+/)[0];
+  const msg = 'Olá' + (primeiro ? ', ' + primeiro : '') + '! Segue orçamento para resolução dos problemas encontrados na última manutenção preventiva realizada no dia ' + dBR(r.dataVisita) + '.';
+  if(typeof openWhatsapp === 'function' && typeof toWhatsappNumber === 'function') openWhatsapp(toWhatsappNumber(c.fone), msg);
+}
 function pendenciasClique(el, repintar){
   const a = el.dataset.pv; const id = el.dataset.id;
   const fim = () => { try{ repintar && repintar(); }catch(e){} try{ alertaUrgentes(); }catch(e){} };
@@ -22106,6 +22124,7 @@ function pendenciasClique(el, repintar){
   else if(a === 'voltar'){ pendUI.aberto = ''; fim(); }
   else if(a === 'filtro'){ pendUI.filtro = pendUI.filtro === el.dataset.st ? '' : el.dataset.st; fim(); }
   else if(a === 'urg'){ const r = estado.relatorios[id]; if(r){ setRelCampo(id, 'pendUrgente', r.pendUrgente !== true); } fim(); }
+  else if(a === 'zap'){ pendZap(id); }
   else if(a === 'ativ'){ if(typeof openServiceDetails === 'function') openServiceDetails(Number(el.dataset.aid) || el.dataset.aid); }
   else if(a === 'criarativ'){ garantirAtividadePend(id).then(at => { if(!at) aviso('Não foi possível criar a atividade agora.', 5000); fim(); try{ renderAll(); }catch(e){} }); }
   else if(a === 'status'){
