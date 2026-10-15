@@ -23870,7 +23870,7 @@ function montar(){
       <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="agendado">Com parcela Agendada</option><option value="quitado">Quitados</option></select>
       ${ui.modo !== 'obras' ? '' : `<select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>`}
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
-      ${ui.modo === 'os' ? '<button type="button" class="btn-ghost" data-obr="imp-plan" id="obrImpPlan" style="display:none;" title="OS em aberto da planilha antiga Controle de OS (linhas amarelas e laranjas)">📥 Importar planilha antiga</button>' : ''}
+      ${ui.modo === 'os' ? '<button type="button" class="btn-ghost" data-obr="rec-os" title="Confere o Cadastro de OS e traz para cá toda OS marcada como Cobrar que ainda não está nesta tela">↻ Trazer OS do Cadastro</button><button type="button" class="btn-ghost" data-obr="imp-plan" id="obrImpPlan" style="display:none;" title="OS em aberto da planilha antiga Controle de OS (linhas amarelas e laranjas)">📥 Importar planilha antiga</button>' : ''}
       <button type="button" class="btn-primary" data-obr="novo">${ui.modo === 'manut' ? '+ Novo pedido' : ui.modo === 'os' ? '+ Nova OS' : '+ Novo registro'}</button>
     </div>
     <div id="obrLista" style="padding:0 20px 30px;"></div>
@@ -23892,6 +23892,7 @@ function montar(){
     else if(a === 'criar-busca') abrirNovo({ cliente: b.dataset.nome });
     else if(a === 'csv') exportarCsv();
     else if(a === 'imp-plan'){ if(window.FIN_API && FIN_API.abrirImportPlanilha) FIN_API.abrirImportPlanilha(); }
+    else if(a === 'rec-os'){ b.disabled = true; reconciliarOs().then(n => { const tot = window.OS_API ? OS_API.todas().filter(o => o.status === 'cobrar').length : 0; avisar(n ? n + (n === 1 ? ' OS trazida' : ' OS trazidas') + ' do Cadastro de OS.' : 'Nada novo: as ' + tot + ' OS marcadas como Cobrar já estão aqui.', 6000); if(n && registrosDaAba('definir').length){ ui.empresa = 'definir'; v.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === 'definir')); } renderLista(); }).catch(e => { console.error(e); avisar('Não foi possível trazer as OS: ' + (e && e.message || e), 8000); }).finally(() => { b.disabled = false; }); }
   });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
 }
@@ -24129,7 +24130,8 @@ async function sincronizarOsAgora(os, op){
     if(v > 0 && Math.abs(Number(p.valor) - v) > 0.004){ p.valor = v; recalcularPedido(r, p); r.parcelas = Object.assign({}, r.parcelas); }
     const d = descricaoOs(os); if(d) p.descricao = d; r.pedidos = Object.assign({}, r.pedidos); r.atualizadoEm = agora; renderLista(); await store.save(true); return r;
   }
-  const chave = fold(os.cliente || '');           // OS sem valor (migradas do fluxo antigo) entram com R$ 0 — o Financeiro informa o valor em ✎ let r = todosRegistros().find(x => ehOs(x) && fold(nomeCliente(x)) === chave); const cl = clientePorNome(os.cliente);
+  const chave = fold(os.cliente || '');           // OS sem valor (migradas do fluxo antigo) entram com R$ 0 — o Financeiro informa o valor em ✎
+  let r = todosRegistros().find(x => ehOs(x) && fold(nomeCliente(x)) === chave); const cl = clientePorNome(os.cliente);
   if(!r){ r = { id: uid('os_'), tipo: 'os', empresa: null, cliente: cl ? cl.name : (os.cliente || ''), clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
   const pid = uid('p'); r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero: os.numero, descricao: descricaoOs(os) || null, valor: v, osId: os.id, osNumero: os.numero } });
   const fin = os.fin || {}; const fs = fin.status || 'a_cobrar'; const stP = fs === 'recebida' ? 'recebido' : fs === 'cobrada' ? 'enviado' : fs === 'agendado' ? 'agendado' : 'a_cobrar';
@@ -24143,8 +24145,11 @@ async function sincronizarOsAgora(os, op){
 let reconciliandoOs = false;
 async function reconciliarOs(){
   if(reconciliandoOs || !window.OS_API) return; reconciliandoOs = true;
-  try{ await OS_API.garantirCarregado(); await garantirCarregado(); for(const os of OS_API.todas()){ if(os.status === 'cobrar' && !pedidoDaOs(os)) await sincronizarOsAgora(os); } }
+  let n = 0, falhas = 0, ultimoErro = null;
+  try{ await OS_API.garantirCarregado(); await garantirCarregado(); for(const os of OS_API.todas()){ if(os.status === 'cobrar' && !pedidoDaOs(os)){ try{ await sincronizarOsAgora(os); n++; }catch(e){ falhas++; ultimoErro = e; console.error('os: trazer OS ' + os.numero, e); } } } }
   finally{ reconciliandoOs = false; }
+  if(falhas){ const er = ultimoErro || {}; alert('⚠️ ' + falhas + (falhas === 1 ? ' OS não pôde' : ' OS não puderam') + ' ser trazida(s) do Cadastro de OS para o Financeiro.\n\nMotivo: ' + (er.code || er.message || 'erro desconhecido') + (store.lastError ? '\nFirebase: ' + (store.lastError.code || store.lastError.message) : '')); }
+  return n;
 }
 // Financeiro mudou parcelas de uma OS → situação financeira da OS (lida pelo Gestor e pelos painéis)
 async function espelharNaOs(r){
@@ -25075,7 +25080,7 @@ function mostrarSecao(s){
   {
     const modo = s;
     if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo !== 'obras' ? 'definir' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
-    montar(); renderLista(); garantirCarregado().then(async () => { if(modo === 'os'){ try{ await reconciliarOs(); }catch(e){ console.error('os: reconciliar', e); } } renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
+    montar(); renderLista(); garantirCarregado().then(async () => { if(modo === 'os'){ try{ await reconciliarOs(); }catch(e){ console.error('os: reconciliar', e); } if(ui.modo === 'os' && ui.empresa !== 'agendados' && registrosDaAba('definir').length){ ui.empresa = 'definir'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === 'definir')); } } renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
 }
 function ligarNavegacao(){
   [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
