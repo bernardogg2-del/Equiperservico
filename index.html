@@ -764,7 +764,11 @@
   .os-dec-b.on-ped{ background:#b4232a; border-color:#b4232a; color:#fff; } .os-dec-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .os-dec-2 input{ width:100%; }
   .obr-aprov{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; margin-right:6px; } .obr-aprov-aguardando{ background:#fff3d6; color:#8a5a00; } .obr-aprov-aprovado{ background:#dff3e6; color:#1c7a3f; } .obr-aprov-nao_aprovado{ background:#fdecea; color:#b4232a; }
   .obr-manut-ctl{ margin-top:8px; } .obr-manut-ctl label{ display:block; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; } .obr-manut-et{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
-  .os-apagar{ color:#b4232a !important; border-color:rgba(180,35,42,.35) !important; margin-left:auto; }
+  .obr-hist{ grid-column:1 / -1; margin-top:2px; font-size:12.5px; }
+.obr-hist summary{ cursor:pointer; color:var(--text-secondary); font-weight:600; user-select:none; }
+.obr-hist .os-linhas{ margin-top:6px; }
+.obr-hist-l{ margin-top:6px; color:var(--text-secondary); font-size:12px; display:flex; flex-direction:column; gap:2px; }
+.os-apagar{ color:#b4232a !important; border-color:rgba(180,35,42,.35) !important; margin-left:auto; }
 .pending-origem{ margin:6px 0 2px; padding:7px 10px; border-radius:10px; background:#fdecea; color:#b4232a; font-size:13px; font-weight:600; line-height:1.35; }
   .pv-zap{ margin-top:10px; width:100%; padding:11px 10px; border-radius:12px; border:1.5px solid #1c7a3f; background:#fff; color:#1c7a3f; font:inherit; font-weight:700; font-size:14px; cursor:pointer; } .pv-zap:hover{ background:#eef8f1; }
   .obr-emp-definir{ background:#fdecea; color:#b4232a; border:1px solid #f3b9b4; } .obr-tab-alerta{ color:#b4232a; font-weight:800; }
@@ -23021,7 +23025,7 @@ window.SUG_API = { ligar, iniciar };
 (function(){
 'use strict';
 function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function fmtD(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
+function fmtD(iso){ try{ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); if(m) return m[3] + '/' + m[2] + '/' + m[1]; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
 function fmtDH(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }catch(e){ return ''; } }
 function quem(){ return (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || ''; }
 const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['preventiva', 'Cliente Preventiva'], ['visita_orcamento', 'Visita Orçamento'], ['pedido_manutencao', 'Gerou pedido de manutenção'], ['outro', 'Outro']];
@@ -23055,7 +23059,7 @@ function aplicarDecisao(os, dec, agora){
     const v = Math.round((Number(dec.valor) || 0) * 100) / 100;
     const antes = (os.status === 'cobrar' && os.fin && os.fin.valor != null && os.fin.valor !== '') ? Number(os.fin.valor) : 0;
     const modo = dec.modo || (antes ? 'manter' : 'somar');       // OS que já foi ao Financeiro: por padrão NÃO soma de novo
-    const finSt = os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida') ? os.fin.status : 'a_cobrar';
+    const finSt = os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'agendado' || os.fin.status === 'recebida') ? os.fin.status : 'a_cobrar';
     os.status = 'cobrar'; os.motivoNaoCobrar = null; os.motivoTexto = null;
     os.fin = Object.assign({}, os.fin || {}, { status: finSt, valor: modo === 'manter' ? antes : modo === 'substituir' ? v : Math.round((antes + v) * 100) / 100, enviadaAoFinanceiroEm: (os.fin && os.fin.enviadaAoFinanceiroEm) || agora });
     const brl = (x) => Number(x).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -23080,7 +23084,7 @@ function registrar(numero, item){
   const k = item.origem + '_' + String(item.refId);
   if(os.itens[k]) return { os, aviso: '' };                               // a mesma linha já estava nela (reprocessamento): não duplica
   const linha = { origem: item.origem, refId: item.refId, cliente: item.cliente || '', descricao: item.descricao || '', data: item.data || '', tecnicos: (item.tecnicos || []).filter(Boolean), inicio: item.inicio || null, fim: item.fim || null, adicionadoEm: agora, adicionadoPor: quem() || null };
-  const liquidada = os.status === 'cobrar' && os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida');
+  const liquidada = os.status === 'cobrar' && os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'agendado' || os.fin.status === 'recebida');
   if(liquidada){
     linha.complemento = true; os.status = 'decidir'; os.complementoEm = agora;
     aviso = 'O número de OS ' + os.numero + ' já foi liquidado como ' + (os.fin.status === 'recebida' ? 'RECEBIDO' : 'COBRADO') + ' pelo Financeiro. A atividade entrou nela como complemento, mas é melhor criar uma nova OS. Ela voltou para a decisão em "Cobrar / Não cobrar".';
@@ -23164,7 +23168,7 @@ async function registrarEGravar(numero, item){
     item = Object.assign({}, item, { decisao: Object.assign({}, item.decisao, { modo }) });
   }
   const r = registrar(numero, item);
-  if(r.os){ await store.save(true); renderAba(); }
+  if(r.os){ await store.save(true); renderAba(); if(window.OBR_API && OBR_API.sincronizarOs) OBR_API.sincronizarOs(r.os); }
   if(item.pedido && item.pedido.numero && window.OBR_API && OBR_API.criarPedidoManutencao){ try{ await OBR_API.criarPedidoManutencao({ numero: item.pedido.numero, valor: item.pedido.valor, cliente: item.cliente, descricao: item.descricao, osNumero: numero, origem: item.origem, refId: item.refId }); try{ avisoNaoBloqueante('Pedido de manutenção ' + item.pedido.numero + ' enviado ao Financeiro.', 5000); }catch(e){} }catch(err){ console.error('os: pedido de manutenção', err); alert('⚠️ O pedido de manutenção ' + item.pedido.numero + ' NÃO foi gravado. Verifique a internet e a regra do Firebase para "obrasPedidos".'); } }
   if(r.aviso){ try{ customConfirm(r.aviso, () => {}, 'Entendi'); }catch(e){ alert(r.aviso); } }
   return r;
@@ -23230,12 +23234,12 @@ function abrirMigracao(){
 
 // ---------- tela (Cadastros e OS → "Cobrar / Não cobrar"): por enquanto só a listagem agrupada ----------
 const ROT_STATUS = { decidir: 'A definir (OS antigas)', aguardando: 'Não finalizados', cobrar: 'Cobradas (no Financeiro)', nao_cobrar: 'Não cobrar' };
-const ROT_FIN = { a_cobrar: 'a cobrar', cobrada: 'cobrada', recebida: 'recebida', cancelada: 'cancelada' };
+const ROT_FIN = { a_cobrar: 'a cobrar', cobrada: 'enviada', agendado: 'agendada', recebida: 'recebida', cancelada: 'cancelada' };
 function cartao(os){
   const linhas = itensDe(os).sort((a, b) => String(a.data).localeCompare(String(b.data)));
   const chip = os.status === 'cobrar' ? `<span class="prv-chip ${os.fin && os.fin.status === 'recebida' ? 'green' : 'amber'}">${esc(ROT_FIN[(os.fin || {}).status] || 'a cobrar')}</span>` : os.status === 'nao_cobrar' ? `<span class="prv-chip gray">${esc((MOTIVOS.find(m => m[0] === os.motivoNaoCobrar) || ['', 'sem motivo'])[1])}${os.motivoTexto ? ' — ' + esc(os.motivoTexto) : ''}</span>` : '';
   const finSt = (os.fin || {}).status; const noFinanceiro = os.status === 'cobrar';
-  const liquidada = noFinanceiro && (finSt === 'cobrada' || finSt === 'recebida');
+  const liquidada = noFinanceiro && (finSt === 'cobrada' || finSt === 'agendado' || finSt === 'recebida');
   let acoes = '';
   if(os.status === 'decidir' || os.status === 'aguardando'){
     acoes = `<button type="button" class="btn-primary" data-os-act="cobrar" data-id="${esc(os.id)}">Cobrar</button>
@@ -23274,6 +23278,7 @@ function apagarOs(id){
       try{
         if(typeof rtdb !== 'undefined' && rtdb) await rtdb.ref('ordensServico/' + os.id).remove();
         store.items = store.items.filter(o => o.id !== os.id); delete store.snapshot[os.id];
+        if(window.OBR_API && OBR_API.sincronizarOs) OBR_API.sincronizarOs(os, { remover: true });
         fecha(); renderAba(); atualizarTelas();
         try{ avisoNaoBloqueante(resumo + ' apagada.', 5000); }catch(e){}
       }catch(err){ console.error('os: apagar', err); alert('⚠️ Não foi possível apagar a OS. Verifique a internet e tente de novo.'); ok.disabled = false; ok.textContent = 'Apagar definitivamente'; }
@@ -23345,14 +23350,15 @@ async function decidir(id, status, motivo, texto){
   await garantirCarregado();
   const os = store.items.find(o => o.id === id); if(!os) return;
   const agora = new Date().toISOString();
-  const liquidada = os.status === 'cobrar' && os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida');
+  const liquidada = os.status === 'cobrar' && os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'agendado' || os.fin.status === 'recebida');
   if(status === 'decidir' && liquidada){ try{ avisoNaoBloqueante('Esta OS já foi cobrada pelo Financeiro e não pode voltar para a decisão.', 6000); }catch(e){} return; }
   os.status = status; os.decididoEm = agora; os.decididoPor = quem() || null;
-  if(status === 'cobrar'){ os.fin = Object.assign({}, os.fin || {}, { status: (os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'recebida')) ? os.fin.status : 'a_cobrar', enviadaAoFinanceiroEm: agora }); os.motivoNaoCobrar = null; os.motivoTexto = null; hist(os, 'Decisão: COBRAR (enviada ao Financeiro)'); }
+  if(status === 'cobrar'){ os.fin = Object.assign({}, os.fin || {}, { status: (os.fin && (os.fin.status === 'cobrada' || os.fin.status === 'agendado' || os.fin.status === 'recebida')) ? os.fin.status : 'a_cobrar', enviadaAoFinanceiroEm: agora }); os.motivoNaoCobrar = null; os.motivoTexto = null; hist(os, 'Decisão: COBRAR (enviada ao Financeiro)'); }
   else if(status === 'nao_cobrar'){ os.motivoNaoCobrar = motivo || null; os.motivoTexto = texto || null; hist(os, 'Decisão: NÃO COBRAR (' + (MOTIVOS.find(m => m[0] === motivo) || ['', motivo])[1] + (texto ? ' — ' + texto : '') + ')'); }
   else if(status === 'aguardando'){ hist(os, 'Decisão: AGUARDAR mais atividades'); }
   else { os.motivoNaoCobrar = null; os.motivoTexto = null; if(os.fin && os.fin.status === 'a_cobrar') os.fin = Object.assign({}, os.fin, { status: null }); hist(os, 'Voltou para decisão'); }
   renderAba(); const salvou = await store.save(true);
+  if(salvou && window.OBR_API && OBR_API.sincronizarOs) OBR_API.sincronizarOs(os);
   if(!salvou){ const er = store.lastError || {}; alert('⚠️ A decisão sobre a OS ' + os.numero + ' NÃO foi gravada no servidor — por isso ela volta ao reabrir o app.\n\nMotivo: ' + (er.code || er.message || 'sem conexão ou sem permissão') + '\n\nSe aparecer PERMISSION_DENIED, a regra do Firebase para "ordensServico" precisa permitir gravação.'); return; }
   try{ avisoNaoBloqueante(status === 'cobrar' ? 'OS ' + os.numero + ' enviada ao Financeiro.' : status === 'nao_cobrar' ? 'OS ' + os.numero + ' registrada como "não cobrar".' : status === 'aguardando' ? 'OS ' + os.numero + ' aguardando mais atividades.' : 'OS ' + os.numero + ' voltou para a decisão.', 5000); }catch(e){}
 }
@@ -23610,7 +23616,7 @@ function abrirImportPlanilha(){
         OS_API.hist(os, 'Importada da planilha Controle de OS (linha ' + p.cor + ')' + (p.obs ? ': ' + p.obs : ''));
         OS_API.store.items.push(os);
       });
-      await OS_API.store.save(true); ov.classList.remove('open'); OS_API.renderAba(); render();
+      await OS_API.store.save(true); ov.classList.remove('open'); OS_API.renderAba(); render(); if(window.OBR_API && OBR_API.reconciliarOs) OBR_API.reconciliarOs();
       try{ avisoNaoBloqueante(sel.length + ' OS importadas da planilha para "A cobrar".', 6000); }catch(e){}
     }catch(err){ console.error('fin: importar planilha', err); alert('⚠️ A importação NÃO foi gravada. Verifique a internet e tente de novo.'); bt.disabled = false; bt.textContent = 'Importar'; }
   };
@@ -23628,7 +23634,7 @@ async function abrir(){
   v.innerHTML = '<div class="empty-state">Carregando…</div>';
   await OS_API.garantirCarregado(); render();
 }
-window.FIN_API = { abrir, render, buscaValor, parseValor, contatos, mensagemCobranca };
+window.FIN_API = { abrir, render, buscaValor, parseValor, contatos, mensagemCobranca, abrirImportPlanilha, planilhaPendentes };
 })();
 
 
@@ -23758,7 +23764,7 @@ const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
 // Abas: Equiper | Eqp | Geral (o que ainda tem a receber) · Agendados (calendário de pagamentos) · Finalizados (tudo recebido = quitado, das duas empresas)
 const ABAS_OBR = EMPRESAS.concat([['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);
 const ehFinalizado = (r) => totais(r).fin === 'quitado';          // tudo recebido: o registro vai para Finalizados (e volta sozinho se surgir um novo valor a receber)
-function registrosDaAba(k, modo){ const m = modo || ui.modo; const todos = todosRegistros().filter(r => ehManut(r) === (m === 'manut')); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); if(k === 'definir') return ativos.filter(r => !r.empresa); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
+function registrosDaAba(k, modo){ const m = modo || ui.modo; const todos = todosRegistros().filter(r => modoDe(r) === m); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); if(k === 'definir') return ativos.filter(r => !r.empresa); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
 const rotAba = (k) => (ABAS_OBR.find(e => e[0] === k) || ['', k])[1];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
@@ -23787,7 +23793,7 @@ const APROVACAO = [['aguardando', 'Aguardando aprovação'], ['aprovado', 'Aprov
 const aprovDe = (p) => (p && p.aprovacao) || 'aguardando';
 const rotAprov = (k) => (APROVACAO.find(x => x[0] === k) || APROVACAO[0])[1];
 const chipAprov = (p) => `<span class="obr-aprov obr-aprov-${aprovDe(p)}">${esc(rotAprov(aprovDe(p)))}</span>`;
-const chipObra = (r, p) => { if(ehManut(r)){ const ap = aprovDe(p); return chipAprov(p) + (ap === 'aprovado' ? chipEtapas(r, p) : ''); } return chipEtapas(r, p); };
+const chipObra = (r, p) => { if(ehOs(r)) return ''; if(ehManut(r)){ const ap = aprovDe(p); return chipAprov(p) + (ap === 'aprovado' ? chipEtapas(r, p) : ''); } return chipEtapas(r, p); };
 const chipEtapas = (r, p) => { const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-lg"><span class="obr-leg">Interno</span><span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span></span>${o ? `<span class="obr-lg"><span class="obr-leg">Obra</span><span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span></span>` : ''}`; };
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
 const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
@@ -23800,11 +23806,14 @@ let carregado = false, carregando = null;
 const ui = { modo: 'obras', empresaObras: 'equiper', empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, montado: false };
 
 // ---------- cálculo ----------
-const ehManut = (r) => !!r && r.tipo === 'manutencao';           // pedidos de manutenção (vindos de Cadastros e OS) vivem no mesmo nó, marcados com tipo:'manutencao'
+const ehManut = (r) => !!r && r.tipo === 'manutencao';
+const ehOs = (r) => !!r && r.tipo === 'os';                      // ordens de serviço (vindas de Cadastros e OS): mesma tela, mesmas abas e parcelas
+const modoDe = (r) => ehManut(r) ? 'manut' : ehOs(r) ? 'os' : 'obras';
+const semObra = (r) => ehManut(r) || ehOs(r);                     // registros sem etapas de obra e com empresa a definir           // pedidos de manutenção (vindos de Cadastros e OS) vivem no mesmo nó, marcados com tipo:'manutencao'
 const todosRegistros = () => store.items.filter(r => r && r.id && r.active !== false);
-const registros = () => todosRegistros().filter(r => !ehManut(r));      // obras (o Gestor e os painéis só enxergam estas)
+const registros = () => todosRegistros().filter(r => modoDe(r) === 'obras');      // obras (o Gestor e os painéis só enxergam estas)
 const ABAS_MANUT = [['definir', 'Definir empresa']].concat(EMPRESAS, [['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);   // pedido vindo de Cadastros e OS chega sem empresa: o Financeiro escolhe Equiper ou Eqp
-const abasDoModo = () => ui.modo === 'manut' ? ABAS_MANUT : ABAS_OBR;
+const abasDoModo = () => ui.modo === 'obras' ? ABAS_OBR : ABAS_MANUT;
 const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
 const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 function totais(r){
@@ -23847,21 +23856,22 @@ async function garantirCarregado(){
   await carregando;
 }
 function aoMudarRemoto(){ renderLista(); renderGestor(); reconciliar(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
-async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderLista(); await store.save(true); }
+async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderLista(); await store.save(true); if(ehOs(r)) espelharNaOs(r).catch(e => console.error('os: espelhar', e)); }
 
 // ---------- tela principal ----------
 function montar(){
   const v = document.getElementById('finObrasView'); if(!v || ui.montado) return; ui.montado = true;
   v.innerHTML = `<div class="tech-day-panel">
-    <div class="tech-day-head"><div class="tech-day-title">${ui.modo === 'manut' ? 'Pedidos de manutenção' : 'Obras e Pedidos'}</div><div class="tech-day-date mono" id="obrContagem"></div></div>
+    <div class="tech-day-head"><div class="tech-day-title">${ui.modo === 'manut' ? 'Pedidos de manutenção' : ui.modo === 'os' ? 'Ordens de serviço' : 'Obras e Pedidos'}</div><div class="tech-day-date mono" id="obrContagem"></div></div>
     <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${abasDoModo().map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="agendado">Com parcela Agendada</option><option value="quitado">Quitados</option></select>
-      ${ui.modo === 'manut' ? '' : `<select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>`}
+      ${ui.modo !== 'obras' ? '' : `<select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>`}
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
-      <button type="button" class="btn-primary" data-obr="novo">${ui.modo === 'manut' ? '+ Novo pedido' : '+ Novo registro'}</button>
+      ${ui.modo === 'os' ? '<button type="button" class="btn-ghost" data-obr="imp-plan" id="obrImpPlan" style="display:none;" title="OS em aberto da planilha antiga Controle de OS (linhas amarelas e laranjas)">📥 Importar planilha antiga</button>' : ''}
+      <button type="button" class="btn-primary" data-obr="novo">${ui.modo === 'manut' ? '+ Novo pedido' : ui.modo === 'os' ? '+ Nova OS' : '+ Novo registro'}</button>
     </div>
     <div id="obrLista" style="padding:0 20px 30px;"></div>
     <div id="obrAgendados" style="display:none; padding:0 20px 30px;"></div>
@@ -23874,12 +23884,14 @@ function montar(){
   const fs = document.getElementById('obrFiltroSit'); if(fs) fs.addEventListener('change', (e) => { ui.sit = e.target.value; renderLista(); });
   if(v._obrLigado) return; v._obrLigado = true;
   v.addEventListener('click', (e) => {
+    if(e.target.closest('.obr-hist')) return;          // abrir/fechar o histórico da OS não abre o registro
     const b = e.target.closest('[data-obr]'); if(!b) return; const a = b.dataset.obr;
     if(a === 'empresa'){ ui.empresa = b.dataset.emp; v.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); renderLista(); }
     else if(a === 'novo') abrirNovo({ cliente: ui.busca.trim() });
     else if(a === 'abrir') abrirDetalhe(b.dataset.id);
     else if(a === 'criar-busca') abrirNovo({ cliente: b.dataset.nome });
     else if(a === 'csv') exportarCsv();
+    else if(a === 'imp-plan'){ if(window.FIN_API && FIN_API.abrirImportPlanilha) FIN_API.abrirImportPlanilha(); }
   });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
 }
@@ -23894,7 +23906,7 @@ function kpis(todos){
     { tom: 'verde', icone: 'ok', texto: brlCurto(rec), zero: !(rec > 0), rotulo: 'Recebido', sub: contr > 0 ? Math.round(rec / contr * 100) + '% do contratado' : '—' },
     { tom: 'neutro', icone: 'caixa', texto: brlCurto(aRec), zero: !(aRec > 0), rotulo: 'A receber', sub: nSaldo + (nSaldo === 1 ? ' obra' : ' obras') + ' com saldo' + (nl > 0 ? ' · ' + brlCurto(nl) + ' não liberado' : '') },
   ]);
-  return ui.modo === 'manut' ? String(html).replace(/ obras\b/g, ' clientes').replace(/ obra\b/g, ' cliente') : html;
+  return ui.modo !== 'obras' ? String(html).replace(/ obras\b/g, ' clientes').replace(/ obra\b/g, ' cliente') : html;
 }
 const rotuloStatus = (k) => (STATUS_PARC.find(x => x[0] === k) || ['', k])[1];
 // Cartão do cliente: uma linha COMPACTA por pedido (número + descrição + valor) com as parcelas dele lado a lado (nome/% · valor · situação).
@@ -23903,12 +23915,14 @@ function celulaParcela(p){
   return `<div class="obr-pc" title="${esc(nome)}"><div class="obr-pc-n">${esc(nome)}</div><div class="obr-pc-b"><span class="obr-pc-v">${esc(brl(p.valor))}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div>${p.agendadoPara && st !== 'recebido' ? `<div class="obr-pc-d">pagamento ${esc(fmtData(p.agendadoPara))}</div>` : ''}</div>`;
 }
 function linhaPedido(r, p, parcelas){
+  if(ehOs(r)) return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">OS ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span><span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
+    ${parcelas.length ? `<div class="obr-parcs-c">${parcelas.map(celulaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas nesta OS</div>'}${historicoOsHtml(p, false)}</div>`;
   return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span>${chipObra(r, p)}<span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
     ${parcelas.length ? `<div class="obr-parcs-c">${parcelas.map(celulaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas neste pedido</div>'}</div>`;
 }
 function cartao(r){
   const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
-  const chips = [(!r.empresa && ehManut(r)) ? '<span class="obr-emp obr-emp-definir">⚠ Definir empresa</span>' : ((ui.empresa === 'geral' || ui.empresa === 'finalizados' || ui.empresa === 'definir') ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : ''), ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+  const chips = [(!r.empresa && semObra(r)) ? '<span class="obr-emp obr-emp-definir">⚠ Definir empresa</span>' : ((ui.empresa === 'geral' || ui.empresa === 'finalizados' || ui.empresa === 'definir') ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : ''), semObra(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''].join('');
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   const mostrar = ped.slice(0, 5);
@@ -23924,10 +23938,11 @@ function cartao(r){
 function renderLista(){
   const box = document.getElementById('obrLista'); if(!box) return;
   abasDoModo().forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
-  if(ui.modo === 'manut'){
+  if(ui.modo !== 'obras'){
     const nDef = registrosDaAba('definir').length; const tDef = document.querySelector('#obrTabs [data-emp="definir"]'); if(tDef){ tDef.style.display = (nDef || ui.empresa === 'definir') ? '' : 'none'; if(tDef.firstElementChild) tDef.firstElementChild.className = 'obr-tab-n' + (nDef ? ' obr-tab-alerta' : ''); }
     if(carregado && ui.empresa === 'definir' && !nDef){ ui.empresa = 'equiper'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); }
   }
+  const ip = document.getElementById('obrImpPlan'); if(ip){ const n = window.FIN_API && FIN_API.planilhaPendentes ? FIN_API.planilhaPendentes().length : 0; ip.style.display = n ? '' : 'none'; ip.textContent = '📥 Importar planilha antiga (' + n + ')'; }
   const ag = ui.empresa === 'agendados'; document.getElementById('obrBarra').style.display = ag ? 'none' : ''; box.style.display = ag ? 'none' : ''; const bag = document.getElementById('obrAgendados'); if(bag) bag.style.display = ag ? '' : 'none';
   if(ag){ montarAgendados(); renderAgendados(); document.getElementById('obrContagem').textContent = previstosTodos().length + (previstosTodos().length === 1 ? ' pagamento previsto' : ' pagamentos previstos'); return; }
   const todos = registrosDaAba(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
@@ -23938,7 +23953,7 @@ function renderLista(){
   document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   box.innerHTML = l.length ? l.map(cartao).join('')
-    : (todos.length === 0 ? (ui.modo === 'manut' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhum pedido de manutenção a receber.<br>Eles chegam de <b>Cadastros e OS</b> ("Gerar pedido de manutenção") ou você cria com <b>+ Novo pedido</b>.</div>' : ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
+    : (todos.length === 0 ? (ui.modo === 'os' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhuma OS a receber.<br>Elas chegam de <b>Cadastros e OS</b> (quando o Gestor marca <b>Cobrar</b>) ou você cria com <b>+ Nova OS</b>.</div>' : ui.modo === 'manut' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhum pedido de manutenção a receber.<br>Eles chegam de <b>Cadastros e OS</b> ("Gerar pedido de manutenção") ou você cria com <b>+ Novo pedido</b>.</div>' : ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
       : `<div class="empty-state">Nenhum registro encontrado${q ? ' para "' + esc(ui.busca.trim()) + '"' : ''}.${q ? `<br><br><button type="button" class="btn-primary" data-obr="criar-busca" data-nome="${esc(ui.busca.trim())}">+ Criar registro para "${esc(ui.busca.trim())}"</button>` : ''}</div>`);
 }
 
@@ -23989,7 +24004,7 @@ function renderCab(){
   const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; const t = totais(r);
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
   el.innerHTML = `<div class="qd-det-head"><div><h3 style="margin:0;">${esc(nomeCliente(r))}</h3>
-      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${ehManut(r) ? 'Manutenção · ' + (r.empresa ? esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1]) : '⚠ definir empresa') : esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>${ehManut(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`}${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
+      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${semObra(r) ? (ehOs(r) ? 'Ordem de serviço · ' : 'Manutenção · ') + (r.empresa ? esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1]) : '⚠ definir empresa') : esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>${semObra(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`}${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
       ${cli && cli.address ? `<div class="prv-hint" style="margin:6px 0 0;">📍 ${esc(cli.address)}</div>` : ''}</div>
       <button type="button" class="btn-ghost" data-obr-d="fechar">Fechar</button></div>`;
 }
@@ -23997,7 +24012,7 @@ function renderDados(){
   const r = atual(); const el = document.getElementById('obrDetDados'); if(!r || !el) return;
   const wa = r.fone && typeof phoneDigits === 'function' && phoneDigits(r.fone).length >= 10;
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Dados do registro</div><div class="obr-grid2">
-    ${ehManut(r) ? `<div class="field"><label>Empresa *</label><select data-obr-campo="empresa" ${r.empresa ? '' : 'style="border-color:#b4232a;"'}><option value="">— Definir —</option>${EMPRESAS.map(([k, n]) => `<option value="${k}" ${r.empresa === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>` : `<div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`}
+    ${semObra(r) ? `<div class="field"><label>Empresa *</label><select data-obr-campo="empresa" ${r.empresa ? '' : 'style="border-color:#b4232a;"'}><option value="">— Definir —</option>${EMPRESAS.map(([k, n]) => `<option value="${k}" ${r.empresa === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>` : `<div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`}
     <div class="field"><label>Pessoa de contato</label><input type="text" data-obr-campo="contato" value="${esc(r.contato || '')}" placeholder="Nome (cargo)"></div>
     <div class="field"><label>WhatsApp / telefone ${wa ? '<a href="#" data-obr-d="whats" style="font-weight:600;">· abrir conversa</a>' : ''}</label><input type="text" data-obr-campo="fone" value="${esc(r.fone || '')}" placeholder="+55 24 90000-0000"></div>
     <div class="field"><label>Forma de pagamento</label><select data-obr-campo="formaPagamento"><option value="">—</option>${FORMAS.map(f => `<option ${r.formaPagamento === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
@@ -24020,9 +24035,9 @@ async function mudarAprovacao(pid, novo){
 }
 function renderPed(){
   const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; const ped = pedidosDe(r); const t = totais(r);
-  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Pedidos <span class="obr-sec-n">${t.nPedidos}</span><span class="obr-sec-tot">Total ${esc(brl(t.contratado))}</span></div>
-    ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}<div style="margin-top:3px;">${chipObra(r, p)}</div>${ehManut(r) ? controlesManut(r, p) : ''}</td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="Remover">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
-    <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">+ Adicionar pedido</button></div></div>`;
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">${ehOs(r) ? 'Ordens de serviço' : 'Pedidos'} <span class="obr-sec-n">${t.nPedidos}</span><span class="obr-sec-tot">Total ${esc(brl(t.contratado))}</span></div>
+    ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}<div style="margin-top:3px;">${chipObra(r, p)}</div>${ehManut(r) ? controlesManut(r, p) : ''}${ehOs(r) ? historicoOsHtml(p, false) : ''}</td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="${ehOs(r) && p.osId ? 'Devolver ao Gestor' : 'Remover'}">${ehOs(r) && p.osId ? '↩' : '✕'}</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
+    <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">${ehOs(r) ? '+ Adicionar OS' : '+ Adicionar pedido'}</button></div></div>`;
 }
 function infoStatus(p){
   const st = stDe(p); let t = '';
@@ -24082,6 +24097,74 @@ async function criarPedidoManutencao(d){
   r.atualizadoEm = agora; r.atualizadoPor = quem() || null;
   renderLista(); await store.save(true);
   return r;
+}
+// ---------- Ordens de serviço no Financeiro (15/10): cada OS marcada "Cobrar" vira um PEDIDO (parcela única) no registro tipo 'os' do cliente ----------
+// O Cadastro de OS (OS_API) continua sendo a origem: número, cliente, linhas (datas, descrições, técnicos) e histórico ficam lá; aqui ficam empresa,
+// parcelas e os recebimentos. Os dois lados se espelham: OS_API chama sincronizarOs() quando a OS muda; gravar() aqui chama espelharNaOs() para
+// a situação financeira (a cobrar / enviado / agendado / recebido) aparecer no card do Gestor e nos painéis.
+const osDe = (p) => (p && p.osId && window.OS_API) ? OS_API.store.items.find(o => o && o.id === p.osId) : null;
+function pedidoDaOs(os){ for(const r of todosRegistros()){ if(!ehOs(r)) continue; const p = lista(r.pedidos).find(x => x.osId === os.id || (!x.osId && fold(x.numero) === fold(os.numero))); if(p) return { r, p }; } return null; }
+function descricaoOs(os){ const it = OS_API.itensDe(os).slice().sort((a, b) => String(a.data).localeCompare(String(b.data))); const u = it[it.length - 1]; return u ? String(u.descricao || '').replace(/^Planilha antiga Controle de OS( — )?/, '').trim() : ''; }
+function historicoOsHtml(p, aberto){
+  const os = osDe(p); if(!os) return '';
+  const it = OS_API.itensDe(os).slice().sort((a, b) => String(a.data).localeCompare(String(b.data)));
+  const h = (Array.isArray(os.historico) ? os.historico : Object.values(os.historico || {})).slice(-8).reverse();
+  return `<details class="obr-hist" ${aberto ? 'open' : ''}><summary>Histórico da OS <span class="obr-sec-n">${it.length}</span></summary>
+    ${it.length ? `<table class="os-linhas"><tbody>${it.map(l => `<tr><td class="mono">${esc(OS_API.fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc((l.tecnicos || []).join(' e ') || '—')}</td></tr>`).join('')}</tbody></table>` : ''}
+    ${h.length ? `<div class="obr-hist-l">${h.map(x => `<div>${esc(OS_API.fmtDH(x.em))} · ${esc(x.por || '—')} · ${esc(x.acao)}</div>`).join('')}</div>` : ''}</details>`;
+}
+let filaOs = Promise.resolve();
+function sincronizarOs(os, op){ const t = filaOs.then(() => sincronizarOsAgora(os, op)).catch(e => console.error('os: sincronizar', e)); filaOs = t; return t; }
+async function sincronizarOsAgora(os, op){
+  if(!os) return null; await garantirCarregado(); const agora = new Date().toISOString(); const v = Math.round((Number(os.fin && os.fin.valor) || 0) * 100) / 100;
+  const ex = pedidoDaOs(os);
+  if(os.status !== 'cobrar' || (op && op.remover)){                 // saiu do Financeiro (voltou ao Gestor, não cobrar ou apagada)
+    if(!ex) return null; const r = ex.r; const recebidas = parcelasDoPedido(r, ex.p.numero).filter(x => stDe(x) === 'recebido');
+    if(recebidas.length){ ex.p.cancelado = true; r.pedidos = Object.assign({}, r.pedidos); }
+    else { const ped = Object.assign({}, r.pedidos); delete ped[ex.p.id]; r.pedidos = ped; const par = Object.assign({}, r.parcelas); Object.keys(par).forEach(k => { if(String(par[k].pedido) === String(ex.p.numero)) delete par[k]; }); r.parcelas = par; }
+    r.atualizadoEm = agora; renderLista(); await store.save(true); return r;
+  }
+  if(ex){
+    const r = ex.r, p = ex.p; p.osId = os.id; if(p.cancelado) p.cancelado = false;
+    if(v > 0 && Math.abs(Number(p.valor) - v) > 0.004){ p.valor = v; recalcularPedido(r, p); r.parcelas = Object.assign({}, r.parcelas); }
+    const d = descricaoOs(os); if(d) p.descricao = d; r.pedidos = Object.assign({}, r.pedidos); r.atualizadoEm = agora; renderLista(); await store.save(true); return r;
+  }
+  const chave = fold(os.cliente || '');           // OS sem valor (migradas do fluxo antigo) entram com R$ 0 — o Financeiro informa o valor em ✎ let r = todosRegistros().find(x => ehOs(x) && fold(nomeCliente(x)) === chave); const cl = clientePorNome(os.cliente);
+  if(!r){ r = { id: uid('os_'), tipo: 'os', empresa: null, cliente: cl ? cl.name : (os.cliente || ''), clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
+  const pid = uid('p'); r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero: os.numero, descricao: descricaoOs(os) || null, valor: v, osId: os.id, osNumero: os.numero } });
+  const fin = os.fin || {}; const fs = fin.status || 'a_cobrar'; const stP = fs === 'recebida' ? 'recebido' : fs === 'cobrada' ? 'enviado' : fs === 'agendado' ? 'agendado' : 'a_cobrar';
+  const dia = (x) => String(x || '').slice(0, 10) || null; const cid = uid('c'); const ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
+  const parc = { id: cid, tipo: 'Parcela única', pedido: os.numero, pct: 100, valor: v, status: stP, ordem, liberadoEm: dia(fin.enviadaAoFinanceiroEm) || dia(agora) };
+  if(stP === 'recebido'){ parc.pago = true; parc.pagoEm = dia(fin.recebidaEm) || dia(agora); parc.forma = fin.forma || null; parc.obs = fin.obs || null; }
+  else if(stP === 'enviado' || stP === 'agendado'){ parc.enviadoEm = dia(fin.cobradaEm) || dia(agora); if(fin.vencimento) parc.agendadoPara = dia(fin.vencimento); }
+  r.parcelas = Object.assign({}, r.parcelas, { [cid]: parc }); r.atualizadoEm = agora; renderLista(); await store.save(true); return r;
+}
+// OS que já estavam no Financeiro antes desta tela (ou chegaram sem passar por sincronizarOs) ganham o pedido/parcela aqui, uma vez
+let reconciliandoOs = false;
+async function reconciliarOs(){
+  if(reconciliandoOs || !window.OS_API) return; reconciliandoOs = true;
+  try{ await OS_API.garantirCarregado(); await garantirCarregado(); for(const os of OS_API.todas()){ if(os.status === 'cobrar' && !pedidoDaOs(os)) await sincronizarOsAgora(os); } }
+  finally{ reconciliandoOs = false; }
+}
+// Financeiro mudou parcelas de uma OS → situação financeira da OS (lida pelo Gestor e pelos painéis)
+async function espelharNaOs(r){
+  if(!ehOs(r) || !window.OS_API) return; let mudou = false; const ROTS = { a_cobrar: 'a cobrar', cobrada: 'enviada ao cliente', agendado: 'pagamento agendado', recebida: 'recebida' };
+  for(const p of lista(r.pedidos)){
+    const os = osDe(p); if(!os || os.status !== 'cobrar') continue;
+    const ps = parcelasDoPedido(r, p.numero); const sts = ps.map(stDe);
+    let st = 'a_cobrar'; if(ps.length && sts.every(x => x === 'recebido')) st = 'recebida'; else if(sts.includes('agendado')) st = 'agendado'; else if(sts.includes('enviado')) st = 'cobrada';
+    const minD = (k, f) => ps.filter(f || (() => true)).map(x => x[k]).filter(Boolean).sort()[0] || null; const maxD = (k) => ps.map(x => x[k]).filter(Boolean).sort().pop() || null;
+    const fin = Object.assign({}, os.fin || {});
+    fin.status = st; fin.valor = Math.round((Number(p.valor) || 0) * 100) / 100;
+    fin.cobradaEm = st === 'a_cobrar' ? null : (minD('enviadoEm') ? minD('enviadoEm') + 'T12:00:00.000Z' : fin.cobradaEm || null);
+    fin.vencimento = minD('agendadoPara', x => stDe(x) !== 'recebido') ? minD('agendadoPara', x => stDe(x) !== 'recebido') + 'T12:00:00.000Z' : null;
+    fin.recebidaEm = st === 'recebida' ? (maxD('pagoEm') ? maxD('pagoEm') + 'T12:00:00.000Z' : fin.recebidaEm || null) : null;
+    if(st === 'recebida'){ fin.forma = ps.map(x => x.forma).filter(Boolean).pop() || fin.forma || null; fin.recebidaPor = fin.recebidaPor || quem() || null; }
+    if(st !== 'a_cobrar') fin.cobradaPor = fin.cobradaPor || quem() || null; else { fin.cobradaPor = null; }
+    const antes = JSON.stringify(os.fin || {}), depois = JSON.stringify(fin);
+    if(antes !== depois){ const stAntes = (os.fin || {}).status; os.fin = fin; if(stAntes !== st) OS_API.hist(os, 'Financeiro: ' + ROTS[st] + (fin.valor != null ? ' (' + brl(fin.valor) + ')' : '')); mudou = true; }
+  }
+  if(mudou){ await OS_API.store.save(true); try{ OS_API.atualizarTelas(); }catch(e){} }
 }
 function nomeCampoPedidos(r){ return [['', 'Nenhum (parcela avulsa)']].concat(pedidosDe(r).filter(p => !p.cancelado).map(p => [p.numero, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : '')])); }
 async function mudarStatus(id, novo){
@@ -24165,6 +24248,11 @@ function acaoDetalhe(a, ds){
   }
   if(a === 'ped-rm'){
     const p = r.pedidos[ds.id]; if(!p) return; const dele = lista(r.parcelas).filter(x => String(x.pedido) === String(p.numero));
+    const osLig = ehOs(r) ? osDe(p) : null;
+    if(osLig){      // OS vinda de Cadastros e OS: sai do Financeiro e volta para a decisão do Gestor (o pedido some daqui pelo espelhamento)
+      if(dele.some(x => stDe(x) === 'recebido')) return avisar('A OS ' + p.numero + ' já tem parcela recebida; não dá para devolvê-la ao Gestor.', 7000);
+      return customConfirm('Devolver a OS ' + p.numero + ' ao Gestor? Ela sai do Financeiro e volta para a decisão "Cobrar / Não cobrar" em Cadastros e OS.', async () => { osLig.fin = Object.assign({}, osLig.fin || {}, { status: null, canceladaEm: new Date().toISOString(), canceladaPor: quem() || null }); await OS_API.decidir(osLig.id, 'decidir'); renderDetalheSecoes(); }, 'Devolver');
+    }
     if(dele.some(x => stDe(x) === 'recebido')) return avisar('O pedido ' + p.numero + ' já tem parcelas recebidas. Marque como "cancelado" em ✎ em vez de remover, para manter o histórico.', 8000);
     return customConfirm('Remover o pedido ' + p.numero + (dele.length ? ' e as ' + dele.length + ' parcelas dele' : '') + ' deste registro?', async () => { const m = Object.assign({}, r.pedidos); delete m[ds.id]; r.pedidos = m; const mp = Object.assign({}, r.parcelas); dele.forEach(x => { delete mp[x.id]; }); r.parcelas = mp; await gravar(r); renderDetalheSecoes(); }, 'Remover');
   }
@@ -24292,7 +24380,7 @@ async function aplicarCondicao(r, c, modo){
 function abrirNovo(pre){
   pre = pre || {}; let ov = document.getElementById('obrNovoOverlay'); if(ov) ov.remove();
   ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrNovoOverlay';
-  ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">${ui.modo === 'manut' ? 'Novo pedido de manutenção' : 'Novo registro de obra'}</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, pedidos (quantos forem, cada um com seu valor) e a condição de pagamento: o valor de cada pedido é dividido nas parcelas.</p>
+  ov.innerHTML = `<div class="modal obr-modal"><h3 style="margin:0 0 4px;">${ui.modo === 'manut' ? 'Novo pedido de manutenção' : ui.modo === 'os' ? 'Nova ordem de serviço' : 'Novo registro de obra'}</h3><p class="prv-hint" style="margin:0 0 10px;">Cliente, contato, pedidos (quantos forem, cada um com seu valor) e a condição de pagamento: o valor de cada pedido é dividido nas parcelas.</p>
     <div class="obr-grid2">
       <div class="field"><label>Empresa *</label><select id="obrNEmp">${EMPRESAS.map(([k, n]) => `<option value="${k}" ${k === (pre.empresa || (EMPRESAS.some(e => e[0] === ui.empresa) ? ui.empresa : 'equiper')) ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
       <div class="field"><label>Cliente *</label><input type="text" id="obrNCli" value="${esc(pre.cliente || '')}" placeholder="Digite para buscar os clientes cadastrados" autocomplete="off"></div>
@@ -24302,7 +24390,7 @@ function abrirNovo(pre){
       <div class="field"><label>Pessoa de contato</label><input type="text" id="obrNContato" placeholder="Nome (cargo)"></div>
       <div class="field"><label>WhatsApp / telefone</label><input type="text" id="obrNFone" placeholder="+55 24 90000-0000"></div>
       <div class="field"><label>Forma de pagamento</label><select id="obrNForma"><option value="">—</option>${FORMAS.map(f => `<option>${esc(f)}</option>`).join('')}</select></div>
-      ${ui.modo === 'manut' ? '' : `<div class="field"><label>Situação da obra</label><select id="obrNSit">${SITUACOES.slice(0, 3).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div>`}
+      ${ui.modo !== 'obras' ? '' : `<div class="field"><label>Situação da obra</label><select id="obrNSit">${SITUACOES.slice(0, 3).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></div>`}
     </div>
     <div class="obr-sec" style="margin-top:6px;"><div class="obr-sec-t">Pedidos <span class="obr-sec-tot" id="obrNTotal">Total R$ 0,00</span></div>
       <div id="obrNPedidos"></div><div class="prv-linha" style="margin-top:6px;"><button type="button" class="btn-ghost oe-mini" id="obrNAddPed">+ Adicionar outro pedido</button></div></div>
@@ -24365,7 +24453,7 @@ async function criarRegistro(ov, cond, datasFn){
     if(cl){ let mudou = false; if(contato && !cl.contato){ cl.contato = contato; mudou = true; } if(fone && !cl.fone){ cl.fone = fone; mudou = true; } if(mudou) await saveClients(); }     // não sobrescreve o que já estava no cadastro
     const agora = new Date().toISOString(); const id = uid('ob_');
     const rec = { id, empresa: $('obrNEmp').value, cliente: cl ? cl.name : nome, clienteId: cl ? cl.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, cond: c.n ? { pcts: c.pcts } : null, situacao: $('obrNSit') ? $('obrNSit').value : 'nao_comecou', obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {}, parcelas: {} };
-    if(ui.modo === 'manut') rec.tipo = 'manutencao';
+    if(ui.modo === 'manut') rec.tipo = 'manutencao'; else if(ui.modo === 'os') rec.tipo = 'os';
     ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor }; });
     const boleto = $('obrNForma').value === 'Boleto'; const datas = boleto && datasFn ? datasFn().slice(0, c.n) : []; const nDatas = datas.filter(Boolean).length;
     if(c.n) Object.values(rec.pedidos).forEach(p => { rec.parcelas = Object.assign({}, rec.parcelas, gerarParcelas(rec, p, c.pcts, { datas, forma: boleto ? 'Boleto' : null })); });
@@ -24897,7 +24985,7 @@ const segundaDe = (x) => { const [y, m, d] = partesD(x); const dt = new Date(y, 
 const dowDe = (x) => { const [y, m, d] = partesD(x); return new Date(y, m - 1, d).getDay(); };
 function coletarEventos(op){
   op = op || {}; const out = [];
-  todosRegistros().filter(r => ehManut(r) === (op.modo === 'manut')).filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
+  todosRegistros().filter(r => modoDe(r) === (op.modo || 'obras')).filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
     const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
     parcelasDe(r).forEach(p => {
       const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && ped.cancelado && st !== 'recebido') return;      // parcela de pedido cancelado não conta
@@ -24982,13 +25070,12 @@ function renderAgendados(){
 let secao = 'os';
 function mostrarSecao(s){
   secao = s; const os = document.getElementById('finPaneOS'), ob = document.getElementById('finObrasView'); if(!os || !ob) return;
-  os.style.display = s === 'os' ? '' : 'none'; ob.style.display = (s === 'obras' || s === 'manut') ? '' : 'none';
+  os.style.display = 'none'; ob.style.display = '';          // as três seções usam a mesma tela (abas Equiper/Eqp/Geral/Agendados/Finalizados)
   [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
-  if(s === 'obras' || s === 'manut'){
-    const modo = s === 'manut' ? 'manut' : 'obras';
-    if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo === 'manut' ? 'definir' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
-    montar(); renderLista(); garantirCarregado().then(() => { renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
-  else if(window.FIN_API) FIN_API.render();
+  {
+    const modo = s;
+    if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo !== 'obras' ? 'definir' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
+    montar(); renderLista(); garantirCarregado().then(async () => { if(modo === 'os'){ try{ await reconciliarOs(); }catch(e){ console.error('os: reconciliar', e); } } renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
 }
 function ligarNavegacao(){
   [['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
@@ -24996,7 +25083,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
