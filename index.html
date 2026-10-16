@@ -25059,8 +25059,8 @@ function htmlEvento(e, hoje, comEmpresa){
   const passou = e.ev === 'previsto' && e.data < hoje;
   return `<div class="pgc-ev pgc-ev-${e.ev} ${passou ? 'pgc-ev-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><div class="pgc-ev-h"><b>${esc(e.cliente)}</b>${comEmpresa ? `<span class="obr-emp obr-emp-${esc(e.empresa)}">${esc((EMPRESAS.find(x => x[0] === e.empresa) || [0, ''])[1])}</span>` : ''}<span class="pgc-ev-o pgc-ev-o-${esc(e.origem)}">${esc(rotOrigem(e.origem))}</span><span class="pgc-ev-v">${esc(brl(e.valor))}</span></div><div class="pgc-ev-s">${e.pedido ? (e.origem === 'os' ? 'OS ' : 'Pedido ') + esc(e.pedido) + (e.desc ? ' · ' + esc(e.desc) : '') + ' · ' : ''}${esc(e.tipo)}</div><div class="pgc-ev-c"><span class="obr-st obr-st-${esc(e.status)}">${esc(rotuloStatus(e.status))}</span>${e.forma ? `<span class="obr-ped-tag">${esc(e.forma)}</span>` : ''}<span class="pgc-ev-t">${e.ev === 'recebido' ? 'recebido em ' + esc(fmtData(e.data)) : passou ? '<b class="obr-verm">a data passou</b> · ' + esc(fmtData(e.data)) : 'previsto para ' + esc(fmtData(e.data))}</span></div></div>`;
 }
-function montarAgendados(){
-  const v = document.getElementById('obrAgendados'); if(!v || uiC.montado) return; uiC.montado = true; const h = hojeStr(); uiC.mes = uiC.mes || h.slice(0, 7); uiC.semana = uiC.semana || segundaDe(h);
+function montarAgendados(){      // monta de novo sempre que a tela foi recriada (troca de seção)
+  const v = document.getElementById('obrAgendados'); if(!v || (uiC.montado && v.querySelector('#pgagGrid'))) return; uiC.montado = true; const h = hojeStr(); uiC.mes = uiC.mes || h.slice(0, 7); uiC.semana = uiC.semana || segundaDe(h);
   v.innerHTML = `<div class="pgag-filtros"><select id="pgagOrigem" aria-label="Origem"><option value="">Obras, manutenção e OS</option>${ORIGENS.map(([k, n]) => `<option value="${k}" ${uiC.origem === k ? 'selected' : ''}>${k === 'obras' ? 'Só obras e pedidos' : k === 'manut' ? 'Só pedidos de manutenção' : 'Só ordens de serviço'}</option>`).join('')}</select><select id="pgagEmpresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select><label class="pgag-chk"><input type="checkbox" id="pgagRec" checked> Mostrar recebidos</label></div>
     <div class="week-summary" id="pgagSemana"><div class="week-summary-head"><div class="week-summary-title">Pagamentos da semana</div><div class="week-nav"><button type="button" class="nav-btn" data-pgag="semAnt" title="Semana anterior">‹</button><div class="week-summary-range mono" id="pgagSemRange"></div><button type="button" class="nav-btn" data-pgag="semProx" title="Próxima semana">›</button><button type="button" class="btn-ghost week-current-btn" data-pgag="semHoje" id="pgagSemHoje" style="display:none;">Semana atual</button></div></div>
       <div class="pgag-semtot" id="pgagSemTot"></div><div class="week-days-grid" id="pgagSemGrid"></div></div>
@@ -25086,7 +25086,7 @@ function montarAgendados(){
   document.getElementById('pgagRec').addEventListener('change', (e) => { uiC.recebidos = e.target.checked; renderAgendados(); });
 }
 function renderAgendados(){
-  const v = document.getElementById('obrAgendados'); if(!v || !uiC.montado || ui.empresa !== 'agendados') return;
+  const v = document.getElementById('obrAgendados'); if(!v || ui.empresa !== 'agendados') return; if(!uiC.montado || !v.querySelector('#pgagGrid')) montarAgendados();
   const hoje = hojeStr(); const evs = eventosCal(); const porDia = {}; evs.forEach(e => { (porDia[e.data] = porDia[e.data] || []).push(e); }); const sm = (l) => soma(l.map(e => e.valor));
   // ---- painel de informações (no lugar do quadro financeiro) ----
   const prev = coletarEventos({ empresa: uiC.empresa, recebidos: false, modo: uiC.origem || 'todos' }); const seg0 = segundaDe(hoje), dom0 = somarDias(seg0, 6);
