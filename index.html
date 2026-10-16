@@ -23875,7 +23875,7 @@ async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizad
 
 // ---------- tela principal ----------
 function montar(){
-  const v = document.getElementById('finObrasView'); if(!v || ui.montado) return; ui.montado = true;
+  const v = document.getElementById('finObrasView'); if(!v || ui.montado) return; ui.montado = true; uiC.montado = false;      // a tela é recriada a cada seção: o calendário (Agendados) precisa ser montado de novo nela
   v.innerHTML = `<div class="tech-day-panel">
     <div class="tech-day-head"><div class="tech-day-title">${ui.modo === 'manut' ? 'Pedidos de manutenção' : ui.modo === 'os' ? 'Ordens de serviço' : 'Obras e Pedidos'}</div><div class="tech-day-date mono" id="obrContagem"></div></div>
     <div class="prv-kpi-grid" id="obrTopo" style="margin:0 20px 12px; display:none;"></div>
