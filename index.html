@@ -764,7 +764,12 @@
   .os-dec-b.on-ped{ background:#b4232a; border-color:#b4232a; color:#fff; } .os-dec-2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .os-dec-2 input{ width:100%; }
   .obr-aprov{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; margin-right:6px; } .obr-aprov-aguardando{ background:#fff3d6; color:#8a5a00; } .obr-aprov-aprovado{ background:#dff3e6; color:#1c7a3f; } .obr-aprov-nao_aprovado{ background:#fdecea; color:#b4232a; }
   .obr-manut-ctl{ margin-top:8px; } .obr-manut-ctl label{ display:block; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; } .obr-manut-et{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
-  .obr-hist{ grid-column:1 / -1; margin-top:2px; font-size:12.5px; }
+  .obr-ent{ flex-basis:100%; font-size:11.5px; color:var(--text-secondary); } .obr-ent-amb{ color:#b45309; font-weight:600; } .obr-ent-verm{ color:#b4232a; font-weight:600; }
+.pgc-ev-o{ font-size:10.5px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; padding:1px 7px; border-radius:999px; background:var(--surface-2); color:var(--text-secondary); border:1px solid var(--border); }
+.pgc-ev-o-obras{ color:#1a56db; border-color:rgba(26,86,219,.3); background:rgba(26,86,219,.08); }
+.pgc-ev-o-manut{ color:#b45309; border-color:rgba(180,83,9,.3); background:rgba(180,83,9,.08); }
+.pgc-ev-o-os{ color:#b4232a; border-color:rgba(180,35,42,.3); background:rgba(180,35,42,.08); }
+.obr-hist{ grid-column:1 / -1; margin-top:2px; font-size:12.5px; }
 .obr-hist summary{ cursor:pointer; color:var(--text-secondary); font-weight:600; user-select:none; }
 .obr-hist .os-linhas{ margin-top:6px; }
 .obr-hist-l{ margin-top:6px; color:var(--text-secondary); font-size:12px; display:flex; flex-direction:column; gap:2px; }
@@ -2201,8 +2206,10 @@
   .obrg-sub{ display:flex; gap:8px; margin:0 0 12px; }
   .obrg-sec-h{ font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 8px; padding:7px 12px; border-radius:8px; background:var(--surface-2); border-left:4px solid var(--line); display:flex; justify-content:space-between; gap:10px; }
   .obrg-sec-h.g1{ background:var(--st-prog-bg, #e8f0fe); border-left-color:var(--st-prog, #1a56db); }
-  .obrg-sec-h.g2{ background:#fdf0d5; border-left-color:#E0A800; }
-  .obrg-sec-h.g3{ background:var(--st-attr-bg, #fff6d6); border-left-color:var(--st-attr, #e0a800); }
+  .obrg-sec-h.g2{ background:#e6f4ec; border-left-color:#1f6b45; }
+  .obrg-sec-h.g3{ background:#fdf0d5; border-left-color:#E0A800; }
+  .obrg-sec-h.g4{ background:var(--st-attr-bg, #fff6d6); border-left-color:var(--st-attr, #e0a800); }
+  .obrg-sec-h.g6{ background:rgba(192,57,43,.08); border-left-color:#C0392B; }
   .obrg-sec-h.gf{ border-left-color:#1f6b45; }
   .obrg-card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:10px 14px 6px; margin-bottom:10px; box-shadow:var(--shadow-sm); }
   .obrg-cli{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:15px; margin-bottom:4px; }
@@ -2297,7 +2304,7 @@
      a cor de situação aparece em etiquetas SUAVES (fundo translúcido + borda fina + texto escuro) e em pequenos acentos.
      Mapa de cores pedido: Etapa interna = vermelho / amarelo / verde · Etapa obra = vermelho / azul / verde claro / verde escuro.
      ===================================================================================================== */
-  .obr-sp-aguardando_compra, .obr-sp-aguardando_inicio, .obi-st-nao_liberado, .obrg-k-aguardando_compra, .obrg-k-aguardando_inicio, .obrg-dot-aguardando_compra, .obrg-dot-aguardando_inicio
+  .obr-sp-aguardando_sinal, .obrg-k-aguardando_sinal, .obrg-dot-aguardando_sinal, .obr-sp-aguardando_compra, .obr-sp-aguardando_inicio, .obi-st-nao_liberado, .obrg-k-aguardando_compra, .obrg-k-aguardando_inicio, .obrg-dot-aguardando_compra, .obrg-dot-aguardando_inicio
     { --c:#C0392B; --c-num:#B3261E; --c-bg:rgba(192,57,43,.12); --c-line:rgba(192,57,43,.32); --c-tx:#96281D; }
   .obrg-k-total{ --c:#1D1D1F; --c-num:#1D1D1F; --c-bg:rgba(29,29,31,.07); --c-line:rgba(29,29,31,.25); --c-tx:#1D1D1F; cursor:default; background:var(--panel-2, #f4f4f5); }
   .obr-sp-comprado, .obrg-k-comprado, .obrg-dot-comprado
@@ -23775,9 +23782,9 @@ const STATUS_PARC = [['nao_liberado', 'Não liberado'], ['a_cobrar', 'A cobrar']
 const stDe = (p) => p.status || (p.pago ? 'recebido' : 'a_cobrar');          // registros da 1ª versão tinham só "pago"
 // Andamento de cada PEDIDO (quem muda é o Gestor, na aba "Obras e Pedidos" dele; o Financeiro só vê). Fica em `statusPedidos`, um campo à parte do registro,
 // para o Gestor nunca regravar pedidos/parcelas do Financeiro (e vice-versa).
-const STATUS_OBRA = [['aguardando_compra', 'Aguardando compra'], ['comprado', 'Comprado'], ['liberado_entrega', 'Liberado para entrega'], ['entregue', 'Entregue'], ['aguardando_inicio', 'Aguardando liberação para início'], ['liberado_inicio', 'Liberado para iniciar'], ['iniciado', 'Iniciado'], ['aguardando_testes', 'Aguardando testes finais'], ['finalizado', 'Finalizado']];
+const STATUS_OBRA = [['aguardando_sinal', 'Aguardando pagamento do sinal'], ['aguardando_compra', 'Aguardando compra'], ['comprado', 'Comprado'], ['liberado_entrega', 'Liberado para entrega'], ['entregue', 'Entregue'], ['aguardando_inicio', 'Aguardando liberação para início'], ['liberado_inicio', 'Liberado para iniciar'], ['iniciado', 'Iniciado'], ['aguardando_testes', 'Aguardando testes finais'], ['finalizado', 'Finalizado']];
 // Duas fases: a INTERNA (nossa: compras e entrega do equipamento) e a da OBRA (instalação no cliente)
-const FASE_INTERNA = ['aguardando_compra', 'comprado', 'liberado_entrega', 'entregue'];
+const FASE_INTERNA = ['aguardando_sinal', 'aguardando_compra', 'comprado', 'liberado_entrega', 'entregue'];
 const FASES_OBRA = [['interna', 'Etapa interna · compras'], ['obra', 'Etapa obra']];
 const faseDe = (k) => FASE_INTERNA.includes(k) ? 'interna' : 'obra';
 const opcoesAndamento = (atual) => FASES_OBRA.map(([f, n]) => `<optgroup label="${esc(n)}">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(([k, nome]) => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(nome)}</option>`).join('')}</optgroup>`).join('');
@@ -23786,7 +23793,15 @@ const rotObra = (k) => (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];
 // `statusPedidos[pid] = { i: interna, o: obra, s: a mais avançada (compatível), em, por, auto }`. Registro antigo (só com `s`) é lido assim: s interna → interna = s; s da obra → interna = entregue e obra = s.
 const OBRA_ST = ['aguardando_inicio', 'liberado_inicio', 'iniciado', 'aguardando_testes', 'finalizado'];
 const entradaSt = (r, pid) => (r && r.statusPedidos && r.statusPedidos[pid]) || {};
-function internoDe(r, pid){ const e = entradaSt(r, pid); if(e.i && FASE_INTERNA.includes(e.i)) return e.i; if(e.s && FASE_INTERNA.includes(e.s)) return e.s; return e.s || e.o ? 'entregue' : 'aguardando_compra'; }
+// Sinal do pedido ainda não recebido pelo Financeiro (a primeira parcela — "Sinal" — ou, sem ela, a primeira da lista)
+function sinalPendente(r, pid){ const p = r && r.pedidos && r.pedidos[pid]; if(!p) return false; const ps = parcelasDoPedido(r, p.numero); if(!ps.length) return false; const sn = ps.find(x => x.tipo === 'Sinal') || ps[0]; return stDe(sn) !== 'recebido'; }
+function internoDe(r, pid){
+  const e = entradaSt(r, pid); let k;
+  if(e.i && FASE_INTERNA.includes(e.i)) k = e.i; else if(e.s && FASE_INTERNA.includes(e.s)) k = e.s; else k = e.s || e.o ? 'entregue' : 'aguardando_compra';
+  if(k === 'aguardando_sinal' && !sinalPendente(r, pid)) return 'aguardando_compra';                   // o Financeiro recebeu o sinal: o pedido segue para compras
+  if(k === 'aguardando_compra' && !(e.i || e.s || e.o) && sinalPendente(r, pid)) return 'aguardando_sinal';   // pedido novo (sem andamento marcado): espera o sinal ser pago
+  return k;
+}
 function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
 const statusObraDe = (r, pid) => obraDe(r, pid) || internoDe(r, pid);          // situação "principal" do pedido = a mais avançada
 const APROVACAO = [['aguardando', 'Aguardando aprovação'], ['aprovado', 'Aprovado'], ['nao_aprovado', 'Não aprovado']];
@@ -23863,6 +23878,7 @@ function montar(){
   const v = document.getElementById('finObrasView'); if(!v || ui.montado) return; ui.montado = true;
   v.innerHTML = `<div class="tech-day-panel">
     <div class="tech-day-head"><div class="tech-day-title">${ui.modo === 'manut' ? 'Pedidos de manutenção' : ui.modo === 'os' ? 'Ordens de serviço' : 'Obras e Pedidos'}</div><div class="tech-day-date mono" id="obrContagem"></div></div>
+    <div class="prv-kpi-grid" id="obrTopo" style="margin:0 20px 12px; display:none;"></div>
     <div class="portal-tabs" id="obrTabs" style="padding:0 20px 4px;">${abasDoModo().map(([k, n]) => `<button type="button" class="portal-tab ${k === ui.empresa ? 'active' : ''}" data-obr="empresa" data-emp="${k}">${n}<span class="obr-tab-n" id="obrTabN_${k}"></span></button>`).join('')}</div>
     <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
     <div class="fin-filtros" id="obrBarra">
@@ -23870,7 +23886,7 @@ function montar(){
       <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="agendado">Com parcela Agendada</option><option value="quitado">Quitados</option></select>
       ${ui.modo !== 'obras' ? '' : `<select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>`}
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
-      ${ui.modo === 'os' ? '<button type="button" class="btn-ghost" data-obr="rec-os" title="Confere o Cadastro de OS e traz para cá toda OS marcada como Cobrar que ainda não está nesta tela">↻ Trazer OS do Cadastro</button><button type="button" class="btn-ghost" data-obr="imp-plan" id="obrImpPlan" style="display:none;" title="OS em aberto da planilha antiga Controle de OS (linhas amarelas e laranjas)">📥 Importar planilha antiga</button>' : ''}
+      ${ui.modo === 'os' ? '<button type="button" class="btn-ghost" data-obr="rec-os" title="Confere o Cadastro de OS e traz para cá toda OS marcada como Cobrar que ainda não está nesta tela">↻ Trazer OS do Cadastro</button>' : ''}
       <button type="button" class="btn-primary" data-obr="novo">${ui.modo === 'manut' ? '+ Novo pedido' : ui.modo === 'os' ? '+ Nova OS' : '+ Novo registro'}</button>
     </div>
     <div id="obrLista" style="padding:0 20px 30px;"></div>
@@ -23891,7 +23907,6 @@ function montar(){
     else if(a === 'abrir') abrirDetalhe(b.dataset.id);
     else if(a === 'criar-busca') abrirNovo({ cliente: b.dataset.nome });
     else if(a === 'csv') exportarCsv();
-    else if(a === 'imp-plan'){ if(window.FIN_API && FIN_API.abrirImportPlanilha) FIN_API.abrirImportPlanilha(); }
     else if(a === 'rec-os'){ b.disabled = true; reconciliarOs().then(n => { const tot = window.OS_API ? OS_API.todas().filter(o => o.status === 'cobrar').length : 0; avisar(n ? n + (n === 1 ? ' OS trazida' : ' OS trazidas') + ' do Cadastro de OS.' : 'Nada novo: as ' + tot + ' OS marcadas como Cobrar já estão aqui.', 6000); if(n && registrosDaAba('definir').length){ ui.empresa = 'definir'; v.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === 'definir')); } renderLista(); }).catch(e => { console.error(e); avisar('Não foi possível trazer as OS: ' + (e && e.message || e), 8000); }).finally(() => { b.disabled = false; }); }
   });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obr-card')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
@@ -23916,7 +23931,7 @@ function celulaParcela(p){
   return `<div class="obr-pc" title="${esc(nome)}"><div class="obr-pc-n">${esc(nome)}</div><div class="obr-pc-b"><span class="obr-pc-v">${esc(brl(p.valor))}</span><span class="obr-st obr-st-${st}">${esc(rotuloStatus(st))}</span></div>${p.agendadoPara && st !== 'recebido' ? `<div class="obr-pc-d">pagamento ${esc(fmtData(p.agendadoPara))}</div>` : ''}</div>`;
 }
 function linhaPedido(r, p, parcelas){
-  if(ehOs(r)) return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">OS ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span><span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
+  if(ehOs(r)) return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">OS ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span><span class="obr-ped-val">${esc(brl(p.valor))}</span>${entradaOsHtml(r, p, parcelas)}</div>
     ${parcelas.length ? `<div class="obr-parcs-c">${parcelas.map(celulaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas nesta OS</div>'}${historicoOsHtml(p, false)}</div>`;
   return `<div class="obr-pedlin"><div class="obr-pedlin-h"><span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span>${chipObra(r, p)}<span class="obr-ped-val">${esc(brl(p.valor))}</span></div>
     ${parcelas.length ? `<div class="obr-parcs-c">${parcelas.map(celulaParcela).join('')}</div>` : '<div class="obr-sem-parc">Sem parcelas neste pedido</div>'}</div>`;
@@ -23936,14 +23951,29 @@ function cartao(r){
     <div class="obr-barra" title="${t.pct}% recebido"><span style="width:${t.pct}%"></span></div>
   </div>`;
 }
+// Painel do topo (Ordens de serviço): quantas OS existem e em que situação, somando todas as abas
+function renderTopoOs(){
+  const el = document.getElementById('obrTopo'); if(!el) return; if(ui.modo !== 'os'){ el.style.display = 'none'; return; } el.style.display = '';
+  const c = { total: 0, a_cobrar: 0, enviado: 0, agendado: 0, pago: 0 }, v = { total: 0, a_cobrar: 0, enviado: 0, pago: 0 };
+  todosRegistros().filter(ehOs).forEach(r => pedidosDe(r).filter(p => !p.cancelado).forEach(p => {
+    const ps = parcelasDoPedido(r, p.numero); const sts = ps.map(stDe); const val = Number(p.valor) || 0; c.total++; v.total += val;
+    if(ps.length && sts.every(x => x === 'recebido')){ c.pago++; v.pago += val; }
+    else if(sts.includes('agendado') || sts.includes('enviado')){ c.enviado++; v.enviado += val; if(sts.includes('agendado')) c.agendado++; }
+    else { c.a_cobrar++; v.a_cobrar += val; }
+  }));
+  el.innerHTML = PREV_API.kpiCards([
+    { tom: 'neutro', icone: 'total', texto: String(c.total), zero: !c.total, rotulo: 'Total de OS', sub: brlCurto(v.total) },
+    { tom: 'amarelo', icone: 'relogio', texto: String(c.a_cobrar), zero: !c.a_cobrar, rotulo: 'A cobrar', sub: brlCurto(v.a_cobrar) },
+    { tom: 'azul', icone: 'andamento', texto: String(c.enviado), zero: !c.enviado, rotulo: 'Enviadas ou agendadas', sub: brlCurto(v.enviado) + (c.agendado ? ' · ' + c.agendado + ' agendada' + (c.agendado === 1 ? '' : 's') : '') },
+    { tom: 'verde', icone: 'ok', texto: String(c.pago), zero: !c.pago, rotulo: 'Pagas', sub: brlCurto(v.pago) + (c.total ? ' · ' + Math.round(c.pago / c.total * 100) + '%' : '') } ]);
+}
 function renderLista(){
-  const box = document.getElementById('obrLista'); if(!box) return;
+  const box = document.getElementById('obrLista'); if(!box) return; renderTopoOs();
   abasDoModo().forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
   if(ui.modo !== 'obras'){
     const nDef = registrosDaAba('definir').length; const tDef = document.querySelector('#obrTabs [data-emp="definir"]'); if(tDef){ tDef.style.display = (nDef || ui.empresa === 'definir') ? '' : 'none'; if(tDef.firstElementChild) tDef.firstElementChild.className = 'obr-tab-n' + (nDef ? ' obr-tab-alerta' : ''); }
     if(carregado && ui.empresa === 'definir' && !nDef){ ui.empresa = 'equiper'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); }
   }
-  const ip = document.getElementById('obrImpPlan'); if(ip){ const n = window.FIN_API && FIN_API.planilhaPendentes ? FIN_API.planilhaPendentes().length : 0; ip.style.display = n ? '' : 'none'; ip.textContent = '📥 Importar planilha antiga (' + n + ')'; }
   const ag = ui.empresa === 'agendados'; document.getElementById('obrBarra').style.display = ag ? 'none' : ''; box.style.display = ag ? 'none' : ''; const bag = document.getElementById('obrAgendados'); if(bag) bag.style.display = ag ? '' : 'none';
   if(ag){ montarAgendados(); renderAgendados(); document.getElementById('obrContagem').textContent = previstosTodos().length + (previstosTodos().length === 1 ? ' pagamento previsto' : ' pagamentos previstos'); return; }
   const todos = registrosDaAba(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
@@ -24106,6 +24136,15 @@ async function criarPedidoManutencao(d){
 const osDe = (p) => (p && p.osId && window.OS_API) ? OS_API.store.items.find(o => o && o.id === p.osId) : null;
 function pedidoDaOs(os){ for(const r of todosRegistros()){ if(!ehOs(r)) continue; const p = lista(r.pedidos).find(x => x.osId === os.id || (!x.osId && fold(x.numero) === fold(os.numero))); if(p) return { r, p }; } return null; }
 function descricaoOs(os){ const it = OS_API.itensDe(os).slice().sort((a, b) => String(a.data).localeCompare(String(b.data))); const u = it[it.length - 1]; return u ? String(u.descricao || '').replace(/^Planilha antiga Controle de OS( — )?/, '').trim() : ''; }
+// "entrou em DD/MM · N dias em aberto" (data em que a OS chegou ao Financeiro; dias contados até receber tudo)
+function entradaOsHtml(r, p, parcelas){
+  const os = osDe(p); const fin = (os && os.fin) || {};
+  const ent = String(fin.enviadaAoFinanceiroEm || (os && (os.decididoEm || os.criadoEm)) || p.criadoEm || r.criadoEm || '').slice(0, 10); if(!/^\d{4}-\d{2}-\d{2}$/.test(ent)) return '';
+  const tudoRecebido = parcelas.length && parcelas.every(x => stDe(x) === 'recebido');
+  const fim = tudoRecebido ? (parcelas.map(x => x.pagoEm).filter(Boolean).sort().pop() || hojeStr()) : hojeStr(); const dias = diasEntre(ent, fim);
+  const cls = tudoRecebido ? '' : dias >= 30 ? ' obr-ent-verm' : dias >= 7 ? ' obr-ent-amb' : '';
+  return `<span class="obr-ent${cls}" title="${tudoRecebido ? 'Recebida em ' + dias + ' dias' : 'Dias desde que a OS chegou ao Financeiro'}">entrou ${esc(fmtData(ent))} · ${dias} ${dias === 1 ? 'dia' : 'dias'}${tudoRecebido ? ' até receber' : ' em aberto'}</span>`;
+}
 function historicoOsHtml(p, aberto){
   const os = osDe(p); if(!os) return '';
   const it = OS_API.itensDe(os).slice().sort((a, b) => String(a.data).localeCompare(String(b.data)));
@@ -24575,8 +24614,8 @@ function renderGestor(){
     const todos = g.itens.flatMap(({ r }) => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const completo = todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado');
     const prinG = todos.length ? andamentoPrincipal(todos) : null;          // o MESMO andamento principal mostrado no cartão (o que segura a obra)
-    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes') ? 1 : prinG === 'liberado_entrega' ? 2 : prinG === 'liberado_inicio' ? 3 : 4;
-    g.rankPrin = g.grp === 4 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
+    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_entrega' ? 3 : prinG === 'liberado_inicio' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;
+    g.rankPrin = g.grp === 5 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
   });
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
   const tile = (n, rot, cor) => `<div class="obrg-t4" style="border-left-color:${cor};"><b style="color:${cor};">${n}</b><span>${esc(rot)}</span></div>`;
@@ -24590,7 +24629,7 @@ function renderGestor(){
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Liberados para entrega', 3: 'Liberados para iniciar', 4: 'Ainda na etapa interna ou aguardando liberação' };
+  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para entrega', 4: 'Liberados para iniciar', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
   let grpAnt = null;
   const cabGrp = (g) => { if(uiG.sub === 'finalizados' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
   box.innerHTML = lista_.length ? lista_.map((g_) => { const { chave, nome, itens } = g_; const cab = cabGrp(g_);
@@ -24991,7 +25030,7 @@ async function abrirGestor(){ montarGestor(); mostrarAbaGestor(uiG.aba); try{ aw
 // · (ao clicar num dia) os pagamentos daquele dia. Previsto = parcela AINDA NÃO recebida com data (`agendadoPara`: data combinada ou data do boleto);
 // recebido = parcela já recebida (pode ser ocultado).
 // =====================================================================================
-const uiC = { mes: null, dia: null, semana: null, empresa: '', recebidos: true, montado: false };
+const uiC = { mes: null, dia: null, semana: null, empresa: '', origem: '', recebidos: true, montado: false };
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 const DOW3 = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']; const DOWF = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
 const pad2 = (n) => String(n).padStart(2, '0'); const isoD = (d) => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); const partesD = (x) => x.split('-').map(Number);
@@ -25000,26 +25039,29 @@ const segundaDe = (x) => { const [y, m, d] = partesD(x); const dt = new Date(y, 
 const dowDe = (x) => { const [y, m, d] = partesD(x); return new Date(y, m - 1, d).getDay(); };
 function coletarEventos(op){
   op = op || {}; const out = [];
-  todosRegistros().filter(r => modoDe(r) === (op.modo || 'obras')).filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
+  const modo = op.modo || 'todos';            // o calendário é um só: obras, pedidos de manutenção e ordens de serviço juntos (op.modo filtra por origem)
+  todosRegistros().filter(r => modo === 'todos' || modoDe(r) === modo).filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
     const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
     parcelasDe(r).forEach(p => {
       const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && ped.cancelado && st !== 'recebido') return;      // parcela de pedido cancelado não conta
-      const base = { rid: r.id, pid: p.id, cliente: nomeCliente(r), empresa: r.empresa, pedido: p.pedido || '', desc: ped ? ped.descricao || '' : '', tipo: p.tipo || 'Parcela', valor: Number(p.valor) || 0, status: st, forma: p.forma || '' };
+      const base = { rid: r.id, pid: p.id, origem: modoDe(r), cliente: nomeCliente(r), empresa: r.empresa, pedido: p.pedido || '', desc: ped ? ped.descricao || '' : '', tipo: p.tipo || 'Parcela', valor: Number(p.valor) || 0, status: st, forma: p.forma || '' };
       if(st === 'recebido'){ if(op.recebidos !== false && p.pagoEm) out.push(Object.assign({}, base, { data: p.pagoEm, ev: 'recebido' })); }
       else if(p.agendadoPara) out.push(Object.assign({}, base, { data: p.agendadoPara, ev: 'previsto' }));
     });
   });
   return out.sort((a, b) => a.data.localeCompare(b.data) || a.cliente.localeCompare(b.cliente, 'pt-BR'));
 }
-const eventosCal = () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: ui.modo });
-const previstosTodos = () => coletarEventos({ recebidos: false, modo: ui.modo });
+const ORIGENS = [['obras', 'Obra'], ['manut', 'Manutenção'], ['os', 'OS']];
+const rotOrigem = (k) => (ORIGENS.find(x => x[0] === k) || [0, ''])[1];
+const eventosCal = () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: uiC.origem || 'todos' });
+const previstosTodos = () => coletarEventos({ recebidos: false, modo: 'todos' });
 function htmlEvento(e, hoje, comEmpresa){
   const passou = e.ev === 'previsto' && e.data < hoje;
-  return `<div class="pgc-ev pgc-ev-${e.ev} ${passou ? 'pgc-ev-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><div class="pgc-ev-h"><b>${esc(e.cliente)}</b>${comEmpresa ? `<span class="obr-emp obr-emp-${esc(e.empresa)}">${esc((EMPRESAS.find(x => x[0] === e.empresa) || [0, ''])[1])}</span>` : ''}<span class="pgc-ev-v">${esc(brl(e.valor))}</span></div><div class="pgc-ev-s">${e.pedido ? 'Pedido ' + esc(e.pedido) + (e.desc ? ' · ' + esc(e.desc) : '') + ' · ' : ''}${esc(e.tipo)}</div><div class="pgc-ev-c"><span class="obr-st obr-st-${esc(e.status)}">${esc(rotuloStatus(e.status))}</span>${e.forma ? `<span class="obr-ped-tag">${esc(e.forma)}</span>` : ''}<span class="pgc-ev-t">${e.ev === 'recebido' ? 'recebido em ' + esc(fmtData(e.data)) : passou ? '<b class="obr-verm">a data passou</b> · ' + esc(fmtData(e.data)) : 'previsto para ' + esc(fmtData(e.data))}</span></div></div>`;
+  return `<div class="pgc-ev pgc-ev-${e.ev} ${passou ? 'pgc-ev-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><div class="pgc-ev-h"><b>${esc(e.cliente)}</b>${comEmpresa ? `<span class="obr-emp obr-emp-${esc(e.empresa)}">${esc((EMPRESAS.find(x => x[0] === e.empresa) || [0, ''])[1])}</span>` : ''}<span class="pgc-ev-o pgc-ev-o-${esc(e.origem)}">${esc(rotOrigem(e.origem))}</span><span class="pgc-ev-v">${esc(brl(e.valor))}</span></div><div class="pgc-ev-s">${e.pedido ? (e.origem === 'os' ? 'OS ' : 'Pedido ') + esc(e.pedido) + (e.desc ? ' · ' + esc(e.desc) : '') + ' · ' : ''}${esc(e.tipo)}</div><div class="pgc-ev-c"><span class="obr-st obr-st-${esc(e.status)}">${esc(rotuloStatus(e.status))}</span>${e.forma ? `<span class="obr-ped-tag">${esc(e.forma)}</span>` : ''}<span class="pgc-ev-t">${e.ev === 'recebido' ? 'recebido em ' + esc(fmtData(e.data)) : passou ? '<b class="obr-verm">a data passou</b> · ' + esc(fmtData(e.data)) : 'previsto para ' + esc(fmtData(e.data))}</span></div></div>`;
 }
 function montarAgendados(){
   const v = document.getElementById('obrAgendados'); if(!v || uiC.montado) return; uiC.montado = true; const h = hojeStr(); uiC.mes = uiC.mes || h.slice(0, 7); uiC.semana = uiC.semana || segundaDe(h);
-  v.innerHTML = `<div class="pgag-filtros"><select id="pgagEmpresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select><label class="pgag-chk"><input type="checkbox" id="pgagRec" checked> Mostrar recebidos</label></div>
+  v.innerHTML = `<div class="pgag-filtros"><select id="pgagOrigem" aria-label="Origem"><option value="">Obras, manutenção e OS</option>${ORIGENS.map(([k, n]) => `<option value="${k}" ${uiC.origem === k ? 'selected' : ''}>${k === 'obras' ? 'Só obras e pedidos' : k === 'manut' ? 'Só pedidos de manutenção' : 'Só ordens de serviço'}</option>`).join('')}</select><select id="pgagEmpresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select><label class="pgag-chk"><input type="checkbox" id="pgagRec" checked> Mostrar recebidos</label></div>
     <div class="week-summary" id="pgagSemana"><div class="week-summary-head"><div class="week-summary-title">Pagamentos da semana</div><div class="week-nav"><button type="button" class="nav-btn" data-pgag="semAnt" title="Semana anterior">‹</button><div class="week-summary-range mono" id="pgagSemRange"></div><button type="button" class="nav-btn" data-pgag="semProx" title="Próxima semana">›</button><button type="button" class="btn-ghost week-current-btn" data-pgag="semHoje" id="pgagSemHoje" style="display:none;">Semana atual</button></div></div>
       <div class="pgag-semtot" id="pgagSemTot"></div><div class="week-days-grid" id="pgagSemGrid"></div></div>
     <div class="month-nav"><button type="button" class="nav-btn" data-pgag="mesAnt" title="Mês anterior">‹</button><div class="month-title" id="pgagMes"></div><button type="button" class="nav-btn" data-pgag="mesProx" title="Próximo mês">›</button><button type="button" class="btn-ghost oe-mini" data-pgag="mesHoje">Hoje</button></div>
@@ -25040,13 +25082,14 @@ function montarAgendados(){
   });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-pgag-dia],[data-cal-reg]')){ e.preventDefault(); e.target.click(); } });
   document.getElementById('pgagEmpresa').addEventListener('change', (e) => { uiC.empresa = e.target.value; renderAgendados(); });
+  document.getElementById('pgagOrigem').addEventListener('change', (e) => { uiC.origem = e.target.value; renderAgendados(); });
   document.getElementById('pgagRec').addEventListener('change', (e) => { uiC.recebidos = e.target.checked; renderAgendados(); });
 }
 function renderAgendados(){
   const v = document.getElementById('obrAgendados'); if(!v || !uiC.montado || ui.empresa !== 'agendados') return;
   const hoje = hojeStr(); const evs = eventosCal(); const porDia = {}; evs.forEach(e => { (porDia[e.data] = porDia[e.data] || []).push(e); }); const sm = (l) => soma(l.map(e => e.valor));
   // ---- painel de informações (no lugar do quadro financeiro) ----
-  const prev = coletarEventos({ empresa: uiC.empresa, recebidos: false }); const seg0 = segundaDe(hoje), dom0 = somarDias(seg0, 6);
+  const prev = coletarEventos({ empresa: uiC.empresa, recebidos: false, modo: uiC.origem || 'todos' }); const seg0 = segundaDe(hoje), dom0 = somarDias(seg0, 6);
   const dHoje = prev.filter(e => e.data === hoje), dSem = prev.filter(e => e.data >= seg0 && e.data <= dom0), dMes = prev.filter(e => e.data.slice(0, 7) === hoje.slice(0, 7)), dPassou = prev.filter(e => e.data < hoje), prox = prev.find(e => e.data >= hoje);
   const n = (l, um, vs) => l.length + (l.length === 1 ? ' ' + um : ' ' + vs);
   document.getElementById('obrKpis').innerHTML = PREV_API.kpiCards([
@@ -25064,7 +25107,7 @@ function renderAgendados(){
   document.getElementById('pgagSemTot').innerHTML = `Previsto na semana: <b>${esc(brl(sm(pSem)))}</b> (${pSem.length} ${pSem.length === 1 ? 'pagamento' : 'pagamentos'})${uiC.recebidos ? ` · Recebido: <b>${esc(brl(sm(rSem)))}</b> (${rSem.length})` : ''}`;
   const gs = document.getElementById('pgagSemGrid'); gs.className = 'week-days-grid' + (nDias === 6 ? ' pgag-n6' : nDias === 7 ? ' pgag-n7' : '');
   gs.innerHTML = dias.map(d => { const [, , dd] = partesD(d); const l = doDia(d); const isHoje = d === hoje; const tot = sm(l.filter(e => e.ev === 'previsto'));
-    return `<div class="week-day-col${isHoje ? ' is-today' : ''}${uiC.dia === d ? ' pgag-sel' : ''}"><div class="week-day-col-head${isHoje ? ' today' : ''}" role="button" tabindex="0" data-pgag-dia="${d}" title="Ver os pagamentos deste dia"><span>${DOW3[dowDe(d)]} ${dd}</span><span class="week-day-count">${l.length}</span></div><div class="week-day-list">${l.map(e => `<div class="pgag-bar pgag-bar-${e.ev}${e.ev === 'previsto' && e.data < hoje ? ' pgag-bar-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><b>${esc(e.cliente)}</b><span>${esc(brl(e.valor))}</span><small>${e.pedido ? 'Pedido ' + esc(e.pedido) + ' · ' : ''}${esc(e.tipo)}${e.forma ? ' · ' + esc(e.forma) : ''}</small></div>`).join('') || '<div class="pgag-vazio">—</div>'}</div>${tot ? `<div class="pgag-dia-tot">${esc(brl(tot))}</div>` : ''}</div>`; }).join('');
+    return `<div class="week-day-col${isHoje ? ' is-today' : ''}${uiC.dia === d ? ' pgag-sel' : ''}"><div class="week-day-col-head${isHoje ? ' today' : ''}" role="button" tabindex="0" data-pgag-dia="${d}" title="Ver os pagamentos deste dia"><span>${DOW3[dowDe(d)]} ${dd}</span><span class="week-day-count">${l.length}</span></div><div class="week-day-list">${l.map(e => `<div class="pgag-bar pgag-bar-${e.ev}${e.ev === 'previsto' && e.data < hoje ? ' pgag-bar-passou' : ''}" role="button" tabindex="0" data-cal-reg="${esc(e.rid)}"><b>${esc(e.cliente)}</b><span>${esc(brl(e.valor))}</span><small>${e.pedido ? (e.origem === 'os' ? 'OS ' : 'Pedido ') + esc(e.pedido) + ' · ' : ''}${esc(e.tipo)}${e.forma ? ' · ' + esc(e.forma) : ''}</small></div>`).join('') || '<div class="pgag-vazio">—</div>'}</div>${tot ? `<div class="pgag-dia-tot">${esc(brl(tot))}</div>` : ''}</div>`; }).join('');
   // ---- calendário do mês (pontinhos) ----
   const [ano, mes] = partesD(uiC.mes + '-01'); document.getElementById('pgagMes').textContent = MESES[mes - 1].charAt(0).toUpperCase() + MESES[mes - 1].slice(1) + ' de ' + ano;
   const offset = new Date(ano, mes - 1, 1).getDay(); const total = new Date(ano, mes, 0).getDate(); let g = DOW3.map(d => `<div class="cal-dow">${d}</div>`).join('');
