@@ -1,0 +1,184 @@
+[
+ {
+  "arquivo": "Aquecimento_C400.pdf",
+  "nome": "Aquecimento a gás – Rinnai C400",
+  "tipo": "aquecimento",
+  "sempre": false,
+  "ordem": 1
+ },
+ {
+  "arquivo": "Aquecimento_E35.pdf",
+  "nome": "Aquecimento a gás – Rinnai E35",
+  "tipo": "aquecimento",
+  "sempre": false,
+  "ordem": 2
+ },
+ {
+  "arquivo": "Aquecimento_E43.pdf",
+  "nome": "Aquecimento a gás – Rinnai E43",
+  "tipo": "aquecimento",
+  "sempre": false,
+  "ordem": 3
+ },
+ {
+  "arquivo": "Conforto_SmartStart.pdf",
+  "nome": "Conforto – recirculação SmartStart",
+  "tipo": "conforto",
+  "sempre": false,
+  "ordem": 4
+ },
+ {
+  "arquivo": "Conforto_SmartStart_conectividade.pdf",
+  "nome": "Conforto – recirculação SmartStart com conectividade",
+  "tipo": "conforto",
+  "sempre": false,
+  "ordem": 5
+ },
+ {
+  "arquivo": "Pressurizacao_Twin_5-40.pdf",
+  "nome": "Pressurização – Grundfos Twin 5-40",
+  "tipo": "pressurizacao",
+  "sempre": false,
+  "ordem": 6
+ },
+ {
+  "arquivo": "Pressurizacao_Twin_10-46.pdf",
+  "nome": "Pressurização – Grundfos Twin 10-46",
+  "tipo": "pressurizacao",
+  "sempre": false,
+  "ordem": 7
+ },
+ {
+  "arquivo": "Pressurizacao_Wilo.pdf",
+  "nome": "Pressurização – Wilo",
+  "tipo": "pressurizacao",
+  "sempre": false,
+  "ordem": 8
+ },
+ {
+  "arquivo": "Pressurizacao_Scala2.pdf",
+  "nome": "Pressurização – Grundfos Scala2 (com quadro)",
+  "tipo": "pressurizacao",
+  "sempre": false,
+  "ordem": 9
+ },
+ {
+  "arquivo": "Pressurizacao_descarga_Scala1.pdf",
+  "nome": "Pressurização de descarga – Grundfos Scala1",
+  "tipo": "pressurizacao",
+  "sempre": false,
+  "ordem": 10
+ },
+ {
+  "arquivo": "Recalque_bifasico.pdf",
+  "nome": "Recalque – quadro bifásico",
+  "tipo": "recalque",
+  "sempre": false,
+  "ordem": 11
+ },
+ {
+  "arquivo": "Recalque_trifasico.pdf",
+  "nome": "Recalque – quadro trifásico",
+  "tipo": "recalque",
+  "sempre": false,
+  "ordem": 12
+ },
+ {
+  "arquivo": "Reuso.pdf",
+  "nome": "Reúso – quadro de pressurização",
+  "tipo": "reuso",
+  "sempre": false,
+  "ordem": 13
+ },
+ {
+  "arquivo": "Piscina_com_aquecimento.pdf",
+  "nome": "Quadro piscina com aquecimento",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 14
+ },
+ {
+  "arquivo": "Piscina_com_aquecimento_e_hidro.pdf",
+  "nome": "Quadro piscina com aquecimento e hidro",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 15
+ },
+ {
+  "arquivo": "Piscina_PoolSpa.pdf",
+  "nome": "Quadro piscina e spa (Pool/Spa)",
+  "tipo": "spa",
+  "sempre": false,
+  "ordem": 16
+ },
+ {
+  "arquivo": "Hidromassagem.pdf",
+  "nome": "Quadro hidromassagem",
+  "tipo": "hidro",
+  "sempre": false,
+  "ordem": 17
+ },
+ {
+  "arquivo": "Registros_piscina.pdf",
+  "nome": "Registros da piscina – manobras",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 18
+ },
+ {
+  "arquivo": "Comando_Piscina_Tholz.pdf",
+  "nome": "App Tholz – piscina",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 19
+ },
+ {
+  "arquivo": "Comando_Piscina_Tholz_com_hidro.pdf",
+  "nome": "App Tholz – piscina com hidro",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 20
+ },
+ {
+  "arquivo": "Comando_Piscina_Tholz_com_convite.pdf",
+  "nome": "App Tholz – piscina (com convite)",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 21
+ },
+ {
+  "arquivo": "Comando_PoolSpa_Tholz_com_hidro.pdf",
+  "nome": "App Tholz – Pool/Spa com hidro",
+  "tipo": "spa",
+  "sempre": false,
+  "ordem": 22
+ },
+ {
+  "arquivo": "Comando_Piscina_Pentair_com_hidro.pdf",
+  "nome": "App Pentair – piscina com hidro",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 23
+ },
+ {
+  "arquivo": "Tholz_Adicionar_por_convite.pdf",
+  "nome": "App Tholz – adicionar por convite",
+  "tipo": "piscina",
+  "sempre": false,
+  "ordem": 24
+ },
+ {
+  "arquivo": "Sauna.pdf",
+  "nome": "Sauna – painel de controle",
+  "tipo": "sauna",
+  "sempre": false,
+  "ordem": 25
+ },
+ {
+  "arquivo": "Manutencoes_gerais.pdf",
+  "nome": "Manutenção – prescrições gerais",
+  "tipo": "geral",
+  "sempre": true,
+  "ordem": 26
+ }
+]
