@@ -6850,7 +6850,40 @@ async function rescheduleService(id, newDate){
     if(contract) contract.scheduledFor = prevScheduledFor;
     return false;
   }
+  // Lembrete de Serviço que acabou de ganhar data: oferece avisar quem anotou o lembrete pelo WhatsApp.
+  if(svc.lembrete && !prevDates[0] && svc.lembretePor){ try{ await oferecerAvisoLembrete(svc, newDate); }catch(e){ console.error('Aviso de lembrete:', e); } }
   return true;
+}
+
+// Telefone de quem anotou o lembrete: técnicos (cadastro), contatos fixos (Alex/Marcelo) e, por último,
+// números informados na hora e guardados neste aparelho. Se não achar, pergunta o número.
+function telefoneDePessoa(nome){
+  const n = String(nome || '').trim().toLowerCase(); if(!n) return '';
+  const t = (typeof TECHS !== 'undefined' ? TECHS : []).find(x => String(x.name || '').trim().toLowerCase() === n); if(t && t.phone) return t.phone;
+  const ec = Object.values(typeof extraContacts !== 'undefined' ? extraContacts : {}).find(c => c && c.phone && (String(c.name || '').trim().toLowerCase() === n || String(c.name || '').toLowerCase().split(' ')[0] === n.split(' ')[0])); if(ec) return ec.phone;
+  try{ const m = JSON.parse(localStorage.getItem('lembreteFones') || '{}'); if(m[n]) return m[n]; }catch(e){}
+  return '';
+}
+async function oferecerAvisoLembrete(svc, data){
+  const [y, m, d] = String(data).split('-').map(Number);
+  const dia = new Date(y, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+  const quem = svc.lembretePor;
+  if(!confirm(`Lembrete agendado para ${dia}.\n\nAvisar ${quem} pelo WhatsApp que o serviço de ${svc.client} foi agendado para esse dia?`)) return;
+  let fone = telefoneDePessoa(quem);
+  if(!fone){
+    fone = (prompt(`Não encontrei o WhatsApp de ${quem}. Informe o número com DDD (fica guardado neste aparelho):`) || '').trim();
+    if(!fone) return;
+    try{ const mp = JSON.parse(localStorage.getItem('lembreteFones') || '{}'); mp[String(quem).trim().toLowerCase()] = fone; localStorage.setItem('lembreteFones', JSON.stringify(mp)); }catch(e){}
+  }
+  const tecs = getServiceTechnicians(svc).filter(Boolean);
+  const linhas = [`Olá, ${quem}! O lembrete que você anotou foi agendado:`, '', `*Cliente:* ${svc.client}`];
+  if(svc.description) linhas.push(`*Serviço:* ${svc.description}`);
+  if(svc.address) linhas.push(`*Endereço:* ${svc.address}`);
+  linhas.push(`*Data:* ${dia}`);
+  if(tecs.length) linhas.push(`*Técnico${tecs.length > 1 ? 's' : ''}:* ${tecs.join(' e ')}`);
+  const por = (typeof currentActingName === 'function' && currentActingName()) || '';
+  if(por) linhas.push('', `Agendado por ${por}.`);
+  openWhatsapp(toWhatsappNumber(fone), linhas.join('\n'));
 }
 
 function renderPendingStyleList(containerId, pending){
