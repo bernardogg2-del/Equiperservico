@@ -20684,7 +20684,7 @@ function gerarPdfContratoManut(d){
   const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const fmt = (iso) => fmtData(String(iso || '').slice(0, 10));
   const T = d.textos || {}; const cliente = limparPdf(d.cliente || ''); const valor = brl(d.calc ? d.calc.adotado : d.valor);
-  const sub = (t) => String(t == null ? '' : t).replace(/\{cliente\}/g, cliente).replace(/\{endereco\}/g, limparPdf(d.endereco || '')).replace(/\{valor\}/g, valor).replace(/\{vigencia\}/g, fmt(d.vigenciaEm)).replace(/\{data\}/g, fmt(d.emitidoEm)).replace(/\{contato\}/g, limparPdf(d.contato || '')).replace(/\{fone\}/g, limparPdf(d.fone || ''));
+  const sub = (t) => String(t == null ? '' : t).replace(/\{cliente\}/g, cliente).replace(/\{endereco\}/g, limparPdf(d.endereco || '')).replace(/\{valor\}/g, valor).replace(/\{vigencia\}/g, fmt(d.vigenciaEm)).replace(/\{data\}/g, fmt(d.emitidoEm)).replace(/\{contato\}/g, limparPdf(d.contato || '')).replace(/\{fone\}/g, limparPdf(d.fone || '')).replace(/\(\s*,\s*\)/g, '').replace(/\(\s*,\s*/g, '(').replace(/\s*,\s*\)/g, ')').replace(/\s+\./g, '.');
   const nf = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
   const CINZA = '#F4F4F5', LINHA = '#E6E7E9', DIM = '#6B7076', INK = '#17181A', RED = '#D91A22';
   function rodape(){ doc.setDrawColor(LINHA); doc.setLineWidth(0.25); doc.line(M, PH - 15, PW - M, PH - 15); setF('sans', 7.5, DIM); txt(sub(T.rodape || 'Equiper Projetos e Instalações · Contrato de manutenção preventiva — {cliente}'), M, PH - 10.5); setF('sansB', 7.5, DIM); txt(String(pag), PW - M, PH - 10.5, { align: 'right' }); }
@@ -20695,7 +20695,7 @@ function gerarPdfContratoManut(d){
     if(subt) cabAtual = [subt, titulo]; const [st, ti] = cabAtual;
     const lh = 22, lw = lh * 1.093;
     try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, INK); txt('equiper', M, y + 10); }
-    setF('sansB', 7, DIM); doc.setCharSpace(0.6); txt(String(st).toUpperCase(), PW - M, y + 8, { align: 'right' }); doc.setCharSpace(0);
+    setF('sansB', 7, DIM); { const t = limparPdf(String(st).toUpperCase()); const cs = 0.6; const w = doc.getTextWidth(t) + (t.length - 1) * cs; doc.setCharSpace(cs); txt(t, PW - M - w, y + 8); doc.setCharSpace(0); }      // alinhado pela borda direita do título (o espaçamento entre letras não conta no fim)
     setF('serifB', 20, INK); txt(ti, PW - M, y + 16.5, { align: 'right' });
     y += lh + 4; doc.setFillColor(RED); doc.rect(M, y, W, 1.1, 'F'); y += 8;
   }
@@ -20755,20 +20755,20 @@ function gerarPdfContratoManut(d){
   cabecalho(T.contratoSub || 'CONTRATO DE', T.contratoTitulo || 'Manutenção preventiva');
   // cartão-resumo: cliente + 4 caixas (valor, vigência, visitas, equipamentos)
   const nEq = (d.sistemas || []).reduce((n, x) => n + Number(x.qtd), 0);
-  const caixas = [['VALOR MENSAL', valor, '#B4232A'], ['INÍCIO DA VIGÊNCIA', fmt(d.vigenciaEm), INK], ['VISITAS POR ANO', String(d.visitas || 0), INK], ['EQUIPAMENTOS', String(nEq), INK]];
+  const caixas = [['VALOR MENSAL', valor, '#B4232A'], ['INÍCIO DA VIGÊNCIA', fmt(d.vigenciaEm), INK]];
   const hCab = 10 + 4.3 * Math.max(1, doc.splitTextToSize(limparPdf(d.endereco || ''), W - 8).length) + 4;
   doc.setFillColor('#FFFFFF'); doc.setDrawColor(LINHA); doc.setLineWidth(0.3); doc.roundedRect(M, y, W, hCab + 19, 2.5, 2.5, 'FD');
   setF('sansB', 7, DIM); doc.setCharSpace(0.5); txt('CLIENTE', M + 4, y + 5); doc.setCharSpace(0); setF('sansB', 12, INK); txt(cliente, M + 4, y + 11);
   setF('sans', 9, DIM); doc.splitTextToSize(limparPdf(d.endereco || ''), W - 8).forEach((l, i) => txt(l, M + 4, y + 15.5 + i * 4.3));
   let yb = y + hCab; doc.setDrawColor(LINHA); doc.line(M + 4, yb, PW - M - 4, yb); yb += 3;
-  const cw = (W - 8) / 4; caixas.forEach(([rot, val, cor], i) => { const x = M + 4 + i * cw; setF('sansB', 6.5, DIM); doc.setCharSpace(0.4); txt(rot, x, yb + 4); doc.setCharSpace(0); setF('serifB', 13, cor); txt(val, x, yb + 11.5); });
+  const cw = (W - 8) / 2; caixas.forEach(([rot, val, cor], i) => { const x = M + 4 + i * cw; setF('sansB', 6.5, DIM); doc.setCharSpace(0.4); txt(rot, x, yb + 4); doc.setCharSpace(0); setF('serifB', 13, cor); txt(val, x, yb + 11.5); });
   y += hCab + 19 + 7;
   corpo(T.contratoCabecalho); y += 1;
   (T.secoes || []).forEach(sec => { if(/^5\b/.test(sec.t || '')) garantir(46); if(/^7\b/.test(sec.t || '')) garantir(30); titulo(sub(sec.t)); corpo(sec.b); });
   // assinaturas lado a lado
   garantir(46); y += 10; setF('sansB', 10.5, INK); txt(sub(T.deAcordo || 'De acordo:'), M, y + 4); y += 18;
   const colW = (W - 14) / 2; doc.setDrawColor(C.texto); doc.setLineWidth(0.3);
-  [[M, T.empresa || 'Equiper Projetos e Instalações', sub(T.cartaAssinante || 'Marcelo Ratto')], [M + colW + 14, cliente, 'Contratante']].forEach(([x, n1, n2]) => { doc.line(x, y, x + colW, y); setF('sansB', 9, INK); txt(doc.splitTextToSize(limparPdf(n1), colW)[0], x, y + 4.8); setF('sans', 8, DIM); txt(n2, x, y + 9); });
+  [[M, sub(T.cartaAssinante || 'Marcelo Ratto'), T.empresa || 'Equiper Projetos e Instalações'], [M + colW + 14, cliente, 'Contratante']].forEach(([x, n1, n2]) => { doc.line(x, y, x + colW, y); setF('sansB', 9, INK); txt(doc.splitTextToSize(limparPdf(n1), colW)[0], x, y + 4.8); setF('sans', 8, DIM); txt(n2, x, y + 9); });
   y += 16; setF('sans', 9, DIM); txt('Local e data: ____________________________ , ____ / ____ / ________', M, y + 4);
   rodape();
   return doc.output('blob');
