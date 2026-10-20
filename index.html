@@ -3295,6 +3295,7 @@
       <button type="button" class="portal-tab" data-prvmanut="config">Configuração por cliente</button>
       <button type="button" class="portal-tab" data-prvmanut="catalogo">Catálogo de equipamentos</button>
       <button type="button" class="portal-tab" data-prvmanut="historico">Histórico de relatórios</button>
+      <button type="button" class="portal-tab" data-prvmanut="precos">Preços do contrato</button>
     </div>
     <div id="prvManutVisitas">
     <div class="tecnicos-head">
@@ -3354,6 +3355,7 @@
     <div id="prvManutConfig" style="display:none;"></div>
     <div id="prvManutCatalogo" style="display:none;"></div>
     <div id="prvManutHistorico" style="display:none;"></div>
+    <div id="prvManutPrecos" style="display:none;"></div>
   </div>
 
   <div id="tabOS" style="display:none;">
@@ -20692,13 +20694,22 @@ function gerarPdfContratoManut(d){
     setF('serifB', 17, C.ink); txt(titulo, PW - M, y + 10.6, { align: 'right' }); setF('sans', 8, C.dim); txt(T.empresa || 'Equiper Projetos e Instalações', PW - M, y + 14.6, { align: 'right' });
     y += lh + 3; doc.setFillColor(C.red); doc.rect(M, y, W, 0.8, 'F'); y += 7;
   }
-  function par(t, op){ op = op || {}; const tam = op.tam || 9.5, lhh = op.lh || 4.6, x = M + (op.ind || 0);
-    const linhas = doc.splitTextToSize(limparPdf(t), W - (op.ind || 0)); linhas.forEach(l => { garantir(lhh); setF(op.bold ? 'sansB' : 'sans', tam, op.cor || C.texto); txt(l, x, y + lhh - 1.2, op.align ? { align: op.align } : undefined); y += lhh; }); y += op.gap != null ? op.gap : 1.5; }
+  function par(t, op){ op = op || {}; const tam = op.tam || 9.5, lhh = op.lh || 4.6, x = M + (op.ind || 0); const larg = W - (op.ind || 0);
+    t = limparPdf(t);
+    if(t.indexOf('**') >= 0){           // trechos entre **asteriscos** saem em negrito: quebra de linha palavra a palavra
+      const toks = []; t.split(/(\*\*[^*]+\*\*)/).forEach(seg => { if(!seg) return; const b = seg.startsWith('**') && seg.endsWith('**'); seg.replace(/^\*\*|\*\*$/g, '').split(/(\s+)/).forEach(w => { if(w) toks.push({ w, b }); }); });
+      let linha = [], lw = 0; const flush = () => { garantir(lhh); let xx = x; linha.forEach(tk => { setF(tk.b ? 'sansB' : 'sans', tam, op.cor || C.texto); txt(tk.w, xx, y + lhh - 1.2); xx += doc.getTextWidth(tk.w); }); y += lhh; linha = []; lw = 0; };
+      toks.forEach(tk => { setF(tk.b ? 'sansB' : 'sans', tam, op.cor || C.texto); const ww = doc.getTextWidth(tk.w); if(lw + ww > larg && linha.length && !/^\s+$/.test(tk.w)){ while(linha.length && /^\s+$/.test(linha[linha.length - 1].w)) linha.pop(); flush(); } if(!(linha.length === 0 && /^\s+$/.test(tk.w))){ linha.push(tk); lw += ww; } });
+      if(linha.length) flush(); y += op.gap != null ? op.gap : 1.5; return;
+    }
+    const linhas = doc.splitTextToSize(t, larg); linhas.forEach(l => { garantir(lhh); setF(op.bold ? 'sansB' : 'sans', tam, op.cor || C.texto); txt(l, x, y + lhh - 1.2, op.align ? { align: op.align } : undefined); y += lhh; }); y += op.gap != null ? op.gap : 1.5; }
+  // altura que um bloco de corpo ocupará (para encostar a assinatura no pé da página 1)
+  function alturaCorpo(texto){ const y0 = y; const docText = doc.text; let h = 0; const save = { y }; doc.text = () => {}; const g0 = LIM; try{ corpo(texto); h = y - y0; } finally { doc.text = docText; y = save.y; } return h; }
   function titulo(t){ garantir(12); y += 3; setF('sansB', 10.5, C.ink); txt(t, M, y + 3.5); y += 7; }
   function tabelaSistemas(){
     const sis = d.sistemas || [];
     garantir(8); doc.setFillColor(C.ink); doc.rect(M, y, W, 6.5, 'F'); setF('sansB', 8.5, '#FFFFFF'); txt('SISTEMA / EQUIPAMENTO', M + 3, y + 4.5); txt('QTD.', PW - M - 3, y + 4.5, { align: 'right' }); y += 6.5;
-    sis.forEach((x, i) => { garantir(6.2); if(i % 2 === 0){ doc.setFillColor(C.cinzaBloco); doc.rect(M, y, W, 6.2, 'F'); } setF('sans', 9, C.texto); txt(x.nome, M + 3, y + 4.3); setF('sansB', 9, C.texto); txt(String(x.qtd), PW - M - 3, y + 4.3, { align: 'right' }); y += 6.2; });
+    sis.forEach((x, i) => { garantir(6.2); if(i % 2 === 0){ doc.setFillColor(C.cinzaBloco); doc.rect(M, y, W, 6.2, 'F'); } setF('sans', 9, C.texto); txt(x.nome, M + 3, y + 4.3); const wn = doc.getTextWidth(limparPdf(x.nome)); const nf = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); const extra = [x.sistema, x.cat && nf(x.cat) !== nf(x.nome) ? x.cat : ''].filter(Boolean).join(' · '); if(extra){ setF('sans', 7.5, C.dim); txt(extra, M + 3 + wn + 3, y + 4.3); } setF('sansB', 9, C.texto); txt(String(x.qtd), PW - M - 3, y + 4.3, { align: 'right' }); y += 6.2; });
     if(!sis.length) par('— (nenhum equipamento listado)', { cor: C.dim }); y += 3;
   }
   // Corpo de uma seção, linha a linha: "* texto" = subtítulo em negrito; "- texto" = item recuado; "! texto" = caixa de destaque (valor);
@@ -20717,9 +20728,12 @@ function gerarPdfContratoManut(d){
   cabecalho(T.cartaSub || 'PROPOSTA DE', T.cartaTitulo || 'Contrato de manutenção');
   setF('sans', 9.5, C.dim); txt(fmt(d.emitidoEm), PW - M, y + 3, { align: 'right' }); y += 8;
   corpo(T.carta);
-  y += 6; corpo(T.cartaAssinatura); y += 6;
+  const contatosL = String(T.cartaContatos || '').split('\n').filter(l => l.trim());
+  const hFim = alturaCorpo(T.cartaAssinatura) + 6 + 5 + contatosL.length * 4.6 + 2;      // assinatura + linha + contatos
+  if(y + 6 + hFim <= LIM) y = LIM - hFim; else y += 6;                                      // do "Atenciosamente" até o fim: no pé da página
+  corpo(T.cartaAssinatura); y += 6;
   doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, y, PW - M, y); y += 5;
-  String(T.cartaContatos || '').split('\n').filter(l => l.trim()).forEach(l => par(sub(l), { tam: 9, gap: 0 }));
+  contatosL.forEach(l => par(sub(l), { tam: 9, gap: 0 }));
   // ---------------- página 2: contrato ----------------
   novaPagina(); cabecalho(T.contratoSub || 'CONTRATO DE', T.contratoTitulo || 'Manutenção preventiva');
   corpo(T.contratoCabecalho); y += 2;
@@ -21590,6 +21604,8 @@ function ligarAbas(){
       document.getElementById('prvManutConfig').style.display = tab === 'config' ? '' : 'none';
       document.getElementById('prvManutCatalogo').style.display = tab === 'catalogo' ? '' : 'none';
       document.getElementById('prvManutHistorico').style.display = tab === 'historico' ? '' : 'none';
+      const pp = document.getElementById('prvManutPrecos'); if(pp) pp.style.display = tab === 'precos' ? '' : 'none';
+      if(tab === 'precos' && window.OBR_API && OBR_API.abrirPrecosContrato) OBR_API.abrirPrecosContrato(pp);
       if(tab === 'config') renderConfig();
       if(tab === 'catalogo') renderCatalogo();
       if(tab === 'historico'){ renderHistorico(); garantirRelatorios(); }
@@ -24706,10 +24722,10 @@ function renderGestor(){
     const rotOutros = outros.map(rotObra).join(', ');
     const pontos = pares.slice(0, 14).map(x => `<i class="obrg-dot obrg-dot-${statusObraDe(x.r, x.p.id)}" title="Pedido ${esc(x.p.numero)} · ${esc(rotObra(statusObraDe(x.r, x.p.id)))}"></i>`).join('') + (pares.length > 14 ? `<small class="obrg-mais">+${pares.length - 14}</small>` : '');
     const cmPend = g_.grp === 'f' && !cmEnviado(regs); const cmEst = g_.grp === 'f' ? cmEstado(regs) : null;
-    const acoes = (g_.grp === 'f' ? `<button type="button" class="btn-ghost oe-mini ${cmPend ? 'obrg-cm-pend' : ''}" data-obrg-cm="${esc(regs.map(r => r.id).join(','))}">📄 Contrato de manutenção${cmEst && cmEst.status === 'enviado' ? ' ✓' : ''}</button>` : '') + `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
+    const acoes = (g_.grp === 'f' ? `<button type="button" class="btn-ghost oe-mini ${cmPend ? 'obrg-cm-pend' : ''}" data-obrg-cm="${esc(regs.map(r => r.id).join(','))}">📄 Contrato de manutenção${cmEst && CM_RESOLVIDO[cmEst.status] ? ' ✓' : ''}</button>` : '') + `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
     return cab + `<div class="obrg-card obrg-cliente${aberto ? ' obrg-aberto' : ''}">
       <div class="obrg-resumo" role="button" tabindex="0" aria-expanded="${aberto}" data-obrg-cli="${esc(chave)}" title="${aberto ? 'Recolher' : 'Abrir o cartão completo'}"><span class="obrg-seta">${aberto ? '▾' : '▸'}</span>
-        <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}${cmPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o contrato de manutenção preventiva">⚠ Contrato de manutenção a enviar</span>' : cmEst && cmEst.status === 'enviado' ? `<span class="prv-chip green obrg-cm-chip" title="Contrato de manutenção enviado">Contrato enviado ${esc(fmtData(String(cmEst.enviadoEm || '').slice(0, 10)))}</span>` : ''}</span>
+        <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}${cmPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o contrato de manutenção preventiva">⚠ Contrato de manutenção a enviar</span>' : cmEst && cmEst.status === 'enviado' ? `<span class="prv-chip green obrg-cm-chip" title="Contrato de manutenção enviado">Contrato enviado ${esc(fmtData(String(cmEst.enviadoEm || '').slice(0, 10)))}</span>` : cmEst && CM_RESOLVIDO[cmEst.status] ? `<span class="prv-chip gray obrg-cm-chip">${esc(CM_RESOLVIDO[cmEst.status])}</span>` : ''}</span>
         <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.slice(0, 2).map(k => `<span class="obrg-outros obrg-outros-${k}" title="Outros pedidos deste cliente: ${esc(rotOutros)}">${esc(rotObra(k))}</span>`).join('')}${outros.length > 2 ? `<span class="obrg-outros" title="${esc(rotOutros)}">+${outros.length - 2}</span>` : ''}</span>
         <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-anel${fin && fin === todosPeds.length ? ' cheio' : ''}" style="--p:${pctPedidos(todosPeds)}" role="img" aria-label="${pctPedidos(todosPeds)}% concluído" title="${pctPedidos(todosPeds)}% das etapas de instalação (o Teste vale 10% de cada equipamento) · ${fin} de ${todosPeds.length} finalizados"><b>${pctPedidos(todosPeds)}%</b></span></div>
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
@@ -25110,8 +25126,8 @@ function cmCategoriaDe(nome){
   if(cmCfg.vinculos && cmCfg.vinculos[n]) return cmCfg.vinculos[n];      // vínculo salvo pelo Gestor vale mais que as palavras-chave
   const tem = (...ks) => ks.some(k => n.includes(k));
   if(tem('pool')) return 'pool_spa'; if(tem('spa') && !tem('espa')) return 'spa'; if(tem('piscina')) return 'piscina';
-  if(tem('quadro', 'qd.', 'qd ')) return 'quadro'; if(tem('sauna')) return 'sauna'; if(tem('coletor', 'placa solar', 'solar')) return 'coletor';
-  if(tem('boiler', 'reservat', 'termico')) return 'reservatorio'; if(tem('apoio', 'circula')) return 'bomba_apoio';
+  if(tem('quadro', 'qd.', 'qd ')) return 'quadro'; if(tem('sauna')) return 'sauna'; if(tem('coletor', 'placa solar', 'placas solares')) return 'coletor';
+  if(tem('boiler', 'reservat', 'termico')) return 'reservatorio'; if(tem('apoio', 'circula')) return 'bomba_apoio'; if(tem('solar')) return 'coletor';
   if(tem('aquecedor', 'rinnai', 'harman', 'gas', 'gás')) return 'aquecedor'; if(tem('reuso', 'reúso')) return 'reuso';
   if(tem('triturador', 'esgoto')) return 'drenagem_esgoto'; if(tem('pluvial', 'drenagem')) return 'drenagem_pluvial'; if(tem('recalque')) return 'recalque';
   if(tem('pressuriz', 'rp ', 'sfl', 'eletrobomba', 'bomba')) return 'pressurizador'; if(tem('filtro')) return 'filtro';
@@ -25125,7 +25141,8 @@ function cmEquipamentos(regs){
   return out;
 }
 const cmEstado = (regs) => regs.map(r => r.contratoManut).filter(Boolean).sort((a, b) => String(b.atualizadoEm || '').localeCompare(String(a.atualizadoEm || '')))[0] || null;
-const cmEnviado = (regs) => { const c = cmEstado(regs); return !!c && c.status === 'enviado'; };
+const CM_RESOLVIDO = { enviado: 'Contrato enviado', ja_tem: 'Já tem contrato', recusou: 'Não quis contrato' };
+const cmEnviado = (regs) => { const c = cmEstado(regs); return !!c && !!CM_RESOLVIDO[c.status]; };      // pendência resolvida: enviado, já tinha contrato ou o cliente não quis
 // Clientes com a obra finalizada (todos os pedidos entregues e finalizados) — base da pendência
 function cmClientesFinalizados(){
   const grupos = new Map();
@@ -25152,7 +25169,7 @@ const CM_TEXTOS = {
   contratoSub: 'CONTRATO DE', contratoTitulo: 'Manutenção preventiva',
   contratoCabecalho: '* Contrato de Manutenção Preventiva (mão de obra, sem material)\nCliente: {cliente}\n{endereco}',
   secoes: [
-    { t: 'Serviços', b: 'Esta proposta visa atender o cliente, quando solicitado e para eventuais manutenções trimestrais, fazendo uma manutenção preventiva nos equipamentos listados abaixo. Os serviços serão realizados de segunda a sexta-feira, em horário comercial. O atendimento fora do estipulado é de urgência e será cobrado em faturamento complementar.' },
+    { t: 'Serviços', b: 'Esta proposta visa atender o cliente, quando solicitado e para eventuais **manutenções trimestrais**, fazendo uma manutenção preventiva nos equipamentos listados abaixo. Os serviços serão realizados de segunda a sexta-feira, em horário comercial. O atendimento fora do estipulado é de urgência e será cobrado em faturamento complementar.' },
     { t: 'A) Descrição dos sistemas inclusos', b: '{sistemas}' },
     { t: '1 – Programa de manutenção preventiva', b: '* A – Bombas\n- I. Anotação dos valores das medidas elétricas do motor, como tensão, corrente, desequilíbrio de corrente e isolamento elétrico do motor, de modo a acompanhar o desgaste do equipamento até a necessidade de substituição;\n- II. Verificação das características hidráulicas dos equipamentos;\n- III. Limpeza das válvulas;\n* B – Filtração\n- Teste de pressão e condição geral de funcionamento; funcionamento UVC;\n* C – Quadros elétricos\n- Inspeção visual; verificação do funcionamento padrão do quadro; verificação do estado dos DPS (dispositivos de proteção contra surtos atmosféricos).' },
     { t: '2 – Diversos', b: 'Todos os materiais que forem necessários substituir serão cobrados, sendo informado antes se o valor for acima de 1 salário-mínimo. Serão cobrados junto com a mensalidade seguinte.' },
@@ -25171,7 +25188,7 @@ function abrirCmTextos(aoFechar){
   const ta = (k, v, rows) => `<textarea data-txt="${esc(k)}" rows="${rows || 3}" style="width:100%; font-family:inherit; font-size:13px;">${esc(v || '')}</textarea>`;
   const render = () => {
     ov.innerHTML = `<div class="modal obr-modal" style="max-width:900px; max-height:92vh; overflow-y:auto;"><h3 style="margin:0 0 4px;">Textos do contrato de manutenção</h3>
-      <p class="prv-hint" style="margin:0 0 10px;">Campos trocados na hora: <code>{cliente}</code> <code>{endereco}</code> <code>{valor}</code> <code>{vigencia}</code> <code>{data}</code> <code>{contato}</code> <code>{fone}</code>. Comece a linha com <code>* </code> para subtítulo em negrito, <code>- </code> para item recuado, <code>! </code> para caixa de destaque; <code>{sistemas}</code> vira a tabela dos sistemas.</p>
+      <p class="prv-hint" style="margin:0 0 10px;">Campos trocados na hora: <code>{cliente}</code> <code>{endereco}</code> <code>{valor}</code> <code>{vigencia}</code> <code>{data}</code> <code>{contato}</code> <code>{fone}</code>. Comece a linha com <code>* </code> para subtítulo em negrito, <code>- </code> para item recuado, <code>! </code> para caixa de destaque; <code>{sistemas}</code> vira a tabela dos sistemas; <code>**texto**</code> deixa o trecho em negrito.</p>
       <div class="obr-sec-t">Página 1 · carta</div>
       <div class="obr-grid2"><div class="field obr-meio"><label>Sobretítulo</label><input type="text" data-txt="cartaSub" value="${esc(T.cartaSub)}"></div><div class="field obr-meio"><label>Título</label><input type="text" data-txt="cartaTitulo" value="${esc(T.cartaTitulo)}"></div></div>
       <div class="field"><label>Corpo da carta</label>${ta('carta', T.carta, 9)}</div>
@@ -25227,12 +25244,13 @@ function cmConfirmarDados(d, cli){
   });
 }
 // Tabela de preços e vínculos equipamento → categoria (gravados no Firebase, valem para todos os contratos)
-function abrirCmConfig(aoFechar){
-  let ov = document.getElementById('obrCmCfgOverlay'); if(ov) ov.remove();
-  ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrCmCfgOverlay'; ov.style.zIndex = 100001;
+function abrirCmConfig(aoFechar, container){      // container: renderiza dentro dele (aba "Preços do contrato" em Manutenções) em vez de abrir por cima
+  let ov;
+  if(container){ ov = container; if(ov._cmLigado){ ov._cmRender(); return; } ov._cmLigado = true; }
+  else { ov = document.getElementById('obrCmCfgOverlay'); if(ov) ov.remove(); ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrCmCfgOverlay'; ov.style.zIndex = 100001; }
   const render = () => {
     const cats = cmCats(); const vinc = Object.entries(cmCfg.vinculos || {}).sort((a, b) => a[0].localeCompare(b[0]));
-    ov.innerHTML = `<div class="modal obr-modal" style="max-width:860px; max-height:92vh; overflow-y:auto;"><h3 style="margin:0 0 4px;">Tabela de preços do contrato de manutenção</h3>
+    ov.innerHTML = `<div class="${container ? 'tech-day-panel' : 'modal obr-modal'}" style="${container ? 'padding:18px 20px;' : 'max-width:860px; max-height:92vh; overflow-y:auto;'}"><h3 style="margin:0 0 4px;">Tabela de preços do contrato de manutenção</h3>
       <p class="prv-hint" style="margin:0 0 10px;">Valores por equipamento e por ano. O que entra no contrato é <b>mão de obra + fração do material</b> × multiplicador (a planilha usa metade do material). Mudanças valem para os próximos contratos.</p>
       <div class="obr-grid2"><div class="field obr-meio"><label>Fração do material cobrada (%)</label><input type="number" min="0" max="100" step="5" data-cfg="frac" value="${esc(Math.round((cmCfg.fracMaterial != null ? cmCfg.fracMaterial : 0.5) * 100))}"></div><div class="field obr-meio"><label>Deslocamento (R$ por km)</label><input type="text" inputmode="decimal" data-cfg="km" value="${esc(campoValor(cmCfg.km))}"></div><div class="field obr-meio"><label>Visitas por ano (padrão)</label><input type="number" min="0" step="1" data-cfg="visitas" value="${esc(cmCfg.visitas)}"></div></div>
       <table class="obr-tab"><thead><tr><th>Categoria</th><th class="obr-d">Mão de obra</th><th class="obr-d">Material</th><th class="obr-d">×</th><th class="obr-d">No contrato</th><th></th></tr></thead><tbody>
@@ -25243,8 +25261,9 @@ function abrirCmConfig(aoFechar){
       <p class="prv-hint" style="margin:2px 0 8px;">Quando você escolhe a categoria de um equipamento no contrato, o app guarda o vínculo pelo nome e usa da próxima vez. Sem vínculo, ele tenta pelas palavras do nome.</p>
       ${vinc.length ? `<table class="obr-tab"><tbody>${vinc.map(([n, k]) => `<tr><td>${esc(n)}</td><td><select data-cfg-vinc="${esc(n)}">${cats.map(c => `<option value="${c[0]}" ${c[0] === k ? 'selected' : ''}>${esc(c[1])}</option>`).join('')}</select></td><td class="obr-acoes"><button type="button" class="obr-ic" data-cfg-rmv="${esc(n)}" title="Esquecer vínculo">✕</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum vínculo salvo ainda.</div>'}
       <div class="prv-linha" style="margin:6px 0 0;"><button type="button" class="btn-ghost oe-mini" data-cfg-act="add-vinc">+ Vincular equipamento</button></div>
-      <div class="modal-actions" style="justify-content:flex-end; margin-top:14px;"><button type="button" class="btn-ghost" data-cfg-act="fechar">Cancelar</button><button type="button" class="btn-primary" data-cfg-act="salvar">Salvar</button></div></div>`;
+      <div class="modal-actions" style="justify-content:${container ? 'space-between' : 'flex-end'}; margin-top:14px;">${container ? '<button type="button" class="btn-ghost" data-cfg-act="textos">✎ Textos do contrato</button>' : ''}<span><button type="button" class="btn-ghost" data-cfg-act="fechar">${container ? 'Desfazer' : 'Cancelar'}</button> <button type="button" class="btn-primary" data-cfg-act="salvar">Salvar</button></span></div></div>`;
   };
+  ov._cmRender = render;
   const ler = () => {
     const f = Number(ov.querySelector('[data-cfg="frac"]').value); if(!Number.isNaN(f)) cmCfg.fracMaterial = Math.max(0, Math.min(100, f)) / 100;
     const km = parseValor(ov.querySelector('[data-cfg="km"]').value); if(km != null && !Number.isNaN(km)) cmCfg.km = km; const vs = Number(ov.querySelector('[data-cfg="visitas"]').value); if(!Number.isNaN(vs)) cmCfg.visitas = vs;
@@ -25254,19 +25273,22 @@ function abrirCmConfig(aoFechar){
     cmCfg.categorias = cats;
     const v = {}; ov.querySelectorAll('[data-cfg-vinc]').forEach(sl => { v[sl.dataset.cfgVinc] = sl.value; }); cmCfg.vinculos = v;
   };
+  const fecharCfg = () => { if(container){ cmCarregarCfg().then(render); render(); } else { ov.remove(); } if(aoFechar) aoFechar(); };
   ov.addEventListener('click', async (e) => {
-    if(e.target === ov){ ov.remove(); if(aoFechar) aoFechar(); return; }
+    if(e.target === ov && !container){ ov.remove(); if(aoFechar) aoFechar(); return; }
     const rm = e.target.closest('[data-cfg-rm]'); if(rm){ ler(); const c = Object.assign({}, cmCfg.categorias); c[rm.dataset.cfgRm] = Object.assign({}, c[rm.dataset.cfgRm] || {}, { oculta: true }); cmCfg.categorias = c; render(); return; }
     const rmv = e.target.closest('[data-cfg-rmv]'); if(rmv){ ler(); const v = Object.assign({}, cmCfg.vinculos); delete v[rmv.dataset.cfgRmv]; cmCfg.vinculos = v; render(); return; }
     const b = e.target.closest('[data-cfg-act]'); if(!b) return; const a = b.dataset.cfgAct;
-    if(a === 'fechar'){ ov.remove(); if(aoFechar) aoFechar(); return; }
+    if(a === 'fechar'){ if(container){ try{ cmAplicarCfg(JSON.parse(localStorage.getItem('cm_cfg') || '{}')); }catch(_){} render(); return; } ov.remove(); if(aoFechar) aoFechar(); return; }
+    if(a === 'textos'){ abrirCmTextos(); return; }
     if(a === 'add-cat'){ ler(); const nome = prompt('Nome da nova categoria:'); if(!nome) return; const k = 'c_' + fold(nome).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 24) + '_' + Date.now().toString(36).slice(-3); cmCfg.categorias = Object.assign({}, cmCfg.categorias, { [k]: { nome: nome.trim(), mo: 250, mat: 150, mult: 1 } }); render(); return; }
     if(a === 'add-vinc'){ ler(); const nome = prompt('Nome do equipamento (como aparece nas obras):'); if(!nome) return; cmCfg.vinculos = Object.assign({}, cmCfg.vinculos, { [fold(nome)]: cmCategoriaDe(nome) }); render(); return; }
-    if(a === 'salvar'){ ler(); b.disabled = true; b.textContent = 'Salvando…'; const ok = await cmSalvarCfg(); if(ok) avisar('Tabela de preços salva.', 4000); ov.remove(); if(aoFechar) aoFechar(); }
+    if(a === 'salvar'){ ler(); b.disabled = true; b.textContent = 'Salvando…'; const ok = await cmSalvarCfg(); if(ok) avisar('Tabela de preços salva.', 4000); if(container){ render(); } else { ov.remove(); } if(aoFechar) aoFechar(); }
   });
   ov.addEventListener('input', (e) => { if(e.target.matches('[data-cfg-mo],[data-cfg-mat],[data-cfg-mult],[data-cfg="frac"]')){ const t = e.target; const sel = t.selectionStart; const k = t.dataset.cfgMo || t.dataset.cfgMat || t.dataset.cfgMult; ler(); render(); const n = k ? ov.querySelector(`[data-cfg-mo="${k}"],[data-cfg-mat="${k}"],[data-cfg-mult="${k}"]`) : null; const alvo = t.dataset.cfgMo ? ov.querySelector(`[data-cfg-mo="${k}"]`) : t.dataset.cfgMat ? ov.querySelector(`[data-cfg-mat="${k}"]`) : t.dataset.cfgMult ? ov.querySelector(`[data-cfg-mult="${k}"]`) : ov.querySelector('[data-cfg="frac"]'); if(alvo){ alvo.focus(); try{ alvo.setSelectionRange(sel, sel); }catch(_){} } } });
-  render(); document.body.appendChild(ov);
+  render(); if(!container) document.body.appendChild(ov);
 }
+async function abrirPrecosContrato(container){ await cmCarregarCfg(); abrirCmConfig(null, container); }
 async function abrirContratoManut(rids){
   await carregarInstTodos(); await cmCarregarCfg(); const regs = rids.map(porId).filter(Boolean); if(!regs.length) return;
   const r0 = regs[0]; const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r0.clienteId)) || clientePorNome(r0.cliente);
@@ -25280,7 +25302,7 @@ async function abrirContratoManut(rids){
   const render = () => {
     const t = cmCalcular(d);
     ov.innerHTML = `<div class="modal obr-modal" style="max-width:820px; max-height:92vh; overflow-y:auto;"><h3 style="margin:0 0 4px;">Contrato de manutenção preventiva</h3>
-      <p class="prv-hint" style="margin:0 0 10px;"><b>${esc(d.cliente)}</b>${d.endereco ? ' · ' + esc(d.endereco) : ''}${salvo ? ` · <span class="prv-chip ${salvo.status === 'enviado' ? 'green' : 'amber'}">${salvo.status === 'enviado' ? 'enviado em ' + esc(fmtData(String(salvo.enviadoEm || '').slice(0, 10))) + (salvo.enviadoPor ? ' por ' + esc(salvo.enviadoPor) : '') : 'PDF gerado, ainda não enviado'}</span>` : ''}</p>
+      <p class="prv-hint" style="margin:0 0 10px;"><b>${esc(d.cliente)}</b>${d.endereco ? ' · ' + esc(d.endereco) : ''}${salvo ? ` · <span class="prv-chip ${salvo.status === 'enviado' ? 'green' : CM_RESOLVIDO[salvo.status] ? 'gray' : 'amber'}">${salvo.status === 'enviado' ? 'enviado em ' + esc(fmtData(String(salvo.enviadoEm || '').slice(0, 10))) + (salvo.enviadoPor ? ' por ' + esc(salvo.enviadoPor) : '') : CM_RESOLVIDO[salvo.status] ? CM_RESOLVIDO[salvo.status] + (salvo.enviadoEm ? ' · ' + esc(fmtData(String(salvo.enviadoEm).slice(0, 10))) : '') + (salvo.enviadoPor ? ' por ' + esc(salvo.enviadoPor) : '') : 'PDF gerado, ainda não enviado'}</span>` : ''}</p>
       <div class="obr-grid2">
         <div class="field obr-meio"><label>Data do contrato</label><input type="date" data-cm="emitidoEm" value="${esc(d.emitidoEm)}"></div>
         <div class="field obr-meio"><label>Início da vigência <small>(1º dia útil do mês seguinte)</small></label><input type="date" data-cm="vigenciaEm" value="${esc(d.vigenciaEm)}"></div>
@@ -25297,14 +25319,15 @@ async function abrirContratoManut(rids){
       <div class="obr-tot" style="flex-wrap:wrap;"><span>Equipamentos <b>${esc(brl(t.equip))}/ano</b></span><span>Deslocamento <b>${esc(brl(t.desloc))}/ano</b> <small>(${esc(String(d.visitas || 0))} visitas × ${esc(String(d.km || 0))} km × ${esc(brl(cmCfg.km))}/km)</small></span><span>Total <b>${esc(brl(t.anual))}/ano</b></span><span>Mensal calculado <b class="obr-verde">${esc(brl(t.mensal))}</b></span></div>
       <div class="obr-grid2" style="margin-top:8px;"><div class="field obr-meio"><label>Valor mensal manual (opcional)</label><input type="text" inputmode="decimal" data-cm="valorManual" value="${esc(d.valorManual || '')}" placeholder="deixe vazio para usar o calculado"></div><div class="field obr-meio"><label>Valor adotado no contrato</label><div style="font-size:20px; font-weight:700; padding:6px 0;">${esc(brl(t.adotado))}<small style="font-weight:500; color:var(--text-secondary);"> /mês</small></div></div></div>
       <div class="field-error" id="obrCmErr"></div>
-      <div class="modal-actions" style="justify-content:flex-end; flex-wrap:wrap; gap:8px;"><button type="button" class="btn-ghost" data-cm-act="fechar">Fechar</button><button type="button" class="btn-ghost" data-cm-act="pdf">⤓ Baixar contrato (PDF)</button><button type="button" class="btn-primary" data-cm-act="enviado" ${salvo && salvo.status === 'enviado' ? 'disabled' : ''}>✓ Marcar como enviado</button></div></div>`;
+      <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;"><span style="display:flex; gap:8px; flex-wrap:wrap;">${salvo && CM_RESOLVIDO[salvo.status] ? '<button type="button" class="btn-ghost" data-cm-act="reabrir">↩ Reabrir pendência</button>' : '<button type="button" class="btn-ghost" data-cm-act="ja_tem" title="O cliente já tem contrato de manutenção: a pendência sai do painel">Cliente já tem contrato</button><button type="button" class="btn-ghost" data-cm-act="recusou" title="O cliente não quer o contrato: a pendência sai do painel">Cliente não quer</button>'}</span><span style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost" data-cm-act="fechar">Fechar</button><button type="button" class="btn-ghost" data-cm-act="pdf">⤓ Baixar contrato (PDF)</button><button type="button" class="btn-primary" data-cm-act="enviado" ${salvo && salvo.status === 'enviado' ? 'disabled' : ''}>✓ Marcar como enviado</button></span></div></div>`;
   };
   const ler = () => { const n = (v) => { const x = parseValor(v); return x == null || Number.isNaN(x) ? '' : x; };
     ov.querySelectorAll('[data-cm]').forEach(i => { const k = i.dataset.cm; d[k] = (k === 'valorManual') ? n(i.value) : i.value; });
     ov.querySelectorAll('[data-cm-cat]').forEach(sl => { const it = d.itens[+sl.dataset.cmCat]; if(it.cat !== sl.value){ it.cat = sl.value; const k = fold(it.nome); if(k){ cmCfg.vinculos = Object.assign({}, cmCfg.vinculos, { [k]: sl.value }); cmSalvarCfg(); } } }); ov.querySelectorAll('[data-cm-qtd]').forEach(i => { d.itens[+i.dataset.cmQtd].qtd = Number(i.value) || 0; }); };
-  const dadosPdf = () => Object.assign({}, d, { textos: cmTextos(), calc: cmCalcular(d), sistemas: (() => { const m = new Map(); d.itens.filter(i => Number(i.qtd) > 0).forEach(i => { const k = i.cat === 'outro' || i.cat === 'quadro' ? i.nome : cmCat(i.cat)[1]; m.set(k, (m.get(k) || 0) + Number(i.qtd)); }); return [...m.entries()].map(([nome, qtd]) => ({ nome, qtd })); })() });
+  const dadosPdf = () => Object.assign({}, d, { textos: cmTextos(), calc: cmCalcular(d), sistemas: (() => { const m = new Map(); d.itens.filter(i => Number(i.qtd) > 0).forEach(i => { const k = fold(i.nome) + '|' + i.cat; const e = m.get(k) || { nome: i.nome, cat: cmCat(i.cat)[1].replace(/ \(incluso\)$/, ''), sistema: i.sistema || '', qtd: 0 }; e.qtd += Number(i.qtd); m.set(k, e); }); return [...m.values()]; })() });
   async function salvar(status){ const agora = new Date().toISOString(); const t = cmCalcular(d); const salvoAntes = cmEstado(regs);
-    const c = { status, dados: JSON.parse(JSON.stringify(d)), valor: t.adotado, atualizadoEm: agora, atualizadoPor: quem() || null, geradoEm: (salvoAntes && salvoAntes.geradoEm) || agora, enviadoEm: status === 'enviado' ? agora : (salvoAntes && salvoAntes.enviadoEm) || null, enviadoPor: status === 'enviado' ? (quem() || null) : (salvoAntes && salvoAntes.enviadoPor) || null };
+    const resolve = !!CM_RESOLVIDO[status];
+    const c = { status, dados: JSON.parse(JSON.stringify(d)), valor: t.adotado, atualizadoEm: agora, atualizadoPor: quem() || null, geradoEm: (salvoAntes && salvoAntes.geradoEm) || (status === 'gerado' ? agora : null), enviadoEm: resolve ? agora : null, enviadoPor: resolve ? (quem() || null) : null };
     regs.forEach(r => { r.contratoManut = c; r.atualizadoEm = agora; }); await store.save(true); renderGestor(); try{ if(window.PAINEIS_API) PAINEIS_API.renderTudo(); }catch(e){} }
   ov.addEventListener('input', (e) => { if(e.target.matches('[data-cm],[data-cm-cat],[data-cm-qtd]')){ const foco = e.target.dataset.cm || e.target.dataset.cmCat != null ? ('cat' + e.target.dataset.cmCat) : ('qtd' + e.target.dataset.cmQtd); const t = e.target; const sel = t.selectionStart; ler(); if(t.dataset.cm === 'emitidoEm' && t.value) d.vigenciaEm = cmPrimeiroDiaUtilMesSeguinte(t.value); if(t.tagName === 'INPUT' && t.type !== 'date' && t.type !== 'number'){ /* não re-renderiza enquanto digita texto */ if(t.dataset.cm === 'valorManual'){ render(); const n = ov.querySelector('[data-cm="valorManual"]'); if(n){ n.focus(); try{ n.setSelectionRange(sel, sel); }catch(_){} } } return; } render(); if(t.dataset.cmQtd != null){ const n = ov.querySelector(`[data-cm-qtd="${t.dataset.cmQtd}"]`); if(n) n.focus(); } } });
   ov.addEventListener('click', async (e) => {
@@ -25313,6 +25336,8 @@ async function abrirContratoManut(rids){
     if(e.target.closest('[data-cm-add]')){ ler(); const nome = prompt('Nome do equipamento:'); if(!nome) return; d.itens.push({ nome: nome.trim(), sistema: '', pedido: '', cat: cmCategoriaDe(nome), qtd: 1 }); render(); return; }
     const b = e.target.closest('[data-cm-act]'); if(!b) return; const a = b.dataset.cmAct; ler();
     if(a === 'fechar'){ ov.remove(); return; }
+    if(a === 'ja_tem' || a === 'recusou'){ const rot = a === 'ja_tem' ? 'JÁ TEM contrato de manutenção' : 'NÃO QUER o contrato de manutenção'; customConfirm('Registrar que ' + d.cliente + ' ' + rot + '? O aviso sai do Painel Gestor e da aba Finalizados.', async () => { await salvar(a); ov.remove(); avisar('Registrado: ' + CM_RESOLVIDO[a].toLowerCase() + '.', 5000); }, 'Registrar'); return; }
+    if(a === 'reabrir'){ customConfirm('Reabrir a pendência do contrato de manutenção de ' + d.cliente + '? O aviso volta ao painel.', async () => { await salvar('gerado'); ov.remove(); abrirContratoManut(rids); }, 'Reabrir'); return; }
     if(a === 'config'){ abrirCmConfig(() => render()); return; }
     if(a === 'textos'){ abrirCmTextos(() => render()); return; }
     const err = (t) => { const el = ov.querySelector('#obrCmErr'); if(el) el.textContent = t; };
@@ -25472,7 +25497,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { contratosManutPendentes: cmPendentes, abrirContratoManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { contratosManutPendentes: cmPendentes, abrirContratoManut, abrirPrecosContrato, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
@@ -25573,7 +25598,7 @@ function renderGestor(){
   const tilesObra = (A.STATUS_OBRA ? A.STATUS_OBRA.filter(([k]) => !(A.FASE_INTERNA || []).includes(k)) : []).map(([k, n]) => { const sel = ped.filter(x => x.o === k); const q = sel.length; const cl = new Set(sel.map(x => x.r.clienteId || fold(x.r.cliente))).size; return `<button type="button" class="pn-k obr-sp-${k} pn-vars" data-pn-go="obras"><span class="pn-k-n">${cl}</span><span class="pn-k-r">${esc(n)}</span><span class="pn-k-s">${q} ${q === 1 ? 'pedido' : 'pedidos'}</span></button>`; }).join('');
   const cmPend = A.contratosManutPendentes ? A.contratosManutPendentes() : [];
   const bContratos = bloco('Contratos de manutenção a enviar', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : cmPend.length
-    ? `<div class="pn-kpis">${kpi(cmPend.length, cmPend.length === 1 ? 'obra finalizada sem contrato enviado' : 'obras finalizadas sem contrato enviado', 'red', 'obras', 'obrgSubFin')}</div>${cmPend.slice(0, 8).map(g => `<div class="pn-lin pn-click" data-pn-go="obras" data-pn-sub="obrgSubFin"><span class="pn-lin-t">${esc(g.nome)}<small>${g.peds.length} ${g.peds.length === 1 ? 'pedido' : 'pedidos'} · obra finalizada</small></span><span class="prv-chip red">a enviar</span></div>`).join('')}${cmPend.length > 8 ? `<div class="pn-nota">+ ${cmPend.length - 8} clientes</div>` : ''}`
+    ? `<div class="pn-kpis">${kpi(cmPend.length, cmPend.length === 1 ? 'obra finalizada sem contrato enviado' : 'obras finalizadas sem contrato enviado', 'red', 'obras', 'obrgSubFin')}</div>${cmPend.slice(0, 8).map(g => `<div class="pn-lin pn-click" data-pn-cm="${esc(g.regs.map(r => r.id).join(','))}" title="Abrir o contrato de manutenção: gerar, marcar como enviado, já tem contrato ou não quer"><span class="pn-lin-t">${esc(g.nome)}<small>${g.peds.length} ${g.peds.length === 1 ? 'pedido' : 'pedidos'} · obra finalizada</small></span><span class="prv-chip red">a enviar</span></div>`).join('')}${cmPend.length > 8 ? `<div class="pn-nota">+ ${cmPend.length - 8} clientes</div>` : ''}`
     : '<div class="pn-vazio">Nenhuma obra finalizada aguardando o contrato de manutenção.</div>', 'obrgSubFin');
   const bObras = bloco('Etapas das obras', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : `<div class="pn-fase">Etapa interna · compras</div>${tilesInterna(ped, false, totalI)}<div class="pn-fase">Etapa obra</div><div class="pn-kpis">${totalO}${tilesObra}</div><div class="pn-nota">${ped.length} ${ped.length === 1 ? 'pedido' : 'pedidos'} em andamento nas obras</div>`);
   // oficina
@@ -25633,6 +25658,7 @@ function ligar(){
     box.addEventListener('click', (e) => {
       const pg = e.target.closest('[data-pn-pag]'); if(pg){ const [q, k] = pg.dataset.pnPag.split(':'); if(q === 'alex') ui.pagAlex = k; else ui.pagGestor = k; renderTudo(); return; }
       const pv = e.target.closest('[data-pv]'); if(pv && window.PREV_API){ PREV_API.pendenciasClique(pv, renderTudo); return; }
+      const cm = e.target.closest('[data-pn-cm]'); if(cm){ if(O().abrirContratoManut) O().abrirContratoManut(cm.dataset.pnCm.split(',')); return; }
       const g = e.target.closest('[data-pn-go]'); if(g){ ir(g.dataset.pnGo, g.dataset.pnSub); return; }
       const ab = e.target.closest('[data-pn-aba]'); if(ab){ ui.alexAba = ab.dataset.pnAba; renderAlex(); return; }
       const et = e.target.closest('[data-pn-etapa]'); if(et){ const k = et.dataset.pnEtapa; ui.alexEtapa = (k && ui.alexEtapa === k) ? '' : k; if(k === 'entregue') ui.alexAba = 'entregues'; else if(k) ui.alexAba = 'compras'; renderAlex(); return; }
