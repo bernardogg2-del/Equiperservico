@@ -154,8 +154,8 @@
   .btn-primary:active{ transform: translateY(0); }
 
   /* Uso pontual do vermelho de destaque: só o botão de ação mais importante do topo. */
-  #openAddBtn{ background: var(--accent); }
-  #openAddBtn:hover{ filter: brightness(1.08); }
+  #openAddBtn, #openLembreteBtn{ background: var(--accent); }
+  #openAddBtn:hover, #openLembreteBtn:hover{ filter: brightness(1.08); }
 
   /* ===== Today / Tomorrow boxes ===== */
 
@@ -765,8 +765,11 @@
   .obr-aprov{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:700; margin-right:6px; } .obr-aprov-aguardando{ background:#fff3d6; color:#8a5a00; } .obr-aprov-aprovado{ background:#dff3e6; color:#1c7a3f; } .obr-aprov-nao_aprovado{ background:#fdecea; color:#b4232a; }
   .obr-manut-ctl{ margin-top:8px; } .obr-manut-ctl label{ display:block; font-size:11px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:.03em; margin-bottom:3px; } .obr-manut-et{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px; }
   .obr-ent{ flex-basis:100%; font-size:11.5px; color:var(--text-secondary); } .obr-ent-amb{ color:#b45309; font-weight:600; } .obr-ent-verm{ color:#b4232a; font-weight:600; }
+.pn-jornal{ margin-bottom:14px; } .pn-jor-nav{ display:flex; align-items:center; gap:10px; margin:4px 0 10px; } .pn-jor-dia{ display:flex; flex-direction:column; line-height:1.1; } .pn-jor-dia span{ font-size:12px; color:var(--text-secondary); text-transform:capitalize; }
+.pn-jor-sec{ margin-top:8px; } .pn-jor-t{ font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin:6px 0 2px; }
+.pn-jor-l{ align-items:flex-start; } .pn-jor-h{ width:44px; flex:none; font-size:12px; color:var(--text-secondary); padding-top:2px; }
 .pending-lembrete{ background:#fff6d6 !important; color:#7a5a00 !important; }
-#openLembreteBtn{ margin-right:8px; }
+#openLembreteBtn{ margin-right:8px; } @media (max-width:759px){ #openLembreteBtn{ margin-right:6px; } }
 .orc-sis{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:6px; margin:4px 0 10px; }
 .orc-sis-i{ display:flex; align-items:center; gap:8px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px; background:var(--surface); cursor:pointer; font-size:13.5px; }
 .orc-sis-i.on{ border-color:#1c7a3f; background:rgba(28,122,63,.08); font-weight:600; } .orc-sis-i input{ accent-color:#1c7a3f; }
@@ -990,7 +993,7 @@
     /* Reserva o espaço do botão flutuante para o texto do título nunca ficar por baixo dele. */
     .app-content .tecnicos-head,
     #tabOficinaGestor .tech-day-head,
-    #tabEstoque .tech-day-head{ padding-right: 150px; }
+    #tabEstoque .tech-day-head{ padding-right: 360px; }
     /* Oficina e Estoque usam um painel centralizado de 720px com 26px de respiro no topo: só tira
        esse respiro, para o título subir para a linha superior. A coluna continua centralizada,
        exatamente como era (o recuo horizontal dessas duas abas já existia e não foi mexido). */
@@ -1002,7 +1005,7 @@
     /* Galeria do gestor (dentro do layout): mesmo tratamento da Oficina/Estoque — título na linha
        superior, sem passar por baixo do botão flutuante. */
     #galeriaView.galeria-no-gestor .tech-day-panel{ padding-top: 0; }
-    #galeriaView.galeria-no-gestor .tech-day-head{ padding-right: 150px; padding-bottom: 32px; }
+    #galeriaView.galeria-no-gestor .tech-day-head{ padding-right: 360px; padding-bottom: 32px; }
   }
 
   /* ===== Navegação inferior (mobile) — Terceira Entrega =====
@@ -1742,7 +1745,7 @@
      Cadastros e OS reservam o espaço (como os títulos das outras abas já fazem com o padding de 150px). */
   @media (min-width: 760px){
     #maintResumoCards{ margin-top: 52px; }
-    #prvOsTabs{ padding-right: 150px !important; }
+    #prvOsTabs{ padding-right: 360px !important; }
   }
   /* ===== Quadros de resumo em espaço estreito (ex.: aba Oficina): o texto nunca pode ser cortado =====
      Quando o quadro fica estreito, o cartão troca o ícone-ao-lado por: ícone + número na primeira linha e o rótulo
@@ -3090,14 +3093,14 @@
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnPGestor"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel Gestor</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnPAlex"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Painel Alex</span></button>
       <button type="button" class="sidebar-nav-btn active" id="sidebarBtnAgenda"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4M3 9h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/></svg><span>Agenda</span></button>
-      <button type="button" class="sidebar-nav-btn" id="sidebarBtnTecnicos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span>Enviar agenda</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnOrcamentos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M9 13h6M9 17h6"/></svg><span>Orçamentos</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnManutencoes"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg><span>Manutenções</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnOficinaGestor"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg><span>Oficina</span></button>
+      <button type="button" class="sidebar-nav-btn" id="sidebarBtnTecnicos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg><span>Enviar agenda</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnOS"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1z"/><path d="M9 11h6M9 15h6M9 7h6"/></svg><span>Cadastros e OS</span><span class="os-badge" id="osBadgeSidebar" style="display:none;"></span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnClientes"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Clientes</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnAcessos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M20 3h-4M20 3v4"/></svg><span>Acessos</span></button>
-      <button type="button" class="sidebar-nav-btn" id="sidebarBtnOficinaGestor"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg><span>Oficina</span></button>
-      <button type="button" class="sidebar-nav-btn" id="sidebarBtnObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
-      <button type="button" class="sidebar-nav-btn" id="sidebarBtnOrcamentos"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M9 13h6M9 17h6"/></svg><span>Orçamentos</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnPainel"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg><span>Estatísticas</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnGaleria"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galeria</span></button>
       <button type="button" class="sidebar-nav-btn" id="sidebarBtnEstoque"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg><span>Estoque</span></button>
@@ -3116,7 +3119,7 @@
       </div>
     </div>
     <button class="btn-ghost" id="managerLogoutBtn">Sair</button>
-    <button class="btn-ghost" id="openLembreteBtn" title="Anotar um problema/pedido sem data: entra em Atividades não concluídas para você agendar depois">📝 Lembrete</button>
+    <button class="btn-primary" id="openLembreteBtn" title="Anotar um problema/pedido sem data: entra em Atividades não concluídas para você agendar depois">📝 Lembrete de Serviço</button>
     <button class="btn-primary" id="openAddBtn">+ Agendar serviço</button>
   </div>
 
@@ -3146,10 +3149,7 @@
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg>
       <span>Manutenções</span>
     </button>
-    <button type="button" class="bottom-nav-btn" id="bottomNavBtnPainel">
-      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
-      <span>Estatísticas</span>
-    </button>
+    <button type="button" class="bottom-nav-btn" id="bottomNavBtnOrcamentos"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M9 13h6M9 17h6"/></svg><span>Orçamentos</span></button>
     <button type="button" class="bottom-nav-btn" id="bottomNavBtnMais">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
       <span>Mais</span>
@@ -3181,7 +3181,10 @@
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
       <span>Obras e Pedidos</span>
     </button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOrcamentos"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M9 13h6M9 17h6"/></svg><span>Orçamentos</span></button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPainel">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+      <span>Estatísticas</span>
+    </button>
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnGaleria">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       <span>Galeria</span>
@@ -3511,7 +3514,7 @@
         <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosMasterInput" style="width:auto;" disabled> Gestor Master</label>
       </div>
       <div class="field" id="acessosAbasSection" style="display:none;">
-        <label>Abas que este gestor poderá acessar</label>
+        <label>Abas que este gestor poderá acessar <small style="font-weight:400; color:var(--text-secondary);">(vale também para Gestor Master; Acessos fica sempre liberada para o Master)</small></label>
         <div id="acessosAbasList"></div>
         <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
           <button type="button" class="btn-ghost" id="acessosAbasMarcarTodas">Marcar todas</button>
@@ -12578,7 +12581,7 @@ document.getElementById('sidebarLogoutBtn').addEventListener('click', logout);
 // Navegação inferior (mobile) — mesmos destinos das abas originais, nenhuma lógica nova.
 document.getElementById('bottomNavBtnAgenda').addEventListener('click', () => switchTab('agenda'));
 document.getElementById('bottomNavBtnManutencoes').addEventListener('click', () => switchTab('manutencoes'));
-document.getElementById('bottomNavBtnPainel').addEventListener('click', () => switchTab('painel'));
+document.getElementById('bottomNavBtnPainel').addEventListener('click', () => { switchTab('painel'); toggleBottomNavSheet(false); });
 function toggleBottomNavSheet(open){
   document.getElementById('bottomNavSheet').classList.toggle('open', open);
   document.getElementById('bottomNavSheetBackdrop').classList.toggle('open', open);
@@ -12755,7 +12758,7 @@ function openModal(prefillDate, opts){
   pendingDate = prefillDate || selectedDate || todayStr();
   document.getElementById('f-date').value = modalLembrete ? '' : pendingDate;
   document.getElementById('f-date-field').style.display = modalLembrete ? 'none' : '';
-  document.getElementById('addModalTitle').textContent = modalLembrete ? 'Lembrete' : 'Agendar serviço';
+  document.getElementById('addModalTitle').textContent = modalLembrete ? 'Lembrete de serviço' : 'Agendar serviço';
   document.getElementById('addModalSub').textContent = modalLembrete ? 'Anote o cliente e o que precisa ser feito, sem data. O lembrete fica em "Atividades não concluídas" até você agendar o dia.' : 'Só o dia, cliente e o que precisa ser feito. O técnico é definido depois, no fim do dia.';
   document.getElementById('submitAddBtn').textContent = modalLembrete ? 'Anotar lembrete' : 'Agendar';
   document.getElementById('f-client').value = '';
@@ -18300,7 +18303,7 @@ function acessosMastersAtivos(){ return USERS.filter(u => u.isMaster === true &&
 // PERMISSÕES DE ABAS do Gestor comum. Identificadores reais (mesmos usados por switchTab e pelos
 // botões do DOM). "acessos" NÃO está aqui de propósito: é exclusiva do Master, com regra própria.
 // "galeria" não é um painel de switchTab (abre por openGaleria) mas é um destino de navegação do
-// Gestor, então também é configurável. Master sempre acessa tudo. Gestor SEM tabPermissions salvas
+// Gestor, então também é configurável. Master também respeita as abas marcadas (só Acessos é sempre dele). Gestor SEM tabPermissions salvas
 // (todos os cadastrados antes deste recurso) continua com acesso a tudo — nada é retirado sozinho.
 // Aviso honesto: isto controla a NAVEGAÇÃO da interface (JavaScript no navegador); não substitui
 // autenticação/regras no Firebase, que continuam como estavam.
@@ -18346,7 +18349,6 @@ function gestorPodeAbrirAba(tab){
   if(currentRole !== 'manager') return true;
   if(tab === 'acessos') return isCurrentUserMaster();
   if(!ABAS_GESTOR_IDS.includes(tab)) return false;
-  if(isCurrentUserMaster()) return true;
   const u = USERS.find(x => x.id === currentUserId);
   const perm = u && u.tabPermissions;
   if(!perm || typeof perm !== 'object' || Array.isArray(perm)) return true; // legado: sem permissões salvas = acesso total
@@ -18440,12 +18442,12 @@ function acessosAtualizarCamposPin(){
   else { masterInput.disabled = false; }
   acessosAtualizarSecaoAbas();
 }
-// Seção de abas: só aparece para Gestor que NÃO é Master (Master acessa tudo, sem configurar).
+// Seção de abas: aparece para todo Gestor, inclusive Master.
 function acessosAtualizarSecaoAbas(){
   const sec = document.getElementById('acessosAbasSection'); if(!sec) return;
   const gestor = document.getElementById('acessosPerfilManager').checked;
   const master = document.getElementById('acessosMasterInput').checked;
-  sec.style.display = (gestor && !master) ? '' : 'none';
+  sec.style.display = gestor ? '' : 'none';          // Master também pode ter as abas escolhidas (Acessos continua sempre liberada para ele)
 }
 // Padrão = TODAS marcadas (é o acesso que os gestores têm hoje): novo gestor, gestor legado sem
 // permissões salvas, ou usuário que está virando gestor. Restringir é desmarcar. Com permissões
@@ -18680,7 +18682,7 @@ async function salvarUsuarioAcessos(dados){
 
   // Permissões de abas (só Gestor comum). undefined = não mexe (chamadas antigas continuam iguais).
   let permissoesNorm = null;
-  if(dados.tabPermissions !== undefined && dados.profiles.manager && !dados.isMaster){
+  if(dados.tabPermissions !== undefined && dados.profiles.manager){
     const v = normalizarPermissoesAbas(dados.tabPermissions);
     if(!v.ok) return { ok: false, reason: v.reason };
     if(!Object.values(v.mapa).some(Boolean)) return { ok: false, reason: 'Selecione ao menos uma aba para este Gestor — sem nenhuma aba liberada ele não conseguiria usar o sistema.' };
@@ -18978,7 +18980,7 @@ document.getElementById('acessosUsuarioModalSalvarBtn').addEventListener('click'
     isMaster: document.getElementById('acessosMasterInput').checked
   };
   document.querySelectorAll('#acessosPinsContainer [data-acessospinperfil]').forEach(inp => { dados.pinByProfile[inp.dataset.acessospinperfil] = inp.value; });
-  if(dados.profiles.manager && !dados.isMaster){
+  if(dados.profiles.manager){
     dados.tabPermissions = {};
     document.querySelectorAll('#acessosAbasList [data-acessosaba]').forEach(cb => { dados.tabPermissions[cb.dataset.acessosaba] = cb.checked; });
   }
@@ -25862,7 +25864,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
@@ -26024,7 +26026,7 @@ function ligar(){
 }
 async function abrir(){ ligar(); render(); try{ await garantirCarregado(); }catch(e){ console.error('orçamentos', e); } render(); }
 function resumo(){ const ab = abertos(); const venc = ab.filter(o => { const d = diasAte(o.dataLimite); return d != null && d >= 0 && d <= 7; }), atras = ab.filter(o => { const d = diasAte(o.dataLimite); return d != null && d < 0; }); return { abertos: ab.length, vencendo: venc.length, atrasados: atras.length, feitos: ab.filter(o => o.feitoEm).length, lista: atras.concat(venc).sort((a, b) => String(a.dataLimite).localeCompare(String(b.dataLimite))), pronto: carregado }; }
-window.ORC_API = { abrir, render, resumo, garantirCarregado, SISTEMAS };
+window.ORC_API = { abrir, render, resumo, garantirCarregado, SISTEMAS, itens: todos };
 })();
 
 // =====================================================================================
@@ -26038,7 +26040,7 @@ const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&a
 const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const num = (n) => Number(n) || 0;
 const O = () => window.OBR_API || {};
-const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo' };
+const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo', jornalDia: null };
 let obrasPronto = false, osPronto = false;
 
 function dataHoje(){ try{ const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }catch(e){ return ''; } }
@@ -26078,6 +26080,62 @@ function blocoManutencao(){
     ${urgentes.slice(0, 6).map(lin).join('')}${urgentes.length > 6 ? `<div class="pn-mais">+ ${urgentes.length - 6} contratos — veja todos em Manutenções</div>` : ''}`;
   return bloco('Manutenção preventiva', 'manutencoes', corpo);
 }
+// ---------- Jornal do dia: o que mudou no app num dia (padrão: ontem) ----------
+const diaLocal = (iso) => { if(!iso) return ''; const d = new Date(iso); if(isNaN(d)) return String(iso).slice(0, 10); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const horaLocal = (iso) => { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+const fmtD = (s) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? m[3] + '/' + m[2] + '/' + m[1] : ''; };
+const hojeISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const somaDia = (iso, n) => { const d = new Date(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10) + n); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+const brlJ = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+function eventosDoDia(dia){
+  const A = O(); const ev = { obras: [], atividades: [], estoque: [], manut: [], os: [], docs: [], oficina: [] };
+  const push = (k, hora, texto, por, go, sub) => ev[k].push({ hora: hora || '', texto, por: por || '', go, sub });
+  // Obras: andamento dos pedidos, etapas dos equipamentos, parcelas
+  if(A.registros){
+    const inst = A.instalacoes ? A.instalacoes() : {};
+    A.registros().forEach(r => {
+      const nome = A.nomeCliente(r); const peds = A.pedidosDe(r);
+      peds.forEach(p => { const e = (r.statusPedidos || {})[p.id]; if(e && e.em && diaLocal(e.em) === dia){ const i = A.internoDe(r, p.id), o = A.obraDe(r, p.id); push('obras', horaLocal(e.em), nome + ' · pedido ' + p.numero + ': ' + A.rotObra(o && o !== 'aguardando_inicio' ? o : i) + (e.auto ? ' (automático)' : ''), e.por, 'obras'); } });
+      const d = inst[r.id]; if(d && d.pedidos){ Object.keys(d.pedidos).forEach(pid => { const ped = peds.find(p => p.id === pid); const sis = d.pedidos[pid].sistemas || {}; Object.values(sis).forEach(s => Object.values(s.subitens || {}).forEach(sub => { const pr = (d.prog || {})[sub.id] || {}; Object.keys(pr).forEach(et => { const f = pr[et]; if(f && f.em && diaLocal(f.em) === dia){ const etNome = ((sub.etapas || {})[et] || {}).nome || et; push('obras', horaLocal(f.em), nome + ' · ' + sub.nome + ' — ' + etNome + ' ' + (f.s === 'iniciado' ? 'iniciada' : 'finalizada') + (ped ? ' (pedido ' + ped.numero + ')' : ''), f.por, 'obras'); } }); })); }); }
+      Object.values(r.parcelas || {}).forEach(pc => { if(!pc) return; if(pc.pagoEm === dia) push('obras', '', nome + ' · recebido ' + brlJ(pc.valor) + (pc.pedido ? ' (pedido ' + pc.pedido + ', ' + (pc.tipo || 'parcela') + ')' : ''), '', 'obras'); else if(pc.enviadoEm === dia) push('obras', '', nome + ' · cobrança enviada: ' + brlJ(pc.valor) + (pc.pedido ? ' (pedido ' + pc.pedido + ')' : ''), '', 'obras'); });
+      [['contratoManut', 'Contrato de manutenção'], ['manualOperacao', 'Manual de operação']].forEach(([k, rot]) => { const c = r[k]; if(c && c.enviadoEm && diaLocal(c.enviadoEm) === dia) push('docs', horaLocal(c.enviadoEm), rot + ' de ' + nome + ': ' + (c.status === 'enviado' ? 'enviado' : c.status === 'ja_tem' ? 'cliente já tinha' : c.status === 'recusou' ? 'cliente não quis' : c.status === 'nao_precisa' ? 'não precisa' : c.status), c.enviadoPor, 'obras', 'obrgSubFin'); else if(c && c.geradoEm && diaLocal(c.geradoEm) === dia && c.status === 'gerado') push('docs', horaLocal(c.geradoEm), rot + ' de ' + nome + ': PDF gerado', c.atualizadoPor, 'obras', 'obrgSubFin'); });
+    });
+  }
+  // Atividades concluídas / lembretes anotados
+  (typeof services !== 'undefined' ? services : []).forEach(s => {
+    if(s.completedAt && diaLocal(s.completedAt) === dia) push('atividades', horaLocal(s.completedAt), s.client + (s.description ? ' — ' + s.description : ''), (typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician]).filter(Boolean).join(' e '), 'agenda');
+    if(s.lembreteEm && diaLocal(s.lembreteEm) === dia) push('atividades', horaLocal(s.lembreteEm), 'Lembrete anotado: ' + s.client + (s.description ? ' — ' + s.description : ''), s.lembretePor, 'agenda');
+  });
+  // Estoque: itens que entraram em reposição/atenção no dia (pelas movimentações)
+  const itens = typeof estoqueItens !== 'undefined' ? estoqueItens : []; const movs = (typeof estoqueMovimentacoes !== 'undefined' ? estoqueMovimentacoes : []).filter(m => m && diaLocal(m.createdAt) === dia);
+  const porItem = {}; movs.forEach(m => { (porItem[m.estoqueItemId] = porItem[m.estoqueItemId] || []).push(m); });
+  Object.keys(porItem).forEach(id => { const it = itens.find(x => String(x.id) === String(id)); if(!it) return; const l = porItem[id].slice().sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))); const mn = Number(it.minimumQuantity) || 0; const antes = Number(l[0].previousQuantity), depois = Number(l[l.length - 1].newQuantity);
+    if(depois < mn && antes >= mn) push('estoque', horaLocal(l[l.length - 1].createdAt), it.name + ': entrou em REPOSIÇÃO (' + depois + ' ' + (it.unit || '') + ', mínimo ' + mn + ')', l[l.length - 1].createdBy, 'estoque');
+    else if(depois === mn && antes > mn) push('estoque', horaLocal(l[l.length - 1].createdAt), it.name + ': chegou ao mínimo (' + depois + ' ' + (it.unit || '') + ')', l[l.length - 1].createdBy, 'estoque');
+    else if(depois >= mn && antes < mn) push('estoque', horaLocal(l[l.length - 1].createdAt), it.name + ': reposto (' + antes + ' → ' + depois + ' ' + (it.unit || '') + ')', l[l.length - 1].createdBy, 'estoque'); });
+  if(movs.length) push('estoque', '', movs.length + (movs.length === 1 ? ' movimentação de estoque no dia' : ' movimentações de estoque no dia') + ' (' + movs.filter(m => m.type === 'entrada' || m.type === 'devolucao').length + ' entradas, ' + movs.filter(m => m.type === 'saida').length + ' saídas)', '', 'estoque');
+  // Manutenção preventiva: contratos que venceram no dia (entraram em atraso) e visitas feitas
+  (typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []).forEach(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); if(prox === dia) push('manut', '', c.client + ': manutenção preventiva venceu (prevista para ' + fmtD(prox) + ')' + (c.scheduledFor ? ' — visita agendada para ' + fmtD(c.scheduledFor) : ' — sem visita agendada'), '', 'manutencoes'); });
+  (typeof services !== 'undefined' ? services : []).forEach(s => { if(s.maintenanceContractId && s.completedAt && diaLocal(s.completedAt) === dia) push('manut', horaLocal(s.completedAt), 'Visita preventiva concluída: ' + s.client, (typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician]).filter(Boolean).join(' e '), 'manutencoes'); });
+  // Cadastros e OS: histórico das OS no dia
+  if(window.OS_API && OS_API.todas) OS_API.todas().forEach(os => { const h = Array.isArray(os.historico) ? os.historico : Object.values(os.historico || {}); h.forEach(x => { if(x && x.em && diaLocal(x.em) === dia) push('os', horaLocal(x.em), 'OS ' + os.numero + ' (' + (os.cliente || '') + '): ' + x.acao, x.por, 'os'); }); });
+  // Orçamentos
+  if(window.ORC_API && ORC_API.itens) ORC_API.itens().forEach(o => { if(o.criadoEm && diaLocal(o.criadoEm) === dia) push('docs', horaLocal(o.criadoEm), 'Orçamento anotado: ' + o.cliente, o.criadoPor, 'orcamentos'); if(o.feitoEm && diaLocal(o.feitoEm) === dia) push('docs', horaLocal(o.feitoEm), 'Orçamento feito: ' + o.cliente, o.feitoPor, 'orcamentos'); if(o.enviadoEm && diaLocal(o.enviadoEm) === dia) push('docs', horaLocal(o.enviadoEm), 'Orçamento enviado: ' + o.cliente, o.enviadoPor, 'orcamentos'); });
+  // Oficina
+  (typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []).forEach(e => { const n = (e.client || '') + ' — ' + (e.equipment || ''); [['withdrawnAt', 'retirado', 'withdrawnBy'], ['manutencaoStartedAt', 'manutenção iniciada', 'manutencaoStartedBy'], ['manutencaoCompletedAt', 'manutenção concluída', 'manutencaoCompletedBy'], ['testeCompletedAt', 'teste concluído', 'testeCompletedBy'], ['reinstalledAt', 'reinstalado', 'reinstalledBy']].forEach(([k, rot, por]) => { if(e[k] && diaLocal(e[k]) === dia) push('oficina', horaLocal(e[k]), n + ': ' + rot, e[por], 'oficinagestor'); }); });
+  Object.keys(ev).forEach(k => ev[k].sort((a, b) => String(a.hora).localeCompare(String(b.hora))));
+  return ev;
+}
+function blocoJornal(){
+  const dia = ui.jornalDia || somaDia(hojeISO(), -1); const hoje = hojeISO();
+  const ev = eventosDoDia(dia); const total = Object.values(ev).reduce((n, l) => n + l.length, 0);
+  const rot = dia === somaDia(hoje, -1) ? 'ontem' : dia === hoje ? 'hoje' : new Date(+dia.slice(0, 4), +dia.slice(5, 7) - 1, +dia.slice(8, 10)).toLocaleDateString('pt-BR', { weekday: 'long' });
+  const sec = (t, l) => l.length ? `<div class="pn-jor-sec"><div class="pn-jor-t">${esc(t)}<span class="pn-tec-n">${l.length}</span></div>${l.map(e => `<div class="pn-lin pn-click pn-jor-l" data-pn-go="${esc(e.go || 'pgestor')}"${e.sub ? ` data-pn-sub="${esc(e.sub)}"` : ''}><span class="mono pn-jor-h">${esc(e.hora || '—')}</span><span class="pn-lin-t">${esc(e.texto)}${e.por ? `<small>por ${esc(e.por)}</small>` : ''}</span></div>`).join('')}</div>` : '';
+  const corpo = `<div class="pn-jor-nav"><button type="button" class="nav-btn" data-pn-jor="-1" title="Dia anterior">‹</button><div class="pn-jor-dia"><b>${esc(fmtD(dia))}</b><span>${esc(rot)}</span></div><button type="button" class="nav-btn" data-pn-jor="1" title="Dia seguinte" ${dia >= hoje ? 'disabled' : ''}>›</button>${dia !== somaDia(hoje, -1) ? '<button type="button" class="btn-ghost oe-mini" data-pn-jor="ontem">Ontem</button>' : ''}</div>
+    ${total ? sec('Obras e pedidos', ev.obras) + sec('Atividades', ev.atividades) + sec('Estoque', ev.estoque) + sec('Manutenção preventiva', ev.manut) + sec('Oficina', ev.oficina) + sec('Cadastros e OS', ev.os) + sec('Orçamentos, contratos e manuais', ev.docs) : '<div class="pn-vazio">Nenhuma alteração registrada neste dia.</div>'}`;
+  return `<section class="pn-bloco pn-jornal"><div class="pn-bloco-h"><h3>Jornal do dia</h3><span class="pn-tec-n">${total} ${total === 1 ? 'registro' : 'registros'}</span></div>${corpo}</section>`;
+}
+
 function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): sem os contadores de OS cobradas e Não cobrar
   const pend = (typeof groupPaired === 'function' ? groupPaired((typeof services !== 'undefined' ? services : []).filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido)).length : 0);
   const qd = window.QUADROS_API ? num(QUADROS_API.pendentesOS()) : 0, eq = window.OSOF_API ? num(OSOF_API.pendentesOS()) : 0;
@@ -26142,7 +26200,7 @@ function renderGestor(){
   const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
   const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
   const bOf = bloco('Oficina', 'oficinagestor', `<div class="pn-kpis">${Object.keys(rotG).map(g => kpi(nG(g), rotG[g], tomG[g] || 'gray', 'oficinagestor')).join('')}${kpi(parados, 'Parados além do limite', parados ? 'red' : 'gray', 'oficinagestor')}</div>`);
-  box.innerHTML = cab('Painel Gestor', dataHoje()) + pagBar('gestor') + (ui.pagGestor === 'pend' && window.PREV_API ? PREV_API.pendenciasHtml() : `<div class="pn-grade">${bAtiv}${bOrc}${bContratos}${bManuais}${bObras}${bOf}${blocoEstoque()}${blocoCadastrosOS(true)}${blocoManutencao()}</div>`);
+  box.innerHTML = cab('Painel Gestor', dataHoje()) + pagBar('gestor') + (ui.pagGestor === 'pend' && window.PREV_API ? PREV_API.pendenciasHtml() : `${blocoJornal()}<div class="pn-grade">${bOrc}${bContratos}${bManuais}${bObras}${bOf}${blocoEstoque()}${blocoManutencao()}</div>`);
 }
 
 // ---------- PAINEL ALEX ----------
@@ -26196,6 +26254,7 @@ function ligar(){
       const pv = e.target.closest('[data-pv]'); if(pv && window.PREV_API){ PREV_API.pendenciasClique(pv, renderTudo); return; }
       const cm = e.target.closest('[data-pn-cm]'); if(cm){ if(O().abrirContratoManut) O().abrirContratoManut(cm.dataset.pnCm.split(',')); return; }
       const mn = e.target.closest('[data-pn-man]'); if(mn){ if(O().abrirManualOperacao) O().abrirManualOperacao(mn.dataset.pnMan.split(',')); return; }
+      const jr = e.target.closest('[data-pn-jor]'); if(jr){ const k = jr.dataset.pnJor; const atual = ui.jornalDia || somaDia(hojeISO(), -1); ui.jornalDia = k === 'ontem' ? null : somaDia(atual, Number(k)); renderGestor(); return; }
       const g = e.target.closest('[data-pn-go]'); if(g){ ir(g.dataset.pnGo, g.dataset.pnSub); return; }
       const ab = e.target.closest('[data-pn-aba]'); if(ab){ ui.alexAba = ab.dataset.pnAba; renderAlex(); return; }
       const et = e.target.closest('[data-pn-etapa]'); if(et){ const k = et.dataset.pnEtapa; ui.alexEtapa = (k && ui.alexEtapa === k) ? '' : k; if(k === 'entregue') ui.alexAba = 'entregues'; else if(k) ui.alexAba = 'compras'; renderAlex(); return; }
