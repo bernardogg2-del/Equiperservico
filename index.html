@@ -12494,6 +12494,7 @@ function renderOS(){
             ${s.isRetorno ? `<span class="os-retorno-tag">↩ RETORNO${original ? ' de ' + shortLabel(original.date) : ''}</span>` : ''}
           </div>
           ${s.description ? `<div class="field"><label>O que foi pedido</label><div>${escapeHtml(s.description)}</div></div>` : ''}
+          ${(s.technicianInstructionText || '').trim() ? `<div class="field"><label>Orientações para o técnico</label><div>${escapeHtml(s.technicianInstructionText.trim())}</div></div>` : ''}
           ${s.address ? `<div class="field"><label>Endereço</label><div class="mono">${escapeHtml(s.address)}</div></div>` : ''}
           <div class="field">
             <label>Horários</label>
