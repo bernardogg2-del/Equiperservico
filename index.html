@@ -781,6 +781,17 @@
 .orc-flash{ box-shadow:0 0 0 3px rgba(217,26,34,.35); transition:box-shadow .4s; }
 .obrg-cm-pend{ color:#b4232a !important; border-color:rgba(180,35,42,.4) !important; font-weight:700; }
 .obrg-cm-chip{ margin-left:6px; }
+/* revisão 7: pedido novo (< 7 dias), pedido sem equipamentos, edição de equipamentos */
+.obrg-novo{ background:#1a56db !important; color:#fff !important; border-color:#1a56db !important; font-weight:700; }
+.obrg-novo-n{ color:#1a56db !important; background:rgba(26,86,219,.12) !important; }
+.obrg-semeq-txt{ color:#b4232a; font-weight:700; }
+.obrg-novos{ margin:8px 0 12px; padding:10px 12px; border:1px solid rgba(26,86,219,.35); border-radius:12px; background:rgba(26,86,219,.05); }
+.obrg-novos-t{ font-weight:700; font-size:13px; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+.obrg-novos-i{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; text-align:left; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:7px 10px; margin-top:5px; cursor:pointer; font:inherit; color:var(--ink); }
+.obrg-novos-i:hover{ background:var(--surface-2); } .obrg-novos-i small{ color:var(--text-dim); margin-left:auto; font-size:11.5px; }
+.obrg-ic-desc{ padding:1px 7px; font-size:11px; margin-left:4px; }
+.obi-eq-desc{ font-size:12.5px; color:var(--text-dim); margin:2px 0 4px; white-space:pre-wrap; }
+@media (max-width:700px){ .obrg-novos-i small{ margin-left:0; width:100%; } }
 .obrg-cm-n{ font-size:11px; font-weight:700; color:#b4232a; background:rgba(180,35,42,.1); border-radius:999px; padding:1px 7px; margin-left:4px; }
 .obrg-cm-n em{ display:none; font-style:normal; }
 @media (max-width:700px){ .obrg-cm-n{ font-size:10px; padding:1px 5px; margin-left:3px; } .obrg-cm-n i{ display:none; } .obrg-cm-n em{ display:inline; } } /* revisão 22/10: no celular, ícone + número (📄 contrato · 📘 manual) em vez do texto */
@@ -2343,7 +2354,7 @@
     { --c:#F2B705; --c-num:#9A7400; --c-bg:rgba(242,183,5,.20); --c-line:rgba(201,154,18,.50); --c-tx:#7A5B00; }
   .obr-sp-entregue, .obrg-k-entregue, .obrg-dot-entregue
     { --c:#2E7D4F; --c-num:#2E7D4F; --c-bg:rgba(46,125,79,.12); --c-line:rgba(46,125,79,.35); --c-tx:#1F5A38; }
-  .obr-sp-iniciado, .obi-st-iniciado, .obrg-k-iniciado, .obrg-dot-iniciado
+  .obr-sp-iniciado, .obi-st-iniciado, .obrg-k-iniciado, .obrg-dot-iniciado, .obr-sp-parcial
     { --c:#3D84B0; --c-num:#2B6A92; --c-bg:rgba(61,132,176,.12); --c-line:rgba(61,132,176,.34); --c-tx:#24607F; }
   .obr-sp-aguardando_testes, .obi-st-finalizado, .obrg-k-aguardando_testes, .obrg-dot-aguardando_testes
     { --c:#5FBF85; --c-num:#3D9A63; --c-bg:rgba(95,191,133,.18); --c-line:rgba(95,191,133,.50); --c-tx:#2E7D4F; }
@@ -24448,7 +24459,7 @@ const FASE_INTERNA = ['aguardando_sinal', 'aguardando_compra', 'comprado', 'libe
 const FASES_OBRA = [['interna', 'Etapa interna · compras'], ['obra', 'Etapa obra']];
 const faseDe = (k) => FASE_INTERNA.includes(k) ? 'interna' : 'obra';
 const opcoesAndamento = (atual) => FASES_OBRA.map(([f, n]) => `<optgroup label="${esc(n)}">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(([k, nome]) => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(nome)}</option>`).join('')}</optgroup>`).join('');
-const rotObra = (k) => (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];
+const rotObra = (k) => k === 'parcial' ? 'Iniciado · entregue parcialmente' : (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];   // 'parcial' = andamento derivado do CLIENTE (revisão 7), nunca de um pedido
 // O pedido tem DUAS trilhas que andam juntas: a INTERNA (compras → comprado → liberado para entrega → entregue) e a da OBRA (aguardando liberação → liberado para iniciar → iniciado → aguardando testes → finalizado).
 // `statusPedidos[pid] = { i: interna, o: obra, s: a mais avançada (compatível), em, por, auto }`. Registro antigo (só com `s`) é lido assim: s interna → interna = s; s da obra → interna = entregue e obra = s.
 const OBRA_ST = ['aguardando_inicio', 'liberado_inicio', 'iniciado', 'aguardando_testes', 'finalizado'];
@@ -24950,7 +24961,7 @@ function acaoDetalhe(a, ds){
       aoSalvar: async (v) => {
         const emUso = pedidoEmUso(v.numero, p ? { r: r.id, p: p.id } : null);
         if(emUso) return 'O pedido ' + v.numero + ' já está em "' + nomeCliente(emUso.r) + '" (' + (EMPRESAS.find(e => e[0] === emUso.r.empresa) || [0, ''])[1] + ').';
-        const id = p ? p.id : uid('p'); const velho = p ? String(p.numero) : null; const novo = { id, numero: v.numero, descricao: v.descricao, valor: v.valor, cancelado: v.cancelado === '1' || null };
+        const id = p ? p.id : uid('p'); const velho = p ? String(p.numero) : null; const novo = { id, numero: v.numero, descricao: v.descricao, valor: v.valor, cancelado: v.cancelado === '1' || null, criadoEm: p ? (p.criadoEm || null) : new Date().toISOString(), criadoPor: p ? (p.criadoPor || null) : (quem() || null) };   // revisão 7
         r.pedidos = Object.assign({}, r.pedidos, { [id]: novo }); let gerou = false;
         if(p){ if(velho !== String(v.numero)) lista(r.parcelas).forEach(x => { if(String(x.pedido) === velho) x.pedido = v.numero; }); recalcularPedido(r, novo); r.parcelas = Object.assign({}, r.parcelas); }
         else if(pctsDe(r).length && !novo.cancelado){ r.parcelas = Object.assign({}, r.parcelas, gerarParcelas(r, novo, pctsDe(r))); gerou = true; }
@@ -25164,7 +25175,7 @@ async function criarRegistro(ov, cond, datasFn){
     const agora = new Date().toISOString(); const id = uid('ob_');
     const rec = { id, empresa: $('obrNEmp').value, cliente: cl ? cl.name : nome, clienteId: cl ? cl.id : null, contato: contato || null, fone: fone || null, formaPagamento: $('obrNForma').value || null, cond: c.n ? { pcts: c.pcts } : null, situacao: $('obrNSit') ? $('obrNSit').value : 'nao_comecou', obs: $('obrNObs').value.trim() || null, active: true, criadoEm: agora, criadoPor: quem(), pedidos: {}, parcelas: {} };
     if(ui.modo === 'manut') rec.tipo = 'manutencao'; else if(ui.modo === 'os') rec.tipo = 'os';
-    ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor }; });
+    ped.forEach((p, i) => { const pid = uid('p') + i; rec.pedidos[pid] = { id: pid, numero: p.numero, descricao: p.descricao || null, valor: p.valor, criadoEm: agora, criadoPor: quem() || null }; });   // revisão 7: quando o pedido entrou (alerta "Novo" no Gestor)
     const boleto = $('obrNForma').value === 'Boleto'; const datas = boleto && datasFn ? datasFn().slice(0, c.n) : []; const nDatas = datas.filter(Boolean).length;
     if(c.n) Object.values(rec.pedidos).forEach(p => { rec.parcelas = Object.assign({}, rec.parcelas, gerarParcelas(rec, p, c.pcts, { datas, forma: boleto ? 'Boleto' : null })); });
     store.items.push(rec); if(ui.empresa !== 'geral') ui.empresa = rec.empresa; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); ui.busca = ''; const bi = document.getElementById('obrBusca'); if(bi) bi.value = '';
@@ -25229,6 +25240,7 @@ function montarGestor(){
   v.addEventListener('change', (e) => { const sel = e.target.closest('[data-obrg-st]'); if(sel){ const [rid, pid, tr] = sel.dataset.obrgSt.split('|'); mudarAndamento(rid, pid, tr, sel.value); } });
   v.addEventListener('click', (e) => {
     const ex = e.target.closest('[data-obrg-exp]'); if(ex){ uiG.clientes = ex.dataset.obrgExp === 'todos' ? new Set(uiG.chaves) : new Set(); renderGestor(); return; }
+    const nv = e.target.closest('[data-obrg-irnovo]'); if(nv){ const [chave, rid, pid] = nv.dataset.obrgIrnovo.split('|'); uiG.sub = 'andamento'; uiG.busca = ''; const bi = document.getElementById('obrgBusca'); if(bi) bi.value = ''; uiG.clientes.add(chave); uiG.abertos.add(rid + '|' + pid); renderGestor(); setTimeout(() => { const el = document.querySelector('[data-obrg-eq="' + rid + '|' + pid + '"]'); if(el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 60); return; }   // revisão 7
     const cl = e.target.closest('[data-obrg-cli]'); if(cl){ const k = cl.dataset.obrgCli; if(uiG.clientes.has(k)) uiG.clientes.delete(k); else uiG.clientes.add(k); renderGestor(); return; }
     const c = e.target.closest('[data-obrg-chip]'); if(c){ uiG.status = uiG.status === c.dataset.obrgChip ? '' : c.dataset.obrgChip; document.getElementById('obrgStatus').value = uiG.status; renderGestor(); return; }
     const a = e.target.closest('[data-obrg-ativ]'); if(a){ const [rid, pid] = a.dataset.obrgAtiv.split('|'); criarAtividade(rid, pid); return; }
@@ -25251,6 +25263,10 @@ function andamentoPrincipal(pares){
   const ordem = (k) => STATUS_OBRA.findIndex(x => x[0] === k);
   // Obra já começou (algum pedido Iniciado / Aguardando testes): esse é o andamento principal — os outros pedidos (ainda por entregar etc.) aparecem ao lado
   const emObra = pares.map(x => obraDe(x.r, x.p.id)).filter(k => k === 'iniciado' || k === 'aguardando_testes');
+  // revisão 7: a obra já começou (ou um pedido já foi finalizado) e ainda há pedido por entregar → "Iniciado · entregue parcialmente"
+  const comecou = pares.some(x => { const o = obraDe(x.r, x.p.id); return o === 'iniciado' || o === 'aguardando_testes' || o === 'finalizado'; });
+  const porEntregar = pares.some(x => !x.p.cancelado && internoDe(x.r, x.p.id) !== 'entregue');
+  if(comecou && porEntregar && pares.length > 1) return 'parcial';
   if(emObra.length) return emObra.sort((a, b) => ordem(a) - ordem(b))[0];
   const ks = pares.map(x => statusObraDe(x.r, x.p.id)); const abertos = ks.filter(k => k !== 'finalizado');
   return (abertos.length ? abertos : ks).sort((a, b) => ordem(a) - ordem(b))[0];
@@ -25260,6 +25276,12 @@ function outrosAndamentos(pares, prin){
   const out = []; const add = (k) => { if(k && k !== prin && !out.includes(k)) out.push(k); };
   pares.forEach(x => { const i = internoDe(x.r, x.p.id), o = obraDe(x.r, x.p.id); if(i !== 'entregue') add(i); if(o && o !== 'finalizado' && !(o === 'aguardando_inicio' && i !== 'entregue')) add(o); else if(!o) add(statusObraDe(x.r, x.p.id)); const reg = obraDeRegistrado(x.r, x.p.id); if(reg && reg !== o) add(reg); /* iniciado por evolução: mostra ao lado o andamento registrado */ });
   return out.sort((a, b) => STATUS_OBRA.findIndex(x => x[0] === a) - STATUS_OBRA.findIndex(x => x[0] === b));
+}
+// revisão 7: faixa "Pedidos cadastrados recentemente" (menos de 7 dias) no topo de Obras e Pedidos do Gestor; toque abre o cartão do cliente
+function htmlPedidosNovos(){
+  const l = pedidosNovos(); if(!l.length) return '';
+  return `<div class="obrg-novos" role="region" aria-label="Pedidos cadastrados recentemente"><div class="obrg-novos-t">🆕 Pedidos cadastrados nos últimos ${NOVO_PEDIDO_DIAS} dias <span class="obrg-cm-n obrg-novo-n">${l.length}</span></div>
+    ${l.map(({ r, p }) => `<button type="button" class="obrg-novos-i" data-obrg-irnovo="${esc(fold(nomeCliente(r)))}|${esc(r.id)}|${esc(p.id)}"><b>${esc(nomeCliente(r))}</b><span class="prv-chip gray">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1])}</span><span>Pedido ${esc(p.numero)}${p.descricao ? ' · ' + esc(p.descricao) : ''}</span><small>${esc(new Date(pedidoCriadoEm(r, p)).toLocaleDateString('pt-BR'))}${p.criadoPor ? ' · ' + esc(p.criadoPor) : ''}${pedidoSemEquip(r, p, inst[r.id] || {}) ? ' · <b class="obrg-semeq-txt">sem equipamentos</b>' : ''}</small></button>`).join('')}</div>`;
 }
 function renderGestor(){
   const v = document.getElementById('tabObras'); if(!v || !uiG.montado || v.style.display === 'none') return;
@@ -25280,13 +25302,13 @@ function renderGestor(){
     const todos = g.itens.flatMap(({ r }) => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const completo = todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado');
     const prinG = todos.length ? andamentoPrincipal(todos) : null;          // o MESMO andamento principal mostrado no cartão (o que segura a obra)
-    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_entrega' ? 3 : prinG === 'liberado_inicio' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;
+    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes' || prinG === 'parcial') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_entrega' ? 3 : prinG === 'liberado_inicio' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;
     g.rankPrin = g.grp === 5 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
   });
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
   const tile = (n, rot, cor) => `<div class="obrg-t4" style="border-left-color:${cor};"><b style="color:${cor};">${n}</b><span>${esc(rot)}</span></div>`;
-  document.getElementById('obrgChips').innerHTML = `<div class="obrg-resumo4">${tile(nAnd + nFin, 'Clientes registrados', 'var(--ink)')}${tile(cliFase.interna.size, 'Na etapa interna', '#b45309')}${tile(cliFase.obra.size, 'Na etapa obra', '#1a56db')}${tile(nFin, 'Finalizados', '#1f6b45')}</div>`;
-  document.getElementById('obrgSubN1').textContent = nAnd; const nCm = cmPendentes().length, nMan = manPendentes().length; document.getElementById('obrgSubN2').innerHTML = nFin + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado"><em>📄 </em>${nCm}<i> sem contrato</i></span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado"><em>📘 </em>${nMan}<i> sem manual</i></span>` : '');
+  document.getElementById('obrgChips').innerHTML = `<div class="obrg-resumo4">${tile(nAnd + nFin, 'Clientes registrados', 'var(--ink)')}${tile(cliFase.interna.size, 'Na etapa interna', '#b45309')}${tile(cliFase.obra.size, 'Na etapa obra', '#1a56db')}${tile(nFin, 'Finalizados', '#1f6b45')}</div>` + htmlPedidosNovos();   // revisão 7
+  const nNovosT = pedidosNovos().length, nSemEqT = pedidosSemEquip().length; document.getElementById('obrgSubN1').innerHTML = nAnd + (nNovosT ? ` <span class="obrg-cm-n obrg-novo-n" title="Pedidos cadastrados há menos de ${NOVO_PEDIDO_DIAS} dias"><em>🆕 </em>${nNovosT}<i> ${nNovosT === 1 ? 'novo' : 'novos'}</i></span>` : '') + (nSemEqT ? ` <span class="obrg-cm-n" title="Pedidos em andamento sem equipamentos cadastrados"><em>⚠ </em>${nSemEqT}<i> sem equipamentos</i></span>` : '');   // revisão 7 const nCm = cmPendentes().length, nMan = manPendentes().length; document.getElementById('obrgSubN2').innerHTML = nFin + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado"><em>📄 </em>${nCm}<i> sem contrato</i></span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado"><em>📘 </em>${nMan}<i> sem manual</i></span>` : '');
   document.querySelectorAll('#obrgSubAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgSub === uiG.sub));
   lista_ = lista_.filter(g => (g.grp === 'f') === (uiG.sub === 'finalizados'));
   if(uiG.sub !== 'finalizados') lista_.sort((a, b) => (a.grp - b.grp) || (a.rankPrin - b.rankPrin) || fold(a.nome).localeCompare(fold(b.nome)));
@@ -25295,7 +25317,7 @@ function renderGestor(){
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  const TIT_GRP = { 1: 'Obra em andamento · iniciado / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para entrega', 4: 'Liberados para iniciar', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
+  const TIT_GRP = { 1: 'Obra em andamento · iniciado / entregue parcialmente / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para entrega', 4: 'Liberados para iniciar', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
   let grpAnt = null;
   const cabGrp = (g) => { if(uiG.sub === 'finalizados' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
   box.innerHTML = lista_.length ? lista_.map((g_) => { const { chave, nome, itens } = g_; const cab = cabGrp(g_);
@@ -25308,19 +25330,20 @@ function renderGestor(){
     const pontos = pares.slice(0, 14).map(x => `<i class="obrg-dot obrg-dot-${statusObraDe(x.r, x.p.id)}" title="Pedido ${esc(x.p.numero)} · ${esc(rotObra(statusObraDe(x.r, x.p.id)))}"></i>`).join('') + (pares.length > 14 ? `<small class="obrg-mais">+${pares.length - 14}</small>` : '');
     const cmPend = g_.grp === 'f' && !cmEnviado(regs); const cmEst = g_.grp === 'f' ? cmEstado(regs) : null;
     const manPend = g_.grp === 'f' && !manEnviado(regs); const manEst = g_.grp === 'f' ? manEstado(regs) : null;
+    const nNovos = pares.filter(x => pedidoNovo(x.r, x.p)).length, nSemEq = pares.filter(x => pedidoSemEquip(x.r, x.p, inst[x.r.id] || {})).length;   // revisão 7
     const acoes = (g_.grp === 'f' ? `<button type="button" class="btn-ghost oe-mini ${cmPend ? 'obrg-cm-pend' : ''}" data-obrg-cm="${esc(regs.map(r => r.id).join(','))}">📄 Contrato de manutenção${cmEst && CM_RESOLVIDO[cmEst.status] ? ' ✓' : ''}</button><button type="button" class="btn-ghost oe-mini ${manPend ? 'obrg-cm-pend' : ''}" data-obrg-man="${esc(regs.map(r => r.id).join(','))}">📘 Manual de operação${manEst && MAN_RESOLVIDO[manEst.status] ? ' ✓' : ''}</button>` : '') + `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
     return cab + `<div class="obrg-card obrg-cliente${aberto ? ' obrg-aberto' : ''}">
       <div class="obrg-resumo" role="button" tabindex="0" aria-expanded="${aberto}" data-obrg-cli="${esc(chave)}" title="${aberto ? 'Recolher' : 'Abrir o cartão completo'}"><span class="obrg-seta">${aberto ? '▾' : '▸'}</span>
-        <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}${cmPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o contrato de manutenção preventiva">⚠ Contrato de manutenção a enviar</span>' : cmEst && cmEst.status === 'enviado' ? `<span class="prv-chip green obrg-cm-chip" title="Contrato de manutenção enviado">Contrato enviado ${esc(fmtData(String(cmEst.enviadoEm || '').slice(0, 10)))}</span>` : cmEst && CM_RESOLVIDO[cmEst.status] ? `<span class="prv-chip gray obrg-cm-chip">${esc(CM_RESOLVIDO[cmEst.status])}</span>` : ''}${manPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o manual de operação">⚠ Manual de operação a enviar</span>' : manEst && MAN_RESOLVIDO[manEst.status] ? `<span class="prv-chip ${manEst.status === 'enviado' ? 'green' : 'gray'} obrg-cm-chip">${esc(MAN_RESOLVIDO[manEst.status])}${manEst.status === 'enviado' && manEst.enviadoEm ? ' ' + esc(fmtData(String(manEst.enviadoEm).slice(0, 10))) : ''}</span>` : ''}</span>
+        <span class="obrg-nome"><b>${esc(nome)}</b>${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}${nNovos ? `<span class="prv-chip obrg-novo obrg-cm-chip" title="Pedido cadastrado há menos de ${NOVO_PEDIDO_DIAS} dias">Novo${nNovos > 1 ? ' ×' + nNovos : ''}</span>` : ''}${nSemEq ? `<span class="prv-chip red obrg-cm-chip obrg-semeq-chip" title="Pedido sem equipamentos cadastrados (abra o cartão e cadastre, ou marque que não precisa)">⚠ ${nSemEq === 1 ? '1 pedido sem equipamentos' : nSemEq + ' pedidos sem equipamentos'}</span>` : ''}${cmPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o contrato de manutenção preventiva">⚠ Contrato de manutenção a enviar</span>' : cmEst && cmEst.status === 'enviado' ? `<span class="prv-chip green obrg-cm-chip" title="Contrato de manutenção enviado">Contrato enviado ${esc(fmtData(String(cmEst.enviadoEm || '').slice(0, 10)))}</span>` : cmEst && CM_RESOLVIDO[cmEst.status] ? `<span class="prv-chip gray obrg-cm-chip">${esc(CM_RESOLVIDO[cmEst.status])}</span>` : ''}${manPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o manual de operação">⚠ Manual de operação a enviar</span>' : manEst && MAN_RESOLVIDO[manEst.status] ? `<span class="prv-chip ${manEst.status === 'enviado' ? 'green' : 'gray'} obrg-cm-chip">${esc(MAN_RESOLVIDO[manEst.status])}${manEst.status === 'enviado' && manEst.enviadoEm ? ' ' + esc(fmtData(String(manEst.enviadoEm).slice(0, 10))) : ''}</span>` : ''}</span>
         <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.slice(0, 2).map(k => `<span class="obrg-outros obrg-outros-${k}" title="Outros pedidos deste cliente: ${esc(rotOutros)}">${esc(rotObra(k))}</span>`).join('')}${outros.length > 2 ? `<span class="obrg-outros" title="${esc(rotOutros)}">+${outros.length - 2}</span>` : ''}</span>
         <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-anel${fin && fin === todosPeds.length ? ' cheio' : ''}" style="--p:${pctPedidos(todosPeds)}" role="img" aria-label="${pctPedidos(todosPeds)}% concluído" title="${pctPedidos(todosPeds)}% das etapas de instalação (o Teste vale 10% de cada equipamento) · ${fin} de ${todosPeds.length} finalizados"><b>${pctPedidos(todosPeds)}%</b></span></div>
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
       ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const ki = internoDe(r, p.id), ko = obraDe(r, p.id); const e = entradaSt(r, p.id); const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
         const quando = e.em ? 'Alterado' + (e.por ? ' por ' + e.por : '') + ' em ' + new Date(e.em).toLocaleDateString('pt-BR') : '';
         const bolas = subsDoPedido(d, p.id); const dotsEq = bolas.slice(0, 14).map(x => `<i class="obi-dot obi-dot-${estadoSub(d, x)}" title="${esc(x.nome)} · ${esc(rotEstado(estadoSub(d, x)))}"></i>`).join('') + (bolas.length > 14 ? `<small class="obrg-mais">+${bolas.length - 14}</small>` : '');
-        return `<div class="obrg-ped"><div class="obrg-ped-h">${varias ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotEmp(r))}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
-          <div class="obrg-ped-st"><select class="obr-sp obr-sp-${ki}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|i" aria-label="Etapa interna do pedido ${esc(p.numero)}" title="Etapa interna · compras${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'interna').map(([k, n]) => `<option value="${k}" ${k === ki ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${ko ? `<select class="obr-sp obr-sp-${ko}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|o" aria-label="Etapa obra do pedido ${esc(p.numero)}" title="Etapa obra${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'obra').map(([k, n]) => `<option value="${k}" ${k === ko ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>` : '<span class="obrg-obra-vazia" title="A etapa obra começa quando o equipamento é entregue">Obra · aguarda entrega</span>'}</div>
-          <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button>${botaoQuadros(r.id, p.id, key)}<button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
+        return `<div class="obrg-ped"><div class="obrg-ped-h">${varias ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotEmp(r))}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span><button type="button" class="obr-ic obrg-ic-desc" data-obrg-peddesc="${esc(key)}" title="Editar a descrição do pedido" aria-label="Editar a descrição do pedido ${esc(p.numero)}">✎</button>${pedidoNovo(r, p) ? `<span class="prv-chip obrg-novo" title="Pedido cadastrado${p.criadoPor ? ' por ' + esc(p.criadoPor) : ''} em ${esc(new Date(pedidoCriadoEm(r, p)).toLocaleDateString('pt-BR'))}">Novo</span>` : ''}${pedidoSemEquip(r, p, d) ? '<span class="prv-chip red obrg-semeq-chip" title="Nenhum equipamento cadastrado neste pedido. Abra Equipamentos para cadastrar ou marque que não precisa.">⚠ Sem equipamentos</span>' : ''}</div>
+          <div class="obrg-ped-st"><select class="obr-sp obr-sp-${ki}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|i" aria-label="Etapa interna do pedido ${esc(p.numero)}" title="Etapa interna · compras${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'interna').map(([k, n]) => `<option value="${k}" ${k === ki ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${ko ? `<select class="obr-sp obr-sp-${ko}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|o" aria-label="Etapa obra do pedido ${esc(p.numero)}" title="Etapa obra${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'obra').map(([k, n]) => `<option value="${k}" ${k === ko ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>` : '<span class="obrg-obra-vazia" title="A etapa obra só abre depois de marcar o pedido como Entregue na etapa interna">Obra · abre após Entregue</span>'}</div>
+          <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''} ${pedidoSemEquip(r, p, d) ? 'obrg-cm-pend' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button>${botaoQuadros(r.id, p.id, key)}<button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
     </div>`; }).join('')
     : `<div class="empty-state">${registros().length ? (uiG.sub === 'finalizados' ? 'Nenhum cliente com todos os pedidos entregues e finalizados.' : 'Nenhum pedido em andamento com esses filtros.') : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
@@ -25609,6 +25632,57 @@ function resumoPedido(d, pid){
   return { total: subs.length, finalizados: est.filter(instalado).length, testados: c('testado'), iniciados: c('iniciado'), liberados: c('liberado'), naoLiberados: c('nao_liberado'), etapasTotal: subs.reduce((n, x) => n + etapasDe(x).length, 0), etapasFeitas: subs.reduce((n, x) => n + feitasDe(d, x), 0) };
 }
 const copiarEtapas = (sub) => Object.fromEntries(etapasDe(sub).map(e => [e.id, { id: e.id, nome: e.nome, ordem: e.ordem }]));
+// ---- revisão 7: alerta de pedido NOVO (cadastrado há menos de 7 dias) e de pedido SEM equipamentos ----
+const NOVO_PEDIDO_DIAS = 7;
+function pedidoCriadoEm(r, p){ const t = Date.parse(p && p.criadoEm || (r && r.criadoEm) || ''); return Number.isFinite(t) ? t : null; }   // pedido antigo (sem carimbo) usa a data do registro
+function pedidoNovo(r, p){ const t = pedidoCriadoEm(r, p); return t !== null && (Date.now() - t) < NOVO_PEDIDO_DIAS * 86400000 && (Date.now() - t) > -86400000; }
+const semEquipDe = (r, pid) => (r && r.semEquip && r.semEquip[pid]) || null;                      // marcado pelo Gestor: "este pedido não precisa de equipamentos"
+function pedidoSemEquip(r, p, d){ return !p.cancelado && statusObraDe(r, p.id) !== 'finalizado' && !semEquipDe(r, p.id) && subsDoPedido(d || inst[r.id] || {}, p.id).length === 0; }
+async function marcarSemEquip(rid, pid, marcar){
+  const r = porId(rid); if(!r || !r.pedidos || !r.pedidos[pid]) return;
+  r.semEquip = Object.assign({}, r.semEquip); if(marcar) r.semEquip[pid] = { em: new Date().toISOString(), por: quem() || null }; else delete r.semEquip[pid];
+  r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderGestor(); await store.save(true);
+}
+function pedidosNovos(){ const out = []; registros().forEach(r => pedidosDe(r).filter(p => !p.cancelado && pedidoNovo(r, p)).forEach(p => out.push({ r, p }))); return out.sort((a, b) => (pedidoCriadoEm(b.r, b.p) || 0) - (pedidoCriadoEm(a.r, a.p) || 0)); }
+function pedidosSemEquip(){ const out = []; registros().forEach(r => { const d = inst[r.id] || {}; pedidosDe(r).filter(p => pedidoSemEquip(r, p, d)).forEach(p => out.push({ r, p })); }); return out; }
+// ---- revisão 7: editar descrição do pedido (mesmo campo que o Financeiro usa) ----
+function abrirEditarDescPedido(rid, pid){
+  const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
+  formRapido({ titulo: 'Pedido ' + p.numero + ' — descrição', campos: [ { id: 'descricao', rotulo: 'Descrição do serviço', valor: p.descricao || '', dica: 'Ex.: Aquecimento solar com apoio a gás' } ],
+    aoSalvar: async (v) => { p.descricao = v.descricao || null; r.pedidos = Object.assign({}, r.pedidos); r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem();
+      renderGestor(); try{ renderLista(); }catch(e){} await store.save(true);
+      if(inst[rid] && inst[rid].pedidos && inst[rid].pedidos[pid]) escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/descricao']: p.descricao });   // cópia que o técnico vê
+      return null; } });
+}
+// ---- revisão 7: editar sistema (nome/identificação) e equipamento (nome, descrição, etapas), reordenar ----
+function abrirEditarSistema(rid, pid, sid){
+  const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; if(!sis) return;
+  formRapido({ titulo: 'Editar sistema', campos: [ { id: 'nome', rotulo: 'Nome do sistema (com a identificação, se houver)', valor: sis.nome || '', obrig: true, dica: 'Ex.: Piscina — Piscina principal' } ],
+    aoSalvar: async (v) => { await escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/nome']: v.nome }); return null; } });
+}
+// Etapas editadas por texto: a etapa com o MESMO nome mantém o id (e o progresso já marcado); etapa nova ganha id novo; etapa removida perde o progresso.
+function mapaEtapasEditado(txt, antigas){
+  const vistos = new Set(); const nomes = String(txt || '').split(/[,;\n]+/).map(t => t.trim()).filter(t => { if(!t) return false; const k = fold(t); if(vistos.has(k)) return false; vistos.add(k); return true; }).slice(0, 10);
+  const lista_ = nomes.length ? nomes : ETAPAS_PADRAO; const usados = new Set(); const out = {};
+  lista_.forEach((n, i) => { const ex = antigas.find(e => fold(e.nome) === fold(n) && !usados.has(e.id)); let id = ex ? ex.id : null; if(!id){ let k = antigas.length + 1; while(usados.has('e' + k) || antigas.some(e => e.id === 'e' + k)) k++; id = 'e' + k; } usados.add(id); out[id] = { id, nome: n.slice(0, 40), ordem: i + 1 }; });
+  return out;
+}
+function abrirEditarEquip(rid, pid, sid, subId){
+  const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; const sub = sis && sis.subitens && sis.subitens[subId]; if(!sub) return;
+  const antigas = etapasDe(sub);
+  formRapido({ titulo: 'Editar equipamento', aviso: 'Renomear não apaga o progresso. Nas etapas, as que mantiverem o mesmo nome continuam com as marcações do técnico; a etapa removida perde a marcação.',
+    campos: [ { id: 'nome', rotulo: 'Nome do equipamento', valor: sub.nome || '', obrig: true }, { id: 'desc', rotulo: 'Descrição / observação (opcional)', tipo: 'area', valor: sub.desc || '' }, { id: 'etapas', rotulo: 'Etapas (separadas por vírgula)', valor: antigas.map(e => e.nome).join(', ') } ],
+    aoSalvar: async (v) => {
+      const etapas = mapaEtapasEditado(v.etapas, antigas); const base = 'obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + subId;
+      const up = { [base + '/nome']: v.nome, [base + '/desc']: v.desc || null, [base + '/etapas']: etapas };
+      antigas.forEach(e => { if(!etapas[e.id]) up['obraInstalacao/' + rid + '/prog/' + subId + '/' + e.id] = null; });
+      await escreverInst(up); return null; } });
+}
+function moverEquip(rid, pid, sid, subId, dir){
+  const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; if(!sis) return; const l = lista(sis.subitens).sort(ord); const i = l.findIndex(x => x.id === subId); const j = i + dir; if(i < 0 || j < 0 || j >= l.length) return;
+  const base = 'obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/'; const up = {}; l.forEach((x, k) => { const pos = k === i ? j + 1 : k === j ? i + 1 : k + 1; if(pos !== x.ordem) up[base + x.id + '/ordem'] = pos; });
+  if(Object.keys(up).length) escreverInst(up);
+}
 function htmlEtapas(d, rid, sub, travado, compacto){
   const prog = (d.prog || {})[sub.id] || {};
   return `<div class="obi-etl${compacto ? ' obi-etl-c' : ''}" role="group" aria-label="Etapas de ${esc(sub.nome)}">${etapasDe(sub).map(e => { const es = estadoEtapa(d, sub.id, e.id); const f = prog[e.id]; const k = esc(rid) + '|' + esc(sub.id) + '|' + esc(e.id);
@@ -25617,16 +25691,16 @@ function htmlEtapas(d, rid, sub, travado, compacto){
 }
 function htmlEquip(d, rid, sub, opt){
   opt = opt || {}; const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const bloqueado = !opt.gestor && st === 'nao_liberado'; const desab = !!opt.somenteLeitura || bloqueado;
-  const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
-  return `<div class="obi-eq obi-eq-${st}"><div class="obi-eq-h"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-eq-a">${acoes}</span></div>
+  const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="obr-ic" data-obrg-edsub="${esc(opt.key)}|${esc(sub.id)}" title="Editar nome, descrição e etapas" aria-label="Editar equipamento ${esc(sub.nome)}">✎</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|-1" title="Mover para cima" aria-label="Mover ${esc(sub.nome)} para cima">▲</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|1" title="Mover para baixo" aria-label="Mover ${esc(sub.nome)} para baixo">▼</button><button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
+  return `<div class="obi-eq obi-eq-${st}"><div class="obi-eq-h"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-eq-a">${acoes}</span></div>${sub.desc ? `<div class="obi-eq-desc">${esc(sub.desc)}</div>` : ''}
     ${htmlEtapas(d, rid, sub, false, true)}
     ${bloqueado ? '<div class="obi-aviso">Aguardando a liberação do Gestor para iniciar.</div>' : ''}</div>`;
 }
 function painelEquip(r, p, d){
-  const res = resumoPedido(d, p.id); const dp = (d.pedidos || {})[p.id]; const sists = lista(dp && dp.sistemas).sort(ord); const key = r.id + '|' + p.id;
-  return `<div class="obrg-eq"><div class="obrg-eq-bar"><span class="obrg-eq-res">${res.total ? `<b>${res.finalizados}</b> de ${res.total} ${res.total === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}${res.testados ? ' · <b>' + res.testados + '</b> ' + (res.testados === 1 ? 'testado' : 'testados') : ''} · ${res.etapasFeitas}/${res.etapasTotal} etapas` : 'Nenhum equipamento neste pedido ainda'}</span>
-      <span class="obrg-eq-acoes">${res.naoLiberados ? `<button type="button" class="btn-ghost oe-mini" data-obrg-libtodos="${esc(key)}">Liberar todos</button>` : ''}${res.total ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(key)}">⤓ PDF do pedido</button>` : ''}<button type="button" class="btn-primary oe-mini" data-obrg-addsis="${esc(key)}">+ Sistema</button></span></div>
-    ${sists.map(sis => `<div class="obrg-sistema"><div class="obrg-sistema-h"><b>${esc(sis.nome)}</b><span><button type="button" class="btn-ghost oe-mini" data-obrg-addeq="${esc(key)}|${esc(sis.id)}">+ Equipamento</button><button type="button" class="btn-ghost oe-mini qd-remover" data-obrg-rmsis="${esc(key)}|${esc(sis.id)}">Remover sistema</button></span></div>${lista(sis.subitens).sort(ord).map(sub => htmlEquip(d, r.id, sub, { gestor: true, key: key + '|' + sis.id })).join('')}</div>`).join('') || '<div class="prv-hint" style="margin:6px 0;">Use <b>+ Sistema</b> para escolher uma base (aquecimento, piscina, pressurização…) e os equipamentos que este pedido tem.</div>'}</div>`;
+  const res = resumoPedido(d, p.id); const dp = (d.pedidos || {})[p.id]; const sists = lista(dp && dp.sistemas).sort(ord); const key = r.id + '|' + p.id; const se = semEquipDe(r, p.id);
+  return `<div class="obrg-eq"><div class="obrg-eq-bar"><span class="obrg-eq-res">${res.total ? `<b>${res.finalizados}</b> de ${res.total} ${res.total === 1 ? 'equipamento finalizado' : 'equipamentos finalizados'}${res.testados ? ' · <b>' + res.testados + '</b> ' + (res.testados === 1 ? 'testado' : 'testados') : ''} · ${res.etapasFeitas}/${res.etapasTotal} etapas` : se ? `Este pedido não precisa de equipamentos${se.por ? ' · marcado por ' + esc(se.por) : ''}${se.em ? ' em ' + esc(new Date(se.em).toLocaleDateString('pt-BR')) : ''}` : '<span class="obrg-semeq-txt">⚠ Nenhum equipamento cadastrado neste pedido</span>'}</span>
+      <span class="obrg-eq-acoes">${!res.total ? (se ? `<button type="button" class="btn-ghost oe-mini" data-obrg-semeq="${esc(key)}|0">Desfazer</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-semeq="${esc(key)}|1" title="Tira o aviso: este pedido não tem equipamentos para instalar">Não precisa de equipamentos</button>`) : ''}${res.naoLiberados ? `<button type="button" class="btn-ghost oe-mini" data-obrg-libtodos="${esc(key)}">Liberar todos</button>` : ''}${res.total ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(key)}">⤓ PDF do pedido</button>` : ''}<button type="button" class="btn-primary oe-mini" data-obrg-addsis="${esc(key)}">+ Sistema</button></span></div>
+    ${sists.map(sis => `<div class="obrg-sistema"><div class="obrg-sistema-h"><b>${esc(sis.nome)}</b><span><button type="button" class="obr-ic" data-obrg-edsis="${esc(key)}|${esc(sis.id)}" title="Editar o nome do sistema" aria-label="Editar sistema ${esc(sis.nome)}">✎</button><button type="button" class="btn-ghost oe-mini" data-obrg-addeq="${esc(key)}|${esc(sis.id)}">+ Equipamento</button><button type="button" class="btn-ghost oe-mini qd-remover" data-obrg-rmsis="${esc(key)}|${esc(sis.id)}">Remover sistema</button></span></div>${lista(sis.subitens).sort(ord).map(sub => htmlEquip(d, r.id, sub, { gestor: true, key: key + '|' + sis.id })).join('')}</div>`).join('') || '<div class="prv-hint" style="margin:6px 0;">Use <b>+ Sistema</b> para escolher uma base (aquecimento, piscina, pressurização…) e os equipamentos que este pedido tem.</div>'}</div>`;
 }
 function definirEtapa(rid, subId, etId, novo){        // grava só quando a resposta MUDA; "Não começou" apaga o registro
   if(!ESTADOS_ETAPA.some(x => x[0] === novo)) return; const d = inst[rid] || {}; if(estadoEtapa(d, subId, etId) === novo) return;
@@ -25646,6 +25720,11 @@ function cliqueEquip(e){
   if((b = g('data-obrg-qd'))){ const [rid, pid] = b.dataset.obrgQd.split('|'); abrirQuadrosObra(rid, pid); return; }
   if((b = g('data-obrg-addsis'))){ const [rid, pid] = b.dataset.obrgAddsis.split('|'); abrirAddSistema(rid, pid); return; }
   if((b = g('data-obrg-addeq'))){ const [rid, pid, sid] = b.dataset.obrgAddeq.split('|'); abrirAddEquip(rid, pid, sid); return; }
+  if((b = g('data-obrg-peddesc'))){ const [rid, pid] = b.dataset.obrgPeddesc.split('|'); abrirEditarDescPedido(rid, pid); return; }                       // revisão 7
+  if((b = g('data-obrg-semeq'))){ const [rid, pid, v] = b.dataset.obrgSemeq.split('|'); marcarSemEquip(rid, pid, v === '1'); return; }
+  if((b = g('data-obrg-edsis'))){ const [rid, pid, sid] = b.dataset.obrgEdsis.split('|'); abrirEditarSistema(rid, pid, sid); return; }
+  if((b = g('data-obrg-edsub'))){ const [rid, pid, sid, sub] = b.dataset.obrgEdsub.split('|'); abrirEditarEquip(rid, pid, sid, sub); return; }
+  if((b = g('data-obrg-mvsub'))){ const [rid, pid, sid, sub, dir] = b.dataset.obrgMvsub.split('|'); moverEquip(rid, pid, sid, sub, Number(dir)); return; }
   if((b = g('data-obrg-rmsis'))){ const [rid, pid, sid] = b.dataset.obrgRmsis.split('|'); const sis = (((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas; const x = sis && sis[sid]; if(!x) return;
     customConfirm('Remover o sistema "' + x.nome + '" e os equipamentos dele deste pedido? O progresso já marcado também é apagado.', () => { const up = { ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid]: null }; lista(x.subitens).forEach(sb => { up['obraInstalacao/' + rid + '/lib/' + sb.id] = null; up['obraInstalacao/' + rid + '/prog/' + sb.id] = null; }); escreverInst(up); }, 'Remover'); return; }
   if((b = g('data-obrg-rmsub'))){ const [rid, pid, sid, sub] = b.dataset.obrgRmsub.split('|'); const x = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; const sb = x && x.subitens && x.subitens[sub]; if(!sb) return;
@@ -25687,10 +25766,28 @@ async function abrirAddSistema(rid, pid){
   };
 }
 function mapaEtapasDeTexto(txt){ const vistos = new Set(); const nomes = String(txt || '').split(/[,;\n]+/).map(t => t.trim()).filter(t => { if(!t) return false; const k = fold(t); if(vistos.has(k)) return false; vistos.add(k); return true; }).slice(0, 10); const final = nomes.length ? nomes : ETAPAS_PADRAO; return Object.fromEntries(final.map((n, i) => ['e' + (i + 1), { id: 'e' + (i + 1), nome: n.slice(0, 40), ordem: i + 1 }])); }
-function abrirAddEquip(rid, pid, sid){
+// revisão 7: "+ Equipamento" oferece os itens da base (com quantidade, como no "+ Sistema") e mais um campo livre — antes só havia o campo livre, com etapas padrão.
+async function abrirAddEquip(rid, pid, sid){
   const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; if(!sis) return;
-  formRapido({ titulo: 'Novo equipamento — ' + sis.nome, campos: [ { id: 'nome', rotulo: 'Nome do equipamento', obrig: true, dica: 'Ex.: Bomba de reforço' }, { id: 'etapas', rotulo: 'Etapas (separadas por vírgula)', valor: ETAPAS_PADRAO.join(', ') } ],
-    aoSalvar: async (v) => { const novoId = uid('q') + 'x'; const ordem = 1 + Math.max(0, ...lista(sis.subitens).map(x => x.ordem || 0)); await escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + novoId]: { id: novoId, nome: v.nome, ordem, etapas: mapaEtapasDeTexto(v.etapas) } }); return null; } });
+  try{ await garantirSistemas(); }catch(e){}
+  const base = sis.baseId ? sistemas().find(x => x.id === sis.baseId) : null; const itensBase = base ? subitensDe(base) : [];
+  const existentes = lista(sis.subitens); const jaTem = (nome) => existentes.filter(x => fold(x.nome) === fold(nome) || fold(x.nome).startsWith(fold(nome) + ' ')).length;
+  let ov = document.getElementById('obrAddEqOverlay'); if(ov) ov.remove(); ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrAddEqOverlay';
+  ov.innerHTML = `<div class="modal" style="max-width:540px; max-height:90vh; overflow-y:auto;"><h3>Adicionar equipamento — ${esc(sis.nome)}</h3><p class="prv-hint" style="margin:0 0 8px;">${itensBase.length ? 'Escolha quantos de cada item da base entram agora (<b>0</b> = nenhum). ' : ''}Os equipamentos entram como <b>Não liberados</b>.</p>
+    ${itensBase.length ? `<div class="obr-resto-t">Itens da base</div><div id="obrAddEqSubs">${itensBase.map(sub => { const n = jaTem(sub.nome); return `<div class="obi-q"><span>${esc(sub.nome)}<small>${esc(etapasDe(sub).map(e => e.nome).join(' · '))}${n ? ' · já tem ' + n : ''}</small></span><input type="number" min="0" max="20" value="0" data-q="${esc(sub.id)}" aria-label="Quantidade de ${esc(sub.nome)}"></div>`; }).join('')}</div>` : ''}
+    <div class="field" style="margin-top:8px;"><label for="obrAddEqExtra">Outro equipamento (opcional)</label><input type="text" id="obrAddEqExtra" maxlength="80" placeholder="Nome do equipamento" autocomplete="off"></div>
+    <div class="field"><label for="obrAddEqEtapas">Etapas do equipamento "outro" (separadas por vírgula)</label><input type="text" id="obrAddEqEtapas" value="${esc(ETAPAS_PADRAO.join(', '))}" autocomplete="off"></div>
+    <div class="field-error" id="obrAddEqErr"></div><div class="modal-actions" style="justify-content:flex-end;"><button type="button" class="btn-ghost" id="obrAddEqCancel">Cancelar</button><button type="button" class="btn-primary" id="obrAddEqOk">Adicionar</button></div></div>`;
+  document.body.appendChild(ov); const $ = (id) => document.getElementById(id);
+  ov.addEventListener('click', (e) => { if(e.target === ov || e.target.id === 'obrAddEqCancel') ov.remove(); });
+  $('obrAddEqOk').onclick = async () => {
+    let ordem = Math.max(0, ...existentes.map(x => x.ordem || 0)); const up = {}; const pre = 'obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/'; let n = 0;
+    itensBase.forEach(sub => { const inp = ov.querySelector('[data-q="' + sub.id + '"]'); const q = Math.max(0, Math.min(20, parseInt(inp && inp.value, 10) || 0)); const ja = jaTem(sub.nome);
+      for(let k = 1; k <= q; k++){ ordem++; n++; const id = uid('q') + ordem; const idx = ja + k; up[pre + id] = { id, nome: (ja + q) > 1 ? sub.nome + ' ' + idx : sub.nome, ordem, etapas: copiarEtapas(sub) }; } });
+    const extra = $('obrAddEqExtra').value.trim(); if(extra){ ordem++; n++; const id = uid('q') + ordem + 'x'; up[pre + id] = { id, nome: extra, ordem, etapas: mapaEtapasDeTexto($('obrAddEqEtapas').value) }; }
+    if(!n){ $('obrAddEqErr').textContent = 'Escolha pelo menos um equipamento (quantidade maior que zero) ou escreva um nome.'; return; }
+    ov.remove(); await escreverInst(up); avisar(n === 1 ? 'Equipamento adicionado.' : n + ' equipamentos adicionados.');
+  };
 }
 // ---- Técnico: lista de equipamentos dentro do cartão da atividade (toca no equipamento para abrir as etapas) ----
 const uiT = { abertos: {}, eq: {}, sis: {} };
@@ -26426,7 +26523,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { _teste: { fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
