@@ -1977,6 +1977,8 @@
   .os-linhas{ width:100%; border-collapse:collapse; margin-top:8px; font-size:13px; }
   .os-linhas td{ padding:5px 6px; border-top:1px dashed var(--line); vertical-align:top; }
   .os-linhas tr.os-compl td{ background:var(--warning-soft); }
+  .os-ps{ display:flex; gap:6px; align-items:baseline; line-height:1.35; white-space:pre-line; } .os-ps + .os-ps{ margin-top:3px; }
+  .os-ps-k{ flex:none; font-size:10.5px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--text-dim); min-width:60px; } .os-ps-vazio{ color:var(--text-dim); font-weight:400; }
   .os-origem{ font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; background:var(--panel-2); color:var(--text-dim); white-space:nowrap; }
   @media (max-width:600px){ .os-linhas td:nth-child(4){ display:none; } }
   .os-acoes{ display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
@@ -23405,7 +23407,15 @@ async function registrarEGravar(numero, item){
   return r;
 }
 // montadores das linhas, a partir dos registros de cada fila
-function linhaDeAtividade(s){ return { origem: 'atividade', refId: s.id, cliente: typeof stripPreventivaPrefix === 'function' ? stripPreventivaPrefix(s.client || '') : (s.client || ''), descricao: s.description || s.client || '', data: s.date || '', tecnicos: typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician], inicio: s.checkIn || null, fim: s.checkOut || null }; }
+function linhaDeAtividade(s){ return { origem: 'atividade', refId: s.id, cliente: typeof stripPreventivaPrefix === 'function' ? stripPreventivaPrefix(s.client || '') : (s.client || ''), descricao: s.description || s.client || '', data: s.date || '', tecnicos: typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician], inicio: s.checkIn || null, fim: s.checkOut || null, obs: s.observations || '' }; }
+// Problema (o que o Gestor escreveu na atividade) e solução (observação do técnico na conclusão): lê da atividade ao vivo, com a cópia guardada na linha como reserva.
+function problemaSolucao(l){
+  if(l.origem !== 'atividade') return { problema: '', solucao: '' };
+  const s = (typeof services !== 'undefined' ? services : []).find(x => x && String(x.id) === String(l.refId));
+  const problema = String((s && s.description) || l.descricao || '').trim();
+  const solucao = String((s && s.observations) || l.obs || '').trim();
+  return { problema, solucao: solucao === problema ? '' : solucao };
+}
 function linhaDeQuadro(q, nomeTipo){ return { origem: 'quadro', refId: q.id, cliente: q.cliente || '', descricao: 'Quadro de comando — ' + (nomeTipo || q.tipoNome || ''), data: String(q.testadoEm || q.criadoEm || '').slice(0, 10), tecnicos: [q.iniciouMontagemPor, q.montadoPor, q.iniciouTestePor, q.testadoPor].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i), inicio: null, fim: null }; }
 function linhaDeEquipamento(eq){ return { origem: 'equipamento', refId: eq.id, cliente: eq.client || '', descricao: 'Oficina — ' + (eq.equipment || ''), data: String(eq.testeCompletedAt || eq.withdrawnAt || '').slice(0, 10), tecnicos: [eq.withdrawnBy, eq.manutencaoStartedBy, eq.manutencaoCompletedBy].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i), inicio: null, fim: null }; }
 
@@ -23484,7 +23494,7 @@ function cartao(os){
   return `<div class="os-row" data-os="${esc(os.id)}">
     <div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div><div class="os-meta">${linhas.length} ${linhas.length === 1 ? 'linha' : 'linhas'}${os.complementoEm ? ' · ⚠ recebeu atividade depois de cobrada' : ''}</div>${quemDecidiu}</div>${chip}</div>
     ${acoes ? `<div class="os-acoes">${acoes}</div>` : ''}
-    <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${esc(l.descricao)}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
+    <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${(() => { const ps = problemaSolucao(l); return l.origem === 'atividade' ? `<div class="os-ps"><span class="os-ps-k">Problema</span>${esc(ps.problema || l.descricao || '—')}</div><div class="os-ps"><span class="os-ps-k">Solução</span>${ps.solucao ? esc(ps.solucao) : '<i class="os-ps-vazio">técnico não registrou observação</i>'}</div>` : esc(l.descricao); })()}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
   </div>`;
 }
 // Apagar OS: só o Gestor, em duas etapas (confirmação + digitar o número da OS). Remove do Firebase; as atividades/quadros/equipamentos ligados continuam existindo.
