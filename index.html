@@ -769,7 +769,8 @@
 .pn-jor-sec{ margin-top:8px; } .pn-jor-t{ font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin:6px 0 2px; }
 .pn-jor-l{ align-items:flex-start; } .pn-jor-h{ width:44px; flex:none; font-size:12px; color:var(--text-secondary); padding-top:2px; }
 .pending-lembrete{ background:#fff6d6 !important; color:#7a5a00 !important; }
-#openLembreteBtn{ margin-right:8px; } @media (max-width:759px){ #openLembreteBtn{ margin-right:6px; } }
+#openLembreteBtn{ margin-right:8px; }
+@media (max-width:759px){ #managerView .header{ gap:12px 10px; } #openLembreteBtn, #openAddBtn{ flex:1 1 calc(50% - 5px); margin:0; padding:11px 6px; font-size:13.5px; white-space:nowrap; min-width:0; } } /* revisão 22/10: os dois botões dividem uma linha no celular (antes cada um ocupava uma linha) */
 .orc-sis{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:6px; margin:4px 0 10px; }
 .orc-sis-i{ display:flex; align-items:center; gap:8px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px; background:var(--surface); cursor:pointer; font-size:13.5px; }
 .orc-sis-i.on{ border-color:#1c7a3f; background:rgba(28,122,63,.08); font-weight:600; } .orc-sis-i input{ accent-color:#1c7a3f; }
@@ -780,6 +781,8 @@
 .obrg-cm-pend{ color:#b4232a !important; border-color:rgba(180,35,42,.4) !important; font-weight:700; }
 .obrg-cm-chip{ margin-left:6px; }
 .obrg-cm-n{ font-size:11px; font-weight:700; color:#b4232a; background:rgba(180,35,42,.1); border-radius:999px; padding:1px 7px; margin-left:4px; }
+.obrg-cm-n em{ display:none; font-style:normal; }
+@media (max-width:700px){ .obrg-cm-n{ font-size:10px; padding:1px 5px; margin-left:3px; } .obrg-cm-n i{ display:none; } .obrg-cm-n em{ display:inline; } } /* revisão 22/10: no celular, ícone + número (📄 contrato · 📘 manual) em vez do texto */
 .pgc-ev-o{ font-size:10.5px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; padding:1px 7px; border-radius:999px; background:var(--surface-2); color:var(--text-secondary); border:1px solid var(--border); }
 .pgc-ev-o-obras{ color:#1a56db; border-color:rgba(26,86,219,.3); background:rgba(26,86,219,.08); }
 .pgc-ev-o-manut{ color:#b45309; border-color:rgba(180,83,9,.3); background:rgba(180,83,9,.08); }
@@ -993,19 +996,22 @@
     /* Reserva o espaço do botão flutuante para o texto do título nunca ficar por baixo dele. */
     .app-content .tecnicos-head,
     #tabOficinaGestor .tech-day-head,
-    #tabEstoque .tech-day-head{ padding-right: 360px; }
+    #tabEstoque .tech-day-head,
+    #tabOrcamentos .tech-day-head{ padding-right: 410px; } /* revisão 22/10: dois botões no cabeçalho flutuante ocupam ~390px */
     /* Oficina e Estoque usam um painel centralizado de 720px com 26px de respiro no topo: só tira
        esse respiro, para o título subir para a linha superior. A coluna continua centralizada,
        exatamente como era (o recuo horizontal dessas duas abas já existia e não foi mexido). */
     #tabOficinaGestor .tech-day-panel,
-    #tabEstoque .tech-day-panel{ padding-top: 0; }
+    #tabEstoque .tech-day-panel,
+    #tabOrcamentos .tech-day-panel{ padding-top: 0; }
     /* Sem o respiro do topo a linha sob o título "Oficina" encostava no botão; desce até a mesma
        altura da linha das outras abas. */
-    #tabOficinaGestor .tech-day-head{ padding-bottom: 32px; }
+    #tabOficinaGestor .tech-day-head,
+    #tabOrcamentos .tech-day-head{ padding-bottom: 32px; }
     /* Galeria do gestor (dentro do layout): mesmo tratamento da Oficina/Estoque — título na linha
        superior, sem passar por baixo do botão flutuante. */
     #galeriaView.galeria-no-gestor .tech-day-panel{ padding-top: 0; }
-    #galeriaView.galeria-no-gestor .tech-day-head{ padding-right: 360px; padding-bottom: 32px; }
+    #galeriaView.galeria-no-gestor .tech-day-head{ padding-right: 410px; padding-bottom: 32px; }
   }
 
   /* ===== Navegação inferior (mobile) — Terceira Entrega =====
@@ -1745,7 +1751,9 @@
      Cadastros e OS reservam o espaço (como os títulos das outras abas já fazem com o padding de 150px). */
   @media (min-width: 760px){
     #maintResumoCards{ margin-top: 52px; }
-    #prvOsTabs{ padding-right: 360px !important; }
+    #prvOsTabs{ margin-top: 52px; padding-right: 0 !important; flex-wrap: wrap; overflow-x: visible; row-gap: 8px; } /* revisão 22/10: botões Lembrete/Agendar numa linha (canto direito) e as abas na linha de baixo, com a largura toda */
+    #prvManutTabs{ flex-wrap: wrap; overflow-x: visible; row-gap: 8px; }
+    #prvManutContratos .tech-day-panel, #prvManutManuais .tech-day-panel, #prvManutPrecos .tech-day-panel{ max-width: none; margin: 0; padding: 6px 0 24px; } /* revisão 22/10: mesma largura das outras sub-abas de Manutenções (antes ficavam num painel estreito centralizado) */ /* revisão 22/10: 7 sub-abas; sem quebra, as últimas ficavam fora da tela em 1366px */
   }
   /* ===== Quadros de resumo em espaço estreito (ex.: aba Oficina): o texto nunca pode ser cortado =====
      Quando o quadro fica estreito, o cartão troca o ícone-ao-lado por: ícone + número na primeira linha e o rótulo
@@ -1946,6 +1954,8 @@
   .pn-cli-s{ font-size:12px; color:var(--text-dim); font-weight:600; }
   .pn-cli .pn-ped{ border-top:1px solid var(--line); }
   .pn-obras .pn-ped{ grid-template-columns:auto minmax(160px, 1fr) auto; }
+  /* Correção celular (22/10): a regra acima anulava a versão estreita de 980px (declarada antes); no telefone a linha do pedido passava de 390px, a página ficava mais larga que a tela e o iOS deixava dar zoom-out — com isso a barra inferior fixa 'flutuava' e os toques caíam em elementos errados. */
+  @media (max-width:980px){ .pn-obras .pn-ped{ grid-template-columns:1fr auto; } .pn-obras .pn-ped-t{ display:flex; grid-column:1 / -1; flex-wrap:wrap; } .pn-obras .pn-ped-c{ min-width:0; white-space:normal; } .pn-obras .pn-ped-d{ white-space:normal; } }
   .pn-obra{ border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px; background:#fff; }
   .pn-obra-n{ font-size:15px; font-weight:800; letter-spacing:-.2px; margin-bottom:4px; }
   .pn-ped{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
@@ -2057,6 +2067,7 @@
   .obr-ic{ display:inline-block; width:auto; min-height:0; line-height:1.2; }
   .obr-acoes{ width:1%; }
   .obr-tab td .prv-chip{ white-space:nowrap; }
+  @media (max-width:700px){ #prvManutPrecos .obr-tab, .obr-modal .obr-tab{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; } #prvManutPrecos input[data-cfg-nome], .obr-modal input[data-cfg-nome]{ min-width:150px !important; } } /* revisão 22/10: tabela de preços (5 colunas) rola de lado no celular em vez de cortar */
   #obrBarra{ align-items:center; }
  #obrBarra select{ width:auto; max-width:100%; }
   /* ===== condição de pagamento, situação das parcelas e blocos por pedido ===== */
@@ -2428,6 +2439,24 @@
   .obrg-ped-h{ flex:1 1 240px; min-width:0; } .obrg-ped-st{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; flex:0 1 auto; max-width:100%; }
   .obrg-ped-a{ flex:1 1 100%; display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-start; }
   .obrg-obra-vazia{ font-size:11.5px; font-weight:500; color:var(--text-secondary); background:var(--surface-2); border:1px dashed var(--border); border-radius:999px; padding:4px 11px; white-space:nowrap; }
+  /* Quadros da obra (botão no pedido + janela) */
+  .obrg-btn-qd{ display:inline-flex; align-items:center; gap:8px; }
+  .obrg-qd-n{ font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; background:var(--panel-2); border:1px solid var(--line); }
+  .obrg-qd-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; background:#c9c9cf; }
+  .obrg-qd-dot.tom-amarelo{ background:#e0a52b; } .obrg-qd-dot.tom-azul{ background:#3b7bd8; } .obrg-qd-dot.tom-verde{ background:#2e9e5b; }
+  .obrg-qd-modal{ max-width:560px; max-height:90vh; overflow-y:auto; }
+  .obrg-qd-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .obrg-qd-sub{ font-size:12.5px; color:var(--text-dim); margin-top:4px; }
+  .obrg-qd-dica{ font-size:12.5px; color:var(--text-dim); margin:10px 0 12px; }
+  .obrg-qd-lista{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+  .obrg-qd-item{ border:1px solid var(--line); border-radius:12px; padding:10px 12px; background:var(--panel); }
+  .obrg-qd-item-h{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .obrg-qd-rem{ margin-left:auto; }
+  .obrg-qd-hist{ margin-top:6px; font-size:12px; color:var(--text-dim); line-height:1.5; }
+  .obrg-qd-vazio{ font-size:13px; color:var(--text-dim); padding:10px 0; }
+  .obrg-qd-form{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .obrg-qd-form .field{ margin:0; flex:1 1 200px; } .obrg-qd-form .obrg-qd-qtd{ flex:0 0 90px; }
+  @media (max-width:520px){ .obrg-qd-form .btn-primary{ flex:1 1 100%; } }
   .obrg-btn-eq{ display:inline-flex; align-items:center; gap:8px; } .obrg-pontos-eq{ display:inline-flex; align-items:center; gap:4px; flex-wrap:wrap; max-width:170px; } .obrg-seta-eq{ font-size:10px; color:var(--text-secondary); }
   .obi-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--c); }
   .obi-dot-nao_liberado{ --c:#C0392B; } .obi-dot-liberado{ --c:#F2B705; } .obi-dot-iniciado{ --c:#3D84B0; } .obi-dot-finalizado{ --c:#5FBF85; } .obi-dot-testado{ --c:#1F5A38; }
@@ -3161,6 +3190,15 @@
   <div class="bottom-nav-sheet-backdrop" id="bottomNavSheetBackdrop"></div>
   <div class="bottom-nav-sheet" id="bottomNavSheet">
     <div class="bottom-nav-sheet-handle"></div>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPGestor"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel Gestor</span></button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPAlex"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Painel Alex</span></button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
+      <span>Obras e Pedidos</span>
+    </button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOficinaGestor">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg>
+      <span>Oficina</span>
+    </button>
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOS">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1z"/><path d="M9 11h6M9 15h6M9 7h6"/></svg>
       <span>Cadastros</span>
@@ -3173,15 +3211,6 @@
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnAcessos">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M20 3h-4M20 3v4"/></svg>
       <span>Acessos</span>
-    </button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOficinaGestor">
-      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg>
-      <span>Oficina</span>
-    </button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPGestor"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel Gestor</span></button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPAlex"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Painel Alex</span></button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
-      <span>Obras e Pedidos</span>
     </button>
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPainel">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
@@ -3949,6 +3978,15 @@
   </div>
 </div>
 
+<style>
+/* Criar equipamento (Oficina): aviso de cliente que já tem equipamento na oficina */
+.oficina-dup{ background:#fff7e6; border:1px solid #f3d9a4; border-radius:10px; padding:10px 12px; margin:4px 0 10px; font-size:13px; color:#5a4300; }
+.oficina-dup strong{ display:block; margin-bottom:6px; color:#4a3800; }
+.oficina-dup ul{ margin:0 0 8px; padding-left:18px; }
+.oficina-dup li{ margin:2px 0; }
+.oficina-dup li span{ color:#8a6d1f; font-size:12px; }
+.oficina-dup .oficina-dup-rodape{ font-size:12.5px; }
+</style>
 <div class="overlay" id="oficinaCriarEquipOverlay">
   <div class="modal">
     <h3>Criar equipamento</h3>
@@ -3976,6 +4014,8 @@
       <textarea id="oficinaCriarEquipObs" maxlength="500" placeholder="Observações sobre o equipamento..."></textarea>
       <div class="mono" id="oficinaCriarEquipObsCount" style="text-align:right; font-size:11px; color:var(--text-dim); margin-top:2px;">0/500</div>
     </div>
+    <!-- Aviso de possível duplicidade: cliente já tem equipamento na oficina (lista pra conferir antes de salvar) -->
+    <div id="oficinaCriarEquipDup" class="oficina-dup" hidden></div>
     <div class="field-error" id="oficinaCriarEquipErr"></div>
     <div class="modal-actions">
       <button type="button" class="btn-ghost" id="oficinaCriarEquipCancelBtn">Cancelar</button>
@@ -4282,20 +4322,57 @@ function sessaoMudou(g, origem){ if(g === geracaoDados) return false; if(typeof 
 function sessaoDeDadosAtiva(){ try{ return !!(perfilEmCarga || (typeof currentRole !== 'undefined' && currentRole)); }catch(e){ return true; } }
 const AO_SAIR_DO_PERFIL = [];                     // funções que cada módulo registra para zerar seus flags de carga
 function aoSairDoPerfil(fn){ AO_SAIR_DO_PERFIL.push(fn); }
+// ===== M2 — o ouvinte como fonte da carga inicial (em vez de get() + on('value') = dois downloads do mesmo nó) =====
+// Padrão atual do app: `await rtdb.ref(nó).get()` (baixa o nó inteiro) e, logo depois, `rtdb.ref(nó).on('value', ...)`, cujo
+// primeiro disparo baixa o MESMO nó outra vez. Medido com o SDK real (firebase 10.12.2, servidor local de teste): get()+on() =
+// 2 downloads; ouvinte primeiro = 1 download, e um segundo on() ou um get() no mesmo caminho, com ouvinte ativo, são servidos do
+// cache do SDK, sem rede. Aqui, para os nós da lista M2_NOS (todos têm um on('value') no MESMO caminho logo após a carga), o get()
+// liga o ouvinte e devolve o primeiro snapshot; o on() que o app faz em seguida reaproveita esse ouvinte. Só age com conexão
+// CONFIRMADA (.info/connected = true) e sessão de dados ativa; offline, desconhecido ou qualquer falha → get() de sempre (cache
+// local/timeout/erros inalterados). Ouvinte que o app não adotar em 30 s é desligado. Reversão: M2_LEITURA_PELO_OUVINTE = false.
+const M2_LEITURA_PELO_OUVINTE = true;
+const M2_ADOCAO_MS = 30000;
+const M2_NOS = new Set(['services', 'clients', 'techPhones', 'galleryPhotos', 'estoque', 'estoqueMovimentacoes', 'estoqueCategorias', 'estoqueAjustes', 'estoqueRetiradas',
+  'oficinaPecasCatalogo', 'oficinaEquipCatalogo', 'quadrosTipos', 'quadrosComando', 'ordensServico', 'obrasPedidos', 'obraSistemas', 'manuaisOperacao', 'contratosManutencao',
+  'orcamentos', 'maintenanceContracts', 'oficina', 'oficinaEquipamentos', 'oficinaStaleThresholdDays', 'extraContacts', 'preventivoUnidades', 'preventivoRelatorios',
+  'preventivoRascunhos', 'obraInstalacao']);
+let rtdbConectado = null;                         // null = desconhecido; true/false pelo .info/connected (ouvinte próprio, fora do registro de perfil)
+const m2Pre = new Map();                          // caminho -> { ref, cb, adotado, timer }
+const M2_STATS = { viaOuvinte: 0, getComum: 0, falhas: 0, adotados: 0, liberados: 0 };
+function rtdbRegistrarOn(target, path, no, ev, cb, errCb){
+  const r = target.on(ev, cb, errCb);            // o SDK devolve o próprio cb
+  if(LOGOUT_ENCERRA_OUVINTES && !NOS_SEMPRE_LIGADOS.includes(no) && !sessaoDeDadosAtiva()){
+    // M1b (rede de segurança): ouvinte de dados de perfil sem sessão válida — desliga na hora.
+    try{ target.off(ev, r || cb); }catch(e){}
+    console.warn('M1b: ouvinte de ' + path + ' ligado sem sessão de dados — desligado');
+    return r;
+  }
+  rtdbOuvintes.push({ path, no, ref: target, cb: r || cb, ev, geracao: geracaoDados });
+  return r;
+}
+function m2Elegivel(path){ return M2_LEITURA_PELO_OUVINTE && rtdbConectado === true && M2_NOS.has(path) && sessaoDeDadosAtiva(); }
+function m2Get(target, path, no){
+  if(!m2Elegivel(path) || m2Pre.has(path)){ M2_STATS.getComum++; return target.get(); }   // já há ouvinte ativo: o SDK responde do cache local
+  return new Promise((resolve, reject) => {
+    let respondeu = false;
+    const entrada = { ref: target, cb: null, adotado: false, timer: null };
+    const liberar = (motivo) => { if(m2Pre.get(path) === entrada) m2Pre.delete(path); clearTimeout(entrada.timer); try{ target.off('value', entrada.cb); }catch(e){} for(let i = rtdbOuvintes.length - 1; i >= 0; i--){ if(rtdbOuvintes[i].cb === entrada.cb) rtdbOuvintes.splice(i, 1); } if(motivo === 'timeout') M2_STATS.liberados++; };
+    entrada.cb = (snap) => { if(!respondeu){ respondeu = true; M2_STATS.viaOuvinte++; resolve(snap); } };
+    const errCb = (e) => { if(!respondeu){ respondeu = true; M2_STATS.falhas++; liberar('erro'); reject(e); } };
+    m2Pre.set(path, entrada);
+    try{ rtdbRegistrarOn(target, path, no, 'value', entrada.cb, errCb); }
+    catch(e){ m2Pre.delete(path); respondeu = true; M2_STATS.getComum++; target.get().then(resolve, reject); return; }   // qualquer falha ao ligar: get() de sempre
+    entrada.timer = setTimeout(() => { if(m2Pre.get(path) === entrada && !entrada.adotado) liberar('timeout'); }, M2_ADOCAO_MS);
+  });
+}
 function rtdbRegistroWrapRef(ref, path){
   const no = path ? path.split('/')[0] : '(root)';
   return new Proxy(ref, {
     get(target, prop){
+      if(prop === 'get' && M2_LEITURA_PELO_OUVINTE && M2_NOS.has(path)) return function(){ return m2Get(target, path, no); };
       if(prop === 'on') return function(ev, cb, errCb){
-        const r = target.on(ev, cb, errCb);            // o SDK devolve o próprio cb
-        if(LOGOUT_ENCERRA_OUVINTES && !NOS_SEMPRE_LIGADOS.includes(no) && !sessaoDeDadosAtiva()){
-          // M1b (rede de segurança): ouvinte de dados de perfil sem sessão válida — desliga na hora.
-          try{ target.off(ev, r || cb); }catch(e){}
-          console.warn('M1b: ouvinte de ' + path + ' ligado sem sessão de dados — desligado');
-          return r;
-        }
-        rtdbOuvintes.push({ path, no, ref: target, cb: r || cb, ev, geracao: geracaoDados });
-        return r;
+        const e = m2Pre.get(path); if(e && !e.adotado && cb !== e.cb){ e.adotado = true; clearTimeout(e.timer); M2_STATS.adotados++; }
+        return rtdbRegistrarOn(target, path, no, ev, cb, errCb);
       };
       if(prop === 'off') return function(ev, cb){
         const r = target.off(ev, cb);
@@ -4324,6 +4401,7 @@ function rtdbRegistroWrap(db){
 // (servicesSnapshot etc.), que são reconstruídos pelo próximo load() a partir do servidor.
 function encerrarDadosDoPerfil(){
   if(!LOGOUT_ENCERRA_OUVINTES) return { desligados: 0, mantidos: rtdbOuvintes.length };
+  m2Pre.forEach(e => clearTimeout(e.timer)); m2Pre.clear(); // M2: os ouvintes de pré-carga saem junto com os demais (abaixo)
   geracaoDados++; // M1b: cargas iniciadas antes deste ponto não ligam ouvintes nem marcam estado
   let desligados = 0;
   for(let i = rtdbOuvintes.length - 1; i >= 0; i--){
@@ -4336,6 +4414,7 @@ function encerrarDadosDoPerfil(){
   if(typeof perfMark === 'function') perfMark('logout_ouvintes_encerrados', { desligados, mantidos: rtdbOuvintes.length });
   return { desligados, mantidos: rtdbOuvintes.length };
 }
+window.__M2 = { stats: M2_STATS, pre: () => Array.from(m2Pre.keys()), conectado: () => rtdbConectado, ligado: M2_LEITURA_PELO_OUVINTE };
 window.__M1 = { ouvintes: () => rtdbOuvintes.map(o => o.path), encerrar: encerrarDadosDoPerfil, geracao: () => geracaoDados, emCarga: () => perfilEmCarga }; // inspeção em testes/console
 
 // ===== Camada de persistência (Firebase Realtime Database) =====
@@ -4358,6 +4437,8 @@ try{
 }catch(e){
   console.error('Falha ao inicializar o Firebase:', e);
 }
+// M2: estado da conexão (só leitura de um booleano local do SDK — nenhum dado trafega). Fora do registro de perfil: sobrevive ao logout.
+try{ if(typeof firebase !== 'undefined' && rtdb) firebase.database().ref('.info/connected').on('value', (s) => { rtdbConectado = s.val() === true; }); }catch(e){ rtdbConectado = null; }
 
 // Imita a antiga interface do window.storage.get(key, shared): lança erro se não existir.
 async function dbGetRaw(key){
@@ -11609,6 +11690,7 @@ function abrirCriarEquipamentoOficina(){
   document.getElementById('oficinaCriarEquipObs').value = '';
   document.getElementById('oficinaCriarEquipObsCount').textContent = '0/500';
   document.getElementById('oficinaCriarEquipErr').textContent = '';
+  oficinaCriarEquipDupReset();
   const selTec = document.getElementById('oficinaCriarEquipTecnico');
   selTec.innerHTML = '<option value="">Selecionar técnico...</option>' + tecnicosAtuaisOrdenados().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
   selTec.value = (currentRole === 'tech' && currentTechName && tecnicosAtuaisOrdenados().includes(currentTechName)) ? currentTechName : '';   // técnico cadastrando: já vem ele mesmo
@@ -11653,12 +11735,52 @@ document.getElementById('oficinaGestorCriarEquipBtn').addEventListener('click', 
 document.getElementById('oficinaCriarEquipBtnTech').addEventListener('click', abrirCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipCancelBtn').addEventListener('click', fecharCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharCriarEquipamentoOficina(); });
+// ---- Conferência de duplicidade ao criar equipamento: se o cliente já tem equipamento na oficina,
+// mostra a lista dentro do próprio modal e exige um segundo clique ("Confirmar e salvar") pra seguir.
+// Só leitura de oficinaEquipamentos (já em memória); nada é gravado até a confirmação.
+let oficinaCriarEquipDupClienteOk = null;   // nome (normalizado) do cliente cuja lista já foi conferida
+function oficinaCriarEquipDupReset(){
+  oficinaCriarEquipDupClienteOk = null;
+  const box = document.getElementById('oficinaCriarEquipDup'); if(box){ box.hidden = true; box.innerHTML = ''; }
+  const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); if(btn) btn.textContent = 'Salvar';
+}
+function equipamentosDoClienteNaOficina(cliente){
+  const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const alvo = fold(cliente); if(!alvo) return [];
+  const FORA = ['reinstalado', 'removido_oficina'];   // já saíram da oficina: não entram na conferência
+  return (Array.isArray(oficinaEquipamentos) ? oficinaEquipamentos : []).filter(eq => eq && fold(eq.client) === alvo && !FORA.includes(eq.status));
+}
+function oficinaCriarEquipMostrarDup(cliente, lista){
+  const box = document.getElementById('oficinaCriarEquipDup');
+  const itens = lista.map(eq => {
+    const st = OFICINA_STATUS_LABELS[eq.status] || eq.status || '—';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(eq.withdrawnAt || '')); const ret = m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+    return `<li>${escapeHtml(eq.equipment || '—')} <span>— ${escapeHtml(st)}${ret ? ' · retirado em ' + ret : ''}</span></li>`;
+  }).join('');
+  const nomeExibido = (lista[0] && lista[0].client) || cliente;   // como está cadastrado na oficina
+  box.innerHTML = `<strong>${escapeHtml(nomeExibido)} já tem ${lista.length} equipamento${lista.length > 1 ? 's' : ''} na oficina:</strong><ul>${itens}</ul><div class="oficina-dup-rodape">Confira se o equipamento que você está cadastrando não é um dos acima. Se for um equipamento diferente, toque em <b>Confirmar e salvar</b>.</div>`;
+  box.hidden = false;
+  document.getElementById('oficinaCriarEquipConfirmBtn').textContent = 'Confirmar e salvar';
+  try{ const modal = box.closest('.modal'); if(modal) modal.scrollTop = modal.scrollHeight; }catch(e){}   // mostra o aviso e o botão de confirmar
+}
+// Se o cliente for alterado depois do aviso, a conferência precisa ser refeita.
+['oficinaCriarEquipCliente', 'oficinaCriarEquipClienteManual'].forEach(id => document.getElementById(id).addEventListener('input', () => { if(oficinaCriarEquipDupClienteOk !== null) oficinaCriarEquipDupReset(); }));
+
 document.getElementById('oficinaCriarEquipConfirmBtn').addEventListener('click', async () => {
   if(oficinaCriarEquipInFlight) return;
-  oficinaCriarEquipInFlight = true;
-  const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
   const clienteManual = document.getElementById('oficinaCriarEquipClienteManual').value.trim();
   const clienteBusca = document.getElementById('oficinaCriarEquipCliente').value.trim();
+  const clienteAtual = clienteManual || clienteBusca;
+  document.getElementById('oficinaCriarEquipErr').textContent = '';
+  if(clienteAtual){
+    const chave = clienteAtual.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if(oficinaCriarEquipDupClienteOk !== chave){
+      const jaTem = equipamentosDoClienteNaOficina(clienteAtual);
+      if(jaTem.length){ oficinaCriarEquipDupClienteOk = chave; oficinaCriarEquipMostrarDup(clienteAtual, jaTem); return; }   // 1º clique: só mostra a lista
+    }
+  }
+  oficinaCriarEquipInFlight = true;
+  const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
   const r = await criarEquipamentoOficina({ client: clienteManual || clienteBusca, equipment: document.getElementById('oficinaCriarEquipNome').value, observation: document.getElementById('oficinaCriarEquipObs').value, technician: document.getElementById('oficinaCriarEquipTecnico').value, withdrawnDate: document.getElementById('oficinaCriarEquipDataRetirada').value });
   btn.disabled = false; btn.textContent = lbl; oficinaCriarEquipInFlight = false;
   if(!r.ok){ document.getElementById('oficinaCriarEquipErr').textContent = r.reason; return; }
@@ -12484,6 +12606,7 @@ function renderOS(){
             ${s.isRetorno ? `<span class="os-retorno-tag">↩ RETORNO${original ? ' de ' + shortLabel(original.date) : ''}</span>` : ''}
           </div>
           ${s.description ? `<div class="field"><label>O que foi pedido</label><div>${escapeHtml(s.description)}</div></div>` : ''}
+          ${(s.technicianInstructionText || '').trim() ? `<div class="field"><label>Orientações para o técnico</label><div>${escapeHtml(s.technicianInstructionText.trim())}</div></div>` : ''}
           ${s.address ? `<div class="field"><label>Endereço</label><div class="mono">${escapeHtml(s.address)}</div></div>` : ''}
           <div class="field">
             <label>Horários</label>
@@ -14847,6 +14970,49 @@ function compressImageFile(file){
 }
 
 const techMediaTentada = new Set();
+// ===== M4 — mídia da agenda do Técnico só quando o card entra na tela =====
+// Antes: ao abrir a agenda, baixava a mídia (servicesMedia/<id>) de TODAS as atividades do dia que tivessem mídia no modelo separado,
+// mesmo as que ficavam fora da tela. Agora: cada card com mídia ainda não carregada é observado por um IntersectionObserver e a
+// mídia dele é baixada quando o card entra na área visível (com 150 px de antecedência). As orientações e fotos continuam aparecendo
+// sozinhas — sem botão. Vale para dupla antiga (pairId: cada registro é carregado no card do seu técnico) e dupla nova
+// (technicians[]: um só registro, carregado uma vez por aparelho). Sem IntersectionObserver (ou flag desligada): carrega tudo, como antes.
+const M4_MIDIA_AO_APARECER = true;               // reversão: false = comportamento anterior (baixa a mídia de todas as atividades do dia ao abrir)
+const M4_ANTECEDENCIA_PX = 150;
+const M4_STATS = { observados: 0, carregadosPorVisibilidade: 0, carregadosSemObserver: 0, rerenders: 0 };
+window.__M4 = { stats: M4_STATS, ligado: M4_MIDIA_AO_APARECER, observer: () => typeof IntersectionObserver !== 'undefined' };
+let techMidiaObs = null, techMidiaFila = [], techMidiaTimer = null, techMidiaRetry = 0;
+function techMidiaDesligarObserver(){ if(techMidiaObs){ try{ techMidiaObs.disconnect(); }catch(e){} techMidiaObs = null; } }
+function techMidiaRerenderar(){
+  clearTimeout(techMidiaTimer);
+  techMidiaTimer = setTimeout(() => {
+    if(currentRole !== 'tech') return;
+    if(isUserBusyTyping() && techMidiaRetry < 8){ techMidiaRetry++; techMidiaRerenderar(); return; }   // não apaga o que a pessoa está escrevendo/gravando
+    techMidiaRetry = 0; M4_STATS.rerenders++; renderTechView();
+  }, 150);
+}
+function techMidiaCarregarIds(ids, origem){
+  const lista = ids.map(id => services.find(x => x.id === id)).filter(sv => sv && sv.mediaExternal && !serviceMediaIsLoaded(sv) && !techMediaTentada.has(sv.id));
+  if(!lista.length) return;
+  lista.forEach(sv => techMediaTentada.add(sv.id));
+  if(origem === 'visibilidade') M4_STATS.carregadosPorVisibilidade += lista.length; else M4_STATS.carregadosSemObserver += lista.length;
+  loadServiceMediaForMany(lista, 'tecnico').finally(() => { techMidiaRerenderar(); });
+}
+function techMidiaObservarCards(){
+  techMidiaDesligarObserver();
+  const cards = Array.from(document.querySelectorAll('#techTaskList [data-techsvc]'));
+  if(!cards.length) return;
+  try{
+    techMidiaObs = new IntersectionObserver((entradas) => {
+      const ids = [];
+      entradas.forEach(en => { if(en.isIntersecting){ try{ techMidiaObs.unobserve(en.target); }catch(e){} ids.push(Number(en.target.dataset.techsvc)); } });
+      if(ids.length) techMidiaCarregarIds(ids, 'visibilidade');
+    }, { root: null, rootMargin: M4_ANTECEDENCIA_PX + 'px 0px' });
+    cards.forEach(c => { techMidiaObs.observe(c); M4_STATS.observados++; });
+  }catch(e){   // qualquer falha da técnica: cai no comportamento anterior (carrega tudo)
+    console.warn('M4: IntersectionObserver indisponível — carregando a mídia de todas as atividades do dia', e);
+    techMidiaDesligarObserver(); techMidiaCarregarIds(cards.map(c => Number(c.dataset.techsvc)), 'fallback');
+  }
+}
 function renderTechView(){
   const idsPendentesOutbox = outboxIdsPendentes('services');
   const t = todayStr();
@@ -14866,10 +15032,13 @@ function renderTechView(){
   // Mídia sob demanda (modelo separado): carrega uma vez as externas do dia e redesenha; registro
   // antigo (inline) não lê nada. Uma tentativa por atividade por sessão aqui (upload/detalhes tentam de novo).
   const externasPendentes = tasks.filter(s => s.mediaExternal && !serviceMediaIsLoaded(s) && !techMediaTentada.has(s.id));
-  if(externasPendentes.length){
+  const m4Observar = M4_MIDIA_AO_APARECER && typeof IntersectionObserver !== 'undefined';
+  if(externasPendentes.length && !m4Observar){
     externasPendentes.forEach(s => techMediaTentada.add(s.id));
     loadServiceMediaForMany(externasPendentes, 'tecnico').finally(() => { if(currentRole === 'tech') renderTechView(); });
   }
+  if(!externasPendentes.length) techMidiaDesligarObserver();
+  else if(m4Observar) setTimeout(techMidiaObservarCards, 0);   // M4: os cards só existem depois deste render
 
   if(tasks.length === 0){
     list.innerHTML = `<div class="empty-state">Nenhum serviço agendado para hoje.</div>`;
@@ -15017,6 +15186,7 @@ function renderTechView(){
         </button>
       </div>
     `;
+    if(m4Observar && s.mediaExternal && !serviceMediaIsLoaded(s) && !techMediaTentada.has(s.id)) card.dataset.techsvc = String(s.id);   // M4: só estes cards são observados
     list.appendChild(card);
     card.querySelectorAll('[data-tec-oe]').forEach(el => el.addEventListener('click', () => openOficinaEquipDetalhe(Number(el.dataset.tecOe))));
     card.querySelectorAll('[data-tec-qd]').forEach(el => el.addEventListener('click', (ev) => { ev.stopPropagation(); QUADROS_API.abrirDetalhe(el.dataset.tecQd, 'oficina'); }));
@@ -16321,6 +16491,19 @@ document.getElementById('instrShareClose').addEventListener('click', () => docum
 // Idempotente: campo já ausente/vazio não gera alteração nem escrita.
 const CLEANUP_INSTR_MEDIA_DAYS = 3;     // fotos/áudios do GESTOR: 3 dias após a conclusão
 const CLEANUP_TECH_AUDIO_MONTHS = 3;    // áudios do TÉCNICO: 3 meses após a conclusão
+const M5_STATS = { instReusadas: 0, limpezaPuladas: 0 }; window.__M5 = M5_STATS;
+const M5_LIMPEZA_SEM_REESCRITA = true;     // false = volta a regravar null em toda sessão
+const M5_LIMPEZA_REVALIDA_MS = 14 * 24 * 60 * 60 * 1000;   // reconfere (regrava null) a cada 14 dias, caso alguém tenha anexado algo depois
+const M5_LIMPEZA_CHAVE = 'm5_midia_expirada_feita';
+function m5LimpezaLer(){ try{ return JSON.parse(localStorage.getItem(M5_LIMPEZA_CHAVE) || '{}') || {}; }catch(e){ return {}; } }
+function m5LimpezaFeita(chave){
+  if(serviceMediaExpiredDone.has(chave)) return true;
+  if(!M5_LIMPEZA_SEM_REESCRITA) return false;
+  const t = m5LimpezaLer()[chave];
+  if(typeof t === 'number' && Date.now() - t < M5_LIMPEZA_REVALIDA_MS){ M5_STATS.limpezaPuladas++; return true; }
+  return false;
+}
+function m5LimpezaMarcar(chaves){ if(!M5_LIMPEZA_SEM_REESCRITA) return; try{ const m = m5LimpezaLer(); const agora = Date.now(); chaves.forEach(k => { m[k] = agora; }); Object.keys(m).forEach(k => { if(agora - m[k] > M5_LIMPEZA_REVALIDA_MS) delete m[k]; }); localStorage.setItem(M5_LIMPEZA_CHAVE, JSON.stringify(m)); }catch(e){} }
 const CLEANUP_CLOCK_MARGIN_MS = 12 * 60 * 60 * 1000; // margem contra relógio adiantado do aparelho
 let cleanupExpiredMediaRan = false;
 
@@ -16359,11 +16542,11 @@ function cleanupExpiredMedia(){
     if(now > instrDeadline){
       if(Array.isArray(svc.technicianInstructionPhotos) && svc.technicianInstructionPhotos.length){ delete svc.technicianInstructionPhotos; changed++; }
       if(Array.isArray(svc.technicianInstructionAudios) && svc.technicianInstructionAudios.length){ delete svc.technicianInstructionAudios; changed++; }
-      if(svc.mediaExternal && !serviceMediaExpiredDone.has(svc.id + ':instr')){ cleanupExternalUpdates['servicesMedia/' + svc.id + '/technicianInstructionPhotos'] = null; cleanupExternalUpdates['servicesMedia/' + svc.id + '/technicianInstructionAudios'] = null; }
+      if(svc.mediaExternal && !m5LimpezaFeita(svc.id + ':instr')){ cleanupExternalUpdates['servicesMedia/' + svc.id + '/technicianInstructionPhotos'] = null; cleanupExternalUpdates['servicesMedia/' + svc.id + '/technicianInstructionAudios'] = null; }
     }
     if(now > audioDeadline){
       if(Array.isArray(svc.audios) && svc.audios.length){ delete svc.audios; changed++; }
-      if(svc.mediaExternal && !serviceMediaExpiredDone.has(svc.id + ':audios')){ cleanupExternalUpdates['servicesMedia/' + svc.id + '/audios'] = null; }
+      if(svc.mediaExternal && !m5LimpezaFeita(svc.id + ':audios')){ cleanupExternalUpdates['servicesMedia/' + svc.id + '/audios'] = null; }
     }
   });
   return changed;
@@ -16386,6 +16569,7 @@ async function cleanupExpiredExternalMedia(){
       serviceMediaSnapshot[id] = serviceMediaSnapshot[id] || {}; serviceMediaSnapshot[id][field] = undefined;
       serviceMediaExpiredDone.add(Number(id) + (field === 'audios' ? ':audios' : ':instr'));
     });
+    m5LimpezaMarcar(paths.map(p => { const [, id, field] = p.split('/'); return Number(id) + (field === 'audios' ? ':audios' : ':instr'); }));
     return paths.length;
   }catch(e){ console.error('Limpeza de mídias (servicesMedia) falhou', e); return 0; }
 }
@@ -18153,6 +18337,7 @@ async function ensureEstoqueLoaded(){
     carregarUltimoRelatorioCompra()
   ]);
   if(sessaoMudou(g, 'estoque')) return;
+  try{ atualizarBotaoUltimaCompra(); }catch(e){}   // M2: as cargas terminam em ordem diferente; redesenha os botões por categoria já com tudo carregado
   popularEquipNomesDatalist();
   await seedEstoqueInicial(); // só agora — depende de estoqueItens e estoqueCategoriasStore, já prontos acima
   if(sessaoMudou(g, 'estoque')) return;
@@ -22793,7 +22978,7 @@ function cartaoQuadro(q, modo){
   const et = etapaDe(q);
   return `<div class="qd-card qd-card-compacto tom-${et.tom}" data-qd="abrir" data-id="${esc(q.id)}" role="button" tabindex="0" title="Toque para abrir">
     <div class="qd-card-main"><div class="qd-cli">${esc(q.cliente)}${q.obsGestor ? ' <span class="qd-ind" title="Tem observação do Gestor">💬</span>' : ''}${((q.fotos && Object.keys(q.fotos).length) || (q.fotosGestor && Object.keys(q.fotosGestor).length)) ? ' <span class="qd-ind" title="Tem fotos">📷</span>' : ''}</div>
-      <div class="qd-linha"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span>${q.processedForOS ? `<span class="qd-chip tom-cinza">OS nº ${esc(q.numeroOS || '—')}</span>` : ''}</div></div>
+      <div class="qd-linha"><span class="qd-tipo">${esc(nomeDoTipo(q))}</span><span class="qd-chip tom-${et.tom}">${esc(et.chip)}</span>${q.obraId ? `<span class="qd-chip tom-cinza" title="Quadro pedido pela obra">Obra${q.pedidoNumero ? ' · Pedido ' + esc(q.pedidoNumero) : ''}</span>` : ''}${q.processedForOS ? `<span class="qd-chip tom-cinza">OS nº ${esc(q.numeroOS || '—')}</span>` : ''}</div></div>
     <div class="qd-acoes"><span class="qd-abrir">›</span></div>
   </div>`;
 }
@@ -22882,7 +23067,9 @@ function htmlSecoes(modo){
   });
   return html;
 }
+const ouvintesMudanca = [];   // quem quer ser avisado quando a lista de quadros muda (ex.: a tela de Obras)
 function renderListas(){
+  ouvintesMudanca.forEach(f => { try{ f(); }catch(e){ console.error('quadros: ouvinte', e); } });
   if(detalheId && document.getElementById('qdDetalheOverlay') && document.getElementById('qdDetalheOverlay').classList.contains('open')) renderDetalhe();
   document.querySelectorAll('.qd-secoes').forEach(el => { el.innerHTML = htmlSecoes(el.dataset.qdSecoes); });
   refrescarOS();
@@ -23133,7 +23320,33 @@ async function concluirOS(id){
 }
 // Chamado no login do Gestor: carrega os quadros em segundo plano para o contador de "Cadastros e OS" já aparecer.
 function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => console.error('quadros: falha ao carregar', e)); }
-window.QUADROS_API = { avancar, etapa: (id) => { const q = porId(quadrosStore, id); if(!q) return null; const et = etapaDe(q); return { id: et.id, chip: et.chip, proxima: et.proxima ? et.proxima.rotulo : null, andamento: et.id === 'montando' || et.id === 'testando' }; }, pronto: () => carregado, garantir: () => garantirCarregado(), cartaoHtml: (id) => { const q = porId(quadrosStore, id); return q ? cartaoQuadro(q, 'oficina') : ''; }, abrirDetalhe: (id, modo) => abrirDetalhe(id, modo || 'oficina'), abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
+// ---- Quadros pedidos pela OBRA (Obras e Pedidos › pedido › Quadros) ----
+// O quadro nasce no MESMO nó quadrosComando (aparece na hora em Oficina › Quadros, "A montar") com o vínculo obraId/pedidoId/pedidoNumero.
+// A Oficina segue o fluxo de sempre; a tela da obra só LÊ o status (e mostra data/responsável de cada etapa).
+function doPedido(obraId, pedidoId){
+  return quadrosAtivos().filter(q => String(q.obraId) === String(obraId) && String(q.pedidoId) === String(pedidoId))
+    .sort((a, b) => String(a.criadoEm || '').localeCompare(String(b.criadoEm || '')) || (Number(a.id) - Number(b.id)))
+    .map(q => { const et = etapaDe(q); return { id: q.id, tipoNome: nomeDoTipo(q), status: et.id, chip: et.chip, tom: et.tom, titulo: et.titulo, montado: ['montado', 'testando', 'testado'].indexOf(et.id) >= 0, testado: et.id === 'testado', osNumero: q.processedForOS ? (q.numeroOS || '') : '',
+      historico: [['Cadastrado', q.criadoEm, q.criadoPor], ['Montagem iniciada', q.iniciouMontagemEm, q.iniciouMontagemPor], ['Montagem concluída', q.montadoEm, q.montadoPor], ['Testes iniciados', q.iniciouTesteEm, q.iniciouTestePor], ['Testes finalizados', q.testadoEm, q.testadoPor]].filter(h => h[1]).map(h => h[0] + ': ' + fmtDataHora(h[1]) + (h[2] ? ' · ' + h[2] : '')) }; });
+}
+async function criarParaObra(d){
+  if(!carregado) return { ok: false, motivo: 'Aguarde a lista de quadros terminar de carregar.' };
+  const cliente = String(d.cliente || '').trim(); if(!cliente) return { ok: false, motivo: 'Obra sem cliente.' };
+  const tipo = tiposStore.items.find(t => String(t.id) === String(d.tipoId) && t.active !== false);
+  if(!tipo) return { ok: false, motivo: 'Escolha o tipo de quadro.' };
+  const qtd = Math.max(1, Math.min(20, Math.floor(Number(d.qtd) || 1)));
+  const agora = new Date().toISOString();
+  for(let i = 0; i < qtd; i++) quadrosStore.items.push({ id: novoId(), cliente, tipoId: tipo.id, tipoNome: tipo.nome, status: 'a_montar', criadoEm: agora, criadoPor: quem(), active: true,
+    obraId: String(d.obraId), pedidoId: String(d.pedidoId), pedidoNumero: String(d.pedidoNumero || ''), origem: 'obra' });
+  renderListas(); await quadrosStore.save();
+  return { ok: true, criados: qtd };
+}
+async function removerDaObra(id){
+  const q = porId(quadrosStore, id); if(!q || !q.obraId) return { ok: false };
+  if(q.status !== 'a_montar') return { ok: false, motivo: 'Este quadro já começou a ser montado pela Oficina. Para removê-lo, use Oficina › Quadros de comando.' };
+  q.active = false; renderListas(); await quadrosStore.save(); return { ok: true };
+}
+window.QUADROS_API = { doPedido, criarParaObra, removerDaObra, tipos: () => tiposAtivos().map(t => ({ id: t.id, nome: t.nome })), aoMudar: (f) => { ouvintesMudanca.push(f); }, abrirLista: () => { try{ trocarSubAba('lista'); }catch(e){} }, avancar, etapa: (id) => { const q = porId(quadrosStore, id); if(!q) return null; const et = etapaDe(q); return { id: et.id, chip: et.chip, proxima: et.proxima ? et.proxima.rotulo : null, andamento: et.id === 'montando' || et.id === 'testando' }; }, pronto: () => carregado, garantir: () => garantirCarregado(), cartaoHtml: (id) => { const q = porId(quadrosStore, id); return q ? cartaoQuadro(q, 'oficina') : ''; }, abrirDetalhe: (id, modo) => abrirDetalhe(id, modo || 'oficina'), abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
 })();
 
 
@@ -23624,7 +23837,7 @@ function linhaDeAtividade(s){ return { origem: 'atividade', refId: s.id, cliente
 function problemaSolucao(l){
   if(l.origem !== 'atividade') return { problema: '', solucao: '' };
   const s = (typeof services !== 'undefined' ? services : []).find(x => x && String(x.id) === String(l.refId));
-  const problema = String((s && s.description) || l.descricao || '').trim();
+  const problema = String((s && s.description) || (l.descricao && l.descricao !== l.cliente ? l.descricao : '') || '').trim(); // sem descrição: não repete o nome do cliente
   const solucao = String((s && s.observations) || l.obs || '').trim();
   return { problema, solucao: solucao === problema ? '' : solucao };
 }
@@ -23706,7 +23919,7 @@ function cartao(os){
   return `<div class="os-row" data-os="${esc(os.id)}">
     <div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div><div class="os-meta">${linhas.length} ${linhas.length === 1 ? 'linha' : 'linhas'}${os.complementoEm ? ' · ⚠ recebeu atividade depois de cobrada' : ''}</div>${quemDecidiu}</div>${chip}</div>
     ${acoes ? `<div class="os-acoes">${acoes}</div>` : ''}
-    <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${(() => { const ps = problemaSolucao(l); return l.origem === 'atividade' ? `<div class="os-ps"><span class="os-ps-k">Problema</span>${esc(ps.problema || l.descricao || '—')}</div><div class="os-ps"><span class="os-ps-k">Solução</span>${ps.solucao ? esc(ps.solucao) : '<i class="os-ps-vazio">técnico não registrou observação</i>'}</div>` : esc(l.descricao); })()}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
+    <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${(() => { const ps = problemaSolucao(l); return l.origem === 'atividade' ? `<div class="os-ps"><span class="os-ps-k">Problema</span>${ps.problema ? esc(ps.problema) : '<i class="os-ps-vazio">sem descrição</i>'}</div><div class="os-ps"><span class="os-ps-k">Solução</span>${ps.solucao ? esc(ps.solucao) : '<i class="os-ps-vazio">técnico não registrou observação</i>'}</div>` : esc(l.descricao); })()}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
   </div>`;
 }
 // Apagar OS: só o Gestor, em duas etapas (confirmação + digitar o número da OS). Remove do Firebase; as atividades/quadros/equipamentos ligados continuam existindo.
@@ -24248,7 +24461,11 @@ function internoDe(r, pid){
   if(k === 'aguardando_compra' && !(e.i || e.s || e.o) && sinalPendente(r, pid)) return 'aguardando_sinal';   // pedido novo (sem andamento marcado): espera o sinal ser pago
   return k;
 }
-function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
+function obraDeRegistrado(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
+// Pedido com alguma evolução marcada pelo técnico (etapa de equipamento iniciada ou finalizada) conta como obra INICIADA,
+// mesmo que o andamento registrado ainda seja anterior (aguardando liberação, liberado para entrega…) — 22/10.
+function temEvolucao(r, pid){ try{ const d = inst[r.id]; if(!d) return false; return subsDoPedido(d, pid).some(sub => progressoSub(d, sub) > 0); }catch(e){ return false; } }
+function obraDe(r, pid){ const o = obraDeRegistrado(r, pid); if(o === 'iniciado' || o === 'aguardando_testes' || o === 'finalizado') return o; return temEvolucao(r, pid) ? 'iniciado' : o; }
 const statusObraDe = (r, pid) => obraDe(r, pid) || internoDe(r, pid);          // situação "principal" do pedido = a mais avançada
 const APROVACAO = [['aguardando', 'Aguardando aprovação'], ['aprovado', 'Aprovado'], ['nao_aprovado', 'Não aprovado']];
 const aprovDe = (p) => (p && p.aprovacao) || 'aguardando';
@@ -25040,7 +25257,7 @@ function andamentoPrincipal(pares){
 // Os demais andamentos do cliente, para mostrar ao lado do principal: a etapa interna dos pedidos ainda não entregues e a etapa de obra dos outros pedidos
 function outrosAndamentos(pares, prin){
   const out = []; const add = (k) => { if(k && k !== prin && !out.includes(k)) out.push(k); };
-  pares.forEach(x => { const i = internoDe(x.r, x.p.id), o = obraDe(x.r, x.p.id); if(i !== 'entregue') add(i); if(o && o !== 'finalizado' && !(o === 'aguardando_inicio' && i !== 'entregue')) add(o); else if(!o) add(statusObraDe(x.r, x.p.id)); });
+  pares.forEach(x => { const i = internoDe(x.r, x.p.id), o = obraDe(x.r, x.p.id); if(i !== 'entregue') add(i); if(o && o !== 'finalizado' && !(o === 'aguardando_inicio' && i !== 'entregue')) add(o); else if(!o) add(statusObraDe(x.r, x.p.id)); const reg = obraDeRegistrado(x.r, x.p.id); if(reg && reg !== o) add(reg); /* iniciado por evolução: mostra ao lado o andamento registrado */ });
   return out.sort((a, b) => STATUS_OBRA.findIndex(x => x[0] === a) - STATUS_OBRA.findIndex(x => x[0] === b));
 }
 function renderGestor(){
@@ -25068,7 +25285,7 @@ function renderGestor(){
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
   const tile = (n, rot, cor) => `<div class="obrg-t4" style="border-left-color:${cor};"><b style="color:${cor};">${n}</b><span>${esc(rot)}</span></div>`;
   document.getElementById('obrgChips').innerHTML = `<div class="obrg-resumo4">${tile(nAnd + nFin, 'Clientes registrados', 'var(--ink)')}${tile(cliFase.interna.size, 'Na etapa interna', '#b45309')}${tile(cliFase.obra.size, 'Na etapa obra', '#1a56db')}${tile(nFin, 'Finalizados', '#1f6b45')}</div>`;
-  document.getElementById('obrgSubN1').textContent = nAnd; const nCm = cmPendentes().length, nMan = manPendentes().length; document.getElementById('obrgSubN2').innerHTML = nFin + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado">${nCm} sem contrato</span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado">${nMan} sem manual</span>` : '');
+  document.getElementById('obrgSubN1').textContent = nAnd; const nCm = cmPendentes().length, nMan = manPendentes().length; document.getElementById('obrgSubN2').innerHTML = nFin + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado"><em>📄 </em>${nCm}<i> sem contrato</i></span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado"><em>📘 </em>${nMan}<i> sem manual</i></span>` : '');
   document.querySelectorAll('#obrgSubAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgSub === uiG.sub));
   lista_ = lista_.filter(g => (g.grp === 'f') === (uiG.sub === 'finalizados'));
   if(uiG.sub !== 'finalizados') lista_.sort((a, b) => (a.grp - b.grp) || (a.rankPrin - b.rankPrin) || fold(a.nome).localeCompare(fold(b.nome)));
@@ -25102,7 +25319,7 @@ function renderGestor(){
         const bolas = subsDoPedido(d, p.id); const dotsEq = bolas.slice(0, 14).map(x => `<i class="obi-dot obi-dot-${estadoSub(d, x)}" title="${esc(x.nome)} · ${esc(rotEstado(estadoSub(d, x)))}"></i>`).join('') + (bolas.length > 14 ? `<small class="obrg-mais">+${bolas.length - 14}</small>` : '');
         return `<div class="obrg-ped"><div class="obrg-ped-h">${varias ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(rotEmp(r))}</span>` : ''}<span class="obr-ped-num">Pedido ${esc(p.numero)}</span><span class="obr-ped-desc">${esc(p.descricao || 'Sem descrição')}</span></div>
           <div class="obrg-ped-st"><select class="obr-sp obr-sp-${ki}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|i" aria-label="Etapa interna do pedido ${esc(p.numero)}" title="Etapa interna · compras${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'interna').map(([k, n]) => `<option value="${k}" ${k === ki ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${ko ? `<select class="obr-sp obr-sp-${ko}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|o" aria-label="Etapa obra do pedido ${esc(p.numero)}" title="Etapa obra${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'obra').map(([k, n]) => `<option value="${k}" ${k === ko ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>` : '<span class="obrg-obra-vazia" title="A etapa obra começa quando o equipamento é entregue">Obra · aguarda entrega</span>'}</div>
-          <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button><button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
+          <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button>${botaoQuadros(r.id, p.id, key)}<button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
     </div>`; }).join('')
     : `<div class="empty-state">${registros().length ? (uiG.sub === 'finalizados' ? 'Nenhum cliente com todos os pedidos entregues e finalizados.' : 'Nenhum pedido em andamento com esses filtros.') : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
@@ -25127,6 +25344,73 @@ function abrirAgendamentoObra(r, descricao, vinculo){
   window.__obraAtiv = vinculo;                                                          // a atividade salva leva junto a obra (e o pedido): o técnico vê o checklist
   setTimeout(() => { const d = document.getElementById('f-desc'); if(d) d.focus(); }, 60);
 }
+// ---------- Quadros de comando da obra: botão "Quadros" no pedido + janela para criar e acompanhar ----------
+const quadrosDaObra = (rid, pid) => { try{ return window.QUADROS_API && QUADROS_API.pronto() ? QUADROS_API.doPedido(rid, pid) : null; }catch(e){ return null; } };
+function botaoQuadros(rid, pid, key){
+  const l = quadrosDaObra(rid, pid) || [];
+  const pront = l.filter(x => x.montado).length;
+  const pontos = l.slice(0, 8).map(x => `<i class="obrg-qd-dot tom-${x.tom}" title="${esc(x.tipoNome)} · ${esc(x.chip)}"></i>`).join('') + (l.length > 8 ? `<small class="obrg-mais">+${l.length - 8}</small>` : '');
+  return `<button type="button" class="btn-ghost oe-mini obrg-btn-qd" data-obrg-qd="${esc(key)}" aria-label="Quadros de comando${l.length ? ': ' + pront + ' de ' + l.length + ' montados' : ''}"><span>Quadros</span>${l.length ? `<span class="obrg-qd-n" title="${pront} de ${l.length} montados">${pront}/${l.length}</span><span class="obrg-pontos-eq">${pontos}</span>` : ''}</button>`;
+}
+function garantirQuadrosObra(){
+  let ov = document.getElementById('obrgQdOverlay'); if(ov) return ov;
+  ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'obrgQdOverlay';
+  ov.innerHTML = '<div class="modal obrg-qd-modal"><div id="obrgQdCorpo"></div></div>';
+  document.body.appendChild(ov);
+  ov.addEventListener('click', async (e) => {
+    if(e.target === ov){ fecharQuadrosObra(); return; }
+    const b = e.target.closest('[data-qdo]'); if(!b) return; const a = b.dataset.qdo;
+    if(a === 'fechar'){ fecharQuadrosObra(); return; }
+    if(a === 'lista'){ fecharQuadrosObra(); try{ if(typeof switchTab === 'function') switchTab('oficinagestor'); if(typeof oficinaGestorSwitchSubTab === 'function') oficinaGestorSwitchSubTab('quadros'); QUADROS_API.abrirLista(); }catch(err){} return; }
+    if(a === 'oficina'){ fecharQuadrosObra(); try{ switchTab('oficinagestor'); oficinaGestorSwitchSubTab('quadros'); }catch(err){} return; }
+    if(a === 'criar'){
+      if(qdoEmAndamento) return; const ctx = qdoCtx; if(!ctx) return;
+      const tipoId = document.getElementById('qdoTipo').value; const qtd = document.getElementById('qdoQtd').value; const erro = document.getElementById('qdoErro'); erro.textContent = '';
+      if(!tipoId){ erro.textContent = 'Escolha o tipo de quadro.'; return; }
+      qdoEmAndamento = true; b.disabled = true;
+      const r = await QUADROS_API.criarParaObra({ obraId: ctx.rid, pedidoId: ctx.pid, pedidoNumero: ctx.numero, cliente: ctx.cliente, tipoId, qtd });
+      qdoEmAndamento = false; b.disabled = false;
+      if(!r.ok){ erro.textContent = r.motivo || 'Não foi possível criar o quadro.'; return; }
+      avisar(r.criados === 1 ? 'Quadro criado — já está em Oficina › Quadros, em "A montar".' : r.criados + ' quadros criados — já estão em Oficina › Quadros, em "A montar".', 4500);
+      renderQuadrosObra(); renderGestor(); return;
+    }
+    if(a === 'remover'){
+      const id = b.dataset.id;
+      customConfirm('Remover este quadro da obra? Ele também sai da lista da Oficina (ainda não foi montado).', async () => { const r = await QUADROS_API.removerDaObra(id); if(!r.ok && r.motivo) avisar(r.motivo, 5500); renderQuadrosObra(); renderGestor(); }, 'Remover');
+    }
+  });
+  return ov;
+}
+let qdoCtx = null, qdoEmAndamento = false;
+function fecharQuadrosObra(){ const ov = document.getElementById('obrgQdOverlay'); if(ov) ov.classList.remove('open'); qdoCtx = null; }
+function abrirQuadrosObra(rid, pid){
+  const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
+  qdoCtx = { rid, pid, numero: p.numero, descricao: p.descricao || '', cliente: nomeCliente(r) };
+  garantirQuadrosObra(); renderQuadrosObra(); document.getElementById('obrgQdOverlay').classList.add('open');
+  if(window.QUADROS_API && !QUADROS_API.pronto()) QUADROS_API.garantir().then(() => { renderQuadrosObra(); renderGestor(); }).catch(() => {});
+}
+function renderQuadrosObra(){
+  const box = document.getElementById('obrgQdCorpo'); const c = qdoCtx; if(!box || !c) return;
+  const pronto = window.QUADROS_API && QUADROS_API.pronto();
+  const lista = pronto ? QUADROS_API.doPedido(c.rid, c.pid) : []; const tipos = pronto ? QUADROS_API.tipos() : [];
+  const tipoAtual = document.getElementById('qdoTipo') ? document.getElementById('qdoTipo').value : ''; const qtdAtual = document.getElementById('qdoQtd') ? document.getElementById('qdoQtd').value : '1';
+  box.innerHTML = `<div class="obrg-qd-head"><div><h3 style="margin:0;">Quadros de comando</h3><div class="obrg-qd-sub">${esc(c.cliente)} · Pedido ${esc(c.numero)}${c.descricao ? ' — ' + esc(c.descricao) : ''}</div></div><button type="button" class="btn-ghost" data-qdo="fechar" aria-label="Fechar">✕</button></div>
+    <p class="obrg-qd-dica">Os quadros criados aqui vão direto para <b>Oficina › Quadros</b> (A montar). Quando o técnico montar e testar, o status muda aqui sozinho.</p>
+    ${!pronto ? '<div class="obrg-qd-vazio">Carregando os quadros…</div>' : `
+    <div class="obrg-qd-lista">${lista.length ? lista.map(x => `<div class="obrg-qd-item">
+        <div class="obrg-qd-item-h"><span class="qd-tipo">${esc(x.tipoNome)}</span><span class="qd-chip tom-${x.tom}">${esc(x.chip)}</span>${x.osNumero ? `<span class="qd-chip tom-cinza">OS nº ${esc(x.osNumero)}</span>` : ''}${x.status === 'a_montar' ? `<button type="button" class="btn-ghost oe-mini obrg-qd-rem" data-qdo="remover" data-id="${esc(x.id)}" title="Remover (ainda não foi montado)">Remover</button>` : ''}</div>
+        ${x.historico.length ? `<div class="obrg-qd-hist">${x.historico.map(h => `<div>${esc(h)}</div>`).join('')}</div>` : ''}</div>`).join('') : '<div class="obrg-qd-vazio">Nenhum quadro criado para este pedido ainda.</div>'}</div>
+    ${tipos.length ? `<div class="obrg-qd-form">
+        <div class="field"><label for="qdoTipo">Tipo de quadro</label><select id="qdoTipo"><option value="">Selecionar tipo...</option>${tipos.map(t => `<option value="${esc(t.id)}" ${String(t.id) === tipoAtual ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select></div>
+        <div class="field obrg-qd-qtd"><label for="qdoQtd">Quantidade</label><input type="number" id="qdoQtd" min="1" max="20" value="${esc(qtdAtual || '1')}" inputmode="numeric"></div>
+        <button type="button" class="btn-primary" data-qdo="criar">+ Criar quadro</button></div>
+      <div class="field-error" id="qdoErro"></div>`
+      : `<div class="obrg-qd-vazio">Ainda não há tipos de quadro cadastrados. <button type="button" class="btn-ghost oe-mini" data-qdo="lista">Cadastrar na Lista de quadros</button></div>`}`}
+    <div class="modal-actions"><button type="button" class="btn-ghost" data-qdo="oficina">Ver na Oficina</button><button type="button" class="btn-primary" data-qdo="fechar">Fechar</button></div>`;
+}
+if(window.QUADROS_API && QUADROS_API.aoMudar) QUADROS_API.aoMudar(() => {   // status mudou na Oficina (ou outro aparelho): atualiza a janela e o botão
+  try{ if(qdoCtx) renderQuadrosObra(); if(document.querySelector('[data-obrg-qd]')) renderGestor(); }catch(e){}
+});
 function criarAtividade(rid, pid){
   const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
   abrirAgendamentoObra(r, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), { reg: rid, ped: pid });
@@ -25240,8 +25524,11 @@ function abrirSistema(id){
 const ESTADOS_SUB = [['nao_liberado', 'Não liberado'], ['liberado', 'Liberado para iniciar'], ['iniciado', 'Iniciado'], ['finalizado', 'Finalizado'], ['testado', 'Finalizado e testado']];
 const rotEstado = (k) => (ESTADOS_SUB.find(x => x[0] === k) || ESTADOS_SUB[0])[1];
 const ord = (a, b) => (a.ordem || 0) - (b.ordem || 0);
+const M5_INST_DEDUPE = true;   // false = volta ao comportamento anterior (cada chamada simultânea lê obraInstalacao de novo)
+let m5InstVoando = null;
 const inst = {}; let instTodosOk = false, instTodosListener = false; const instRegOk = {}, instRegListener = {};
-aoSairDoPerfil(() => { instTodosOk = false; instTodosListener = false; Object.keys(instRegOk).forEach(k => delete instRegOk[k]); Object.keys(instRegListener).forEach(k => delete instRegListener[k]); }); // M1
+aoSairDoPerfil(() => { instTodosOk = false; instTodosListener = false; m5InstVoando = null; Object.keys(instRegOk).forEach(k => delete instRegOk[k]); Object.keys(instRegListener).forEach(k => delete instRegListener[k]); }); // M1
+window.__M5.instTeste = { carregar: () => carregarInstTodos(), zerar: () => { instTodosOk = false; instTodosListener = false; m5InstVoando = null; }, ok: () => instTodosOk };   // gancho só de diagnóstico/teste
 const comTempo = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 function setLocal(path, valor){
   const partes = path.split('/').slice(1); let o = inst; for(let i = 0; i < partes.length - 1; i++){ if(o[partes[i]] == null || typeof o[partes[i]] !== 'object') o[partes[i]] = {}; o = o[partes[i]]; }
@@ -25260,7 +25547,14 @@ function enviarInst(updates){          // acumula na fila local (não substitui 
 }
 function escreverInst(updates){ Object.keys(updates).forEach(p => setLocal(p, updates[p])); renderTudoInst(); return enviarInst(updates); }
 function renderTudoInst(){ try{ renderGestor(); }catch(e){ console.error(e); } try{ renderSlotsTec(); }catch(e){ console.error(e); } }
-async function carregarInstTodos(){
+function carregarInstTodos(){
+  if(instTodosOk) return Promise.resolve();
+  if(!M5_INST_DEDUPE) return carregarInstTodosImpl();
+  if(m5InstVoando){ M5_STATS.instReusadas++; return m5InstVoando; }     // M5: chamadas simultâneas esperam a mesma leitura
+  const p = carregarInstTodosImpl().finally(() => { if(m5InstVoando === p) m5InstVoando = null; });
+  return m5InstVoando = p;
+}
+async function carregarInstTodosImpl(){
   if(instTodosOk) return;
   const g = geracaoDados; // M1b
   try{ const snap = await comTempo(rtdb.ref('obraInstalacao').get(), 9000); if(sessaoMudou(g, 'obraInstalacao')) return; Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); try{ localStorage.setItem('obra_inst_todos', JSON.stringify(inst)); }catch(e){} }
@@ -25348,6 +25642,7 @@ function liberarTodos(rid, pid){ const d = inst[rid] || {}; const up = {}; subsD
 function cliqueEquip(e){
   const g = (attr) => e.target.closest('[' + attr + ']'); let b;
   if((b = g('data-obrg-eq'))){ const k = b.dataset.obrgEq; if(uiG.abertos.has(k)) uiG.abertos.delete(k); else uiG.abertos.add(k); renderGestor(); carregarInstTodos().then(renderGestor).catch(() => {}); return; }
+  if((b = g('data-obrg-qd'))){ const [rid, pid] = b.dataset.obrgQd.split('|'); abrirQuadrosObra(rid, pid); return; }
   if((b = g('data-obrg-addsis'))){ const [rid, pid] = b.dataset.obrgAddsis.split('|'); abrirAddSistema(rid, pid); return; }
   if((b = g('data-obrg-addeq'))){ const [rid, pid, sid] = b.dataset.obrgAddeq.split('|'); abrirAddEquip(rid, pid, sid); return; }
   if((b = g('data-obrg-rmsis'))){ const [rid, pid, sid] = b.dataset.obrgRmsis.split('|'); const sis = (((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas; const x = sis && sis[sid]; if(!x) return;
