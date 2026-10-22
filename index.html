@@ -769,7 +769,8 @@
 .pn-jor-sec{ margin-top:8px; } .pn-jor-t{ font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin:6px 0 2px; }
 .pn-jor-l{ align-items:flex-start; } .pn-jor-h{ width:44px; flex:none; font-size:12px; color:var(--text-secondary); padding-top:2px; }
 .pending-lembrete{ background:#fff6d6 !important; color:#7a5a00 !important; }
-#openLembreteBtn{ margin-right:8px; } @media (max-width:759px){ #openLembreteBtn{ margin-right:6px; } }
+#openLembreteBtn{ margin-right:8px; }
+@media (max-width:759px){ #managerView .header{ gap:12px 10px; } #openLembreteBtn, #openAddBtn{ flex:1 1 calc(50% - 5px); margin:0; padding:11px 6px; font-size:13.5px; white-space:nowrap; min-width:0; } } /* revisão 22/10: os dois botões dividem uma linha no celular (antes cada um ocupava uma linha) */
 .orc-sis{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:6px; margin:4px 0 10px; }
 .orc-sis-i{ display:flex; align-items:center; gap:8px; padding:8px 10px; border:1.5px solid var(--border); border-radius:10px; background:var(--surface); cursor:pointer; font-size:13.5px; }
 .orc-sis-i.on{ border-color:#1c7a3f; background:rgba(28,122,63,.08); font-weight:600; } .orc-sis-i input{ accent-color:#1c7a3f; }
@@ -780,6 +781,8 @@
 .obrg-cm-pend{ color:#b4232a !important; border-color:rgba(180,35,42,.4) !important; font-weight:700; }
 .obrg-cm-chip{ margin-left:6px; }
 .obrg-cm-n{ font-size:11px; font-weight:700; color:#b4232a; background:rgba(180,35,42,.1); border-radius:999px; padding:1px 7px; margin-left:4px; }
+.obrg-cm-n em{ display:none; font-style:normal; }
+@media (max-width:700px){ .obrg-cm-n{ font-size:10px; padding:1px 5px; margin-left:3px; } .obrg-cm-n i{ display:none; } .obrg-cm-n em{ display:inline; } } /* revisão 22/10: no celular, ícone + número (📄 contrato · 📘 manual) em vez do texto */
 .pgc-ev-o{ font-size:10.5px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; padding:1px 7px; border-radius:999px; background:var(--surface-2); color:var(--text-secondary); border:1px solid var(--border); }
 .pgc-ev-o-obras{ color:#1a56db; border-color:rgba(26,86,219,.3); background:rgba(26,86,219,.08); }
 .pgc-ev-o-manut{ color:#b45309; border-color:rgba(180,83,9,.3); background:rgba(180,83,9,.08); }
@@ -993,19 +996,22 @@
     /* Reserva o espaço do botão flutuante para o texto do título nunca ficar por baixo dele. */
     .app-content .tecnicos-head,
     #tabOficinaGestor .tech-day-head,
-    #tabEstoque .tech-day-head{ padding-right: 360px; }
+    #tabEstoque .tech-day-head,
+    #tabOrcamentos .tech-day-head{ padding-right: 410px; } /* revisão 22/10: dois botões no cabeçalho flutuante ocupam ~390px */
     /* Oficina e Estoque usam um painel centralizado de 720px com 26px de respiro no topo: só tira
        esse respiro, para o título subir para a linha superior. A coluna continua centralizada,
        exatamente como era (o recuo horizontal dessas duas abas já existia e não foi mexido). */
     #tabOficinaGestor .tech-day-panel,
-    #tabEstoque .tech-day-panel{ padding-top: 0; }
+    #tabEstoque .tech-day-panel,
+    #tabOrcamentos .tech-day-panel{ padding-top: 0; }
     /* Sem o respiro do topo a linha sob o título "Oficina" encostava no botão; desce até a mesma
        altura da linha das outras abas. */
-    #tabOficinaGestor .tech-day-head{ padding-bottom: 32px; }
+    #tabOficinaGestor .tech-day-head,
+    #tabOrcamentos .tech-day-head{ padding-bottom: 32px; }
     /* Galeria do gestor (dentro do layout): mesmo tratamento da Oficina/Estoque — título na linha
        superior, sem passar por baixo do botão flutuante. */
     #galeriaView.galeria-no-gestor .tech-day-panel{ padding-top: 0; }
-    #galeriaView.galeria-no-gestor .tech-day-head{ padding-right: 360px; padding-bottom: 32px; }
+    #galeriaView.galeria-no-gestor .tech-day-head{ padding-right: 410px; padding-bottom: 32px; }
   }
 
   /* ===== Navegação inferior (mobile) — Terceira Entrega =====
@@ -1745,7 +1751,9 @@
      Cadastros e OS reservam o espaço (como os títulos das outras abas já fazem com o padding de 150px). */
   @media (min-width: 760px){
     #maintResumoCards{ margin-top: 52px; }
-    #prvOsTabs{ padding-right: 360px !important; }
+    #prvOsTabs{ padding-right: 410px !important; flex-wrap: wrap; overflow-x: visible; row-gap: 8px; } /* revisão 22/10: com dois botões no cabeçalho, as abas que não cabem quebram linha em vez de sumir atrás deles */
+    #prvManutTabs{ flex-wrap: wrap; overflow-x: visible; row-gap: 8px; }
+    #prvManutContratos .tech-day-panel, #prvManutManuais .tech-day-panel, #prvManutPrecos .tech-day-panel{ max-width: none; margin: 0; padding: 6px 0 24px; } /* revisão 22/10: mesma largura das outras sub-abas de Manutenções (antes ficavam num painel estreito centralizado) */ /* revisão 22/10: 7 sub-abas; sem quebra, as últimas ficavam fora da tela em 1366px */
   }
   /* ===== Quadros de resumo em espaço estreito (ex.: aba Oficina): o texto nunca pode ser cortado =====
      Quando o quadro fica estreito, o cartão troca o ícone-ao-lado por: ícone + número na primeira linha e o rótulo
@@ -1946,6 +1954,8 @@
   .pn-cli-s{ font-size:12px; color:var(--text-dim); font-weight:600; }
   .pn-cli .pn-ped{ border-top:1px solid var(--line); }
   .pn-obras .pn-ped{ grid-template-columns:auto minmax(160px, 1fr) auto; }
+  /* Correção celular (22/10): a regra acima anulava a versão estreita de 980px (declarada antes); no telefone a linha do pedido passava de 390px, a página ficava mais larga que a tela e o iOS deixava dar zoom-out — com isso a barra inferior fixa 'flutuava' e os toques caíam em elementos errados. */
+  @media (max-width:980px){ .pn-obras .pn-ped{ grid-template-columns:1fr auto; } .pn-obras .pn-ped-t{ display:flex; grid-column:1 / -1; flex-wrap:wrap; } .pn-obras .pn-ped-c{ min-width:0; white-space:normal; } .pn-obras .pn-ped-d{ white-space:normal; } }
   .pn-obra{ border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin-bottom:8px; background:#fff; }
   .pn-obra-n{ font-size:15px; font-weight:800; letter-spacing:-.2px; margin-bottom:4px; }
   .pn-ped{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
@@ -2057,6 +2067,7 @@
   .obr-ic{ display:inline-block; width:auto; min-height:0; line-height:1.2; }
   .obr-acoes{ width:1%; }
   .obr-tab td .prv-chip{ white-space:nowrap; }
+  @media (max-width:700px){ #prvManutPrecos .obr-tab, .obr-modal .obr-tab{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; } #prvManutPrecos input[data-cfg-nome], .obr-modal input[data-cfg-nome]{ min-width:150px !important; } } /* revisão 22/10: tabela de preços (5 colunas) rola de lado no celular em vez de cortar */
   #obrBarra{ align-items:center; }
  #obrBarra select{ width:auto; max-width:100%; }
   /* ===== condição de pagamento, situação das parcelas e blocos por pedido ===== */
@@ -3161,6 +3172,15 @@
   <div class="bottom-nav-sheet-backdrop" id="bottomNavSheetBackdrop"></div>
   <div class="bottom-nav-sheet" id="bottomNavSheet">
     <div class="bottom-nav-sheet-handle"></div>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPGestor"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel Gestor</span></button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPAlex"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Painel Alex</span></button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
+      <span>Obras e Pedidos</span>
+    </button>
+    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOficinaGestor">
+      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg>
+      <span>Oficina</span>
+    </button>
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOS">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1V3a1 1 0 0 1 1-1z"/><path d="M9 11h6M9 15h6M9 7h6"/></svg>
       <span>Cadastros</span>
@@ -3173,15 +3193,6 @@
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnAcessos">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M10.5 12.5 20 3M20 3h-4M20 3v4"/></svg>
       <span>Acessos</span>
-    </button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnOficinaGestor">
-      <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.7-.7-2.3 2.5-2.5z"/></svg>
-      <span>Oficina</span>
-    </button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPGestor"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>Painel Gestor</span></button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPAlex"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg><span>Painel Alex</span></button>
-    <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>
-      <span>Obras e Pedidos</span>
     </button>
     <button type="button" class="bottom-nav-sheet-item" id="bottomNavBtnPainel">
       <svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
@@ -4264,6 +4275,80 @@ PERF_DIAG.report = function(sessionIndex){
   return L.join('\n');
 };
 
+// ===== Etapa 1 / M1 — registro de ouvintes do Realtime Database e encerramento no logout =====
+// Todo rtdb.ref(nó).on('value', cb) passa por este proxy e fica registrado com a referência real e
+// o callback efetivamente anexado; logout() chama encerrarDadosDoPerfil(), que desliga (.off) os
+// ouvintes dos dados do perfil e deixa ligados só os nós da tela de login (NOS_SEMPRE_LIGADOS).
+// Independe do PERF_DIAG (instrumentação temporária): se o PERF_DIAG for removido, este proxy
+// continua sendo a camada que envolve firebase.database().
+const LOGOUT_ENCERRA_OUVINTES = true;            // reversão: false = comportamento anterior (ouvintes ficam ligados após logout)
+const NOS_SEMPRE_LIGADOS = ['techRoster', 'techPins', 'managers', 'financeiro', 'users', 'catalogoEquip']; // login + catálogo compartilhado (minúsculos)
+const rtdbOuvintes = [];                          // { path, no, ref, cb }
+// M1b — geração de sessão de dados: muda no logout, no início de cada tentativa de login e no
+// tempo esgotado do login. Toda carga assíncrona guarda a geração em que começou e, ao terminar,
+// só liga ouvintes / marca "carregado" / roda seeds se a geração ainda for a mesma.
+let geracaoDados = 0;
+let perfilEmCarga = null;                         // perfil cuja carga inicial está em andamento (loadRoleDataWithTimeout)
+function sessaoMudou(g, origem){ if(g === geracaoDados) return false; if(typeof console !== 'undefined') console.info('M1b: carga de ' + (origem || '?') + ' descartada (sessão de dados mudou)'); return true; }
+function sessaoDeDadosAtiva(){ try{ return !!(perfilEmCarga || (typeof currentRole !== 'undefined' && currentRole)); }catch(e){ return true; } }
+const AO_SAIR_DO_PERFIL = [];                     // funções que cada módulo registra para zerar seus flags de carga
+function aoSairDoPerfil(fn){ AO_SAIR_DO_PERFIL.push(fn); }
+function rtdbRegistroWrapRef(ref, path){
+  const no = path ? path.split('/')[0] : '(root)';
+  return new Proxy(ref, {
+    get(target, prop){
+      if(prop === 'on') return function(ev, cb, errCb){
+        const r = target.on(ev, cb, errCb);            // o SDK devolve o próprio cb
+        if(LOGOUT_ENCERRA_OUVINTES && !NOS_SEMPRE_LIGADOS.includes(no) && !sessaoDeDadosAtiva()){
+          // M1b (rede de segurança): ouvinte de dados de perfil sem sessão válida — desliga na hora.
+          try{ target.off(ev, r || cb); }catch(e){}
+          console.warn('M1b: ouvinte de ' + path + ' ligado sem sessão de dados — desligado');
+          return r;
+        }
+        rtdbOuvintes.push({ path, no, ref: target, cb: r || cb, ev, geracao: geracaoDados });
+        return r;
+      };
+      if(prop === 'off') return function(ev, cb){
+        const r = target.off(ev, cb);
+        for(let i = rtdbOuvintes.length - 1; i >= 0; i--){ const o = rtdbOuvintes[i]; if(o.ref === target || o.path === path){ if(!cb || o.cb === cb) rtdbOuvintes.splice(i, 1); } }
+        return r;
+      };
+      const v = Reflect.get(target, prop);
+      return typeof v === 'function' ? v.bind(target) : v;
+    }
+  });
+}
+function rtdbRegistroWrap(db){
+  if(!db || typeof db.ref !== 'function') return db;
+  const origRef = db.ref.bind(db);
+  return new Proxy(db, {
+    get(target, prop){
+      if(prop === 'ref') return (p) => rtdbRegistroWrapRef(origRef(p), p == null ? '' : String(p));
+      const v = Reflect.get(target, prop);
+      return typeof v === 'function' ? v.bind(target) : v;
+    }
+  });
+}
+// Desliga os ouvintes dos dados do perfil e zera os flags de carga, para que o próximo login
+// (mesmo perfil ou outro) releia o que precisa. Não toca na outbox (localStorage), nas gravações
+// em andamento (store.inFlight/queued continuam até terminar) nem nos snapshots de diff
+// (servicesSnapshot etc.), que são reconstruídos pelo próximo load() a partir do servidor.
+function encerrarDadosDoPerfil(){
+  if(!LOGOUT_ENCERRA_OUVINTES) return { desligados: 0, mantidos: rtdbOuvintes.length };
+  geracaoDados++; // M1b: cargas iniciadas antes deste ponto não ligam ouvintes nem marcam estado
+  let desligados = 0;
+  for(let i = rtdbOuvintes.length - 1; i >= 0; i--){
+    const o = rtdbOuvintes[i];
+    if(NOS_SEMPRE_LIGADOS.includes(o.no)) continue;
+    try{ o.ref.off(o.ev || 'value', o.cb); }catch(e){ console.warn('logout: falha ao desligar ouvinte de ' + o.path, e); }
+    rtdbOuvintes.splice(i, 1); desligados++;
+  }
+  AO_SAIR_DO_PERFIL.forEach(fn => { try{ fn(); }catch(e){ console.warn('logout: falha ao zerar estado de módulo', e); } });
+  if(typeof perfMark === 'function') perfMark('logout_ouvintes_encerrados', { desligados, mantidos: rtdbOuvintes.length });
+  return { desligados, mantidos: rtdbOuvintes.length };
+}
+window.__M1 = { ouvintes: () => rtdbOuvintes.map(o => o.path), encerrar: encerrarDadosDoPerfil, geracao: () => geracaoDados, emCarga: () => perfilEmCarga }; // inspeção em testes/console
+
 // ===== Camada de persistência (Firebase Realtime Database) =====
 const firebaseConfig = {
   apiKey: "AIzaSyA1R5kw2Qtex9XFNkJqZyy0UeitG5CEdQ4",
@@ -4277,7 +4362,7 @@ let rtdb = null;
 try{
   if(typeof firebase !== 'undefined'){
     firebase.initializeApp(firebaseConfig);
-    rtdb = perfWrapDatabase(firebase.database()); // PERF_DIAG: só observa get()/on()/escritas, repassa tudo
+    rtdb = perfWrapDatabase(rtdbRegistroWrap(firebase.database())); // registro de ouvintes (M1) + PERF_DIAG (só observa), repassam tudo
   } else {
     console.error('SDK do Firebase não carregou (script bloqueado ou sem internet).');
   }
@@ -8520,9 +8605,11 @@ function semUndefined(v){
   return v;
 }
 function createEstoqueStore(nodeName, alertMsg){
-  const store = { items: [], snapshot: {}, attached: false, inFlight: false, queued: false, onRemote: null };
+  const store = { items: [], snapshot: {}, attached: false, inFlight: false, queued: false, onRemote: null, nodeName };
+  (createEstoqueStore.todos = createEstoqueStore.todos || []).push(store); // M1: para zerar `attached` no logout
   const snap = (r) => { const s = {}; Object.keys(r).forEach(k => { s[k] = JSON.stringify(r[k]); }); return s; };
   store.load = async function(){
+    store.geracao = (typeof geracaoDados === 'number') ? geracaoDados : 0; // M1b: sessão em que esta carga começou
     try{
       if(!rtdb) throw new Error('Firebase indisponível');
       const sn = await rtdb.ref(nodeName).get();
@@ -8551,13 +8638,16 @@ function createEstoqueStore(nodeName, alertMsg){
     return merged;
   };
   store.attach = function(onRemote){
-    if(!rtdb || store.attached) return; store.attached = true; store.onRemote = onRemote;
+    if(!rtdb || store.attached) return false;
+    if(typeof geracaoDados === 'number' && store.geracao !== undefined && store.geracao !== geracaoDados){ console.info('M1b: ouvinte de ' + nodeName + ' não ligado (carga de sessão encerrada)'); return false; } // M1b
+    store.attached = true; store.onRemote = onRemote;
     rtdb.ref(nodeName).on('value', (sn) => {
       const raw = sn.exists() ? sn.val() : {};
       store.items = store.merge(raw || {});
       if(isUserBusyTyping()) return;
       if(store.onRemote) store.onRemote();
     }, (err) => { console.error('Falha na sincronização em tempo real de ' + nodeName + ':', err); });
+    return true;
   };
   store.writeDiff = async function(attempt){
     attempt = attempt || 1;
@@ -13068,17 +13158,27 @@ async function loadRoleDataWithTimeout(role, btn, errBoxId, onSuccess){
   const originalLabel = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Entrando...';
+  // M1b: toda tentativa de login começa numa sessão de dados nova — o que uma tentativa anterior
+  // (logout rápido, tempo esgotado) ainda estiver carregando é descartado ao terminar.
+  encerrarDadosDoPerfil();
+  perfilEmCarga = role;
+  const g = geracaoDados;
+  let entrou = false;
   try{
     await Promise.race([
       ensureRoleDataLoaded(role),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo esgotado ao carregar. Verifique sua internet.')), 15000))
     ]);
+    if(g !== geracaoDados) throw new Error('Sessão de dados encerrada durante a carga.'); // M1b
+    entrou = true;
     onSuccess();
   }catch(e){
     console.error('Falha ao carregar dados do perfil ' + role + ':', e);
     const errBox = document.getElementById(errBoxId);
     if(errBox) errBox.textContent = 'Não foi possível carregar os dados. Verifique sua internet e tente novamente.';
   }finally{
+    perfilEmCarga = null;
+    if(!entrou) encerrarDadosDoPerfil(); // M1b: tempo esgotado/erro = tentativa encerrada; cargas atrasadas não ligam nada
     btn.disabled = false;
     btn.textContent = originalLabel;
   }
@@ -14341,6 +14441,7 @@ function logout(){
   document.getElementById('oficinaView').style.display = 'none';
   document.getElementById('loginView').style.display = '';
   showLoginStep('role');
+  encerrarDadosDoPerfil(); // M1: desliga os ouvintes dos dados do perfil; o próximo login recarrega
 }
 document.getElementById('managerLogoutBtn').addEventListener('click', logout);
 document.getElementById('techLogoutBtn').addEventListener('click', logout);
@@ -17895,36 +17996,58 @@ const nodeLoaded = {
   services: false, clients: false, techPhones: false, maintenanceContracts: false,
   oficinaEquipamentos: false, galleryPhotos: false, estoqueCore: false, extraContactsEtc: false
 };
+// M1: ao sair do perfil, tudo volta a "não carregado" (os ouvintes já foram desligados em
+// encerrarDadosDoPerfil); os dados em memória ficam até o próximo load() substituí-los.
+aoSairDoPerfil(() => {
+  Object.keys(nodeLoaded).forEach(k => { nodeLoaded[k] = false; });
+  realtimeServicesAttached = false; realtimeClientsAttached = false; realtimeTechPhonesAttached = false;
+  realtimeGalleryPhotosAttached = false; realtimeEstoqueAttached = false; realtimeEstoqueMovimentacoesAttached = false;
+  realtimeMaintenanceContractsAttached = false; realtimeOficinaAttached = false; realtimeOficinaEquipamentosAttached = false;
+  realtimeOficinaStaleThresholdAttached = false; realtimeExtraContactsAttached = false;
+  (createEstoqueStore.todos || []).forEach(st => { st.attached = false; });
+  Object.keys(serviceMediaCache).forEach(k => { delete serviceMediaCache[k]; }); // mídia: releitura no próximo login (outro aparelho pode ter mudado)
+  techMediaTentada.clear();
+});
 
 async function ensureServicesLoaded(){
   if(nodeLoaded.services) return;
   nodeLoaded.services = true;
+  const g = geracaoDados; // M1b
   await loadServices();
+  if(sessaoMudou(g, 'services')) return;
   await importPreAgendados(); // depende de services já carregado (evita duplicar o pré-agendado)
   selectedDate = todayStr();
   await runMediaCleanupOnce(); // limpeza de mídias expiradas — depende de services já carregado
+  if(sessaoMudou(g, 'services')) return;
   attachRealtimeServicesListener();
   perfMark('node_loaded', { node: 'services', approxKB: perfApproxKB(services) });
 }
 async function ensureClientsLoaded(){
   if(nodeLoaded.clients) return;
   nodeLoaded.clients = true;
+  const g = geracaoDados; // M1b
   await loadClients();
+  if(sessaoMudou(g, 'clients')) return;
   attachRealtimeClientsListener();
   perfMark('node_loaded', { node: 'clients', approxKB: perfApproxKB(clients) });
 }
 async function ensureTechPhonesLoaded(){
   if(nodeLoaded.techPhones) return;
   nodeLoaded.techPhones = true;
+  const g = geracaoDados; // M1b
   await loadTechPhones();
+  if(sessaoMudou(g, 'techPhones')) return;
   attachRealtimeTechPhonesListener();
   perfMark('node_loaded', { node: 'techPhones' });
 }
 async function ensureMaintenanceContractsLoaded(){
   if(nodeLoaded.maintenanceContracts) return;
   nodeLoaded.maintenanceContracts = true;
+  const g = geracaoDados; // M1b
   await loadMaintenanceContracts();
+  if(sessaoMudou(g, 'maintenanceContracts')) return;
   await importPreventivasPlanilha(); // migração única — grava em maintenanceContracts, precisa dele já carregado
+  if(sessaoMudou(g, 'maintenanceContracts')) return;
   attachRealtimeMaintenanceContractsListener();
   perfMark('node_loaded', { node: 'maintenanceContracts', approxKB: perfApproxKB(maintenanceContracts) });
 }
@@ -17934,7 +18057,9 @@ async function ensureMaintenanceContractsLoaded(){
 async function ensureOficinaEquipamentosLoaded(){
   if(nodeLoaded.oficinaEquipamentos) return;
   nodeLoaded.oficinaEquipamentos = true;
+  const g = geracaoDados; // M1b
   await Promise.all([loadOficinaEquipamentos(), loadOficinaStaleThreshold()]);
+  if(sessaoMudou(g, 'oficinaEquipamentos')) return;
   attachRealtimeOficinaEquipamentosListener();
   attachRealtimeOficinaStaleThresholdListener();
   perfMark('node_loaded', { node: 'oficinaEquipamentos', approxKB: perfApproxKB(oficinaEquipamentos) });
@@ -17942,7 +18067,9 @@ async function ensureOficinaEquipamentosLoaded(){
 async function ensureGalleryPhotosLoaded(){
   if(nodeLoaded.galleryPhotos) return;
   nodeLoaded.galleryPhotos = true;
+  const g = geracaoDados; // M1b
   await loadGalleryPhotos();
+  if(sessaoMudou(g, 'galleryPhotos')) return;
   attachRealtimeGalleryPhotosListener();
   perfMark('node_loaded', { node: 'galleryPhotos', approxKB: perfApproxKB(galleryPhotos) });
 }
@@ -17955,6 +18082,7 @@ async function ensureGalleryPhotosLoaded(){
 async function ensureEstoqueLoaded(){
   if(nodeLoaded.estoqueCore) return;
   nodeLoaded.estoqueCore = true;
+  const g = geracaoDados; // M1b
   await Promise.all([
     loadEstoqueItens(),
     loadEstoqueMovimentacoes(),
@@ -17965,8 +18093,10 @@ async function ensureEstoqueLoaded(){
     oficinaEquipCatalogoStore.load(),
     carregarUltimoRelatorioCompra()
   ]);
+  if(sessaoMudou(g, 'estoque')) return;
   popularEquipNomesDatalist();
   await seedEstoqueInicial(); // só agora — depende de estoqueItens e estoqueCategoriasStore, já prontos acima
+  if(sessaoMudou(g, 'estoque')) return;
   attachRealtimeEstoqueListener();
   attachRealtimeEstoqueMovimentacoesListener();
   estoqueCategoriasStore.attach(() => { if(typeof renderEstoqueAtual === 'function') renderEstoqueAtual(); });
@@ -17982,11 +18112,13 @@ async function ensureEstoqueLoaded(){
 async function ensureExtraContactsEtcLoaded(){
   if(nodeLoaded.extraContactsEtc) return;
   nodeLoaded.extraContactsEtc = true;
+  const g = geracaoDados; // M1b
   await Promise.all([
     loadExtraContacts(),
     loadOficina(), // nó legado (Acessos do Gestor) — nunca mais usado pra login
     loadAdminPin() // só usado na exportação/backup de Acessos do Gestor
   ]);
+  if(sessaoMudou(g, 'extraContacts')) return;
   document.getElementById('alexPhoneInput').value = extraContacts.alex.phone;
   document.getElementById('marceloPhoneInput').value = extraContacts.marcelo.phone;
   attachRealtimeExtraContactsListener();
@@ -18034,12 +18166,14 @@ async function garantirImportarEquipNomesExistentes(){
 }
 
 async function ensureRoleDataLoaded(role){
+  const g = geracaoDados; // M1b: se a sessão mudar no meio (logout/tempo esgotado), não inicia mais nada
   if(window.CAT_API && !window.__catalogoCarregado){ window.__catalogoCarregado = true; try{ await CAT_API.carregar(); }catch(e){ console.warn('catálogo: usando o padrão', e); } }
   perfMark('role_data_start', { role });
   if(role === 'manager'){
     // Etapa 1: services precisa terminar primeiro (importPreAgendados/runMediaCleanupOnce
     // dependem dele já carregado — ordem interna de ensureServicesLoaded() intocada).
     await ensureServicesLoaded();
+    if(sessaoMudou(g, 'perfil gestor')) return;
     // Etapa 2: todo o resto da Fase B do Gestor é independente entre si (rastreado nó a nó na
     // auditoria de latência) — roda em paralelo. Cada ensureXLoaded() preserva sua própria
     // ordem/dependência interna exatamente como antes (ex.: maintenanceContracts→importPreventivasPlanilha,
@@ -18052,7 +18186,9 @@ async function ensureRoleDataLoaded(role){
       ensureEstoqueLoaded(),
       ensureExtraContactsEtcLoaded()
     ]);
+    if(sessaoMudou(g, 'perfil gestor')) return;
     await garantirImportarEquipNomesExistentes(); // só depois do Promise.all: precisa de oficinaEquipamentos E do catálogo já carregados
+    if(sessaoMudou(g, 'perfil gestor')) return;
     if(window.PREV_API) PREV_API.iniciarGestor(); // relatório preventivo: em segundo plano, não atrasa o login
     if(window.QUADROS_API) QUADROS_API.iniciar();  // quadros de comando: em segundo plano (alimenta o contador de Cadastros e OS)
     if(window.REINST_API) REINST_API.agendar();    // confere equipamentos x atividades (reinstalação)
@@ -18060,6 +18196,7 @@ async function ensureRoleDataLoaded(role){
     if(window.OBR_API) OBR_API.iniciarGestor();    // obras: acompanha a instalação (andamento do pedido e Saldo a cobrar)
   } else if(role === 'tech'){
     await ensureServicesLoaded();
+    if(sessaoMudou(g, 'perfil técnico')) return;
     // maintenanceContracts e oficinaEquipamentos também são necessários aqui: ao Técnico concluir
     // uma atividade (data-finish), completeMaintenanceIfLinked()/completeOficinaReinstallationIfLinked()
     // são chamadas e precisam achar o contrato/equipamento vinculado (svc.maintenanceContractId /
@@ -18068,17 +18205,20 @@ async function ensureRoleDataLoaded(role){
     await ensureMaintenanceContractsLoaded();
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
+    if(sessaoMudou(g, 'perfil técnico')) return;
     await garantirImportarEquipNomesExistentes();
     if(window.PREV_API) { try{ await PREV_API.carregarUnidades(); }catch(e){ console.error('prev: unidades', e); } } // relatório preventivo (usa cache se estiver sem sinal)
   } else if(role === 'financeiro'){
     await ensureServicesLoaded();
     await ensureClientsLoaded();                 // contatos para a cobrança
     await ensureMaintenanceContractsLoaded();
+    if(sessaoMudou(g, 'perfil financeiro')) return;
     if(window.OS_API) await OS_API.garantirCarregado();
   } else if(role === 'oficina'){
     await ensureServicesLoaded();
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
+    if(sessaoMudou(g, 'perfil oficina')) return;
     await garantirImportarEquipNomesExistentes();
     if(window.REINST_API) REINST_API.agendar();        // confere equipamentos x atividades (reinstalação)
   }
@@ -19779,8 +19919,10 @@ function aplicarUnidadesBrutas(raw){
   return mudou;
 }
 let unidadesListenerLigado = false;
+aoSairDoPerfil(() => { unidadesListenerLigado = false; }); // M1
 async function carregarUnidades(){
   let raw = null;
+  const g = geracaoDados; // M1b
   try{
     const snap = await comTimeout(rtdb.ref(NOS.unidades).get(), 8000);
     raw = snap.exists() ? snap.val() : {};
@@ -19789,6 +19931,7 @@ async function carregarUnidades(){
     raw = cacheGet('preventivoUnidades') || {};   // sem rede: última configuração confirmada neste aparelho
     console.warn('prev: unidades lidas do cache local (offline)');
   }
+  if(sessaoMudou(g, 'preventivoUnidades')) return;
   aplicarPendentes(raw, NOS.unidades);
   aplicarUnidadesBrutas(raw);
   if(!unidadesListenerLigado && rtdb){
@@ -19868,6 +20011,7 @@ function rascunhoTemConteudo(r){
 
 // ---------------- Relatórios concluídos (Gestor) ----------------
 let relatoriosListenerLigado = false;
+aoSairDoPerfil(() => { relatoriosListenerLigado = false; estado.relatoriosOk = false; }); // M1
 function aplicarRelatoriosBrutos(raw){
   aplicarPendentes(raw, NOS.relatorios);
   estado.relatorios = raw || {}; estado.relatoriosOk = true;
@@ -19875,8 +20019,10 @@ function aplicarRelatoriosBrutos(raw){
 async function garantirRelatorios(){
   if(estado.relatoriosOk) return;
   let raw = {};
+  const g = geracaoDados; // M1b
   try{ const snap = await comTimeout(rtdb.ref(NOS.relatorios).get(), 10000); raw = snap.exists() ? snap.val() : {}; }
   catch(e){ console.warn('prev: não foi possível ler os relatórios agora', e); return; }
+  if(sessaoMudou(g, 'preventivoRelatorios')) return;
   aplicarRelatoriosBrutos(raw);
   if(!relatoriosListenerLigado && rtdb){
     relatoriosListenerLigado = true;
@@ -21850,9 +21996,11 @@ function abrirImportacao(){
 // GERAR o relatório (opcionalmente concluindo a atividade). Também usada quando o Gestor conclui uma atividade pela Agenda.
 // ====================================================================================
 let rascunhosGestorOk = false, rascunhosGestorListener = false;
+aoSairDoPerfil(() => { rascunhosGestorOk = false; rascunhosGestorListener = false; }); // M1
 async function garantirRascunhosGestor(){
   if(rascunhosGestorOk) return;
-  try{ const snap = await comTimeout(rtdb.ref(NOS.rascunhos).get(), 10000); estado.rascunhosGestor = snap.exists() ? snap.val() : {}; rascunhosGestorOk = true; }
+  const g = geracaoDados; // M1b
+  try{ const snap = await comTimeout(rtdb.ref(NOS.rascunhos).get(), 10000); if(sessaoMudou(g, 'preventivoRascunhos')) return; estado.rascunhosGestor = snap.exists() ? snap.val() : {}; rascunhosGestorOk = true; }
   catch(e){ console.warn('prev: não foi possível ler os preenchimentos agora', e); return; }
   if(!rascunhosGestorListener && rtdb){ rascunhosGestorListener = true; try{ rtdb.ref(NOS.rascunhos).on('value', snap => { estado.rascunhosGestor = snap.exists() ? snap.val() : {}; renderOsRelatorios(); }); }catch(e){} }
 }
@@ -22561,6 +22709,7 @@ const ETAPAS = [
 function etapaDe(q){ return ETAPAS.find(e => e.id === q.status) || ETAPAS[0]; }
 
 let carregado = false, carregando = null, subAba = 'quadros', ultimoId = 0, concluidosAberto = false;
+aoSairDoPerfil(() => { carregado = false; carregando = null; }); // M1
 function novoId(){ ultimoId = Math.max(ultimoId + 1, Date.now()); return ultimoId; }
 function quem(){ return (typeof currentActingName === 'function' && currentActingName()) || ''; }
 function porId(store, id){ return store.items.find(x => String(x.id) === String(id)); }
@@ -22571,7 +22720,9 @@ function nomeDoTipo(q){ const t = tiposStore.items.find(x => String(x.id) === St
 
 async function garantirCarregado(){
   if(carregado) return;
+  const g = geracaoDados; // M1b
   if(!carregando) carregando = Promise.all([tiposStore.load(), quadrosStore.load()]).then(() => {
+    if(sessaoMudou(g, 'quadros')) return;
     tiposStore.attach(() => renderListas()); quadrosStore.attach(() => renderListas());
     carregado = true;
   });
@@ -23264,6 +23415,7 @@ function quem(){ return (typeof currentManagerName !== 'undefined' && currentMan
 const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['preventiva', 'Cliente Preventiva'], ['visita_orcamento', 'Visita Orçamento'], ['pedido_manutencao', 'Gerou pedido de manutenção'], ['outro', 'Outro']];
 const store = createEstoqueStore('ordensServico', '⚠️ Não foi possível salvar a ordem de serviço. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null;
+aoSairDoPerfil(() => { carregado = false; carregando = null; }); // M1
 
 function normalizarNumero(n){
   const t = String(n == null ? '' : n).trim().toUpperCase().replace(/\s+/g, ' ');
@@ -23277,7 +23429,8 @@ function hist(os, acao){ os.historico = (Array.isArray(os.historico) ? os.histor
 
 async function garantirCarregado(){
   if(carregado) return;
-  if(!carregando) carregando = store.load().then(() => { store.attach(() => atualizarTelas()); carregado = true; });
+  const g = geracaoDados; // M1b
+  if(!carregando) carregando = store.load().then(() => { if(sessaoMudou(g, 'ordensServico')) return; store.attach(() => atualizarTelas()); carregado = true; });
   await carregando;
 }
 function atualizarTelas(){ try{ renderAba(); if(window.FIN_API) FIN_API.render(); if(window.REL_API) REL_API.render(); }catch(e){ console.error(e); } }
@@ -23412,7 +23565,7 @@ function linhaDeAtividade(s){ return { origem: 'atividade', refId: s.id, cliente
 function problemaSolucao(l){
   if(l.origem !== 'atividade') return { problema: '', solucao: '' };
   const s = (typeof services !== 'undefined' ? services : []).find(x => x && String(x.id) === String(l.refId));
-  const problema = String((s && s.description) || l.descricao || '').trim();
+  const problema = String((s && s.description) || (l.descricao && l.descricao !== l.cliente ? l.descricao : '') || '').trim(); // sem descrição: não repete o nome do cliente
   const solucao = String((s && s.observations) || l.obs || '').trim();
   return { problema, solucao: solucao === problema ? '' : solucao };
 }
@@ -23494,7 +23647,7 @@ function cartao(os){
   return `<div class="os-row" data-os="${esc(os.id)}">
     <div class="os-row-top"><div><div class="os-client">OS ${esc(os.numero)} — ${esc(os.cliente)}</div><div class="os-meta">${linhas.length} ${linhas.length === 1 ? 'linha' : 'linhas'}${os.complementoEm ? ' · ⚠ recebeu atividade depois de cobrada' : ''}</div>${quemDecidiu}</div>${chip}</div>
     ${acoes ? `<div class="os-acoes">${acoes}</div>` : ''}
-    <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${(() => { const ps = problemaSolucao(l); return l.origem === 'atividade' ? `<div class="os-ps"><span class="os-ps-k">Problema</span>${esc(ps.problema || l.descricao || '—')}</div><div class="os-ps"><span class="os-ps-k">Solução</span>${ps.solucao ? esc(ps.solucao) : '<i class="os-ps-vazio">técnico não registrou observação</i>'}</div>` : esc(l.descricao); })()}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
+    <table class="os-linhas os-linhas-click"><tbody>${linhas.map(l => `<tr class="${l.complemento ? 'os-compl' : ''}" data-os-linha="${esc(l.origem)}:${esc(l.refId)}" title="Abrir os detalhes"><td class="mono">${esc(fmtD(l.data) || '—')}</td><td>${(() => { const ps = problemaSolucao(l); return l.origem === 'atividade' ? `<div class="os-ps"><span class="os-ps-k">Problema</span>${ps.problema ? esc(ps.problema) : '<i class="os-ps-vazio">sem descrição</i>'}</div><div class="os-ps"><span class="os-ps-k">Solução</span>${ps.solucao ? esc(ps.solucao) : '<i class="os-ps-vazio">técnico não registrou observação</i>'}</div>` : esc(l.descricao); })()}${l.clienteDiferente ? ' <span class="prv-chip amber">cliente: ' + esc(l.cliente) + '</span>' : ''}${l.complemento ? ' <span class="prv-chip amber">complemento</span>' : ''}</td><td>${esc(l.tecnicos.join(' e ') || '—')}</td><td class="mono">${l.inicio ? esc(l.inicio) + (l.fim ? '–' + esc(l.fim) : '') : ''}</td><td><span class="os-origem">${l.origem === 'atividade' ? 'Agenda' : l.origem === 'quadro' ? 'Quadro' : 'Oficina'}</span></td></tr>`).join('')}</tbody></table>
   </div>`;
 }
 // Apagar OS: só o Gestor, em duas etapas (confirmação + digitar o número da OS). Remove do Firebase; as atividades/quadros/equipamentos ligados continuam existindo.
@@ -24052,6 +24205,7 @@ function dividirValor(V, pcts){ let acum = 0; return pcts.map((pc, i) => { const
 const pctsDe = (r) => { const c = r && r.cond; if(!c) return []; const a = Array.isArray(c.pcts) ? c.pcts : Object.values(c.pcts || {}); return a.map(Number).filter(x => isFinite(x)); };
 const store = createEstoqueStore('obrasPedidos', '⚠️ Não foi possível salvar o registro de obra. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null;
+aoSairDoPerfil(() => { carregado = false; carregando = null; }); // M1
 const ui = { modo: 'obras', empresaObras: 'equiper', empresa: 'equiper', busca: '', fin: '', sit: '', abertoId: null, montado: false };
 
 // ---------- cálculo ----------
@@ -24101,7 +24255,8 @@ function pedidoEmUso(numero, exceto){ const k = fold(numero); for(const r of tod
 
 async function garantirCarregado(){
   if(carregado) return;
-  if(!carregando) carregando = store.load().then(() => { store.attach(() => aoMudarRemoto()); carregado = true; });
+  const g = geracaoDados; // M1b
+  if(!carregando) carregando = store.load().then(() => { if(sessaoMudou(g, 'obrasPedidos')) return; store.attach(() => aoMudarRemoto()); carregado = true; });
   await carregando;
 }
 function aoMudarRemoto(){ renderLista(); renderGestor(); reconciliar(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
@@ -24854,7 +25009,7 @@ function renderGestor(){
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
   const tile = (n, rot, cor) => `<div class="obrg-t4" style="border-left-color:${cor};"><b style="color:${cor};">${n}</b><span>${esc(rot)}</span></div>`;
   document.getElementById('obrgChips').innerHTML = `<div class="obrg-resumo4">${tile(nAnd + nFin, 'Clientes registrados', 'var(--ink)')}${tile(cliFase.interna.size, 'Na etapa interna', '#b45309')}${tile(cliFase.obra.size, 'Na etapa obra', '#1a56db')}${tile(nFin, 'Finalizados', '#1f6b45')}</div>`;
-  document.getElementById('obrgSubN1').textContent = nAnd; const nCm = cmPendentes().length, nMan = manPendentes().length; document.getElementById('obrgSubN2').innerHTML = nFin + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado">${nCm} sem contrato</span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado">${nMan} sem manual</span>` : '');
+  document.getElementById('obrgSubN1').textContent = nAnd; const nCm = cmPendentes().length, nMan = manPendentes().length; document.getElementById('obrgSubN2').innerHTML = nFin + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado"><em>📄 </em>${nCm}<i> sem contrato</i></span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado"><em>📘 </em>${nMan}<i> sem manual</i></span>` : '');
   document.querySelectorAll('#obrgSubAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgSub === uiG.sub));
   lista_ = lista_.filter(g => (g.grp === 'f') === (uiG.sub === 'finalizados'));
   if(uiG.sub !== 'finalizados') lista_.sort((a, b) => (a.grp - b.grp) || (a.rankPrin - b.rankPrin) || fold(a.nome).localeCompare(fold(b.nome)));
@@ -24934,9 +25089,11 @@ const etapasPadraoMap = () => Object.fromEntries(ETAPAS_PADRAO.map((n, i) => ['e
 const etapasDe = (sub) => { const l = lista(sub && sub.etapas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0)); return l.length ? l : lista(etapasPadraoMap()); };   // base antiga, sem etapas: vale o padrão
 const storeSis = createEstoqueStore('obraSistemas', '⚠️ Não foi possível salvar o sistema. Verifique sua internet e tente novamente.');
 let carregadoSis = false, carregandoSis = null;
+aoSairDoPerfil(() => { carregadoSis = false; carregandoSis = null; }); // M1
 async function garantirSistemas(){
   if(carregadoSis) return;
-  if(!carregandoSis) carregandoSis = storeSis.load().then(() => { storeSis.attach(() => { renderSistemas(); }); carregadoSis = true; });
+  const g = geracaoDados; // M1b
+  if(!carregandoSis) carregandoSis = storeSis.load().then(() => { if(sessaoMudou(g, 'obraSistemas')) return; storeSis.attach(() => { renderSistemas(); }); carregadoSis = true; });
   await carregandoSis;
 }
 const sistemas = () => storeSis.items.filter(x => x && x.id && x.active !== false);
@@ -25025,6 +25182,7 @@ const ESTADOS_SUB = [['nao_liberado', 'Não liberado'], ['liberado', 'Liberado p
 const rotEstado = (k) => (ESTADOS_SUB.find(x => x[0] === k) || ESTADOS_SUB[0])[1];
 const ord = (a, b) => (a.ordem || 0) - (b.ordem || 0);
 const inst = {}; let instTodosOk = false, instTodosListener = false; const instRegOk = {}, instRegListener = {};
+aoSairDoPerfil(() => { instTodosOk = false; instTodosListener = false; Object.keys(instRegOk).forEach(k => delete instRegOk[k]); Object.keys(instRegListener).forEach(k => delete instRegListener[k]); }); // M1
 const comTempo = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
 function setLocal(path, valor){
   const partes = path.split('/').slice(1); let o = inst; for(let i = 0; i < partes.length - 1; i++){ if(o[partes[i]] == null || typeof o[partes[i]] !== 'object') o[partes[i]] = {}; o = o[partes[i]]; }
@@ -25045,15 +25203,19 @@ function escreverInst(updates){ Object.keys(updates).forEach(p => setLocal(p, up
 function renderTudoInst(){ try{ renderGestor(); }catch(e){ console.error(e); } try{ renderSlotsTec(); }catch(e){ console.error(e); } }
 async function carregarInstTodos(){
   if(instTodosOk) return;
-  try{ const snap = await comTempo(rtdb.ref('obraInstalacao').get(), 9000); Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); try{ localStorage.setItem('obra_inst_todos', JSON.stringify(inst)); }catch(e){} }
+  const g = geracaoDados; // M1b
+  try{ const snap = await comTempo(rtdb.ref('obraInstalacao').get(), 9000); if(sessaoMudou(g, 'obraInstalacao')) return; Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); try{ localStorage.setItem('obra_inst_todos', JSON.stringify(inst)); }catch(e){} }
   catch(e){ console.warn('obras: não foi possível ler as instalações agora (usando a cópia do aparelho)', e); try{ Object.assign(inst, JSON.parse(localStorage.getItem('obra_inst_todos') || '{}')); }catch(_){} }
+  if(sessaoMudou(g, 'obraInstalacao')) return;
   aplicarPendentes('obraInstalacao/'); instTodosOk = true;
   if(!instTodosListener && rtdb){ instTodosListener = true; try{ rtdb.ref('obraInstalacao').on('value', snap => { Object.keys(inst).forEach(k => delete inst[k]); Object.assign(inst, snap.exists() ? snap.val() : {}); try{ localStorage.setItem('obra_inst_todos', JSON.stringify(inst)); }catch(e){} aplicarPendentes('obraInstalacao/'); renderTudoInst(); reconciliar(); }); }catch(e){} }
 }
 async function carregarInstReg(regId){
   if(instRegOk[regId]) return; let dados = null; const chave = 'obra_inst_' + regId;
+  const g = geracaoDados; // M1b
   try{ const snap = await comTempo(rtdb.ref('obraInstalacao/' + regId).get(), 8000); dados = snap.exists() ? snap.val() : {}; try{ localStorage.setItem(chave, JSON.stringify(dados)); }catch(e){} }
   catch(e){ try{ dados = JSON.parse(localStorage.getItem(chave) || 'null'); }catch(_){} if(!dados) dados = {}; }
+  if(sessaoMudou(g, 'obraInstalacao/' + regId)) return;
   inst[regId] = dados; aplicarPendentes('obraInstalacao/' + regId + '/'); instRegOk[regId] = true;
   if(!instRegListener[regId] && rtdb){ instRegListener[regId] = true; try{ rtdb.ref('obraInstalacao/' + regId).on('value', snap => { inst[regId] = snap.exists() ? snap.val() : {}; aplicarPendentes('obraInstalacao/' + regId + '/'); try{ localStorage.setItem(chave, JSON.stringify(inst[regId])); }catch(e){} renderTudoInst(); }); }catch(e){} }
 }
@@ -25505,7 +25667,8 @@ const MAN_ORDEM = (k) => { const i = MAN_TIPOS.findIndex(t => t[0] === k); retur
 const MAN_MAX = 4 * 1024 * 1024;
 const storeMan = createEstoqueStore('manuaisOperacao', '⚠️ Não foi possível salvar o modelo de manual. Verifique sua internet e tente novamente.');
 let manCarregado = false, manCarregando = null; const manArqCache = {};
-async function garantirManuais(){ if(manCarregado) return; if(!manCarregando) manCarregando = storeMan.load().then(() => { storeMan.attach(() => { try{ renderManuais(); }catch(e){} }); manCarregado = true; }); await manCarregando; }
+aoSairDoPerfil(() => { manCarregado = false; manCarregando = null; }); // M1
+async function garantirManuais(){ if(manCarregado) return; const g = geracaoDados; /* M1b */ if(!manCarregando) manCarregando = storeMan.load().then(() => { if(sessaoMudou(g, 'manuaisOperacao')) return; storeMan.attach(() => { try{ renderManuais(); }catch(e){} }); manCarregado = true; }); await manCarregando; }
 const modelos = () => storeMan.items.filter(m => m && m.id && m.active !== false).sort((a, b) => MAN_ORDEM(a.tipo) - MAN_ORDEM(b.tipo) || (a.ordem || 0) - (b.ordem || 0) || String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
 async function manArquivo(id){ if(manArqCache[id]) return manArqCache[id]; if(!rtdb) throw new Error('sem conexão com o servidor'); const sn = await comTempo(rtdb.ref('manuaisArquivos/' + id).get(), 90000); if(!sn.exists()) throw new Error('arquivo do modelo não encontrado no servidor'); manArqCache[id] = sn.val(); return manArqCache[id]; }
 async function manSalvarArquivo(id, b64){ if(!rtdb) throw new Error('sem conexão'); await rtdb.ref('manuaisArquivos/' + id).set(b64); manArqCache[id] = b64; }
@@ -25695,7 +25858,8 @@ async function abrirPrecosContrato(container){ await cmCarregarCfg(); abrirCmCon
 // Contratos avulsos (criados em Manutenções → Contratos de manutenção, sem obra): nó contratosManutencao, um registro por contrato
 const storeCm = createEstoqueStore('contratosManutencao', '⚠️ Não foi possível salvar o contrato de manutenção. Verifique sua internet e tente novamente.');
 let cmAvulsoCarregado = false, cmAvulsoCarregando = null;
-async function garantirAvulsos(){ if(cmAvulsoCarregado) return; if(!cmAvulsoCarregando) cmAvulsoCarregando = storeCm.load().then(() => { storeCm.attach(() => { try{ renderContratosManut(); }catch(e){} }); cmAvulsoCarregado = true; }); await cmAvulsoCarregando; }
+aoSairDoPerfil(() => { cmAvulsoCarregado = false; cmAvulsoCarregando = null; }); // M1
+async function garantirAvulsos(){ if(cmAvulsoCarregado) return; const g = geracaoDados; /* M1b */ if(!cmAvulsoCarregando) cmAvulsoCarregando = storeCm.load().then(() => { if(sessaoMudou(g, 'contratosManutencao')) return; storeCm.attach(() => { try{ renderContratosManut(); }catch(e){} }); cmAvulsoCarregado = true; }); await cmAvulsoCarregando; }
 const avulsos = () => storeCm.items.filter(r => r && r.id && r.active !== false);
 async function abrirContratoManut(rids){
   await carregarInstTodos(); await cmCarregarCfg(); await garantirAvulsos();
@@ -25938,7 +26102,8 @@ const rotSis = (k) => (SISTEMAS.find(s => s[0] === k) || [k, k])[1];
 const MAX_ARQ = 3 * 1024 * 1024;
 const store = createEstoqueStore('orcamentos', '⚠️ Não foi possível salvar o orçamento. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null; const ui = { aba: 'abertos', busca: '' }; const anexoCache = {};
-async function garantirCarregado(){ if(carregado) return; if(!carregando) carregando = store.load().then(() => { store.attach(() => render()); carregado = true; }); await carregando; }
+aoSairDoPerfil(() => { carregado = false; carregando = null; }); // M1
+async function garantirCarregado(){ if(carregado) return; const g = geracaoDados; /* M1b */ if(!carregando) carregando = store.load().then(() => { if(sessaoMudou(g, 'orcamentos')) return; store.attach(() => render()); carregado = true; }); await carregando; }
 const todos = () => store.items.filter(o => o && o.id && o.active !== false);
 const finalizado = (o) => o.status === 'enviado' || (!!o.feitoEm && !!o.enviadoEm);
 const abertos = () => todos().filter(o => !finalizado(o));
@@ -26283,6 +26448,7 @@ function renderAlex(){
 }
 
 // ---------- ligação ----------
+aoSairDoPerfil(() => { obrasPronto = false; osPronto = false; }); // M1: o próximo login recarrega obras e OS pelo painel
 function carregar(){
   if(window.OBR_API && !obrasPronto) OBR_API.garantirCarregado().then(() => { obrasPronto = true; renderTudo(); }).catch(e => console.error('painel: obras', e));
   if(window.OS_API && !osPronto) OS_API.garantirCarregado().then(() => { osPronto = true; renderTudo(); }).catch(e => console.error('painel: os', e));
@@ -26310,7 +26476,7 @@ function ligar(){
   });
 }
 document.addEventListener('DOMContentLoaded', ligar); ligar();
-setInterval(() => { try{ const a = document.activeElement; if(a && (a.tagName === 'SELECT' || a.id === 'pnAlexBusca')) return; renderTudo(); }catch(e){} }, 20000);   // mantém os números em dia enquanto o painel está aberto
+setInterval(() => { try{ if(typeof currentRole === 'undefined' || !currentRole) return; const a = document.activeElement; if(a && (a.tagName === 'SELECT' || a.id === 'pnAlexBusca')) return; renderTudo(); }catch(e){} }, 20000); // M1: deslogado, não redesenha (um redesenho poderia religar ouvintes)   // mantém os números em dia enquanto o painel está aberto
 window.PAINEIS_API = { abrir, renderTudo, renderGestor, renderAlex };
 })();
 
