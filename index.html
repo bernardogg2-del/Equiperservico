@@ -768,6 +768,24 @@
 .pn-jornal{ margin-bottom:14px; } .pn-jor-nav{ display:flex; align-items:center; gap:10px; margin:4px 0 10px; } .pn-jor-dia{ display:flex; flex-direction:column; line-height:1.1; } .pn-jor-dia span{ font-size:12px; color:var(--text-secondary); text-transform:capitalize; }
 .pn-jor-sec{ margin-top:8px; } .pn-jor-t{ font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-secondary); display:flex; align-items:center; gap:8px; margin:6px 0 2px; }
 .pn-jor-l{ align-items:flex-start; } .pn-jor-h{ width:44px; flex:none; font-size:12px; color:var(--text-secondary); padding-top:2px; }
+/* revisão 8: Jornal do dia em cartões-resumo por área */
+.pn-jor-esp{ flex:1; }
+.pn-jc-grade{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:10px; }
+.pn-jc{ position:relative; background:#fff; border:1px solid var(--line); border-radius:14px; padding:12px 14px 10px 16px; min-width:0; display:flex; flex-direction:column; gap:8px; }
+.pn-jc::before{ content:''; position:absolute; left:0; top:12px; bottom:12px; width:4px; border-radius:0 4px 4px 0; background:var(--jc, #9aa0a6); }
+.pn-jc-ok{ --jc:#2E7D4F; --jc-bg:rgba(46,125,79,.1); } .pn-jc-alerta{ --jc:#D99A06; --jc-bg:rgba(242,183,5,.18); } .pn-jc-erro{ --jc:#C0392B; --jc-bg:rgba(192,57,43,.1); } .pn-jc-neutro{ --jc:#b9bec4; --jc-bg:rgba(0,0,0,.05); }
+.pn-jc-h{ display:flex; align-items:center; gap:8px; } .pn-jc-h h4{ margin:0; font-size:13.5px; font-weight:750; flex:1; min-width:0; } .pn-jc-ic{ font-size:16px; line-height:1; }
+.pn-jc-go{ border:0; background:none; color:var(--text-dim); font:inherit; font-size:12px; font-weight:700; cursor:pointer; padding:2px 4px; border-radius:6px; } .pn-jc-go:hover{ color:var(--text); background:var(--panel-2); }
+.pn-jc-nums{ display:flex; gap:14px; flex-wrap:wrap; } .pn-jc-num{ display:flex; flex-direction:column; min-width:64px; }
+.pn-jc-n{ font-size:26px; font-weight:800; letter-spacing:-.6px; line-height:1.05; color:var(--text); } .pn-jc-r{ font-size:11.5px; color:var(--text-dim); font-weight:600; line-height:1.2; }
+.pn-jc-num-green .pn-jc-n{ color:#2E7D4F; } .pn-jc-num-red .pn-jc-n{ color:#B3261E; } .pn-jc-num-amber .pn-jc-n{ color:#9A7400; } .pn-jc-num-blue .pn-jc-n{ color:#2B6A92; }
+.pn-jc-frase{ display:flex; align-items:flex-start; gap:7px; font-size:12.5px; color:var(--text); background:var(--jc-bg); border-radius:8px; padding:6px 9px; line-height:1.35; }
+.pn-jc-dot{ flex:none; width:8px; height:8px; border-radius:50%; background:var(--jc); margin-top:5px; }
+.pn-jc-tog{ align-self:flex-start; border:0; background:none; color:var(--text-dim); font:inherit; font-size:12px; font-weight:700; cursor:pointer; padding:2px 0; display:flex; gap:4px; align-items:center; } .pn-jc-tog:hover{ color:var(--text); } .pn-jc-tog small{ font-weight:500; }
+.pn-jc-det{ border-top:1px solid var(--line); margin-top:2px; max-height:320px; overflow:auto; } .pn-jc-det .pn-lin:first-of-type{ margin-top:0; border-top:0; }
+.pn-jc-m{ flex:none; width:8px; height:8px; border-radius:50%; background:#b9bec4; } .pn-jc-m-green{ background:#2E7D4F; } .pn-jc-m-red{ background:#C0392B; } .pn-jc-m-amber{ background:#F2B705; } .pn-jc-m-blue{ background:#3D84B0; }
+.pn-p-green{ background:rgba(46,125,79,.12); color:#1F5A38; }
+@media (max-width:700px){ .pn-jc-grade{ grid-template-columns:1fr; } .pn-jc-nums{ gap:10px; } .pn-jc-n{ font-size:22px; } }
 .pending-lembrete{ background:#fff6d6 !important; color:#7a5a00 !important; }
 #openLembreteBtn{ margin-right:8px; }
 @media (min-width:760px){ #tabTecnicos .day-toggle{ margin-top:16px; } } /* revisão 22/10: setas de dia da 'Enviar agenda' não ficam na linha dos botões Lembrete/Agendar */
@@ -786,11 +804,18 @@
 .obrg-novo-n{ color:#1a56db !important; background:rgba(26,86,219,.12) !important; }
 .obrg-semeq-txt{ color:#b4232a; font-weight:700; }
 .obrg-novos{ margin:8px 0 12px; padding:10px 12px; border:1px solid rgba(26,86,219,.35); border-radius:12px; background:rgba(26,86,219,.05); }
-.obrg-novos-t{ font-weight:700; font-size:13px; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+.obrg-novos-t{ font-weight:700; font-size:13px; margin-bottom:6px; display:flex; align-items:center; gap:6px; } .obrg-novos-sub{ font-weight:500; color:var(--text-dim); font-size:12px; }
 .obrg-novos-i{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; width:100%; text-align:left; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:7px 10px; margin-top:5px; cursor:pointer; font:inherit; color:var(--ink); }
 .obrg-novos-i:hover{ background:var(--surface-2); } .obrg-novos-i small{ color:var(--text-dim); margin-left:auto; font-size:11.5px; }
 .obrg-ic-desc{ padding:1px 7px; font-size:11px; margin-left:4px; }
 .obi-eq-desc{ font-size:12.5px; color:var(--text-dim); margin:2px 0 4px; white-space:pre-wrap; }
+.obi-eq-obs{ font-size:12.5px; color:#7a1d22; background:rgba(180,35,42,.06); border-left:3px solid rgba(180,35,42,.45); border-radius:6px; padding:5px 8px; margin:4px 0 6px; white-space:pre-wrap; } .obi-eq-obs small{ color:var(--text-dim); }
+.obrg-obs-vazia{ color:var(--text-dim); }
+.obrg-contato{ display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap; font-size:13px; padding:8px 10px; margin:0 0 10px; background:var(--panel-2, #f4f4f5); border-radius:10px; } .obrg-contato-i i{ color:var(--text-dim); font-style:italic; } .obrg-contato-esp{ flex:1; }
+@media (max-width:700px){ .obrg-contato{ font-size:12.5px; } .obrg-contato-esp{ display:none; } .obrg-contato .btn-primary{ width:100%; } }
+.obrg-qd-dica-sinal{ color:#7a1d22; background:rgba(180,35,42,.07); border:1px solid rgba(180,35,42,.25); border-radius:8px; padding:8px 10px; }
+.obrg-qd-resv{ font-style:normal; color:#b4232a; font-weight:700; margin-left:3px; }
+.qd-chip.tom-vermelho{ background:rgba(180,35,42,.1); color:#b4232a; border-color:rgba(180,35,42,.35); }
 @media (max-width:700px){ .obrg-novos-i small{ margin-left:0; width:100%; } }
 .obrg-cm-n{ font-size:11px; font-weight:700; color:#b4232a; background:rgba(180,35,42,.1); border-radius:999px; padding:1px 7px; margin-left:4px; }
 .obrg-cm-n em{ display:none; font-style:normal; }
@@ -22962,7 +22987,10 @@ const ETAPAS = [
     proxima:null,
     voltar:{ para:'testando', limpa:['testadoEm','testadoPor'] } },
 ];
-function etapaDe(q){ return ETAPAS.find(e => e.id === q.status) || ETAPAS[0]; }
+// revisão 7: quadro criado pela obra enquanto o pedido está "Aguardando pagamento do sinal" fica RESERVADO (status aguardando_sinal):
+// aparece na janela da obra, mas não entra nas listas da Oficina; quando o pedido sai dessa etapa, vira "A montar" sozinho.
+const ETAPA_SINAL = { id:'aguardando_sinal', titulo:'Aguardando sinal', chip:'Reservado · aguardando pagamento do sinal', tom:'vermelho', proxima:null, voltar:null };
+function etapaDe(q){ return q.status === 'aguardando_sinal' ? ETAPA_SINAL : (ETAPAS.find(e => e.id === q.status) || ETAPAS[0]); }
 
 let carregado = false, carregando = null, subAba = 'quadros', ultimoId = 0, concluidosAberto = false;
 aoSairDoPerfil(() => { carregado = false; carregando = null; }); // M1
@@ -23338,7 +23366,7 @@ function iniciar(){ garantirCarregado().then(() => renderListas()).catch(e => co
 function doPedido(obraId, pedidoId){
   return quadrosAtivos().filter(q => String(q.obraId) === String(obraId) && String(q.pedidoId) === String(pedidoId))
     .sort((a, b) => String(a.criadoEm || '').localeCompare(String(b.criadoEm || '')) || (Number(a.id) - Number(b.id)))
-    .map(q => { const et = etapaDe(q); return { id: q.id, tipoNome: nomeDoTipo(q), status: et.id, chip: et.chip, tom: et.tom, titulo: et.titulo, montado: ['montado', 'testando', 'testado'].indexOf(et.id) >= 0, testado: et.id === 'testado', osNumero: q.processedForOS ? (q.numeroOS || '') : '',
+    .map(q => { const et = etapaDe(q); return { id: q.id, tipoNome: nomeDoTipo(q), status: et.id, chip: et.chip, tom: et.tom, titulo: et.titulo, montado: ['montado', 'testando', 'testado'].indexOf(et.id) >= 0, testado: et.id === 'testado', reservado: et.id === 'aguardando_sinal', osNumero: q.processedForOS ? (q.numeroOS || '') : '',
       historico: [['Cadastrado', q.criadoEm, q.criadoPor], ['Montagem iniciada', q.iniciouMontagemEm, q.iniciouMontagemPor], ['Montagem concluída', q.montadoEm, q.montadoPor], ['Testes iniciados', q.iniciouTesteEm, q.iniciouTestePor], ['Testes finalizados', q.testadoEm, q.testadoPor]].filter(h => h[1]).map(h => h[0] + ': ' + fmtDataHora(h[1]) + (h[2] ? ' · ' + h[2] : '')) }; });
 }
 async function criarParaObra(d){
@@ -23348,17 +23376,25 @@ async function criarParaObra(d){
   if(!tipo) return { ok: false, motivo: 'Escolha o tipo de quadro.' };
   const qtd = Math.max(1, Math.min(20, Math.floor(Number(d.qtd) || 1)));
   const agora = new Date().toISOString();
-  for(let i = 0; i < qtd; i++) quadrosStore.items.push({ id: novoId(), cliente, tipoId: tipo.id, tipoNome: tipo.nome, status: 'a_montar', criadoEm: agora, criadoPor: quem(), active: true,
+  for(let i = 0; i < qtd; i++) quadrosStore.items.push({ id: novoId(), cliente, tipoId: tipo.id, tipoNome: tipo.nome, status: d.aguardaSinal ? 'aguardando_sinal' : 'a_montar', criadoEm: agora, criadoPor: quem(), active: true,
     obraId: String(d.obraId), pedidoId: String(d.pedidoId), pedidoNumero: String(d.pedidoNumero || ''), origem: 'obra' });
   renderListas(); await quadrosStore.save();
-  return { ok: true, criados: qtd };
+  return { ok: true, criados: qtd, reservados: !!d.aguardaSinal };
 }
+// Libera os quadros reservados de um pedido (o sinal foi pago / o Gestor avançou o status): viram "A montar" e aparecem na Oficina.
+async function liberarSinal(obraId, pedidoId){
+  const l = quadrosAtivos().filter(q => q.status === 'aguardando_sinal' && String(q.obraId) === String(obraId) && String(q.pedidoId) === String(pedidoId));
+  if(!l.length) return 0; const agora = new Date().toISOString();
+  l.forEach(q => { q.status = 'a_montar'; q.liberadoSinalEm = agora; q.liberadoSinalPor = quem() || null; });
+  renderListas(); await quadrosStore.save(); return l.length;
+}
+function reservadosPorPedido(){ const out = {}; quadrosAtivos().forEach(q => { if(q.status === 'aguardando_sinal' && q.obraId) out[q.obraId + '|' + q.pedidoId] = (out[q.obraId + '|' + q.pedidoId] || 0) + 1; }); return out; }
 async function removerDaObra(id){
   const q = porId(quadrosStore, id); if(!q || !q.obraId) return { ok: false };
-  if(q.status !== 'a_montar') return { ok: false, motivo: 'Este quadro já começou a ser montado pela Oficina. Para removê-lo, use Oficina › Quadros de comando.' };
+  if(q.status !== 'a_montar' && q.status !== 'aguardando_sinal') return { ok: false, motivo: 'Este quadro já começou a ser montado pela Oficina. Para removê-lo, use Oficina › Quadros de comando.' };
   q.active = false; renderListas(); await quadrosStore.save(); return { ok: true };
 }
-window.QUADROS_API = { doPedido, criarParaObra, removerDaObra, tipos: () => tiposAtivos().map(t => ({ id: t.id, nome: t.nome })), aoMudar: (f) => { ouvintesMudanca.push(f); }, abrirLista: () => { try{ trocarSubAba('lista'); }catch(e){} }, avancar, etapa: (id) => { const q = porId(quadrosStore, id); if(!q) return null; const et = etapaDe(q); return { id: et.id, chip: et.chip, proxima: et.proxima ? et.proxima.rotulo : null, andamento: et.id === 'montando' || et.id === 'testando' }; }, pronto: () => carregado, garantir: () => garantirCarregado(), cartaoHtml: (id) => { const q = porId(quadrosStore, id); return q ? cartaoQuadro(q, 'oficina') : ''; }, abrirDetalhe: (id, modo) => abrirDetalhe(id, modo || 'oficina'), abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
+window.QUADROS_API = { doPedido, criarParaObra, removerDaObra, liberarSinal, reservadosPorPedido, listaQuadros: () => quadrosStore.items, tipos: () => tiposAtivos().map(t => ({ id: t.id, nome: t.nome })), aoMudar: (f) => { ouvintesMudanca.push(f); }, abrirLista: () => { try{ trocarSubAba('lista'); }catch(e){} }, avancar, etapa: (id) => { const q = porId(quadrosStore, id); if(!q) return null; const et = etapaDe(q); return { id: et.id, chip: et.chip, proxima: et.proxima ? et.proxima.rotulo : null, andamento: et.id === 'montando' || et.id === 'testando' }; }, pronto: () => carregado, garantir: () => garantirCarregado(), cartaoHtml: (id) => { const q = porId(quadrosStore, id); return q ? cartaoQuadro(q, 'oficina') : ''; }, abrirDetalhe: (id, modo) => abrirDetalhe(id, modo || 'oficina'), abrir, abrirOficina, fecharOficina, iniciar, pendentesOS, processadosOS, renderOS: renderOSQuadros, listaQuadros: () => quadrosAtivos().map(q => Object.assign({ tipoNome: nomeDoTipo(q) }, q)) };
 })();
 
 
@@ -25220,7 +25256,7 @@ function montarGestor(){
       <select id="obrgStatus"><option value="">Qualquer andamento</option>${opcoesAndamento('')}</select>
       <span class="obrg-exp"><button type="button" class="btn-ghost oe-mini" data-obrg-exp="todos">Expandir tudo</button><button type="button" class="btn-ghost oe-mini" data-obrg-exp="nenhum">Recolher tudo</button></span>
     </div>
-    <div class="portal-tabs obrg-sub" id="obrgSubAbas"><button type="button" class="portal-tab active" data-obrg-sub="andamento">Em andamento<span class="obr-tab-n" id="obrgSubN1"></span></button><button type="button" class="portal-tab" data-obrg-sub="finalizados">Finalizados<span class="obr-tab-n" id="obrgSubN2"></span></button></div>
+    <div class="portal-tabs obrg-sub" id="obrgSubAbas"><button type="button" class="portal-tab active" data-obrg-sub="andamento">Em andamento<span class="obr-tab-n" id="obrgSubN1"></span></button><button type="button" class="portal-tab" data-obrg-sub="docs" title="Obras finalizadas que ainda não receberam o contrato de manutenção ou o manual de operação">Manual e contrato<span class="obr-tab-n" id="obrgSubN3"></span></button><button type="button" class="portal-tab" data-obrg-sub="finalizados" title="Obras finalizadas com contrato e manual já resolvidos">Finalizados<span class="obr-tab-n" id="obrgSubN2"></span></button></div>
     <div id="obrgLista"></div>
     </div>
     <div id="obrgPaneSistemas" style="display:none;">
@@ -25280,11 +25316,23 @@ function outrosAndamentos(pares, prin){
 // revisão 7: faixa "Pedidos cadastrados recentemente" (menos de 7 dias) no topo de Obras e Pedidos do Gestor; toque abre o cartão do cliente
 function htmlPedidosNovos(){
   const l = pedidosNovos(); if(!l.length) return '';
-  return `<div class="obrg-novos" role="region" aria-label="Pedidos cadastrados recentemente"><div class="obrg-novos-t">🆕 Pedidos cadastrados nos últimos ${NOVO_PEDIDO_DIAS} dias <span class="obrg-cm-n obrg-novo-n">${l.length}</span></div>
-    ${l.map(({ r, p }) => `<button type="button" class="obrg-novos-i" data-obrg-irnovo="${esc(fold(nomeCliente(r)))}|${esc(r.id)}|${esc(p.id)}"><b>${esc(nomeCliente(r))}</b><span class="prv-chip gray">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1])}</span><span>Pedido ${esc(p.numero)}${p.descricao ? ' · ' + esc(p.descricao) : ''}</span><small>${esc(new Date(pedidoCriadoEm(r, p)).toLocaleDateString('pt-BR'))}${p.criadoPor ? ' · ' + esc(p.criadoPor) : ''}${pedidoSemEquip(r, p, inst[r.id] || {}) ? ' · <b class="obrg-semeq-txt">sem equipamentos</b>' : ''}</small></button>`).join('')}</div>`;
+  // um item por CLIENTE (os pedidos das duas empresas juntos), na ordem do cadastro mais recente
+  const porCli = new Map(); l.forEach(({ r, p }) => { const k = fold(nomeCliente(r)); if(!porCli.has(k)) porCli.set(k, { chave: k, nome: nomeCliente(r), emps: new Set(), itens: [], semEq: 0, quando: 0, por: new Set() }); const g = porCli.get(k); g.emps.add(r.empresa); g.itens.push({ r, p }); if(pedidoSemEquip(r, p, inst[r.id] || {})) g.semEq++; g.quando = Math.max(g.quando, pedidoCriadoEm(r, p) || 0); if(p.criadoPor) g.por.add(p.criadoPor); });
+  const grupos = [...porCli.values()].sort((a, b) => b.quando - a.quando);
+  return `<div class="obrg-novos" role="region" aria-label="Pedidos cadastrados recentemente"><div class="obrg-novos-t">🆕 Pedidos cadastrados nos últimos ${NOVO_PEDIDO_DIAS} dias <span class="obrg-cm-n obrg-novo-n">${l.length}</span><span class="obrg-novos-sub">${grupos.length === 1 ? '1 cliente' : grupos.length + ' clientes'}</span></div>
+    ${grupos.map(g => { const first = g.itens[0]; const nums = g.itens.map(x => x.p.numero).sort((a, b) => String(a).localeCompare(String(b), 'pt-BR', { numeric: true })); return `<button type="button" class="obrg-novos-i" data-obrg-irnovo="${esc(g.chave)}|${esc(first.r.id)}|${esc(first.p.id)}" title="${esc(g.itens.map(x => 'Pedido ' + x.p.numero + (x.p.descricao ? ' · ' + x.p.descricao : '')).join('\n'))}"><b>${esc(g.nome)}</b>${[...g.emps].map(e => `<span class="prv-chip gray">${esc((EMPRESAS.find(x => x[0] === e) || [0, ''])[1])}</span>`).join('')}<span>${g.itens.length === 1 ? 'Pedido ' + esc(nums[0]) + (first.p.descricao ? ' · ' + esc(first.p.descricao) : '') : g.itens.length + ' pedidos: ' + esc(nums.join(', '))}</span><small>${esc(new Date(g.quando).toLocaleDateString('pt-BR'))}${g.por.size ? ' · ' + esc([...g.por].join(', ')) : ''}${g.semEq ? ' · <b class="obrg-semeq-txt">' + (g.semEq === 1 ? '1 sem equipamentos' : g.semEq + ' sem equipamentos') + '</b>' : ''}</small></button>`; }).join('')}</div>`;
+}
+let qdSinalSync = false;
+function sincronizarQuadrosSinal(){   // revisão 7: quadros reservados cujo pedido já não está "Aguardando pagamento do sinal" → "A montar" (uma vez por redesenho; sem laço: só grava se mudou algo)
+  if(qdSinalSync || !window.QUADROS_API || !QUADROS_API.pronto || !QUADROS_API.pronto() || !carregado) return;
+  const resv = QUADROS_API.reservadosPorPedido(); const chaves = Object.keys(resv); if(!chaves.length) return;
+  const liberar = chaves.filter(k => { const [rid, pid] = k.split('|'); const r = porId(rid); return r && r.pedidos && r.pedidos[pid] && internoDe(r, pid) !== 'aguardando_sinal'; });
+  if(!liberar.length) return; qdSinalSync = true;
+  (async () => { let n = 0; for(const k of liberar){ const [rid, pid] = k.split('|'); try{ n += await QUADROS_API.liberarSinal(rid, pid); }catch(e){ console.error('quadros: liberar sinal', e); } } if(n) avisar(n === 1 ? 'Quadro liberado para a Oficina (sinal pago).' : n + ' quadros liberados para a Oficina (sinal pago).', 5000); })().finally(() => { qdSinalSync = false; });
 }
 function renderGestor(){
   const v = document.getElementById('tabObras'); if(!v || !uiG.montado || v.style.display === 'none') return;
+  try{ sincronizarQuadrosSinal(); }catch(e){}
   const q = fold(uiG.busca);
   const base = registros().filter(r => (!uiG.empresa || r.empresa === uiG.empresa)).map(r => ({ r, peds: pedidosDe(r).filter(p => !p.cancelado) })).filter(x => x.peds.length)
     .filter(x => !q || fold(nomeCliente(x.r) + ' ' + x.peds.map(p => p.numero + ' ' + p.descricao).join(' ')).includes(q));
@@ -25304,14 +25352,15 @@ function renderGestor(){
     const prinG = todos.length ? andamentoPrincipal(todos) : null;          // o MESMO andamento principal mostrado no cartão (o que segura a obra)
     g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes' || prinG === 'parcial') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_entrega' ? 3 : prinG === 'liberado_inicio' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;
     g.rankPrin = g.grp === 5 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
+    g.docsPend = g.grp === 'f' && (!cmEnviado(g.itens.map(x => x.r)) || !manEnviado(g.itens.map(x => x.r)));   // revisão 8: finalizada, mas falta contrato de manutenção ou manual de operação
   });
   const nAnd = lista_.filter(g => g.grp !== 'f').length, nFin = lista_.length - nAnd;
   const tile = (n, rot, cor) => `<div class="obrg-t4" style="border-left-color:${cor};"><b style="color:${cor};">${n}</b><span>${esc(rot)}</span></div>`;
   document.getElementById('obrgChips').innerHTML = `<div class="obrg-resumo4">${tile(nAnd + nFin, 'Clientes registrados', 'var(--ink)')}${tile(cliFase.interna.size, 'Na etapa interna', '#b45309')}${tile(cliFase.obra.size, 'Na etapa obra', '#1a56db')}${tile(nFin, 'Finalizados', '#1f6b45')}</div>` + htmlPedidosNovos();   // revisão 7
-  const nNovosT = pedidosNovos().length, nSemEqT = pedidosSemEquip().length; document.getElementById('obrgSubN1').innerHTML = nAnd + (nNovosT ? ` <span class="obrg-cm-n obrg-novo-n" title="Pedidos cadastrados há menos de ${NOVO_PEDIDO_DIAS} dias"><em>🆕 </em>${nNovosT}<i> ${nNovosT === 1 ? 'novo' : 'novos'}</i></span>` : '') + (nSemEqT ? ` <span class="obrg-cm-n" title="Pedidos em andamento sem equipamentos cadastrados"><em>⚠ </em>${nSemEqT}<i> sem equipamentos</i></span>` : '');   // revisão 7 const nCm = cmPendentes().length, nMan = manPendentes().length; document.getElementById('obrgSubN2').innerHTML = nFin + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado"><em>📄 </em>${nCm}<i> sem contrato</i></span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado"><em>📘 </em>${nMan}<i> sem manual</i></span>` : '');
+  const nNovosT = pedidosNovos().length, nSemEqT = pedidosSemEquip().length; document.getElementById('obrgSubN1').innerHTML = nAnd + (nNovosT ? ` <span class="obrg-cm-n obrg-novo-n" title="Pedidos cadastrados há menos de ${NOVO_PEDIDO_DIAS} dias"><em>🆕 </em>${nNovosT}<i> ${nNovosT === 1 ? 'novo' : 'novos'}</i></span>` : '') + (nSemEqT ? ` <span class="obrg-cm-n" title="Pedidos em andamento sem equipamentos cadastrados"><em>⚠ </em>${nSemEqT}<i> sem equipamentos</i></span>` : '');   /* revisão 7 */ const nCm = cmPendentes().length, nMan = manPendentes().length; const nDocs = lista_.filter(g => g.grp === 'f' && g.docsPend).length; document.getElementById('obrgSubN2').textContent = nFin - nDocs; document.getElementById('obrgSubN3').innerHTML = nDocs + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado"><em>📄 </em>${nCm}<i> sem contrato</i></span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado"><em>📘 </em>${nMan}<i> sem manual</i></span>` : '');
   document.querySelectorAll('#obrgSubAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgSub === uiG.sub));
-  lista_ = lista_.filter(g => (g.grp === 'f') === (uiG.sub === 'finalizados'));
-  if(uiG.sub !== 'finalizados') lista_.sort((a, b) => (a.grp - b.grp) || (a.rankPrin - b.rankPrin) || fold(a.nome).localeCompare(fold(b.nome)));
+  lista_ = lista_.filter(g => uiG.sub === 'andamento' ? g.grp !== 'f' : uiG.sub === 'docs' ? (g.grp === 'f' && g.docsPend) : (g.grp === 'f' && !g.docsPend));   // revisão 8: três abas
+  if(uiG.sub === 'andamento') lista_.sort((a, b) => (a.grp - b.grp) || (a.rankPrin - b.rankPrin) || fold(a.nome).localeCompare(fold(b.nome)));
   uiG.chaves = lista_.map(g => g.chave);
   const nPed = filtrados.reduce((n, x) => n + x.peds.length, 0); document.getElementById('obrgContagem').textContent = lista_.length + (lista_.length === 1 ? ' cliente' : ' clientes') + ' · ' + nPed + (nPed === 1 ? ' pedido' : ' pedidos');
   const box = document.getElementById('obrgLista');
@@ -25319,7 +25368,7 @@ function renderGestor(){
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
   const TIT_GRP = { 1: 'Obra em andamento · iniciado / entregue parcialmente / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para entrega', 4: 'Liberados para iniciar', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
   let grpAnt = null;
-  const cabGrp = (g) => { if(uiG.sub === 'finalizados' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
+  const cabGrp = (g) => { if(uiG.sub !== 'andamento' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
   box.innerHTML = lista_.length ? lista_.map((g_) => { const { chave, nome, itens } = g_; const cab = cabGrp(g_);
     const regs = itens.map(x => x.r); const varias = regs.length > 1; const aberto = uiG.clientes.has(chave);        // o cliente tem registros nas duas empresas
     const pares = itens.flatMap(({ r, peds }) => peds.map(p => ({ r, p })));
@@ -25338,6 +25387,7 @@ function renderGestor(){
         <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.slice(0, 2).map(k => `<span class="obrg-outros obrg-outros-${k}" title="Outros pedidos deste cliente: ${esc(rotOutros)}">${esc(rotObra(k))}</span>`).join('')}${outros.length > 2 ? `<span class="obrg-outros" title="${esc(rotOutros)}">+${outros.length - 2}</span>` : ''}</span>
         <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-anel${fin && fin === todosPeds.length ? ' cheio' : ''}" style="--p:${pctPedidos(todosPeds)}" role="img" aria-label="${pctPedidos(todosPeds)}% concluído" title="${pctPedidos(todosPeds)}% das etapas de instalação (o Teste vale 10% de cada equipamento) · ${fin} de ${todosPeds.length} finalizados"><b>${pctPedidos(todosPeds)}%</b></span></div>
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
+      ${htmlContatoCliente(regs)}
       ${itens.map(({ r, peds }) => { const d = inst[r.id] || {}; return peds.map(p => { const ki = internoDe(r, p.id), ko = obraDe(r, p.id); const e = entradaSt(r, p.id); const res = resumoPedido(d, p.id); const key = r.id + '|' + p.id; const ab = uiG.abertos.has(key);
         const quando = e.em ? 'Alterado' + (e.por ? ' por ' + e.por : '') + ' em ' + new Date(e.em).toLocaleDateString('pt-BR') : '';
         const bolas = subsDoPedido(d, p.id); const dotsEq = bolas.slice(0, 14).map(x => `<i class="obi-dot obi-dot-${estadoSub(d, x)}" title="${esc(x.nome)} · ${esc(rotEstado(estadoSub(d, x)))}"></i>`).join('') + (bolas.length > 14 ? `<small class="obrg-mais">+${bolas.length - 14}</small>` : '');
@@ -25346,7 +25396,7 @@ function renderGestor(){
           <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''} ${pedidoSemEquip(r, p, d) ? 'obrg-cm-pend' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button>${botaoQuadros(r.id, p.id, key)}<button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
     </div>`; }).join('')
-    : `<div class="empty-state">${registros().length ? (uiG.sub === 'finalizados' ? 'Nenhum cliente com todos os pedidos entregues e finalizados.' : 'Nenhum pedido em andamento com esses filtros.') : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
+    : `<div class="empty-state">${registros().length ? (uiG.sub === 'finalizados' ? 'Nenhum cliente finalizado com contrato e manual já resolvidos.' : uiG.sub === 'docs' ? 'Nenhuma obra finalizada aguardando contrato de manutenção ou manual de operação.' : 'Nenhum pedido em andamento com esses filtros.') : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
 }
 function gravarEntradaSt(r, pid, i, o, extra){          // grava as duas trilhas (e a mais avançada em `s`, para compatibilidade), sem campos vazios
   const antigo = entradaSt(r, pid); const entrada = { i, s: o || i, em: new Date().toISOString(), por: quem() }; if(o) entrada.o = o; if(antigo.auto) entrada.auto = antigo.auto; Object.assign(entrada, extra || {});
@@ -25358,6 +25408,7 @@ async function mudarAndamento(rid, pid, trilha, novo){
   gravarEntradaSt(r, pid, trilha === 'i' ? novo : i0, trilha === 'o' ? novo : (entradaSt(r, pid).o || (entradaSt(r, pid).s && OBRA_ST.includes(entradaSt(r, pid).s) ? entradaSt(r, pid).s : null)));
   const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit;          // o Financeiro vê a situação da obra acompanhar os pedidos
   r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderGestor(); renderLista(); await store.save(true);
+  if(trilha === 'i' && i0 === 'aguardando_sinal' && window.QUADROS_API && QUADROS_API.liberarSinal){ try{ const n = await QUADROS_API.liberarSinal(rid, pid); if(n) avisar(n === 1 ? 'Quadro reservado liberado para a Oficina.' : n + ' quadros reservados liberados para a Oficina.', 5000); }catch(e){} }   // revisão 7
 }
 function abrirAgendamentoObra(r, descricao, vinculo){
   const nome = nomeCliente(r);
@@ -25372,9 +25423,9 @@ function abrirAgendamentoObra(r, descricao, vinculo){
 const quadrosDaObra = (rid, pid) => { try{ return window.QUADROS_API && QUADROS_API.pronto() ? QUADROS_API.doPedido(rid, pid) : null; }catch(e){ return null; } };
 function botaoQuadros(rid, pid, key){
   const l = quadrosDaObra(rid, pid) || [];
-  const pront = l.filter(x => x.montado).length;
+  const pront = l.filter(x => x.montado).length; const resv = l.filter(x => x.reservado).length;
   const pontos = l.slice(0, 8).map(x => `<i class="obrg-qd-dot tom-${x.tom}" title="${esc(x.tipoNome)} · ${esc(x.chip)}"></i>`).join('') + (l.length > 8 ? `<small class="obrg-mais">+${l.length - 8}</small>` : '');
-  return `<button type="button" class="btn-ghost oe-mini obrg-btn-qd" data-obrg-qd="${esc(key)}" aria-label="Quadros de comando${l.length ? ': ' + pront + ' de ' + l.length + ' montados' : ''}"><span>Quadros</span>${l.length ? `<span class="obrg-qd-n" title="${pront} de ${l.length} montados">${pront}/${l.length}</span><span class="obrg-pontos-eq">${pontos}</span>` : ''}</button>`;
+  return `<button type="button" class="btn-ghost oe-mini obrg-btn-qd" data-obrg-qd="${esc(key)}" aria-label="Quadros de comando${l.length ? ': ' + pront + ' de ' + l.length + ' montados' : ''}"><span>Quadros</span>${l.length ? `<span class="obrg-qd-n" title="${pront} de ${l.length} montados${resv ? ' · ' + resv + ' reservado(s) até o pagamento do sinal' : ''}">${pront}/${l.length}${resv ? ' <em class="obrg-qd-resv">⏸' + resv + '</em>' : ''}</span><span class="obrg-pontos-eq">${pontos}</span>` : ''}</button>`;
 }
 function garantirQuadrosObra(){
   let ov = document.getElementById('obrgQdOverlay'); if(ov) return ov;
@@ -25392,10 +25443,10 @@ function garantirQuadrosObra(){
       const tipoId = document.getElementById('qdoTipo').value; const qtd = document.getElementById('qdoQtd').value; const erro = document.getElementById('qdoErro'); erro.textContent = '';
       if(!tipoId){ erro.textContent = 'Escolha o tipo de quadro.'; return; }
       qdoEmAndamento = true; b.disabled = true;
-      const r = await QUADROS_API.criarParaObra({ obraId: ctx.rid, pedidoId: ctx.pid, pedidoNumero: ctx.numero, cliente: ctx.cliente, tipoId, qtd });
+      const r = await QUADROS_API.criarParaObra({ obraId: ctx.rid, pedidoId: ctx.pid, pedidoNumero: ctx.numero, cliente: ctx.cliente, tipoId, qtd, aguardaSinal: internoDe(porId(ctx.rid), ctx.pid) === 'aguardando_sinal' });
       qdoEmAndamento = false; b.disabled = false;
       if(!r.ok){ erro.textContent = r.motivo || 'Não foi possível criar o quadro.'; return; }
-      avisar(r.criados === 1 ? 'Quadro criado — já está em Oficina › Quadros, em "A montar".' : r.criados + ' quadros criados — já estão em Oficina › Quadros, em "A montar".', 4500);
+      avisar(r.reservados ? (r.criados === 1 ? 'Quadro reservado — vai para a Oficina quando o pedido sair de "Aguardando pagamento do sinal".' : r.criados + ' quadros reservados — vão para a Oficina quando o pedido sair de "Aguardando pagamento do sinal".') : r.criados === 1 ? 'Quadro criado — já está em Oficina › Quadros, em "A montar".' : r.criados + ' quadros criados — já estão em Oficina › Quadros, em "A montar".', 5000);
       renderQuadrosObra(); renderGestor(); return;
     }
     if(a === 'remover'){
@@ -25409,7 +25460,7 @@ let qdoCtx = null, qdoEmAndamento = false;
 function fecharQuadrosObra(){ const ov = document.getElementById('obrgQdOverlay'); if(ov) ov.classList.remove('open'); qdoCtx = null; }
 function abrirQuadrosObra(rid, pid){
   const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
-  qdoCtx = { rid, pid, numero: p.numero, descricao: p.descricao || '', cliente: nomeCliente(r) };
+  qdoCtx = { rid, pid, numero: p.numero, descricao: p.descricao || '', cliente: nomeCliente(r), aguardaSinal: internoDe(r, pid) === 'aguardando_sinal' };
   garantirQuadrosObra(); renderQuadrosObra(); document.getElementById('obrgQdOverlay').classList.add('open');
   if(window.QUADROS_API && !QUADROS_API.pronto()) QUADROS_API.garantir().then(() => { renderQuadrosObra(); renderGestor(); }).catch(() => {});
 }
@@ -25419,10 +25470,10 @@ function renderQuadrosObra(){
   const lista = pronto ? QUADROS_API.doPedido(c.rid, c.pid) : []; const tipos = pronto ? QUADROS_API.tipos() : [];
   const tipoAtual = document.getElementById('qdoTipo') ? document.getElementById('qdoTipo').value : ''; const qtdAtual = document.getElementById('qdoQtd') ? document.getElementById('qdoQtd').value : '1';
   box.innerHTML = `<div class="obrg-qd-head"><div><h3 style="margin:0;">Quadros de comando</h3><div class="obrg-qd-sub">${esc(c.cliente)} · Pedido ${esc(c.numero)}${c.descricao ? ' — ' + esc(c.descricao) : ''}</div></div><button type="button" class="btn-ghost" data-qdo="fechar" aria-label="Fechar">✕</button></div>
-    <p class="obrg-qd-dica">Os quadros criados aqui vão direto para <b>Oficina › Quadros</b> (A montar). Quando o técnico montar e testar, o status muda aqui sozinho.</p>
+    ${c.aguardaSinal ? '<p class="obrg-qd-dica obrg-qd-dica-sinal">⏸ Este pedido está <b>Aguardando pagamento do sinal</b>: os quadros criados agora ficam <b>reservados</b> e só vão para Oficina › Quadros quando o pedido sair dessa etapa (sinal recebido pelo Financeiro ou status mudado por você).</p>' : '<p class="obrg-qd-dica">Os quadros criados aqui vão direto para <b>Oficina › Quadros</b> (A montar). Quando o técnico montar e testar, o status muda aqui sozinho.</p>'}
     ${!pronto ? '<div class="obrg-qd-vazio">Carregando os quadros…</div>' : `
     <div class="obrg-qd-lista">${lista.length ? lista.map(x => `<div class="obrg-qd-item">
-        <div class="obrg-qd-item-h"><span class="qd-tipo">${esc(x.tipoNome)}</span><span class="qd-chip tom-${x.tom}">${esc(x.chip)}</span>${x.osNumero ? `<span class="qd-chip tom-cinza">OS nº ${esc(x.osNumero)}</span>` : ''}${x.status === 'a_montar' ? `<button type="button" class="btn-ghost oe-mini obrg-qd-rem" data-qdo="remover" data-id="${esc(x.id)}" title="Remover (ainda não foi montado)">Remover</button>` : ''}</div>
+        <div class="obrg-qd-item-h"><span class="qd-tipo">${esc(x.tipoNome)}</span><span class="qd-chip tom-${x.tom}">${esc(x.chip)}</span>${x.osNumero ? `<span class="qd-chip tom-cinza">OS nº ${esc(x.osNumero)}</span>` : ''}${x.status === 'a_montar' || x.reservado ? `<button type="button" class="btn-ghost oe-mini obrg-qd-rem" data-qdo="remover" data-id="${esc(x.id)}" title="Remover (ainda não foi montado)">Remover</button>` : ''}</div>
         ${x.historico.length ? `<div class="obrg-qd-hist">${x.historico.map(h => `<div>${esc(h)}</div>`).join('')}</div>` : ''}</div>`).join('') : '<div class="obrg-qd-vazio">Nenhum quadro criado para este pedido ainda.</div>'}</div>
     ${tipos.length ? `<div class="obrg-qd-form">
         <div class="field"><label for="qdoTipo">Tipo de quadro</label><select id="qdoTipo"><option value="">Selecionar tipo...</option>${tipos.map(t => `<option value="${esc(t.id)}" ${String(t.id) === tipoAtual ? 'selected' : ''}>${esc(t.nome)}</option>`).join('')}</select></div>
@@ -25678,6 +25729,12 @@ function abrirEditarEquip(rid, pid, sid, subId){
       antigas.forEach(e => { if(!etapas[e.id]) up['obraInstalacao/' + rid + '/prog/' + subId + '/' + e.id] = null; });
       await escreverInst(up); return null; } });
 }
+function abrirObsEquip(rid, pid, sid, subId){
+  const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; const sub = sis && sis.subitens && sis.subitens[subId]; if(!sub) return; const obs = ((inst[rid] || {}).obsEq || {})[subId] || {};
+  formRapido({ titulo: 'Motivo — ' + sub.nome, aviso: 'Por que este equipamento ainda não está liberado e o que está faltando. Entra no relatório de andamento enviado ao cliente.',
+    campos: [ { id: 't', rotulo: 'Motivo / o que falta', tipo: 'area', valor: obs.t || '', dica: 'Ex.: aguardando chegada do boiler (previsão 30/10)' } ],
+    aoSalvar: async (v) => { await escreverInst({ ['obraInstalacao/' + rid + '/obsEq/' + subId]: v.t ? { t: v.t.slice(0, 300), em: new Date().toISOString(), por: quem() || null } : null }); return null; } });
+}
 function moverEquip(rid, pid, sid, subId, dir){
   const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; if(!sis) return; const l = lista(sis.subitens).sort(ord); const i = l.findIndex(x => x.id === subId); const j = i + dir; if(i < 0 || j < 0 || j >= l.length) return;
   const base = 'obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/'; const up = {}; l.forEach((x, k) => { const pos = k === i ? j + 1 : k === j ? i + 1 : k + 1; if(pos !== x.ordem) up[base + x.id + '/ordem'] = pos; });
@@ -25691,10 +25748,51 @@ function htmlEtapas(d, rid, sub, travado, compacto){
 }
 function htmlEquip(d, rid, sub, opt){
   opt = opt || {}; const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const bloqueado = !opt.gestor && st === 'nao_liberado'; const desab = !!opt.somenteLeitura || bloqueado;
-  const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="obr-ic" data-obrg-edsub="${esc(opt.key)}|${esc(sub.id)}" title="Editar nome, descrição e etapas" aria-label="Editar equipamento ${esc(sub.nome)}">✎</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|-1" title="Mover para cima" aria-label="Mover ${esc(sub.nome)} para cima">▲</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|1" title="Mover para baixo" aria-label="Mover ${esc(sub.nome)} para baixo">▼</button><button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
+  const obs = (d.obsEq || {})[sub.id];
+  const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button><button type="button" class="btn-ghost oe-mini ${obs && obs.t ? '' : 'obrg-obs-vazia'}" data-obrg-obseq="${esc(opt.key)}|${esc(sub.id)}" title="Anotar por que não está liberado e o que falta">${obs && obs.t ? '✎ Motivo' : '+ Motivo'}</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="obr-ic" data-obrg-edsub="${esc(opt.key)}|${esc(sub.id)}" title="Editar nome, descrição e etapas" aria-label="Editar equipamento ${esc(sub.nome)}">✎</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|-1" title="Mover para cima" aria-label="Mover ${esc(sub.nome)} para cima">▲</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|1" title="Mover para baixo" aria-label="Mover ${esc(sub.nome)} para baixo">▼</button><button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
   return `<div class="obi-eq obi-eq-${st}"><div class="obi-eq-h"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-eq-a">${acoes}</span></div>${sub.desc ? `<div class="obi-eq-desc">${esc(sub.desc)}</div>` : ''}
+    ${obs && obs.t ? `<div class="obi-eq-obs"><b>${st === 'nao_liberado' ? '⏸ Não liberado:' : 'Obs.:'}</b> ${esc(obs.t)}<small>${obs.por ? ' · ' + esc(obs.por) : ''}${obs.em ? ' · ' + esc(new Date(obs.em).toLocaleDateString('pt-BR')) : ''}</small></div>` : ''}
     ${htmlEtapas(d, rid, sub, false, true)}
     ${bloqueado ? '<div class="obi-aviso">Aguardando a liberação do Gestor para iniciar.</div>' : ''}</div>`;
+}
+// ---- revisão 8: contato do cliente (pessoa e telefone) + relatório de andamento por WhatsApp ----
+function contatoDoCliente(regs){
+  const rc = regs.find(x => x.contato), rf = regs.find(x => x.fone && phoneDigits(x.fone).length >= 10) || regs.find(x => x.fone); const cl = regs[0] ? clientePorNome(nomeCliente(regs[0])) : null;
+  return { contato: (rc && rc.contato) || (cl && cl.contato) || '', fone: (rf && rf.fone) || (cl && cl.fone) || '' };
+}
+function htmlContatoCliente(regs){
+  const c = contatoDoCliente(regs); const ids = regs.map(r => r.id).join(','); const temFone = phoneDigits(c.fone).length >= 10;
+  return `<div class="obrg-contato"><span class="obrg-contato-i" title="Pessoa de contato">👤 ${c.contato ? esc(c.contato) : '<i>sem contato</i>'}</span><span class="obrg-contato-i" title="Telefone">📞 ${c.fone ? esc(c.fone) : '<i>sem telefone</i>'}</span><button type="button" class="obr-ic" data-obrg-edcontato="${esc(ids)}" title="Editar contato e telefone" aria-label="Editar contato">✎</button><span class="obrg-contato-esp"></span><button type="button" class="btn-primary oe-mini" data-obrg-relzap="${esc(ids)}" ${temFone ? '' : 'disabled title="Cadastre o telefone para enviar"'}>📲 Enviar relatório</button></div>`;
+}
+function abrirEditarContato(ids){
+  const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return; const c = contatoDoCliente(regs);
+  formRapido({ titulo: 'Contato de ' + nomeCliente(regs[0]), campos: [ { id: 'contato', rotulo: 'Pessoa de contato', valor: c.contato, dica: 'Ex.: Sr. João (síndico)' }, { id: 'fone', rotulo: 'Telefone (WhatsApp)', valor: c.fone, dica: '(24) 99999-9999' } ],
+    aoSalvar: async (v) => { if(v.fone && phoneDigits(v.fone).length < 10) return 'Telefone incompleto (com DDD).';
+      regs.forEach(r => { r.contato = v.contato || null; r.fone = v.fone || null; r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); });
+      const cl = clientePorNome(nomeCliente(regs[0])); if(cl){ cl.contato = v.contato || cl.contato; cl.fone = v.fone || cl.fone; try{ await saveClients(true); }catch(e){} }
+      renderGestor(); try{ renderLista(); }catch(e){} await store.save(true); return null; } });
+}
+// Texto do relatório: andamento de cada pedido, equipamentos pendentes (com o motivo anotado) e o percentual geral.
+function mensagemRelatorioObra(regs){
+  const nome = nomeCliente(regs[0]); const c = contatoDoCliente(regs); const hoje = new Date().toLocaleDateString('pt-BR');
+  const pares = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
+  const L = ['Olá' + (c.contato ? ' ' + c.contato : '') + ', segue o relatório de andamento da obra do cliente *' + nome + '* (' + hoje + '):', ''];
+  pares.forEach(({ r, p }) => { const d = inst[r.id] || {}; const subs = subsDoPedido(d, p.id); const st = statusObraDe(r, p.id); const emp = (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
+    L.push('*Pedido ' + p.numero + (p.descricao ? ' · ' + p.descricao : '') + '*' + (regs.length > 1 && emp ? ' (' + emp + ')' : ''));
+    L.push('Andamento: ' + rotObra(st) + (subs.length ? ' · ' + Math.round(progressoPedido(r, p) * 100) + '%' : ''));
+    if(subs.length){ const res = resumoPedido(d, p.id); L.push('Equipamentos: ' + res.finalizados + ' de ' + res.total + ' finalizados' + (res.testados ? ' (' + res.testados + ' testados)' : ''));
+      subs.forEach(sub => { const es = estadoSub(d, sub); if(instalado(es)) return; const obs = (d.obsEq || {})[sub.id]; L.push('• ' + sub.nome + ' — ' + rotEstado(es) + (obs && obs.t ? ': ' + obs.t : '')); }); }
+    const se = semEquipDe(r, p.id); if(!subs.length && se) L.push('(pedido sem equipamentos para instalar)');
+    L.push(''); });
+  L.push('*Andamento geral da obra: ' + pctPedidos(pares) + '%*'); L.push(''); L.push('Equiper Projetos e Instalações');
+  return L.join('\n');
+}
+function enviarRelatorioObra(ids){
+  const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return; const c = contatoDoCliente(regs);
+  if(phoneDigits(c.fone).length < 10){ avisar('Cadastre o telefone do contato (✎ ao lado do nome) para enviar o relatório.', 6000); return; }
+  const msg = mensagemRelatorioObra(regs); const quando = new Date().toISOString();
+  regs.forEach(r => { r.relatorioEnviado = { em: quando, por: quem() || null, para: c.fone }; }); store.save(true).catch(() => {});
+  openWhatsapp(toWhatsappNumber(c.fone), msg);
 }
 function painelEquip(r, p, d){
   const res = resumoPedido(d, p.id); const dp = (d.pedidos || {})[p.id]; const sists = lista(dp && dp.sistemas).sort(ord); const key = r.id + '|' + p.id; const se = semEquipDe(r, p.id);
@@ -25720,6 +25818,9 @@ function cliqueEquip(e){
   if((b = g('data-obrg-qd'))){ const [rid, pid] = b.dataset.obrgQd.split('|'); abrirQuadrosObra(rid, pid); return; }
   if((b = g('data-obrg-addsis'))){ const [rid, pid] = b.dataset.obrgAddsis.split('|'); abrirAddSistema(rid, pid); return; }
   if((b = g('data-obrg-addeq'))){ const [rid, pid, sid] = b.dataset.obrgAddeq.split('|'); abrirAddEquip(rid, pid, sid); return; }
+  if((b = g('data-obrg-obseq'))){ const [rid, pid, sid, sub] = b.dataset.obrgObseq.split('|'); abrirObsEquip(rid, pid, sid, sub); return; }                    // revisão 8
+  if((b = g('data-obrg-edcontato'))){ abrirEditarContato(b.dataset.obrgEdcontato); return; }
+  if((b = g('data-obrg-relzap'))){ enviarRelatorioObra(b.dataset.obrgRelzap); return; }
   if((b = g('data-obrg-peddesc'))){ const [rid, pid] = b.dataset.obrgPeddesc.split('|'); abrirEditarDescPedido(rid, pid); return; }                       // revisão 7
   if((b = g('data-obrg-semeq'))){ const [rid, pid, v] = b.dataset.obrgSemeq.split('|'); marcarSemEquip(rid, pid, v === '1'); return; }
   if((b = g('data-obrg-edsis'))){ const [rid, pid, sid] = b.dataset.obrgEdsis.split('|'); abrirEditarSistema(rid, pid, sid); return; }
@@ -25728,7 +25829,7 @@ function cliqueEquip(e){
   if((b = g('data-obrg-rmsis'))){ const [rid, pid, sid] = b.dataset.obrgRmsis.split('|'); const sis = (((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas; const x = sis && sis[sid]; if(!x) return;
     customConfirm('Remover o sistema "' + x.nome + '" e os equipamentos dele deste pedido? O progresso já marcado também é apagado.', () => { const up = { ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid]: null }; lista(x.subitens).forEach(sb => { up['obraInstalacao/' + rid + '/lib/' + sb.id] = null; up['obraInstalacao/' + rid + '/prog/' + sb.id] = null; }); escreverInst(up); }, 'Remover'); return; }
   if((b = g('data-obrg-rmsub'))){ const [rid, pid, sid, sub] = b.dataset.obrgRmsub.split('|'); const x = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; const sb = x && x.subitens && x.subitens[sub]; if(!sb) return;
-    customConfirm('Remover o equipamento "' + sb.nome + '" deste pedido? O progresso já marcado nele também é apagado.', () => { escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + sub]: null, ['obraInstalacao/' + rid + '/lib/' + sub]: null, ['obraInstalacao/' + rid + '/prog/' + sub]: null }); }, 'Remover'); return; }
+    customConfirm('Remover o equipamento "' + sb.nome + '" deste pedido? O progresso já marcado nele também é apagado.', () => { escreverInst({ ['obraInstalacao/' + rid + '/pedidos/' + pid + '/sistemas/' + sid + '/subitens/' + sub]: null, ['obraInstalacao/' + rid + '/lib/' + sub]: null, ['obraInstalacao/' + rid + '/prog/' + sub]: null, ['obraInstalacao/' + rid + '/obsEq/' + sub]: null }); }, 'Remover'); return; }
   if((b = g('data-obrg-lib'))){ const [rid, sub] = b.dataset.obrgLib.split('|'); alternarLib(rid, sub); return; }
   if((b = g('data-obrg-libtodos'))){ const [rid, pid] = b.dataset.obrgLibtodos.split('|'); liberarTodos(rid, pid); return; }
   if((b = g('data-obi-set'))){ if(b.getAttribute('aria-disabled') === 'true') return; const [rid, sub, et, v] = b.dataset.obiSet.split('|'); definirEtapa(rid, sub, et, v); return; }
@@ -26523,7 +26624,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { _teste: { fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { _teste: { mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
@@ -26700,11 +26801,11 @@ const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&a
 const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const num = (n) => Number(n) || 0;
 const O = () => window.OBR_API || {};
-const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo', jornalDia: null };
+const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo', jornalDia: null, jornalAbertos: new Set() };
 let obrasPronto = false, osPronto = false;
 
 function dataHoje(){ try{ const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }catch(e){ return ''; } }
-function ir(tab, subBtn){ try{ if(typeof switchTab === 'function') switchTab(tab); if(subBtn){ const b = subBtn === 'prvOsTabAguardando' ? document.querySelector('#prvOsTabs [data-prvos="aguardando"]') : subBtn === 'obrgSubFin' ? document.querySelector('#obrgSubAbas [data-obrg-sub="finalizados"]') : document.getElementById(subBtn); if(b) b.click(); } }catch(e){ console.error(e); } }
+function ir(tab, subBtn){ try{ if(typeof switchTab === 'function') switchTab(tab); if(subBtn){ const b = subBtn === 'prvOsTabAguardando' ? document.querySelector('#prvOsTabs [data-prvos="aguardando"]') : subBtn === 'obrgSubFin' ? document.querySelector('#obrgSubAbas [data-obrg-sub="docs"]') : document.getElementById(subBtn); if(b) b.click(); } }catch(e){ console.error(e); } }
 function cab(titulo, sub){ return `<div class="pn-head"><div><div class="pn-title">${esc(titulo)}</div><div class="pn-sub">${esc(sub)}</div></div></div>`; }
 function bloco(titulo, destino, corpo, extra){ return `<section class="pn-bloco"><div class="pn-bloco-h"><h3>${esc(titulo)}</h3>${destino ? `<button type="button" class="pn-ver" data-pn-go="${esc(destino)}"${extra ? ` data-pn-sub="${esc(extra)}"` : ''}>Abrir ›</button>` : ''}</div>${corpo}</section>`; }
 function kpi(n, rot, tom, go, sub, ativo, dataAttr){ return `<button type="button" class="pn-k pn-t-${tom} ${ativo ? 'on' : ''}" ${go ? `data-pn-go="${esc(go)}"` : ''}${sub ? ` data-pn-sub="${esc(sub)}"` : ''} ${dataAttr || ''}><span class="pn-k-n">${n}</span><span class="pn-k-r">${esc(rot)}</span></button>`; }
@@ -26786,14 +26887,78 @@ function eventosDoDia(dia){
   Object.keys(ev).forEach(k => ev[k].sort((a, b) => String(a.hora).localeCompare(String(b.hora))));
   return ev;
 }
+// ---------- Jornal do dia (revisão 8): RESUMO por área, em cartões; cada cartão abre os detalhes ----------
+const plural = (n, um, mais) => n + ' ' + (n === 1 ? um : mais);
+function resumoDoDia(dia){
+  const A = O(); const ev = eventosDoDia(dia); const R = {};
+  const svcs = typeof services !== 'undefined' ? services : [];
+  const tecs = (s) => (typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician]).filter(Boolean).join(' e ');
+  // 1) Atividades do dia: quantas tinha, quantas finalizadas, quantas ficaram
+  const doDia = svcs.filter(s => s.date === dia); const fin = doDia.filter(s => s.status === 'concluido'); const falt = doDia.filter(s => s.status !== 'concluido');
+  R.atividades = { tinha: doDia.length, finalizadas: fin.length, faltaram: falt.length, lista: falt.map(s => ({ t: s.client + (s.description ? ' — ' + s.description : ''), m: tecs(s), tom: 'red', go: 'agenda' })).concat(fin.map(s => ({ t: s.client + (s.description ? ' — ' + s.description : ''), m: (s.completedAt ? horaLocal(s.completedAt) + ' · ' : '') + tecs(s), tom: 'green', go: 'agenda' }))) };
+  // 2) Cadastros e OS: OS criadas no dia; quantas ainda aguardam cadastro (situação atual)
+  const osCriadas = (window.OS_API && OS_API.todas ? OS_API.todas() : []).filter(os => { const h = Array.isArray(os.historico) ? os.historico : Object.values(os.historico || {}); return h.some(x => x && /OS criada/.test(x.acao || '') && diaLocal(x.em) === dia) || diaLocal(os.criadoEm) === dia; });
+  const pendOS = (typeof groupPaired === 'function' ? groupPaired(svcs.filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido)).length : 0) + (window.QUADROS_API ? num(QUADROS_API.pendentesOS()) : 0) + (window.OSOF_API ? num(OSOF_API.pendentesOS()) : 0);
+  R.os = { feitas: osCriadas.length, faltando: pendOS, lista: osCriadas.map(os => ({ t: 'OS ' + os.numero + ' · ' + (os.cliente || ''), m: os.criadoPor || '', go: 'os' })) };
+  // 3) Obras e Pedidos: clientes novos na lista + etapas que os técnicos marcaram nos equipamentos
+  const novos = new Map(); const etapas = new Map(); let mudStatus = 0;
+  if(A.registros){ const inst = A.instalacoes ? A.instalacoes() : {};
+    A.registros().forEach(r => { const nome = A.nomeCliente(r); const peds = A.pedidosDe(r);
+      const pedsNovos = peds.filter(p => diaLocal(p.criadoEm || (diaLocal(r.criadoEm) === dia ? r.criadoEm : '')) === dia);
+      if(pedsNovos.length){ const k = (nome || '').toLowerCase(); if(!novos.has(k)) novos.set(k, { nome, peds: [], por: new Set() }); const g = novos.get(k); pedsNovos.forEach(p => { g.peds.push(p.numero); if(p.criadoPor || r.criadoPor) g.por.add(p.criadoPor || r.criadoPor); }); }
+      peds.forEach(p => { const e = (r.statusPedidos || {})[p.id]; if(e && e.em && diaLocal(e.em) === dia) mudStatus++; });
+      const d = inst[r.id]; if(d && d.pedidos){ Object.keys(d.pedidos).forEach(pid => { Object.values(d.pedidos[pid].sistemas || {}).forEach(sis => Object.values(sis.subitens || {}).forEach(sub => { const pr = (d.prog || {})[sub.id] || {}; Object.keys(pr).forEach(et => { const f = pr[et]; if(f && f.em && diaLocal(f.em) === dia){ const k = (nome || '').toLowerCase(); if(!etapas.has(k)) etapas.set(k, { nome, fin: 0, ini: 0, por: new Set(), eqs: new Set() }); const g = etapas.get(k); if(f.s === 'iniciado') g.ini++; else g.fin++; if(f.por) g.por.add(f.por); g.eqs.add(sub.nome); } }); })); }); }
+    }); }
+  const lNovos = [...novos.values()], lEt = [...etapas.values()];
+  R.obras = { clientesNovos: lNovos.length, pedidosNovos: lNovos.reduce((n, g) => n + g.peds.length, 0), clientesComEtapas: lEt.length, etapasFin: lEt.reduce((n, g) => n + g.fin, 0), etapasIni: lEt.reduce((n, g) => n + g.ini, 0), mudStatus,
+    lista: lNovos.map(g => ({ t: g.nome + ' — novo na lista', m: plural(g.peds.length, 'pedido', 'pedidos') + ': ' + g.peds.join(', ') + (g.por.size ? ' · ' + [...g.por].join(', ') : ''), tom: 'blue', go: 'obras' }))
+      .concat(lEt.map(g => ({ t: g.nome, m: [g.fin ? plural(g.fin, 'etapa finalizada', 'etapas finalizadas') : '', g.ini ? plural(g.ini, 'etapa iniciada', 'etapas iniciadas') : ''].filter(Boolean).join(' · ') + ' em ' + [...g.eqs].slice(0, 3).join(', ') + (g.eqs.size > 3 ? ' +' + (g.eqs.size - 3) : '') + (g.por.size ? ' · ' + [...g.por].join(', ') : ''), tom: 'green', go: 'obras' }))) };
+  // 4) Financeiro: pagamentos programados para o dia (parcelas com data combinada) e quais não entraram
+  const prog = []; const recDia = [];
+  if(A.registros) A.registros().forEach(r => { const nome = A.nomeCliente(r); Object.values(r.parcelas || {}).forEach(pc => { if(!pc) return; const st = pc.status || (pc.pago ? 'recebido' : 'a_cobrar'); if(pc.agendadoPara === dia) prog.push({ nome, pc, rec: st === 'recebido' }); if(pc.pagoEm === dia && pc.agendadoPara !== dia) recDia.push({ nome, pc }); }); });
+  const naoFeitos = prog.filter(x => !x.rec);
+  R.financeiro = { programados: prog.length, feitos: prog.length - naoFeitos.length, naoFeitos: naoFeitos.length, valorNaoFeito: naoFeitos.reduce((n, x) => n + Number(x.pc.valor || 0), 0), outrosRecebidos: recDia.length,
+    lista: naoFeitos.map(x => ({ t: x.nome + ' · ' + brlJ(x.pc.valor), m: 'programado para o dia e não recebido' + (x.pc.pedido ? ' · pedido ' + x.pc.pedido : ''), tom: 'red', go: 'obras' })).concat(prog.filter(x => x.rec).map(x => ({ t: x.nome + ' · ' + brlJ(x.pc.valor), m: 'recebido como programado' + (x.pc.pedido ? ' · pedido ' + x.pc.pedido : ''), tom: 'green', go: 'obras' }))).concat(recDia.map(x => ({ t: x.nome + ' · ' + brlJ(x.pc.valor), m: 'recebido no dia (sem data programada)' + (x.pc.pedido ? ' · pedido ' + x.pc.pedido : ''), tom: 'green', go: 'obras' }))) };
+  // 5) Estoque: itens que entraram na falta (reposição) no dia
+  const falta = ev.estoque.filter(e => /entrou em REPOSIÇÃO|chegou ao mínimo/.test(e.texto)); const movs = ev.estoque.find(e => /movimentaç/.test(e.texto));
+  R.estoque = { faltas: falta.length, movs: movs ? movs.texto : '', lista: falta.map(e => ({ t: e.texto, m: e.por, tom: 'red', go: 'estoque' })) };
+  // 6) Manutenção preventiva: contratos que entraram em "atrasados" (venceram no dia) ou em "próximos de vencer" (15 dias)
+  const contratos = typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []; const atr = [], prx = [];
+  contratos.forEach(c => { const p = addMonths(c.lastDate, c.intervalMonths || 3); if(p === dia) atr.push({ c, p }); else if(somaDia(p, -15) === dia) prx.push({ c, p }); });
+  R.manut = { atrasados: atr.length, proximos: prx.length, lista: atr.map(x => ({ t: x.c.client + ' — entrou em atrasados', m: 'venceu em ' + fmtD(x.p) + (x.c.scheduledFor ? ' · visita agendada ' + fmtD(x.c.scheduledFor) : ' · sem visita agendada'), tom: 'red', go: 'manutencoes' })).concat(prx.map(x => ({ t: x.c.client + ' — entrou em próximos de vencer', m: 'vence em ' + fmtD(x.p) + (x.c.scheduledFor ? ' · visita agendada ' + fmtD(x.c.scheduledFor) : ' · sem visita agendada'), tom: 'amber', go: 'manutencoes' }))) };
+  // 7) Oficina: movimentos do dia (como antes)
+  R.oficina = { movimentos: ev.oficina.length, lista: ev.oficina.map(e => ({ t: e.texto, m: (e.hora ? e.hora + ' · ' : '') + (e.por || ''), go: 'oficinagestor' })) };
+  return R;
+}
 function blocoJornal(){
-  const dia = ui.jornalDia || somaDia(hojeISO(), -1); const hoje = hojeISO();
-  const ev = eventosDoDia(dia); const total = Object.values(ev).reduce((n, l) => n + l.length, 0);
+  const dia = ui.jornalDia || somaDia(hojeISO(), -1); const hoje = hojeISO(); const R = resumoDoDia(dia);
   const rot = dia === somaDia(hoje, -1) ? 'ontem' : dia === hoje ? 'hoje' : new Date(+dia.slice(0, 4), +dia.slice(5, 7) - 1, +dia.slice(8, 10)).toLocaleDateString('pt-BR', { weekday: 'long' });
-  const sec = (t, l) => l.length ? `<div class="pn-jor-sec"><div class="pn-jor-t">${esc(t)}<span class="pn-tec-n">${l.length}</span></div>${l.map(e => `<div class="pn-lin pn-click pn-jor-l" data-pn-go="${esc(e.go || 'pgestor')}"${e.sub ? ` data-pn-sub="${esc(e.sub)}"` : ''}><span class="mono pn-jor-h">${esc(e.hora || '—')}</span><span class="pn-lin-t">${esc(e.texto)}${e.por ? `<small>por ${esc(e.por)}</small>` : ''}</span></div>`).join('')}</div>` : '';
-  const corpo = `<div class="pn-jor-nav"><button type="button" class="nav-btn" data-pn-jor="-1" title="Dia anterior">‹</button><div class="pn-jor-dia"><b>${esc(fmtD(dia))}</b><span>${esc(rot)}</span></div><button type="button" class="nav-btn" data-pn-jor="1" title="Dia seguinte" ${dia >= hoje ? 'disabled' : ''}>›</button>${dia !== somaDia(hoje, -1) ? '<button type="button" class="btn-ghost oe-mini" data-pn-jor="ontem">Ontem</button>' : ''}</div>
-    ${total ? sec('Obras e pedidos', ev.obras) + sec('Atividades', ev.atividades) + sec('Estoque', ev.estoque) + sec('Manutenção preventiva', ev.manut) + sec('Oficina', ev.oficina) + sec('Cadastros e OS', ev.os) + sec('Orçamentos, contratos e manuais', ev.docs) : '<div class="pn-vazio">Nenhuma alteração registrada neste dia.</div>'}`;
-  return `<section class="pn-bloco pn-jornal"><div class="pn-bloco-h"><h3>Jornal do dia</h3><span class="pn-tec-n">${total} ${total === 1 ? 'registro' : 'registros'}</span></div>${corpo}</section>`;
+  const st = (n) => `<span class="pn-jc-n">${n}</span>`;
+  // cartão: chave, título, ícone, estado (ok/alerta/erro/neutro), números [{n, rot}], frase, lista de detalhes, aba
+  const cartao = (k, titulo, icone, tom, nums, frase, lista, go) => { const aberto = ui.jornalAbertos.has(k); const n = lista.length;
+    const SING = { 'finalizadas': 'finalizada', 'ficaram': 'ficou', 'OS cadastradas': 'OS cadastrada', 'clientes novos': 'cliente novo', 'etapas finalizadas': 'etapa finalizada', 'etapas iniciadas': 'etapa iniciada', 'pagamentos programados': 'pagamento programado', 'recebidos': 'recebido', 'não recebidos': 'não recebido', 'entraram em atrasados': 'entrou em atrasados', 'entraram em próximos de vencer': 'entrou em próximos de vencer', 'movimentos': 'movimento' };
+    nums = nums.map(x => Number(x.n) === 1 && SING[x.rot] ? Object.assign({}, x, { rot: SING[x.rot] }) : x);
+    return `<article class="pn-jc pn-jc-${tom} ${aberto ? 'pn-jc-aberto' : ''}" data-pn-jc="${k}">
+      <div class="pn-jc-h"><span class="pn-jc-ic" aria-hidden="true">${icone}</span><h4>${esc(titulo)}</h4><button type="button" class="pn-jc-go" data-pn-go="${esc(go)}" title="Abrir ${esc(titulo)}">Abrir ›</button></div>
+      <div class="pn-jc-nums">${nums.map(x => `<div class="pn-jc-num ${x.tom ? 'pn-jc-num-' + x.tom : ''}">${st(x.n)}<span class="pn-jc-r">${esc(x.rot)}</span></div>`).join('')}</div>
+      <div class="pn-jc-frase"><span class="pn-jc-dot"></span>${esc(frase)}</div>
+      ${n ? `<button type="button" class="pn-jc-tog" data-pn-jtog="${k}" aria-expanded="${aberto}">${aberto ? 'Recolher' : 'Ver detalhes'} <small>(${n})</small><span class="pn-jc-seta">${aberto ? '▴' : '▾'}</span></button>
+      <div class="pn-jc-det" ${aberto ? '' : 'hidden'}>${lista.map(e => `<div class="pn-lin pn-click pn-jc-l" data-pn-go="${esc(e.go || go)}"><span class="pn-jc-m pn-jc-m-${e.tom || 'gray'}"></span><span class="pn-lin-t">${esc(e.t)}${e.m ? `<small>${esc(e.m)}</small>` : ''}</span></div>`).join('')}</div>` : ''}
+    </article>`; };
+  const a = R.atividades, o = R.os, b = R.obras, f = R.financeiro, e = R.estoque, m = R.manut, w = R.oficina;
+  const cards = [
+    cartao('atividades', 'Atividades', '📅', !a.tinha ? 'neutro' : a.faltaram ? 'erro' : 'ok', [{ n: a.tinha, rot: 'no dia' }, { n: a.finalizadas, rot: 'finalizadas', tom: 'green' }, { n: a.faltaram, rot: 'ficaram', tom: a.faltaram ? 'red' : '' }], !a.tinha ? 'Nenhuma atividade agendada para este dia.' : a.faltaram ? plural(a.faltaram, 'atividade não foi finalizada', 'atividades não foram finalizadas') + '.' : 'Todas as atividades do dia foram finalizadas.', a.lista, 'agenda'),
+    cartao('os', 'Cadastros e OS', '📋', o.faltando ? 'alerta' : o.feitas ? 'ok' : 'neutro', [{ n: o.feitas, rot: 'OS cadastradas', tom: o.feitas ? 'green' : '' }, { n: o.faltando, rot: 'aguardando cadastro', tom: o.faltando ? 'amber' : '' }], o.faltando ? plural(o.faltando, 'registro ainda aguarda', 'registros ainda aguardam') + ' cadastro de OS (situação de agora).' : o.feitas ? 'Nenhum registro aguardando cadastro.' : 'Sem OS cadastradas neste dia e nada aguardando.', o.lista, 'os'),
+    cartao('obras', 'Obras e Pedidos', '🏗', (b.clientesNovos || b.etapasFin || b.etapasIni) ? 'ok' : 'neutro', [{ n: b.clientesNovos, rot: 'clientes novos', tom: b.clientesNovos ? 'blue' : '' }, { n: b.etapasFin, rot: 'etapas finalizadas', tom: b.etapasFin ? 'green' : '' }, { n: b.etapasIni, rot: 'etapas iniciadas', tom: b.etapasIni ? 'amber' : '' }], [b.clientesNovos ? plural(b.clientesNovos, 'cliente novo', 'clientes novos') + ' (' + plural(b.pedidosNovos, 'pedido', 'pedidos') + ')' : '', b.clientesComEtapas ? 'técnicos marcaram etapas em ' + plural(b.clientesComEtapas, 'obra', 'obras') : '', b.mudStatus ? plural(b.mudStatus, 'mudança de andamento', 'mudanças de andamento') : ''].filter(Boolean).join(' · ') || 'Nenhum cliente novo e nenhuma etapa marcada.', b.lista, 'obras'),
+    cartao('financeiro', 'Financeiro', '💰', f.naoFeitos ? 'erro' : f.programados ? 'ok' : 'neutro', [{ n: f.programados, rot: 'pagamentos programados' }, { n: f.feitos, rot: 'recebidos', tom: f.feitos ? 'green' : '' }, { n: f.naoFeitos, rot: 'não recebidos', tom: f.naoFeitos ? 'red' : '' }], f.naoFeitos ? plural(f.naoFeitos, 'pagamento programado não entrou', 'pagamentos programados não entraram') + ' (' + brlJ(f.valorNaoFeito) + ').' : f.programados ? 'Todos os pagamentos programados foram recebidos.' : 'Nenhum pagamento programado para este dia.' + (f.outrosRecebidos ? ' ' + plural(f.outrosRecebidos, 'recebimento avulso', 'recebimentos avulsos') + '.' : ''), f.lista, 'obras'),
+    cartao('estoque', 'Estoque', '📦', e.faltas ? 'erro' : 'ok', [{ n: e.faltas, rot: e.faltas === 1 ? 'item entrou na falta' : 'itens entraram na falta', tom: e.faltas ? 'red' : '' }], e.faltas ? plural(e.faltas, 'item ficou abaixo do mínimo', 'itens ficaram abaixo do mínimo') + '.' : 'Nenhum item entrou na falta.' + (e.movs ? ' ' + e.movs.charAt(0).toUpperCase() + e.movs.slice(1) + '.' : ''), e.lista, 'estoque'),
+    cartao('manut', 'Manutenção preventiva', '🔧', m.atrasados ? 'erro' : m.proximos ? 'alerta' : 'ok', [{ n: m.atrasados, rot: 'entraram em atrasados', tom: m.atrasados ? 'red' : '' }, { n: m.proximos, rot: 'entraram em próximos de vencer', tom: m.proximos ? 'amber' : '' }], m.atrasados || m.proximos ? [m.atrasados ? plural(m.atrasados, 'cliente passou', 'clientes passaram') + ' para atrasados' : '', m.proximos ? plural(m.proximos, 'cliente entrou', 'clientes entraram') + ' em próximos de vencer (15 dias)' : ''].filter(Boolean).join(' · ') + '.' : 'Nenhum cliente mudou de situação.', m.lista, 'manutencoes'),
+    cartao('oficina', 'Oficina', '🛠', w.movimentos ? 'ok' : 'neutro', [{ n: w.movimentos, rot: 'movimentos' }], w.movimentos ? plural(w.movimentos, 'movimento de equipamento', 'movimentos de equipamentos') + ' na Oficina.' : 'Sem movimentos na Oficina.', w.lista, 'oficinagestor')
+  ];
+  const alertas = [a.faltaram, o.faltando, f.naoFeitos, e.faltas, m.atrasados, m.proximos].filter(Boolean).length;
+  const todosAbertos = ui.jornalAbertos.size >= 7;
+  const nav = `<div class="pn-jor-nav"><button type="button" class="nav-btn" data-pn-jor="-1" title="Dia anterior">‹</button><div class="pn-jor-dia"><b>${esc(fmtD(dia))}</b><span>${esc(rot)}</span></div><button type="button" class="nav-btn" data-pn-jor="1" title="Dia seguinte" ${dia >= hoje ? 'disabled' : ''}>›</button>${dia !== somaDia(hoje, -1) ? '<button type="button" class="btn-ghost oe-mini" data-pn-jor="ontem">Ontem</button>' : ''}<span class="pn-jor-esp"></span><button type="button" class="pn-ver" data-pn-jtog="${todosAbertos ? '-todos' : '+todos'}">${todosAbertos ? 'Recolher tudo' : 'Expandir tudo'}</button></div>`;
+  return `<section class="pn-bloco pn-jornal"><div class="pn-bloco-h"><h3>Jornal do dia</h3><span class="pn-tec-n">${alertas ? `<span class="pn-pill pn-p-red">${plural(alertas, 'ponto de atenção', 'pontos de atenção')}</span>` : '<span class="pn-pill pn-p-green">sem pontos de atenção</span>'}</span></div>${nav}<div class="pn-jc-grade">${cards.join('')}</div></section>`;
 }
 
 function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): sem os contadores de OS cobradas e Não cobrar
@@ -26915,6 +27080,7 @@ function ligar(){
       const pv = e.target.closest('[data-pv]'); if(pv && window.PREV_API){ PREV_API.pendenciasClique(pv, renderTudo); return; }
       const cm = e.target.closest('[data-pn-cm]'); if(cm){ if(O().abrirContratoManut) O().abrirContratoManut(cm.dataset.pnCm.split(',')); return; }
       const mn = e.target.closest('[data-pn-man]'); if(mn){ if(O().abrirManualOperacao) O().abrirManualOperacao(mn.dataset.pnMan.split(',')); return; }
+      const jt = e.target.closest('[data-pn-jtog]'); if(jt){ const k = jt.dataset.pnJtog; const TODOS = ['atividades', 'os', 'obras', 'financeiro', 'estoque', 'manut', 'oficina']; if(k === '+todos') ui.jornalAbertos = new Set(TODOS); else if(k === '-todos') ui.jornalAbertos = new Set(); else if(ui.jornalAbertos.has(k)) ui.jornalAbertos.delete(k); else ui.jornalAbertos.add(k); renderGestor(); return; }
       const jr = e.target.closest('[data-pn-jor]'); if(jr){ const k = jr.dataset.pnJor; const atual = ui.jornalDia || somaDia(hojeISO(), -1); ui.jornalDia = k === 'ontem' ? null : somaDia(atual, Number(k)); renderGestor(); return; }
       const g = e.target.closest('[data-pn-go]'); if(g){ ir(g.dataset.pnGo, g.dataset.pnSub); return; }
       const ab = e.target.closest('[data-pn-aba]'); if(ab){ ui.alexAba = ab.dataset.pnAba; renderAlex(); return; }
