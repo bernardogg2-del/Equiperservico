@@ -3960,6 +3960,15 @@
   </div>
 </div>
 
+<style>
+/* Criar equipamento (Oficina): aviso de cliente que já tem equipamento na oficina */
+.oficina-dup{ background:#fff7e6; border:1px solid #f3d9a4; border-radius:10px; padding:10px 12px; margin:4px 0 10px; font-size:13px; color:#5a4300; }
+.oficina-dup strong{ display:block; margin-bottom:6px; color:#4a3800; }
+.oficina-dup ul{ margin:0 0 8px; padding-left:18px; }
+.oficina-dup li{ margin:2px 0; }
+.oficina-dup li span{ color:#8a6d1f; font-size:12px; }
+.oficina-dup .oficina-dup-rodape{ font-size:12.5px; }
+</style>
 <div class="overlay" id="oficinaCriarEquipOverlay">
   <div class="modal">
     <h3>Criar equipamento</h3>
@@ -3987,6 +3996,8 @@
       <textarea id="oficinaCriarEquipObs" maxlength="500" placeholder="Observações sobre o equipamento..."></textarea>
       <div class="mono" id="oficinaCriarEquipObsCount" style="text-align:right; font-size:11px; color:var(--text-dim); margin-top:2px;">0/500</div>
     </div>
+    <!-- Aviso de possível duplicidade: cliente já tem equipamento na oficina (lista pra conferir antes de salvar) -->
+    <div id="oficinaCriarEquipDup" class="oficina-dup" hidden></div>
     <div class="field-error" id="oficinaCriarEquipErr"></div>
     <div class="modal-actions">
       <button type="button" class="btn-ghost" id="oficinaCriarEquipCancelBtn">Cancelar</button>
@@ -11620,6 +11631,7 @@ function abrirCriarEquipamentoOficina(){
   document.getElementById('oficinaCriarEquipObs').value = '';
   document.getElementById('oficinaCriarEquipObsCount').textContent = '0/500';
   document.getElementById('oficinaCriarEquipErr').textContent = '';
+  oficinaCriarEquipDupReset();
   const selTec = document.getElementById('oficinaCriarEquipTecnico');
   selTec.innerHTML = '<option value="">Selecionar técnico...</option>' + tecnicosAtuaisOrdenados().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
   selTec.value = (currentRole === 'tech' && currentTechName && tecnicosAtuaisOrdenados().includes(currentTechName)) ? currentTechName : '';   // técnico cadastrando: já vem ele mesmo
@@ -11664,12 +11676,52 @@ document.getElementById('oficinaGestorCriarEquipBtn').addEventListener('click', 
 document.getElementById('oficinaCriarEquipBtnTech').addEventListener('click', abrirCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipCancelBtn').addEventListener('click', fecharCriarEquipamentoOficina);
 document.getElementById('oficinaCriarEquipOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharCriarEquipamentoOficina(); });
+// ---- Conferência de duplicidade ao criar equipamento: se o cliente já tem equipamento na oficina,
+// mostra a lista dentro do próprio modal e exige um segundo clique ("Confirmar e salvar") pra seguir.
+// Só leitura de oficinaEquipamentos (já em memória); nada é gravado até a confirmação.
+let oficinaCriarEquipDupClienteOk = null;   // nome (normalizado) do cliente cuja lista já foi conferida
+function oficinaCriarEquipDupReset(){
+  oficinaCriarEquipDupClienteOk = null;
+  const box = document.getElementById('oficinaCriarEquipDup'); if(box){ box.hidden = true; box.innerHTML = ''; }
+  const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); if(btn) btn.textContent = 'Salvar';
+}
+function equipamentosDoClienteNaOficina(cliente){
+  const fold = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const alvo = fold(cliente); if(!alvo) return [];
+  const FORA = ['reinstalado', 'removido_oficina'];   // já saíram da oficina: não entram na conferência
+  return (Array.isArray(oficinaEquipamentos) ? oficinaEquipamentos : []).filter(eq => eq && fold(eq.client) === alvo && !FORA.includes(eq.status));
+}
+function oficinaCriarEquipMostrarDup(cliente, lista){
+  const box = document.getElementById('oficinaCriarEquipDup');
+  const itens = lista.map(eq => {
+    const st = OFICINA_STATUS_LABELS[eq.status] || eq.status || '—';
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(eq.withdrawnAt || '')); const ret = m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+    return `<li>${escapeHtml(eq.equipment || '—')} <span>— ${escapeHtml(st)}${ret ? ' · retirado em ' + ret : ''}</span></li>`;
+  }).join('');
+  const nomeExibido = (lista[0] && lista[0].client) || cliente;   // como está cadastrado na oficina
+  box.innerHTML = `<strong>${escapeHtml(nomeExibido)} já tem ${lista.length} equipamento${lista.length > 1 ? 's' : ''} na oficina:</strong><ul>${itens}</ul><div class="oficina-dup-rodape">Confira se o equipamento que você está cadastrando não é um dos acima. Se for um equipamento diferente, toque em <b>Confirmar e salvar</b>.</div>`;
+  box.hidden = false;
+  document.getElementById('oficinaCriarEquipConfirmBtn').textContent = 'Confirmar e salvar';
+  try{ const modal = box.closest('.modal'); if(modal) modal.scrollTop = modal.scrollHeight; }catch(e){}   // mostra o aviso e o botão de confirmar
+}
+// Se o cliente for alterado depois do aviso, a conferência precisa ser refeita.
+['oficinaCriarEquipCliente', 'oficinaCriarEquipClienteManual'].forEach(id => document.getElementById(id).addEventListener('input', () => { if(oficinaCriarEquipDupClienteOk !== null) oficinaCriarEquipDupReset(); }));
+
 document.getElementById('oficinaCriarEquipConfirmBtn').addEventListener('click', async () => {
   if(oficinaCriarEquipInFlight) return;
-  oficinaCriarEquipInFlight = true;
-  const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
   const clienteManual = document.getElementById('oficinaCriarEquipClienteManual').value.trim();
   const clienteBusca = document.getElementById('oficinaCriarEquipCliente').value.trim();
+  const clienteAtual = clienteManual || clienteBusca;
+  document.getElementById('oficinaCriarEquipErr').textContent = '';
+  if(clienteAtual){
+    const chave = clienteAtual.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if(oficinaCriarEquipDupClienteOk !== chave){
+      const jaTem = equipamentosDoClienteNaOficina(clienteAtual);
+      if(jaTem.length){ oficinaCriarEquipDupClienteOk = chave; oficinaCriarEquipMostrarDup(clienteAtual, jaTem); return; }   // 1º clique: só mostra a lista
+    }
+  }
+  oficinaCriarEquipInFlight = true;
+  const btn = document.getElementById('oficinaCriarEquipConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Salvando...';
   const r = await criarEquipamentoOficina({ client: clienteManual || clienteBusca, equipment: document.getElementById('oficinaCriarEquipNome').value, observation: document.getElementById('oficinaCriarEquipObs').value, technician: document.getElementById('oficinaCriarEquipTecnico').value, withdrawnDate: document.getElementById('oficinaCriarEquipDataRetirada').value });
   btn.disabled = false; btn.textContent = lbl; oficinaCriarEquipInFlight = false;
   if(!r.ok){ document.getElementById('oficinaCriarEquipErr').textContent = r.reason; return; }
@@ -24190,7 +24242,11 @@ function internoDe(r, pid){
   if(k === 'aguardando_compra' && !(e.i || e.s || e.o) && sinalPendente(r, pid)) return 'aguardando_sinal';   // pedido novo (sem andamento marcado): espera o sinal ser pago
   return k;
 }
-function obraDe(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
+function obraDeRegistrado(r, pid){ const e = entradaSt(r, pid); if(e.o && OBRA_ST.includes(e.o)) return e.o; if(e.s && OBRA_ST.includes(e.s)) return e.s; return internoDe(r, pid) === 'entregue' ? 'aguardando_inicio' : null; }     // a obra só "abre" quando o equipamento foi entregue
+// Pedido com alguma evolução marcada pelo técnico (etapa de equipamento iniciada ou finalizada) conta como obra INICIADA,
+// mesmo que o andamento registrado ainda seja anterior (aguardando liberação, liberado para entrega…) — 22/10.
+function temEvolucao(r, pid){ try{ const d = inst[r.id]; if(!d) return false; return subsDoPedido(d, pid).some(sub => progressoSub(d, sub) > 0); }catch(e){ return false; } }
+function obraDe(r, pid){ const o = obraDeRegistrado(r, pid); if(o === 'iniciado' || o === 'aguardando_testes' || o === 'finalizado') return o; return temEvolucao(r, pid) ? 'iniciado' : o; }
 const statusObraDe = (r, pid) => obraDe(r, pid) || internoDe(r, pid);          // situação "principal" do pedido = a mais avançada
 const APROVACAO = [['aguardando', 'Aguardando aprovação'], ['aprovado', 'Aprovado'], ['nao_aprovado', 'Não aprovado']];
 const aprovDe = (p) => (p && p.aprovacao) || 'aguardando';
@@ -24982,7 +25038,7 @@ function andamentoPrincipal(pares){
 // Os demais andamentos do cliente, para mostrar ao lado do principal: a etapa interna dos pedidos ainda não entregues e a etapa de obra dos outros pedidos
 function outrosAndamentos(pares, prin){
   const out = []; const add = (k) => { if(k && k !== prin && !out.includes(k)) out.push(k); };
-  pares.forEach(x => { const i = internoDe(x.r, x.p.id), o = obraDe(x.r, x.p.id); if(i !== 'entregue') add(i); if(o && o !== 'finalizado' && !(o === 'aguardando_inicio' && i !== 'entregue')) add(o); else if(!o) add(statusObraDe(x.r, x.p.id)); });
+  pares.forEach(x => { const i = internoDe(x.r, x.p.id), o = obraDe(x.r, x.p.id); if(i !== 'entregue') add(i); if(o && o !== 'finalizado' && !(o === 'aguardando_inicio' && i !== 'entregue')) add(o); else if(!o) add(statusObraDe(x.r, x.p.id)); const reg = obraDeRegistrado(x.r, x.p.id); if(reg && reg !== o) add(reg); /* iniciado por evolução: mostra ao lado o andamento registrado */ });
   return out.sort((a, b) => STATUS_OBRA.findIndex(x => x[0] === a) - STATUS_OBRA.findIndex(x => x[0] === b));
 }
 function renderGestor(){
