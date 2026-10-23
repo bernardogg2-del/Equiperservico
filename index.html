@@ -21346,24 +21346,33 @@ function gerarPdfInstalacao(dados){
   const caixas = [[String(eqs.length), 'Equipamentos', C.ink], [String(n('testado')), 'Finalizados e testados', '#1F7A44'], [String(n('finalizado')), 'Finalizados (a testar)', '#3E9A62'], [String(n('iniciado')), 'Iniciados', '#2F6FB0'], [String(n('liberado') + n('nao_liberado')), 'A iniciar', '#C62828']];
   const cw = (W - 4 * 2.5) / 5; garantir(20);
   caixas.forEach(([num, rot, cor], i) => { const x = M + i * (cw + 2.5); doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(x, y, cw, 16, 2, 2, 'FD'); setF('serifB', 17, cor); txt(num, x + 3.2, y + 8.6); setF('sansB', 6.6, C.dim); txt(rot, x + 3.2, y + 13.4); });
-  y += 19; setF('sans', 8.5, C.dim); txt('Progresso geral: ' + pct + '% · ' + feitas + ' de ' + totEt + ' etapas concluídas (o Teste vale 10% de cada equipamento)', M, y + 2.5); doc.setFillColor('#ECEDEF'); doc.roundedRect(M, y + 4.2, W, 2.6, 1.3, 1.3, 'F'); if(pct > 0){ doc.setFillColor('#2E7D4F'); doc.roundedRect(M, y + 4.2, Math.max(2.6, W * pct / 100), 2.6, 1.3, 1.3, 'F'); } y += 11;
+  y += 19; garantir(30);
+  { const R = 11, cx = M + R + 1, cy = y + R + 1;
+    doc.setDrawColor('#ECEDEF'); doc.setLineWidth(2.6); doc.circle(cx, cy, R, 'S');
+    if(pct > 0){ doc.setDrawColor(pct >= 100 ? '#2E7D4F' : '#2F6FB0'); doc.setLineWidth(2.6); try{ doc.setLineCap('round'); }catch(e){}
+      const fim = pct >= 100 ? 360 : pct * 3.6; for(let a = 0; a < fim; a += 2){ const b = Math.min(fim, a + 2), r0 = (a - 90) * Math.PI / 180, r1 = (b - 90) * Math.PI / 180; doc.line(cx + R * Math.cos(r0), cy + R * Math.sin(r0), cx + R * Math.cos(r1), cy + R * Math.sin(r1)); }
+      try{ doc.setLineCap('butt'); }catch(e){} }
+    setF('sansB', 13, C.texto); txt(pct + '%', cx, cy + 1.9, { align: 'center' });
+    setF('sansB', 11, C.texto); txt('Andamento geral da obra', cx + R + 6, cy - 2.2); setF('sans', 8.5, C.dim); txt(feitas + ' de ' + totEt + ' etapas concluídas', cx + R + 6, cy + 3); txt('O Teste vale 10% de cada equipamento', cx + R + 6, cy + 7.2); }
+  y += 2 * 11 + 6;
   // ---------------- pedidos → sistemas → equipamentos ----------------
   (dados.pedidos || []).forEach(p => {
     const todos = []; p.sistemas.forEach(s => s.equipamentos.forEach(e => todos.push(e))); const fin = todos.filter(e => e.estado === 'finalizado' || e.estado === 'testado').length;
-    garantir(14); doc.setFillColor(C.ink); doc.roundedRect(M, y, W, 8.6, 1.8, 1.8, 'F'); setF('sansB', 9.5, '#FFFFFF'); txt('Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), M + 4, y + 5.7);
+    garantir(36); doc.setFillColor(C.ink); doc.roundedRect(M, y, W, 8.6, 1.8, 1.8, 'F'); setF('sansB', 9.5, '#FFFFFF'); txt('Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), M + 4, y + 5.7);
     setF('sansB', 8, '#FFFFFF'); txt(fin + ' de ' + todos.length + (todos.length === 1 ? ' finalizado' : ' finalizados'), PW - M - 4, y + 5.6, { align: 'right' }); y += 11.5;
     p.sistemas.forEach(s => {
       garantir(16); setF('sansB', 10, C.texto); txt(s.nome, M + 1, y + 3.4); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, y + 5.2, PW - M, y + 5.2); y += 8;
       s.equipamentos.forEach(e => {
         // linha das etapas: quebra em várias linhas se necessário
-        setF('sans', 8.6, C.texto); const itens = e.etapas.map(t => { const es = t.estado || (t.feito ? 'finalizado' : 'nao_comecou'); t.es = es; const rot = limparPdf(t.nome) + (es === 'finalizado' && t.em ? '  ' + fmtData(String(t.em).slice(0, 10)) : es === 'iniciado' ? '  (iniciado)' : ''); return { t, rot, w: larg(rot) + 8 }; });
+        setF('sans', 8.6, C.texto); const itens = e.etapas.map(t => { const es = t.estado || (t.feito ? 'finalizado' : 'nao_comecou'); t.es = es; const rot = limparPdf(t.nome) + ' — ' + (es === 'finalizado' ? 'finalizada' + (t.em ? ' dia ' + fmtData(String(t.em).slice(0, 10)) : '') : es === 'iniciado' ? 'iniciada' : 'não iniciada'); return { t, rot, w: larg(rot) + 8 }; });
         const linhas = []; let atual = [], acum = 0; itens.forEach(it => { if(acum + it.w > W - 10 && atual.length){ linhas.push(atual); atual = []; acum = 0; } atual.push(it); acum += it.w + 3; }); if(atual.length) linhas.push(atual);
-        const h = 9 + linhas.length * 5.4; garantir(h + 1.5);
+        setF('sans', 8.4, C.texto); const obsL = e.obs ? doc.splitTextToSize('Obs.: ' + limparPdf(e.obs), W - 14) : []; const h = 9 + linhas.length * 5.4 + (obsL.length ? obsL.length * 4.2 + 3.5 : 0); garantir(h + 1.5);
         doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha2); doc.setLineWidth(0.22); doc.roundedRect(M, y, W, h, 1.6, 1.6, 'FD');
         setF('sansB', 9.6, C.texto); txt(e.nome, M + 4, y + 5.5); pilula(ROT[e.estado] || e.estado, PIL[e.estado] || PDF_PILULA.red, PW - M - 3.5, y + 2.2, 5);
         let ly = y + 10.2; linhas.forEach(linha => { let x = M + 5; linha.forEach(it => {
           if(it.t.es === 'finalizado'){ doc.setFillColor('#2E7D4F'); doc.circle(x, ly - 1.1, 1.3, 'F'); } else if(it.t.es === 'iniciado'){ doc.setFillColor('#2F6FB0'); doc.circle(x, ly - 1.1, 1.3, 'F'); } else { doc.setDrawColor(C.dim); doc.setLineWidth(0.3); doc.circle(x, ly - 1.1, 1.3, 'S'); }
           setF(it.t.es !== 'nao_comecou' ? 'sansB' : 'sans', 8.6, it.t.es !== 'nao_comecou' ? C.texto : C.dim); txt(it.rot, x + 3, ly); x += it.w + 3; }); ly += 5.4; });
+        if(obsL.length){ const oh = obsL.length * 4.2 + 2; doc.setFillColor('#FBEDEE'); doc.roundedRect(M + 3, ly - 3.4, W - 6, oh, 1.2, 1.2, 'F'); doc.setFillColor('#C62828'); doc.rect(M + 3, ly - 3.4, 0.9, oh, 'F'); setF('sans', 8.4, '#7A1D22'); obsL.forEach((l, k) => txt(l, M + 6, ly + 0.2 + k * 4.2)); }
         y += h + 2; });
       y += 2; });
     y += 3; });
@@ -25762,7 +25771,7 @@ function contatoDoCliente(regs){
 }
 function htmlContatoCliente(regs){
   const c = contatoDoCliente(regs); const ids = regs.map(r => r.id).join(','); const temFone = phoneDigits(c.fone).length >= 10;
-  return `<div class="obrg-contato"><span class="obrg-contato-i" title="Pessoa de contato">👤 ${c.contato ? esc(c.contato) : '<i>sem contato</i>'}</span><span class="obrg-contato-i" title="Telefone">📞 ${c.fone ? esc(c.fone) : '<i>sem telefone</i>'}</span><button type="button" class="obr-ic" data-obrg-edcontato="${esc(ids)}" title="Editar contato e telefone" aria-label="Editar contato">✎</button><span class="obrg-contato-esp"></span><button type="button" class="btn-ghost oe-mini" data-obrg-relver="${esc(ids)}" title="Abrir o relatório visual (imprimir ou salvar em PDF)">📄 Ver relatório</button><button type="button" class="btn-primary oe-mini" data-obrg-relzap="${esc(ids)}" ${temFone ? '' : 'disabled title="Cadastre o telefone para enviar"'}>📲 Enviar relatório</button></div>`;
+  return `<div class="obrg-contato"><span class="obrg-contato-i" title="Pessoa de contato">👤 ${c.contato ? esc(c.contato) : '<i>sem contato</i>'}</span><span class="obrg-contato-i" title="Telefone">📞 ${c.fone ? esc(c.fone) : '<i>sem telefone</i>'}</span><button type="button" class="obr-ic" data-obrg-edcontato="${esc(ids)}" title="Editar contato e telefone" aria-label="Editar contato">✎</button><span class="obrg-contato-esp"></span><button type="button" class="btn-ghost oe-mini" data-obrg-relver="${esc(ids)}" title="Abrir o PDF do relatório de andamento">📄 Ver relatório</button><button type="button" class="btn-primary oe-mini" data-obrg-relzap="${esc(ids)}" ${temFone ? '' : 'disabled title="Cadastre o telefone para enviar"'}>📲 Enviar relatório</button></div>`;
 }
 function abrirEditarContato(ids){
   const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return; const c = contatoDoCliente(regs);
@@ -25772,79 +25781,53 @@ function abrirEditarContato(ids){
       const cl = clientePorNome(nomeCliente(regs[0])); if(cl){ cl.contato = v.contato || cl.contato; cl.fone = v.fone || cl.fone; try{ await saveClients(true); }catch(e){} }
       renderGestor(); try{ renderLista(); }catch(e){} await store.save(true); return null; } });
 }
-// ---- revisão 9: dados do relatório (usados pelo texto do WhatsApp e pelo relatório visual) ----
-const fmtDiaRel = (iso) => { if(!iso) return ''; const t = new Date(iso); if(isNaN(t)) return ''; const dd = String(t.getDate()).padStart(2, '0') + '/' + String(t.getMonth() + 1).padStart(2, '0'); return t.getFullYear() === new Date().getFullYear() ? dd : dd + '/' + t.getFullYear(); };
-// Etapas do pedido somadas por nome (Elétrica, Hidráulica, Teste…): finalizada quando TODOS os equipamentos que a têm a finalizaram; a data é a da última marcação.
-function etapasAgregadas(d, subs){
-  const mapa = new Map();
-  subs.forEach(sub => etapasDe(sub).forEach(e => { const k = fold(e.nome); if(!mapa.has(k)) mapa.set(k, { nome: e.nome, ordem: e.ordem || 0, total: 0, fin: 0, ini: 0, ultima: null });
-    const m = mapa.get(k); m.total++; const es = estadoEtapa(d, sub.id, e.id); const f = ((d.prog || {})[sub.id] || {})[e.id];
-    if(es === 'finalizado'){ m.fin++; if(f && f.em && (!m.ultima || f.em > m.ultima)) m.ultima = f.em; } else if(es === 'iniciado') m.ini++; }));
-  return Array.from(mapa.values()).sort((a, b) => a.ordem - b.ordem).map(m => Object.assign(m, { estado: m.fin === m.total ? 'finalizada' : (m.fin || m.ini) ? 'andamento' : 'nao_iniciada' }));
-}
-const rotEtapaAgg = (m) => m.nome + ' — ' + (m.estado === 'finalizada' ? 'finalizada' + (m.ultima ? ' dia ' + fmtDiaRel(m.ultima) : '') : m.estado === 'andamento' ? 'em andamento (' + m.fin + ' de ' + m.total + ' ' + (m.total === 1 ? 'equipamento' : 'equipamentos') + ')' : 'a iniciar');
-function dadosRelatorioObra(regs){
-  const pares = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
-  const peds = pares.map(({ r, p }) => { const d = inst[r.id] || {}; const subs = subsDoPedido(d, p.id); const emp = (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-    return { numero: p.numero, descricao: p.descricao || '', empresa: emp, status: rotObra(statusObraDe(r, p.id)), pct: Math.round(progressoPedido(r, p) * 100), temEquip: subs.length > 0, semEquip: !subs.length && !!semEquipDe(r, p.id),
-      res: subs.length ? resumoPedido(d, p.id) : null, etapas: etapasAgregadas(d, subs),
-      equips: subs.map(sub => { const es = estadoSub(d, sub); const o = (d.obsEq || {})[sub.id]; return { nome: sub.nome, sistema: sub.sisNome || '', estado: es, rot: rotEstado(es), pct: Math.round(progressoSub(d, sub) * 100), obs: o && o.t ? o.t : '', obsPor: (o && o.por) || '', obsEm: (o && o.em) || '' }; }) }; });
-  return { cliente: nomeCliente(regs[0]), contato: contatoDoCliente(regs), data: new Date().toLocaleDateString('pt-BR'), pct: pctPedidos(pares), pedidos: peds };
-}
-const anelTexto = (pct) => pct >= 100 ? '●' : pct >= 63 ? '◕' : pct >= 38 ? '◑' : pct > 0 ? '◔' : '○';   // "bolinha" de progresso para o texto do WhatsApp
-// Texto do relatório (WhatsApp): anel de %, status de cada etapa com a data, equipamentos pendentes e TODAS as observações anotadas.
+// ---- revisão 9: o relatório de andamento é UM só — o PDF de instalação (anel geral, situação de cada etapa por equipamento, observações) ----
+// Mesmo PDF para "Relatório PDF" (baixa), "Ver relatório" (abre) e "Enviar relatório" (anexa à conversa).
 function mensagemRelatorioObra(regs){
-  const R = dadosRelatorioObra(regs);
-  const L = ['Olá' + (R.contato.contato ? ' ' + R.contato.contato : '') + ', segue o relatório de andamento da obra do cliente *' + R.cliente + '* (' + R.data + '):', ''];
-  R.pedidos.forEach(p => {
-    L.push('*Pedido ' + p.numero + (p.descricao ? ' · ' + p.descricao : '') + '*' + (R.pedidos.length > 1 && p.empresa ? ' (' + p.empresa + ')' : ''));
-    L.push(anelTexto(p.pct) + ' ' + p.pct + '% · ' + p.status);
-    p.etapas.forEach(m => L.push((m.estado === 'finalizada' ? '✅ ' : m.estado === 'andamento' ? '🔧 ' : '⚪ ') + rotEtapaAgg(m)));
-    if(p.res) L.push('Equipamentos: ' + p.res.finalizados + ' de ' + p.res.total + ' finalizados' + (p.res.testados ? ' (' + p.res.testados + ' testados)' : ''));
-    p.equips.forEach(e => { if(instalado(e.estado) && !e.obs) return; L.push('• ' + e.nome + ' — ' + e.rot + (e.obs ? ': ' + e.obs : '')); });
-    if(!p.temEquip && p.semEquip) L.push('(pedido sem equipamentos para instalar)');
-    L.push(''); });
-  L.push('*Andamento geral da obra: ' + anelTexto(R.pct) + ' ' + R.pct + '%*'); L.push(''); L.push('Equiper Projetos e Instalações');
-  return L.join('\n');
+  const c = contatoDoCliente(regs);
+  return 'Olá' + (c.contato ? ' ' + c.contato : '') + ', estamos enviando o relatório de andamento da obra do cliente *' + nomeCliente(regs[0]) + '*. O PDF segue em anexo. Qualquer dúvida, é só falar. Equiper Projetos e Instalações';
 }
-// Relatório visual (abre em outra aba; botão para imprimir ou salvar em PDF): anéis de progresso, etapas com data e observações.
-function anelSvg(pct, tam){
-  const c = 2 * Math.PI * 42, off = c * (1 - Math.max(0, Math.min(100, pct)) / 100), cor = pct >= 100 ? '#2E7D4F' : pct > 0 ? '#2F6F9F' : '#B8BDC4';
-  return `<svg viewBox="0 0 100 100" width="${tam}" height="${tam}" role="img" aria-label="${pct}%"><circle cx="50" cy="50" r="42" fill="none" stroke="#E6E8EB" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="${cor}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 50 50)"/><text x="50" y="${tam >= 80 ? 58 : 60}" text-anchor="middle" font-size="${tam >= 80 ? 26 : 28}" font-weight="800" fill="#1F2328" font-family="Arial,Helvetica,sans-serif">${pct}%</text></svg>`;
+async function pdfDoCliente(regs){          // cliente com registros nas duas empresas: um PDF só, com os pedidos de todos
+  await carregarInstTodos(); regs = (regs || []).filter(Boolean); if(!regs.length) return { erro: 'Obra não encontrada.' };
+  const partes = regs.map(r => ({ r, dados: dadosRelatorio(r, inst[r.id] || {}, null) })); const pedidos = [];
+  partes.forEach(({ r, dados }) => dados.pedidos.forEach(p => pedidos.push(Object.assign({}, p, { descricao: (p.descricao || '') + (regs.length > 1 ? ' (' + (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1] + ')' : '') }))));
+  if(!pedidos.length) return { erro: 'Ainda não há equipamentos cadastrados nesta obra para gerar o relatório.' };
+  if(!window.PREV_API || !PREV_API.gerarPdfInstalacao) return { erro: 'O gerador de PDF não está disponível agora.' };
+  try{ const blob = PREV_API.gerarPdfInstalacao(Object.assign({}, partes[0].dados, { pedidos })); return { blob, nome: 'Relatorio-Instalacao-' + (fold(partes[0].dados.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + hojeStr() + '.pdf' }; }
+  catch(e){ console.error('obras: falha ao gerar o PDF', e); return { erro: 'Não foi possível gerar o PDF agora. Tente de novo.' }; }
 }
-function buildRelatorioObraHtml(regs){
-  const R = dadosRelatorioObra(regs); const ck = { finalizada: '✔', andamento: '▸', nao_iniciada: '○' };
-  const peds = R.pedidos.map(p => `<section class="ped"><div class="ped-h"><div class="ped-t"><h2>Pedido ${esc(p.numero)}${p.descricao ? ' · ' + esc(p.descricao) : ''}</h2><div class="sub"><b>${p.pct}%</b> · ${esc(p.status)}${R.pedidos.length > 1 && p.empresa ? ' · ' + esc(p.empresa) : ''}${p.res ? ' · ' + p.res.finalizados + ' de ' + p.res.total + ' equipamentos finalizados' + (p.res.testados ? ' (' + p.res.testados + ' testados)' : '') : ''}</div></div></div>
-    ${p.etapas.length ? `<div class="chips">${p.etapas.map(m => `<span class="chip ${m.estado}"><b>${ck[m.estado]}</b> ${esc(rotEtapaAgg(m))}</span>`).join('')}</div>` : ''}
-    ${p.equips.length ? `<table><thead><tr><th>Equipamento</th><th>Situação</th></tr></thead><tbody>${p.equips.map(e => `<tr><td><b>${esc(e.nome)}</b>${e.sistema ? `<div class="sub">${esc(e.sistema)}</div>` : ''}${e.obs ? `<div class="obs">📝 ${esc(e.obs)}${e.obsEm ? `<small> · ${esc(fmtDiaRel(e.obsEm))}</small>` : ''}</div>` : ''}</td><td><span class="st st-${esc(e.estado)}">${esc(e.rot)}</span></td></tr>`).join('')}</tbody></table>` : `<p class="sub">${p.semEquip ? 'Pedido sem equipamentos para instalar.' : 'Equipamentos ainda não cadastrados.'}</p>`}
-  </section>`).join('');
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Relatório de andamento — ${esc(R.cliente)}</title>
-<style>*{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#1F2328;margin:0;background:#F3F4F6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-.pg{max-width:820px;margin:0 auto;padding:22px 18px 40px} .topo{display:flex;align-items:center;gap:18px;background:#fff;border-radius:16px;padding:18px 20px;border:1px solid #E3E4E6}
-.topo h1{margin:0 0 3px;font-size:21px} .topo .sub{font-size:13px}.sub{color:#5F6670;font-size:12.5px;margin-top:2px} .marca{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#2F6F9F;font-weight:700;margin-bottom:4px}
-.ped{background:#fff;border:1px solid #E3E4E6;border-radius:16px;padding:16px 18px;margin-top:14px;break-inside:avoid} .ped-h{display:flex;align-items:center;gap:16px} .ped h2{margin:0;font-size:16px}
-.chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 6px} .chip{font-size:12.5px;border-radius:999px;padding:5px 11px;border:1px solid #D5D8DC;background:#F7F8F9;color:#444} .chip b{margin-right:2px}
-.chip.finalizada{background:#E7F4EC;border-color:#A9D5B8;color:#1D5E39} .chip.andamento{background:#E8F1F8;border-color:#AFCBE2;color:#1F527A}
-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px} th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#7A8088;padding:4px 6px;border-bottom:1px solid #E3E4E6} td{padding:7px 6px;border-bottom:1px solid #F0F1F3;vertical-align:middle} td.an{width:50px}
-.obs{margin-top:5px;font-size:12.5px;color:#7a1d22;background:#FBEDEE;border-left:3px solid #D88;border-radius:5px;padding:4px 8px;white-space:pre-wrap} .obs small{color:#777}
-.st{font-size:12px;border-radius:999px;padding:3px 9px;background:#EEF0F2;white-space:nowrap} .st-finalizado,.st-testado{background:#E7F4EC;color:#1D5E39} .st-iniciado{background:#E8F1F8;color:#1F527A} .st-nao_liberado{background:#FBEDEE;color:#8A2229}
-.acoes{margin-top:16px;display:flex;gap:10px} .acoes button{font:600 14px Arial;padding:10px 18px;border-radius:10px;border:0;background:#2F6F9F;color:#fff;cursor:pointer} .rod{margin-top:18px;font-size:12px;color:#7A8088;text-align:center}
-@media print{body{background:#fff}.acoes{display:none}.pg{padding:0}} @media(max-width:560px){.topo{flex-direction:column;align-items:flex-start}}</style></head><body><div class="pg">
-<div class="topo">${anelSvg(R.pct, 110)}<div><div class="marca">Relatório de andamento da obra</div><h1>${esc(R.cliente)}</h1><div class="sub">${esc(R.data)}${R.contato.contato ? ' · A/C ' + esc(R.contato.contato) : ''}</div><div class="sub">Andamento geral da obra</div></div></div>
-${peds}
-<div class="acoes"><button type="button" onclick="window.print()">🖨 Imprimir / salvar em PDF</button></div><div class="rod">Equiper Projetos e Instalações</div></div></body></html>`;
-}
-function verRelatorioObra(ids){
+async function verRelatorioObra(ids){
   const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return;
-  const w = window.open('', '_blank'); if(!w){ avisar('O navegador bloqueou a abertura do relatório. Permita pop-ups para este site e tente de novo.', 7000); return; }
-  w.document.open(); w.document.write(buildRelatorioObraHtml(regs)); w.document.close(); try{ w.focus(); }catch(e){}
+  const w = window.open('', '_blank');                  // abre já, no toque (senão o navegador bloqueia), e põe o PDF quando ficar pronto
+  const p = await pdfDoCliente(regs); if(p.erro){ try{ if(w) w.close(); }catch(e){} avisar(p.erro, 6000); return; }
+  if(!w){ baixarBlob(p.blob, p.nome); avisar('O navegador bloqueou a abertura; o PDF foi baixado.', 6000); return; }
+  const url = URL.createObjectURL(p.blob); try{ w.location.href = url; }catch(e){ baixarBlob(p.blob, p.nome); } setTimeout(() => { try{ URL.revokeObjectURL(url); }catch(e){} }, 120000);
 }
-function enviarRelatorioObra(ids){
+// Envio igual ao do relatório de manutenção: mensagem curta + o PDF anexado (folha de compartilhar do aparelho) ou, no computador, baixa o PDF e abre a conversa.
+async function enviarRelatorioObra(ids){
   const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return; const c = contatoDoCliente(regs);
   if(phoneDigits(c.fone).length < 10){ avisar('Cadastre o telefone do contato (✎ ao lado do nome) para enviar o relatório.', 6000); return; }
-  const msg = mensagemRelatorioObra(regs); const quando = new Date().toISOString();
-  regs.forEach(r => { r.relatorioEnviado = { em: quando, por: quem() || null, para: c.fone }; }); store.save(true).catch(() => {});
-  openWhatsapp(toWhatsappNumber(c.fone), msg);
+  avisar('Preparando o PDF para enviar…', 3500);
+  const p = await pdfDoCliente(regs); if(p.erro){ avisar(p.erro, 6000); return; }
+  const msg = mensagemRelatorioObra(regs); const file = new File([p.blob], p.nome, { type: 'application/pdf' });
+  const podeCompartilhar = !!(navigator.share && navigator.canShare && navigator.canShare({ files: [file] }));
+  const registrar = () => { const quando = new Date().toISOString(); regs.forEach(r => { r.relatorioEnviado = { em: quando, por: quem() || null, para: c.fone }; }); store.save(true).catch(() => {}); };
+  let ov = document.getElementById('obrEnvioOverlay'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrEnvioOverlay';
+  ov.innerHTML = `<div class="modal" style="max-width:480px;"><h3>Enviar relatório — ${esc(nomeCliente(regs[0]))}</h3>
+    <p style="margin:0 0 8px;"><b>PDF pronto</b> · ${esc(p.nome)} (${Math.max(1, Math.round(p.blob.size / 1024))} KB)</p>
+    <p style="margin:0 0 10px; font-size:13px;">Para: <b>${esc(c.contato || 'contato do cliente')}</b> · ${esc(c.fone)}</p>
+    <p id="obrEnvioDica" style="margin:0 0 10px; font-size:12.5px; color:var(--text-dim);">${podeCompartilhar ? 'Toque em <b>Compartilhar o PDF</b>: o aparelho abre a lista de aplicativos com o PDF já anexado. Escolha o <b>WhatsApp</b> e depois o contato acima.' : 'Este navegador não deixa o WhatsApp receber o arquivo sozinho. O botão abaixo <b>baixa o PDF</b> e <b>abre a conversa</b> com a mensagem pronta — é só arrastar o PDF baixado para dentro da conversa (ou usar o clipe 📎).'}</p>
+    <div class="field-error" id="obrEnvioErro"></div><div id="obrEnvioAcoes" style="display:flex; flex-direction:column; gap:8px;"></div></div>`;
+  document.body.appendChild(ov); ov.addEventListener('click', (e) => { if(e.target === ov) ov.remove(); });
+  const acoes = ov.querySelector('#obrEnvioAcoes'); const erro = (t) => { ov.querySelector('#obrEnvioErro').textContent = t || ''; };
+  const botao = (rot, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.style.width = '100%'; b.textContent = rot; b.onclick = fn; acoes.appendChild(b); return b; };
+  if(podeCompartilhar) botao('📲 Compartilhar o PDF', 'btn-primary', async () => { erro('');
+    try{ await navigator.share({ files: [file], text: msg, title: 'Relatório de andamento da obra' }); registrar(); ov.remove(); avisar('Relatório enviado e registrado.'); }
+    catch(e){ if(e && e.name === 'AbortError') return; erro('O aparelho não conseguiu compartilhar o arquivo. Use o botão de baixar abaixo.'); } });
+  botao(podeCompartilhar ? '⬇ Baixar o PDF e abrir o WhatsApp só com a mensagem' : '⬇ Baixar o PDF e abrir o WhatsApp', podeCompartilhar ? 'btn-ghost' : 'btn-primary', () => { erro(''); baixarBlob(p.blob, p.nome); registrar(); openWhatsapp(toWhatsappNumber(c.fone), msg);
+    ov.querySelector('#obrEnvioDica').innerHTML = 'O PDF foi baixado (<b>' + esc(p.nome) + '</b>). Na conversa do WhatsApp que abriu, <b>arraste o PDF</b> para dentro (ou use o clipe 📎) e envie.'; });
+  botao('Fechar', 'btn-ghost', () => ov.remove());
 }
 function painelEquip(r, p, d){
   const res = resumoPedido(d, p.id); const dp = (d.pedidos || {})[p.id]; const sists = lista(dp && dp.sistemas).sort(ord); const key = r.id + '|' + p.id; const se = semEquipDe(r, p.id);
@@ -26537,19 +26520,14 @@ async function abrirContratoManut(rids){
 function dadosRelatorio(r, d, pidSo){
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
   const pedidos = pedidosDe(r).filter(p => !p.cancelado && (!pidSo || p.id === pidSo)).map(p => { const dp = (d.pedidos || {})[p.id];
-    const sistemas = lista(dp && dp.sistemas).sort(ord).map(sis => ({ nome: sis.nome, equipamentos: lista(sis.subitens).sort(ord).map(sub => ({ nome: sub.nome, estado: estadoSub(d, sub), etapas: etapasDe(sub).map(e => { const f = ((d.prog || {})[sub.id] || {})[e.id]; const es = estadoEtapa(d, sub.id, e.id); return { nome: e.nome, estado: es, feito: es === 'finalizado', em: f ? f.em : null }; }) })) })).filter(x => x.equipamentos.length);
+    const sistemas = lista(dp && dp.sistemas).sort(ord).map(sis => ({ nome: sis.nome, equipamentos: lista(sis.subitens).sort(ord).map(sub => ({ nome: sub.nome, estado: estadoSub(d, sub), obs: (((d.obsEq || {})[sub.id]) || {}).t || '', etapas: etapasDe(sub).map(e => { const f = ((d.prog || {})[sub.id] || {})[e.id]; const es = estadoEtapa(d, sub.id, e.id); return { nome: e.nome, estado: es, feito: es === 'finalizado', em: f ? f.em : null }; }) })) })).filter(x => x.equipamentos.length);
     return { numero: p.numero, descricao: p.descricao || '', sistemas }; }).filter(p => p.sistemas.length);
   return { cliente: nomeCliente(r), endereco: cli ? cli.address || '' : '', emitidoEm: new Date().toISOString(), pedidos };
 }
 function baixarBlob(blob, nome){ const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 4000); }
 async function baixarRelatorioCliente(rids){          // cliente com registros nas duas empresas: um PDF só, com os pedidos de todos
-  await carregarInstTodos(); const regs = rids.map(porId).filter(Boolean); if(!regs.length) return;
-  const partes = regs.map(r => ({ r, dados: dadosRelatorio(r, inst[r.id] || {}, null) })); const pedidos = [];
-  partes.forEach(({ r, dados }) => dados.pedidos.forEach(p => pedidos.push(Object.assign({}, p, { descricao: (p.descricao || '') + (regs.length > 1 ? ' (' + (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1] + ')' : '') }))));
-  if(!pedidos.length){ avisar('Ainda não há equipamentos cadastrados nesta obra para gerar o relatório.', 6000); return; }
-  if(!window.PREV_API || !PREV_API.gerarPdfInstalacao){ avisar('O gerador de PDF não está disponível agora.'); return; }
-  try{ const blob = PREV_API.gerarPdfInstalacao(Object.assign({}, partes[0].dados, { pedidos })); baixarBlob(blob, 'Relatorio-Instalacao-' + (fold(partes[0].dados.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + hojeStr() + '.pdf'); avisar('Relatório gerado.'); }
-  catch(e){ console.error('obras: falha ao gerar o PDF', e); avisar('Não foi possível gerar o PDF agora. Tente de novo.', 6000); }
+  const p = await pdfDoCliente(rids.map(porId)); if(p.erro){ avisar(p.erro, 6000); return; }
+  baixarBlob(p.blob, p.nome); avisar('Relatório gerado.');
 }
 async function baixarRelatorioObra(rid, pid){
   await carregarInstTodos(); const r = porId(rid); const d = inst[rid]; if(!r) return;
@@ -26677,7 +26655,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { _teste: { dadosRelatorioObra: (ids) => dadosRelatorioObra(ids.split(',').map(porId).filter(Boolean)), htmlRelatorioObra: (ids) => buildRelatorioObraHtml(ids.split(',').map(porId).filter(Boolean)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { _teste: { pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
