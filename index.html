@@ -25730,10 +25730,10 @@ function abrirEditarEquip(rid, pid, sid, subId){
       await escreverInst(up); return null; } });
 }
 function abrirObsEquip(rid, pid, sid, subId){
-  const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; const sub = sis && sis.subitens && sis.subitens[subId]; if(!sub) return; const obs = ((inst[rid] || {}).obsEq || {})[subId] || {};
-  formRapido({ titulo: 'Motivo — ' + sub.nome, aviso: 'Por que este equipamento ainda não está liberado e o que está faltando. Entra no relatório de andamento enviado ao cliente.',
-    campos: [ { id: 't', rotulo: 'Motivo / o que falta', tipo: 'area', valor: obs.t || '', dica: 'Ex.: aguardando chegada do boiler (previsão 30/10)' } ],
-    aoSalvar: async (v) => { await escreverInst({ ['obraInstalacao/' + rid + '/obsEq/' + subId]: v.t ? { t: v.t.slice(0, 300), em: new Date().toISOString(), por: quem() || null } : null }); return null; } });
+  const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; const sub = sis && sis.subitens && sis.subitens[subId]; if(!sub) return; const obs = ((inst[rid] || {}).obsEq || {})[subId] || {}; const nl = estadoSub(inst[rid] || {}, sub) === 'nao_liberado';
+  formRapido({ titulo: (nl ? 'Motivo — ' : 'Observação — ') + sub.nome, aviso: nl ? 'Por que este equipamento ainda não está liberado e o que está faltando. Entra no relatório de andamento do cliente.' : 'Anotação sobre este equipamento. Entra no relatório de andamento do cliente. Deixe em branco para apagar.',
+    campos: [ { id: 't', rotulo: nl ? 'Motivo / o que falta' : 'Observação', tipo: 'area', valor: obs.t || '', dica: nl ? 'Ex.: aguardando chegada do boiler (previsão 30/10)' : 'Ex.: instalado em local diferente do projeto' } ],
+    aoSalvar: async (v) => { await escreverInst({ ['obraInstalacao/' + rid + '/obsEq/' + subId]: v.t ? { t: v.t.slice(0, 500), em: new Date().toISOString(), por: quem() || null } : null }); return null; } });
 }
 function moverEquip(rid, pid, sid, subId, dir){
   const sis = ((((inst[rid] || {}).pedidos || {})[pid] || {}).sistemas || {})[sid]; if(!sis) return; const l = lista(sis.subitens).sort(ord); const i = l.findIndex(x => x.id === subId); const j = i + dir; if(i < 0 || j < 0 || j >= l.length) return;
@@ -25749,7 +25749,7 @@ function htmlEtapas(d, rid, sub, travado, compacto){
 function htmlEquip(d, rid, sub, opt){
   opt = opt || {}; const st = estadoSub(d, sub); const ets = etapasDe(sub); const prog = (d.prog || {})[sub.id] || {}; const bloqueado = !opt.gestor && st === 'nao_liberado'; const desab = !!opt.somenteLeitura || bloqueado;
   const obs = (d.obsEq || {})[sub.id];
-  const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button><button type="button" class="btn-ghost oe-mini ${obs && obs.t ? '' : 'obrg-obs-vazia'}" data-obrg-obseq="${esc(opt.key)}|${esc(sub.id)}" title="Anotar por que não está liberado e o que falta">${obs && obs.t ? '✎ Motivo' : '+ Motivo'}</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="obr-ic" data-obrg-edsub="${esc(opt.key)}|${esc(sub.id)}" title="Editar nome, descrição e etapas" aria-label="Editar equipamento ${esc(sub.nome)}">✎</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|-1" title="Mover para cima" aria-label="Mover ${esc(sub.nome)} para cima">▲</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|1" title="Mover para baixo" aria-label="Mover ${esc(sub.nome)} para baixo">▼</button><button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
+  const acoes = opt.gestor ? `${st === 'nao_liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Liberar</button>` : st === 'liberado' ? `<button type="button" class="btn-ghost oe-mini" data-obrg-lib="${esc(rid)}|${esc(sub.id)}">Bloquear</button>` : ''}<button type="button" class="btn-ghost oe-mini ${obs && obs.t ? '' : 'obrg-obs-vazia'}" data-obrg-obseq="${esc(opt.key)}|${esc(sub.id)}" title="${st === 'nao_liberado' ? 'Anotar por que não está liberado e o que falta' : 'Observação deste equipamento (entra no relatório do cliente)'}">${obs && obs.t ? '✎' : '+'} ${st === 'nao_liberado' ? 'Motivo' : 'Obs.'}</button><button type="button" class="obr-ic" data-obrg-edsub="${esc(opt.key)}|${esc(sub.id)}" title="Editar nome, descrição e etapas" aria-label="Editar equipamento ${esc(sub.nome)}">✎</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|-1" title="Mover para cima" aria-label="Mover ${esc(sub.nome)} para cima">▲</button><button type="button" class="obr-ic" data-obrg-mvsub="${esc(opt.key)}|${esc(sub.id)}|1" title="Mover para baixo" aria-label="Mover ${esc(sub.nome)} para baixo">▼</button><button type="button" class="obr-ic" data-obrg-rmsub="${esc(opt.key)}|${esc(sub.id)}" title="Remover equipamento">✕</button>` : '';
   return `<div class="obi-eq obi-eq-${st}"><div class="obi-eq-h"><b>${esc(sub.nome)}</b><span class="obi-st obi-st-${st}">${esc(rotEstado(st))}</span><span class="obi-eq-a">${acoes}</span></div>${sub.desc ? `<div class="obi-eq-desc">${esc(sub.desc)}</div>` : ''}
     ${obs && obs.t ? `<div class="obi-eq-obs"><b>${st === 'nao_liberado' ? '⏸ Não liberado:' : 'Obs.:'}</b> ${esc(obs.t)}<small>${obs.por ? ' · ' + esc(obs.por) : ''}${obs.em ? ' · ' + esc(new Date(obs.em).toLocaleDateString('pt-BR')) : ''}</small></div>` : ''}
     ${htmlEtapas(d, rid, sub, false, true)}
@@ -25762,7 +25762,7 @@ function contatoDoCliente(regs){
 }
 function htmlContatoCliente(regs){
   const c = contatoDoCliente(regs); const ids = regs.map(r => r.id).join(','); const temFone = phoneDigits(c.fone).length >= 10;
-  return `<div class="obrg-contato"><span class="obrg-contato-i" title="Pessoa de contato">👤 ${c.contato ? esc(c.contato) : '<i>sem contato</i>'}</span><span class="obrg-contato-i" title="Telefone">📞 ${c.fone ? esc(c.fone) : '<i>sem telefone</i>'}</span><button type="button" class="obr-ic" data-obrg-edcontato="${esc(ids)}" title="Editar contato e telefone" aria-label="Editar contato">✎</button><span class="obrg-contato-esp"></span><button type="button" class="btn-primary oe-mini" data-obrg-relzap="${esc(ids)}" ${temFone ? '' : 'disabled title="Cadastre o telefone para enviar"'}>📲 Enviar relatório</button></div>`;
+  return `<div class="obrg-contato"><span class="obrg-contato-i" title="Pessoa de contato">👤 ${c.contato ? esc(c.contato) : '<i>sem contato</i>'}</span><span class="obrg-contato-i" title="Telefone">📞 ${c.fone ? esc(c.fone) : '<i>sem telefone</i>'}</span><button type="button" class="obr-ic" data-obrg-edcontato="${esc(ids)}" title="Editar contato e telefone" aria-label="Editar contato">✎</button><span class="obrg-contato-esp"></span><button type="button" class="btn-ghost oe-mini" data-obrg-relver="${esc(ids)}" title="Abrir o relatório visual (imprimir ou salvar em PDF)">📄 Ver relatório</button><button type="button" class="btn-primary oe-mini" data-obrg-relzap="${esc(ids)}" ${temFone ? '' : 'disabled title="Cadastre o telefone para enviar"'}>📲 Enviar relatório</button></div>`;
 }
 function abrirEditarContato(ids){
   const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return; const c = contatoDoCliente(regs);
@@ -25772,20 +25772,72 @@ function abrirEditarContato(ids){
       const cl = clientePorNome(nomeCliente(regs[0])); if(cl){ cl.contato = v.contato || cl.contato; cl.fone = v.fone || cl.fone; try{ await saveClients(true); }catch(e){} }
       renderGestor(); try{ renderLista(); }catch(e){} await store.save(true); return null; } });
 }
-// Texto do relatório: andamento de cada pedido, equipamentos pendentes (com o motivo anotado) e o percentual geral.
-function mensagemRelatorioObra(regs){
-  const nome = nomeCliente(regs[0]); const c = contatoDoCliente(regs); const hoje = new Date().toLocaleDateString('pt-BR');
+// ---- revisão 9: dados do relatório (usados pelo texto do WhatsApp e pelo relatório visual) ----
+const fmtDiaRel = (iso) => { if(!iso) return ''; const t = new Date(iso); if(isNaN(t)) return ''; const dd = String(t.getDate()).padStart(2, '0') + '/' + String(t.getMonth() + 1).padStart(2, '0'); return t.getFullYear() === new Date().getFullYear() ? dd : dd + '/' + t.getFullYear(); };
+// Etapas do pedido somadas por nome (Elétrica, Hidráulica, Teste…): finalizada quando TODOS os equipamentos que a têm a finalizaram; a data é a da última marcação.
+function etapasAgregadas(d, subs){
+  const mapa = new Map();
+  subs.forEach(sub => etapasDe(sub).forEach(e => { const k = fold(e.nome); if(!mapa.has(k)) mapa.set(k, { nome: e.nome, ordem: e.ordem || 0, total: 0, fin: 0, ini: 0, ultima: null });
+    const m = mapa.get(k); m.total++; const es = estadoEtapa(d, sub.id, e.id); const f = ((d.prog || {})[sub.id] || {})[e.id];
+    if(es === 'finalizado'){ m.fin++; if(f && f.em && (!m.ultima || f.em > m.ultima)) m.ultima = f.em; } else if(es === 'iniciado') m.ini++; }));
+  return Array.from(mapa.values()).sort((a, b) => a.ordem - b.ordem).map(m => Object.assign(m, { estado: m.fin === m.total ? 'finalizada' : (m.fin || m.ini) ? 'andamento' : 'nao_iniciada' }));
+}
+const rotEtapaAgg = (m) => m.nome + ' — ' + (m.estado === 'finalizada' ? 'finalizada' + (m.ultima ? ' dia ' + fmtDiaRel(m.ultima) : '') : m.estado === 'andamento' ? 'em andamento (' + m.fin + ' de ' + m.total + ' ' + (m.total === 1 ? 'equipamento' : 'equipamentos') + ')' : 'a iniciar');
+function dadosRelatorioObra(regs){
   const pares = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
-  const L = ['Olá' + (c.contato ? ' ' + c.contato : '') + ', segue o relatório de andamento da obra do cliente *' + nome + '* (' + hoje + '):', ''];
-  pares.forEach(({ r, p }) => { const d = inst[r.id] || {}; const subs = subsDoPedido(d, p.id); const st = statusObraDe(r, p.id); const emp = (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-    L.push('*Pedido ' + p.numero + (p.descricao ? ' · ' + p.descricao : '') + '*' + (regs.length > 1 && emp ? ' (' + emp + ')' : ''));
-    L.push('Andamento: ' + rotObra(st) + (subs.length ? ' · ' + Math.round(progressoPedido(r, p) * 100) + '%' : ''));
-    if(subs.length){ const res = resumoPedido(d, p.id); L.push('Equipamentos: ' + res.finalizados + ' de ' + res.total + ' finalizados' + (res.testados ? ' (' + res.testados + ' testados)' : ''));
-      subs.forEach(sub => { const es = estadoSub(d, sub); if(instalado(es)) return; const obs = (d.obsEq || {})[sub.id]; L.push('• ' + sub.nome + ' — ' + rotEstado(es) + (obs && obs.t ? ': ' + obs.t : '')); }); }
-    const se = semEquipDe(r, p.id); if(!subs.length && se) L.push('(pedido sem equipamentos para instalar)');
+  const peds = pares.map(({ r, p }) => { const d = inst[r.id] || {}; const subs = subsDoPedido(d, p.id); const emp = (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
+    return { numero: p.numero, descricao: p.descricao || '', empresa: emp, status: rotObra(statusObraDe(r, p.id)), pct: Math.round(progressoPedido(r, p) * 100), temEquip: subs.length > 0, semEquip: !subs.length && !!semEquipDe(r, p.id),
+      res: subs.length ? resumoPedido(d, p.id) : null, etapas: etapasAgregadas(d, subs),
+      equips: subs.map(sub => { const es = estadoSub(d, sub); const o = (d.obsEq || {})[sub.id]; return { nome: sub.nome, sistema: sub.sisNome || '', estado: es, rot: rotEstado(es), pct: Math.round(progressoSub(d, sub) * 100), obs: o && o.t ? o.t : '', obsPor: (o && o.por) || '', obsEm: (o && o.em) || '' }; }) }; });
+  return { cliente: nomeCliente(regs[0]), contato: contatoDoCliente(regs), data: new Date().toLocaleDateString('pt-BR'), pct: pctPedidos(pares), pedidos: peds };
+}
+const anelTexto = (pct) => pct >= 100 ? '●' : pct >= 63 ? '◕' : pct >= 38 ? '◑' : pct > 0 ? '◔' : '○';   // "bolinha" de progresso para o texto do WhatsApp
+// Texto do relatório (WhatsApp): anel de %, status de cada etapa com a data, equipamentos pendentes e TODAS as observações anotadas.
+function mensagemRelatorioObra(regs){
+  const R = dadosRelatorioObra(regs);
+  const L = ['Olá' + (R.contato.contato ? ' ' + R.contato.contato : '') + ', segue o relatório de andamento da obra do cliente *' + R.cliente + '* (' + R.data + '):', ''];
+  R.pedidos.forEach(p => {
+    L.push('*Pedido ' + p.numero + (p.descricao ? ' · ' + p.descricao : '') + '*' + (R.pedidos.length > 1 && p.empresa ? ' (' + p.empresa + ')' : ''));
+    L.push(anelTexto(p.pct) + ' ' + p.pct + '% · ' + p.status);
+    p.etapas.forEach(m => L.push((m.estado === 'finalizada' ? '✅ ' : m.estado === 'andamento' ? '🔧 ' : '⚪ ') + rotEtapaAgg(m)));
+    if(p.res) L.push('Equipamentos: ' + p.res.finalizados + ' de ' + p.res.total + ' finalizados' + (p.res.testados ? ' (' + p.res.testados + ' testados)' : ''));
+    p.equips.forEach(e => { if(instalado(e.estado) && !e.obs) return; L.push('• ' + e.nome + ' — ' + e.rot + (e.obs ? ': ' + e.obs : '')); });
+    if(!p.temEquip && p.semEquip) L.push('(pedido sem equipamentos para instalar)');
     L.push(''); });
-  L.push('*Andamento geral da obra: ' + pctPedidos(pares) + '%*'); L.push(''); L.push('Equiper Projetos e Instalações');
+  L.push('*Andamento geral da obra: ' + anelTexto(R.pct) + ' ' + R.pct + '%*'); L.push(''); L.push('Equiper Projetos e Instalações');
   return L.join('\n');
+}
+// Relatório visual (abre em outra aba; botão para imprimir ou salvar em PDF): anéis de progresso, etapas com data e observações.
+function anelSvg(pct, tam){
+  const c = 2 * Math.PI * 42, off = c * (1 - Math.max(0, Math.min(100, pct)) / 100), cor = pct >= 100 ? '#2E7D4F' : pct > 0 ? '#2F6F9F' : '#B8BDC4';
+  return `<svg viewBox="0 0 100 100" width="${tam}" height="${tam}" role="img" aria-label="${pct}%"><circle cx="50" cy="50" r="42" fill="none" stroke="#E6E8EB" stroke-width="10"/><circle cx="50" cy="50" r="42" fill="none" stroke="${cor}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 50 50)"/><text x="50" y="${tam >= 80 ? 58 : 60}" text-anchor="middle" font-size="${tam >= 80 ? 26 : 28}" font-weight="800" fill="#1F2328" font-family="Arial,Helvetica,sans-serif">${pct}%</text></svg>`;
+}
+function buildRelatorioObraHtml(regs){
+  const R = dadosRelatorioObra(regs); const ck = { finalizada: '✔', andamento: '▸', nao_iniciada: '○' };
+  const peds = R.pedidos.map(p => `<section class="ped"><div class="ped-h"><div class="ped-t"><h2>Pedido ${esc(p.numero)}${p.descricao ? ' · ' + esc(p.descricao) : ''}</h2><div class="sub"><b>${p.pct}%</b> · ${esc(p.status)}${R.pedidos.length > 1 && p.empresa ? ' · ' + esc(p.empresa) : ''}${p.res ? ' · ' + p.res.finalizados + ' de ' + p.res.total + ' equipamentos finalizados' + (p.res.testados ? ' (' + p.res.testados + ' testados)' : '') : ''}</div></div></div>
+    ${p.etapas.length ? `<div class="chips">${p.etapas.map(m => `<span class="chip ${m.estado}"><b>${ck[m.estado]}</b> ${esc(rotEtapaAgg(m))}</span>`).join('')}</div>` : ''}
+    ${p.equips.length ? `<table><thead><tr><th>Equipamento</th><th>Situação</th></tr></thead><tbody>${p.equips.map(e => `<tr><td><b>${esc(e.nome)}</b>${e.sistema ? `<div class="sub">${esc(e.sistema)}</div>` : ''}${e.obs ? `<div class="obs">📝 ${esc(e.obs)}${e.obsEm ? `<small> · ${esc(fmtDiaRel(e.obsEm))}</small>` : ''}</div>` : ''}</td><td><span class="st st-${esc(e.estado)}">${esc(e.rot)}</span></td></tr>`).join('')}</tbody></table>` : `<p class="sub">${p.semEquip ? 'Pedido sem equipamentos para instalar.' : 'Equipamentos ainda não cadastrados.'}</p>`}
+  </section>`).join('');
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Relatório de andamento — ${esc(R.cliente)}</title>
+<style>*{box-sizing:border-box} body{font-family:Arial,Helvetica,sans-serif;color:#1F2328;margin:0;background:#F3F4F6;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pg{max-width:820px;margin:0 auto;padding:22px 18px 40px} .topo{display:flex;align-items:center;gap:18px;background:#fff;border-radius:16px;padding:18px 20px;border:1px solid #E3E4E6}
+.topo h1{margin:0 0 3px;font-size:21px} .topo .sub{font-size:13px}.sub{color:#5F6670;font-size:12.5px;margin-top:2px} .marca{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#2F6F9F;font-weight:700;margin-bottom:4px}
+.ped{background:#fff;border:1px solid #E3E4E6;border-radius:16px;padding:16px 18px;margin-top:14px;break-inside:avoid} .ped-h{display:flex;align-items:center;gap:16px} .ped h2{margin:0;font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 6px} .chip{font-size:12.5px;border-radius:999px;padding:5px 11px;border:1px solid #D5D8DC;background:#F7F8F9;color:#444} .chip b{margin-right:2px}
+.chip.finalizada{background:#E7F4EC;border-color:#A9D5B8;color:#1D5E39} .chip.andamento{background:#E8F1F8;border-color:#AFCBE2;color:#1F527A}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px} th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#7A8088;padding:4px 6px;border-bottom:1px solid #E3E4E6} td{padding:7px 6px;border-bottom:1px solid #F0F1F3;vertical-align:middle} td.an{width:50px}
+.obs{margin-top:5px;font-size:12.5px;color:#7a1d22;background:#FBEDEE;border-left:3px solid #D88;border-radius:5px;padding:4px 8px;white-space:pre-wrap} .obs small{color:#777}
+.st{font-size:12px;border-radius:999px;padding:3px 9px;background:#EEF0F2;white-space:nowrap} .st-finalizado,.st-testado{background:#E7F4EC;color:#1D5E39} .st-iniciado{background:#E8F1F8;color:#1F527A} .st-nao_liberado{background:#FBEDEE;color:#8A2229}
+.acoes{margin-top:16px;display:flex;gap:10px} .acoes button{font:600 14px Arial;padding:10px 18px;border-radius:10px;border:0;background:#2F6F9F;color:#fff;cursor:pointer} .rod{margin-top:18px;font-size:12px;color:#7A8088;text-align:center}
+@media print{body{background:#fff}.acoes{display:none}.pg{padding:0}} @media(max-width:560px){.topo{flex-direction:column;align-items:flex-start}}</style></head><body><div class="pg">
+<div class="topo">${anelSvg(R.pct, 110)}<div><div class="marca">Relatório de andamento da obra</div><h1>${esc(R.cliente)}</h1><div class="sub">${esc(R.data)}${R.contato.contato ? ' · A/C ' + esc(R.contato.contato) : ''}</div><div class="sub">Andamento geral da obra</div></div></div>
+${peds}
+<div class="acoes"><button type="button" onclick="window.print()">🖨 Imprimir / salvar em PDF</button></div><div class="rod">Equiper Projetos e Instalações</div></div></body></html>`;
+}
+function verRelatorioObra(ids){
+  const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return;
+  const w = window.open('', '_blank'); if(!w){ avisar('O navegador bloqueou a abertura do relatório. Permita pop-ups para este site e tente de novo.', 7000); return; }
+  w.document.open(); w.document.write(buildRelatorioObraHtml(regs)); w.document.close(); try{ w.focus(); }catch(e){}
 }
 function enviarRelatorioObra(ids){
   const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return; const c = contatoDoCliente(regs);
@@ -25820,6 +25872,7 @@ function cliqueEquip(e){
   if((b = g('data-obrg-addeq'))){ const [rid, pid, sid] = b.dataset.obrgAddeq.split('|'); abrirAddEquip(rid, pid, sid); return; }
   if((b = g('data-obrg-obseq'))){ const [rid, pid, sid, sub] = b.dataset.obrgObseq.split('|'); abrirObsEquip(rid, pid, sid, sub); return; }                    // revisão 8
   if((b = g('data-obrg-edcontato'))){ abrirEditarContato(b.dataset.obrgEdcontato); return; }
+  if((b = g('data-obrg-relver'))){ verRelatorioObra(b.dataset.obrgRelver); return; }   // revisão 9
   if((b = g('data-obrg-relzap'))){ enviarRelatorioObra(b.dataset.obrgRelzap); return; }
   if((b = g('data-obrg-peddesc'))){ const [rid, pid] = b.dataset.obrgPeddesc.split('|'); abrirEditarDescPedido(rid, pid); return; }                       // revisão 7
   if((b = g('data-obrg-semeq'))){ const [rid, pid, v] = b.dataset.obrgSemeq.split('|'); marcarSemEquip(rid, pid, v === '1'); return; }
@@ -26624,7 +26677,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('os'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { _teste: { mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { _teste: { dadosRelatorioObra: (ids) => dadosRelatorioObra(ids.split(',').map(porId).filter(Boolean)), htmlRelatorioObra: (ids) => buildRelatorioObraHtml(ids.split(',').map(porId).filter(Boolean)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
