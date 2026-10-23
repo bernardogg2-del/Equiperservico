@@ -1600,6 +1600,11 @@
   .role-ico{ margin: 0 auto 8px; width:24px; height:24px; color: var(--text-dim); }
   .role-ico svg{ width:24px; height:24px; }
   .role-name{ font-size: 13.5px; font-weight:600; }
+  .login-conta-info{ display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--text-dim); margin:0 0 10px; padding:8px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
+  .login-conta-info b{ color:var(--text); } .login-conta-info small{ display:block; font-size:11.5px; }
+  .link-btn{ background:none; border:0; padding:0; color:#2F6F9F; font-size:12.5px; font-weight:600; cursor:pointer; text-decoration:underline; }
+  .login-verif{ background:var(--surface-2, #f4f4f5); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin:6px 0 10px; font-size:13px; } .login-verif p{ margin:0 0 8px; } .login-verif button{ width:100%; margin-top:6px; }
+  .login-conta-dica{ margin:10px 0 0; font-size:12px; color:var(--text-dim); text-align:center; }
   .login-form{
     width:100%; max-width: 360px; background: var(--panel); border: 1px solid var(--line);
     border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 20px; display:flex; flex-direction:column; gap: 10px;
@@ -2611,7 +2616,30 @@
     <p>Selecione seu acesso</p>
   </div>
 
+  <!-- Fase 1 (segurança): identificação pela conta do Firebase Authentication. Só depois dela aparecem os perfis da pessoa. -->
+  <div id="loginStepConta" class="login-step" style="display:none;">
+    <div class="login-form">
+      <label for="contaEmailInput">E-mail</label>
+      <input type="email" id="contaEmailInput" autocomplete="username" inputmode="email" placeholder="nome@equiper.com.br">
+      <label for="contaSenhaInput">Senha</label>
+      <input type="password" id="contaSenhaInput" autocomplete="current-password" placeholder="••••••••">
+      <div class="login-err" id="contaLoginErr"></div>
+      <div id="contaVerifBox" class="login-verif" style="display:none;">
+        <p><b>Confirme o seu e-mail para continuar.</b></p>
+        <p>Enviamos um link de verificação para <b id="contaVerifEmail"></b>. Abra o e-mail, toque no link e depois volte aqui e toque em <b>Já verifiquei</b>. Sem a verificação a conta não acessa nada.</p>
+        <button type="button" class="btn-primary" id="contaJaVerifiqueiBtn">Já verifiquei — entrar</button>
+        <button type="button" class="btn-ghost" id="contaReenviarBtn">Reenviar e-mail de verificação</button>
+        <button type="button" class="btn-ghost" id="contaVerifTrocarBtn">Trocar de conta</button>
+        <div class="login-err" id="contaVerifMsg"></div>
+      </div>
+      <button class="btn-primary" id="contaLoginBtn">Entrar</button>
+      <button class="btn-ghost" id="contaEsqueciBtn">Esqueci a senha</button>
+      <p class="login-conta-dica">A senha da conta é pessoal. O PIN de cada perfil continua sendo pedido depois, neste aparelho.</p>
+    </div>
+  </div>
   <div id="loginStepRole" class="login-step">
+    <div class="login-conta-info" id="loginContaInfo" style="display:none;"><span>Conectado como <b id="loginContaNome"></b> <small id="loginContaEmail"></small></span><button type="button" class="link-btn" id="contaTrocarBtn">Trocar de conta</button></div>
+    <div class="login-err" id="loginSemPerfil" style="display:none;">Sua conta está conectada, mas o seu usuário não tem nenhum perfil liberado (ou foi removido). Fale com o Gestor.</div>
     <div class="role-grid" id="roleGrid">
       <div class="role-card" id="roleCardManager">
         <div class="role-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/><path d="M3 11h18"/></svg></div>
@@ -3520,7 +3548,8 @@
         <div class="tecnicos-title">Acessos</div>
       </div>
     </div>
-    <div style="padding:0 20px 14px;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button></div>
+    <div style="padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button><button type="button" class="btn-ghost" id="acessosMigrarPrivadoBtn" title="Move PIN e e-mail de users/ para usersPrivado/ (mostra uma prévia antes)">Mover PINs e e-mails para o nó privado</button></div>
+    <div id="acessosMigrarBox" style="display:none; margin:0 20px 14px; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface); font-size:13px;"></div>
     <div id="acessosUsuariosList" style="padding:0 20px 30px;"></div>
 
     <!-- Estruturas legadas (Etapas 1-3): funções e nós ainda existem e continuam sendo lidos/
@@ -3591,6 +3620,12 @@
         <div style="font-size:12px; color:var(--text-dim); margin-top:6px;">Com todas marcadas o gestor acessa tudo (como hoje). O Gestor Master sempre acessa todas as abas, e "Acessos" é exclusiva do Master.</div>
       </div>
       <div id="acessosPinsContainer"></div>
+      <div class="field"><label>E-mail de acesso <small style="font-weight:400; color:var(--text-secondary);">(conta com que a pessoa entra no app)</small></label><input type="email" id="acessosEmailInput" autocomplete="off" placeholder="nome@equiper.com.br"></div>
+      <div id="acessosContaBox" style="font-size:12.5px; color:var(--text-dim); margin:-4px 0 10px;">
+        <div id="acessosContaStatus"></div>
+        <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:6px;"><div class="field" style="flex:1; min-width:160px; margin:0;"><label>Senha inicial (6+ caracteres)</label><input type="text" id="acessosSenhaInicialInput" autocomplete="off" placeholder="a pessoa troca depois"></div><button type="button" class="btn-ghost" id="acessosCriarContaBtn">Criar conta de acesso</button></div>
+        <div id="acessosContaMsg" style="margin-top:4px;"></div>
+      </div>
       <div class="field-error" id="acessosUsuarioModalErr"></div>
       <div class="modal-actions">
         <button type="button" class="btn-ghost" id="acessosUsuarioModalCancelBtn">Cancelar</button>
@@ -4118,6 +4153,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 // =====================================================================================
 // INSTRUMENTAÇÃO TEMPORÁRIA DE DIAGNÓSTICO — PERF_DIAG (Etapa 1 criou; Etapa 2 ampliou).
@@ -4454,6 +4490,124 @@ function encerrarDadosDoPerfil(){
 window.__M2 = { stats: M2_STATS, pre: () => Array.from(m2Pre.keys()), conectado: () => rtdbConectado, ligado: M2_LEITURA_PELO_OUVINTE };
 window.__M1 = { ouvintes: () => rtdbOuvintes.map(o => o.path), encerrar: encerrarDadosDoPerfil, geracao: () => geracaoDados, emCarga: () => perfilEmCarga }; // inspeção em testes/console
 
+// ===== Fase 1 de segurança — conta (Firebase Authentication) e vínculo com o cadastro de Acessos (users/) =====
+// Modelo: users/<id>/email (o Gestor Master cadastra em Acessos) · emailIndex/<e-mail com "," no lugar de "."> = <id do usuário>
+//         authUsers/<uid da conta> = { userId, email, vinculadoEm } — gravado pela própria pessoa no 1º acesso (a regra só aceita
+//         se o e-mail da conta for o mesmo cadastrado no índice). As regras do banco liberam leitura/escrita só a contas vinculadas.
+const authAtivo = () => AUTH_FIREBASE && !!fbAuth;
+const emailNormal = (e) => String(e || '').trim().toLowerCase();
+const emailChave = (e) => emailNormal(e).replace(/\./g, ',');
+const emailValido = (e) => /^[^\s@#$\[\]\/,]+@[^\s@#$\[\]\/,]+\.[^\s@#$\[\]\/,]+$/.test(emailNormal(e));
+let contaAtual = null;      // { uid, email, userId, perfis } da conta conectada neste aparelho
+function esperarContaFirebase(){ return new Promise(res => { let off = null; off = fbAuth.onAuthStateChanged(u => { try{ if(off) off(); }catch(e){} res(u || null); }); }); }
+async function vincularConta(u){
+  // E-mail verificado é requisito para toda sessão, inclusive para um vínculo criado anteriormente.
+  try{ await u.reload(); }catch(e){ return { ok: false, motivo: 'erro', erro: e }; }
+  const atual = (fbAuth && fbAuth.currentUser) || u;
+  if(!atual.emailVerified) return { ok: false, motivo: 'nao_verificado' };
+  try{ await atual.getIdToken(true); }catch(e){ return { ok: false, motivo: 'erro', erro: e }; }
+  const uid = atual.uid, email = emailNormal(atual.email);
+  try{ const s = await rtdb.ref('authUsers/' + uid).get(); if(s.exists() && s.val() && s.val().userId) return { ok: true, userId: s.val().userId }; }catch(e){ /* sem vínculo ainda: segue para o índice */ }
+  let userId = null;
+  try{ const s = await rtdb.ref('emailIndex/' + emailChave(email)).get(); userId = s.exists() ? s.val() : null; }
+  catch(e){ return { ok: false, motivo: 'erro', erro: e }; }
+  if(!userId) return { ok: false, motivo: 'sem_vinculo' };
+  try{ await rtdb.ref('authUsers/' + uid).set({ userId, email, vinculadoEm: new Date().toISOString() }); }
+  catch(e){ return { ok: false, motivo: 'erro', erro: e }; }
+  return { ok: true, userId };
+}
+function mensagemErroAuth(e){
+  const c = (e && e.code) || '';
+  if(/invalid-credential|wrong-password|user-not-found|invalid-email|invalid-login-credentials/.test(c)) return 'E-mail ou senha incorretos.';
+  if(/too-many-requests/.test(c)) return 'Muitas tentativas. Aguarde alguns minutos e tente de novo.';
+  if(/network-request-failed/.test(c)) return 'Sem conexão. Verifique sua internet.';
+  if(/user-disabled/.test(c)) return 'Esta conta foi desativada. Fale com o Gestor.';
+  return 'Não foi possível entrar agora' + (c ? ' (' + c + ')' : '') + '.';
+}
+function usuarioDaConta(){ return contaAtual ? USERS.find(x => x.id === contaAtual.userId) || null : null; }
+const CARDS_PERFIL = { manager: 'roleCardManager', tech: 'roleCardTech', financeiro: 'roleCardFinanceiro', oficina: 'roleCardOficina' };
+// Depois de carregar users/: só os perfis da pessoa conectada ficam visíveis; os seletores de nome mostram só ela.
+function restringirPerfisAoUsuario(){
+  if(!authAtivo() || !contaAtual) return;
+  const u = usuarioDaConta();
+  const perfis = u ? Object.keys(CARDS_PERFIL).filter(p => u.profiles && u.profiles[p]) : [];
+  contaAtual.perfis = perfis;
+  Object.keys(CARDS_PERFIL).forEach(p => { document.getElementById(CARDS_PERFIL[p]).style.display = perfis.includes(p) ? '' : 'none'; });
+  document.getElementById('loginContaInfo').style.display = '';
+  document.getElementById('loginContaNome').textContent = u ? u.name : '(usuário não encontrado)';
+  document.getElementById('loginContaEmail').textContent = contaAtual.email || '';
+  document.getElementById('loginSemPerfil').style.display = perfis.length ? 'none' : '';
+}
+// Pessoa com um perfil só: vai direto para a etapa dele (menos um toque). Com mais de um, escolhe.
+function abrirPerfilUnico(){
+  if(!authAtivo() || !contaAtual || !contaAtual.perfis || contaAtual.perfis.length !== 1) return false;
+  if(appInitState !== 'ready') return false;
+  document.getElementById(CARDS_PERFIL[contaAtual.perfis[0]]).click(); return true;
+}
+async function entrarComConta(){
+  const email = emailNormal(document.getElementById('contaEmailInput').value), senha = document.getElementById('contaSenhaInput').value;
+  const err = (t) => { document.getElementById('contaLoginErr').textContent = t || ''; };
+  if(!emailValido(email)) return err('Informe um e-mail válido.'); if(!senha) return err('Informe a senha.');
+  const btn = document.getElementById('contaLoginBtn'); btn.disabled = true; btn.textContent = 'Entrando…'; err(''); esconderAvisoVerificacao();
+  try{ await fbAuth.signInWithEmailAndPassword(email, senha); document.getElementById('contaSenhaInput').value = ''; await init(); }
+  catch(e){ err(mensagemErroAuth(e)); }
+  finally{ btn.disabled = false; btn.textContent = 'Entrar'; }
+}
+async function esqueciSenhaConta(){
+  const email = emailNormal(document.getElementById('contaEmailInput').value); const err = (t) => { document.getElementById('contaLoginErr').textContent = t || ''; };
+  if(!emailValido(email)) return err('Digite o seu e-mail no campo acima e toque em "Esqueci a senha".');
+  try{ await fbAuth.sendPasswordResetEmail(email); err('Enviamos um e-mail para ' + email + ' com o link para criar uma nova senha. Veja também a caixa de spam.'); }
+  catch(e){ err(/user-not-found|invalid-email/.test((e && e.code) || '') ? 'Não existe conta com esse e-mail. Fale com o Gestor.' : mensagemErroAuth(e)); }
+}
+function mostrarAvisoVerificacao(email){
+  const box = document.getElementById('contaVerifBox'); box.style.display = ''; document.getElementById('contaVerifEmail').textContent = email; document.getElementById('contaVerifMsg').textContent = '';
+  document.getElementById('contaLoginErr').textContent = ''; document.getElementById('contaLoginBtn').style.display = 'none'; document.getElementById('contaEsqueciBtn').style.display = 'none';
+  ['contaEmailInput', 'contaSenhaInput'].forEach(id => { const el = document.getElementById(id); el.disabled = true; if(el.previousElementSibling) el.previousElementSibling.style.display = 'none'; el.style.display = 'none'; });
+}
+function esconderAvisoVerificacao(){
+  document.getElementById('contaVerifBox').style.display = 'none'; document.getElementById('contaLoginBtn').style.display = ''; document.getElementById('contaEsqueciBtn').style.display = '';
+  ['contaEmailInput', 'contaSenhaInput'].forEach(id => { const el = document.getElementById(id); el.disabled = false; el.style.display = ''; if(el.previousElementSibling) el.previousElementSibling.style.display = ''; });
+}
+async function reenviarVerificacao(){
+  const msg = (t) => { document.getElementById('contaVerifMsg').textContent = t || ''; };
+  const u = fbAuth && fbAuth.currentUser; if(!u){ msg('A conta não está mais conectada. Entre de novo.'); esconderAvisoVerificacao(); return; }
+  const btn = document.getElementById('contaReenviarBtn'); btn.disabled = true;
+  try{ await u.sendEmailVerification(); msg('E-mail reenviado para ' + (u.email || '') + '. Veja também a caixa de spam.'); }
+  catch(e){ msg(/too-many-requests/.test((e && e.code) || '') ? 'Muitos envios seguidos. Aguarde alguns minutos.' : mensagemErroAuth(e)); }
+  finally{ setTimeout(() => { btn.disabled = false; }, 15000); }
+}
+async function jaVerifiquei(){
+  const msg = (t) => { document.getElementById('contaVerifMsg').textContent = t || ''; };
+  const u = fbAuth && fbAuth.currentUser; if(!u){ msg('A conta não está mais conectada. Entre de novo.'); esconderAvisoVerificacao(); return; }
+  try{ await u.reload(); }catch(e){}
+  if(!(fbAuth.currentUser && fbAuth.currentUser.emailVerified)){ msg('Ainda não consta como verificado. Abra o link do e-mail e tente de novo.'); return; }
+  esconderAvisoVerificacao(); await init();      // init() refaz o vínculo com o token renovado
+}
+async function trocarDeConta(){
+  try{ if(typeof currentRole !== 'undefined' && currentRole) logout(); }catch(e){}
+  try{ await fbAuth.signOut(); }catch(e){}
+  contaAtual = null; location.reload();   // recomeça limpo: sem dados de outra pessoa em memória
+}
+// Criação de conta a partir de Acessos (Gestor Master): usa uma 2ª instância do app para não derrubar a sessão de quem está criando.
+async function criarContaAcesso(email, senha){
+  if(!AUTH_FIREBASE || typeof firebase === 'undefined' || !firebase.auth) return { ok: false, reason: 'Autenticação não está ativa nesta versão.' };
+  try{
+    const nome = 'acessos-secundario'; const app2 = (firebase.apps || []).find(a => a.name === nome) || firebase.initializeApp(firebaseConfig, nome);
+    const a2 = app2.auth(); const cred = await a2.createUserWithEmailAndPassword(emailNormal(email), senha);
+    let verifEnviada = false; try{ if(cred && cred.user) { await cred.user.sendEmailVerification(); verifEnviada = true; } }catch(e){ console.warn('verificação de e-mail não enviada agora:', e); }
+    try{ await a2.signOut(); }catch(e){}
+    return { ok: true, verifEnviada };
+  }catch(e){
+    const c = (e && e.code) || '';
+    if(/email-already-in-use/.test(c)) return { ok: false, jaExiste: true, reason: 'Já existe uma conta com esse e-mail. Só salve o e-mail aqui; a pessoa entra com a senha dela (ou usa "Esqueci a senha").' };
+    if(/weak-password/.test(c)) return { ok: false, reason: 'A senha inicial precisa ter pelo menos 6 caracteres.' };
+    if(/invalid-email/.test(c)) return { ok: false, reason: 'E-mail inválido.' };
+    if(/operation-not-allowed/.test(c)) return { ok: false, reason: 'O método "E-mail/senha" ainda não está ativado no Firebase Authentication (console → Authentication → Sign-in method).' };
+    return { ok: false, reason: 'Não foi possível criar a conta' + (c ? ' (' + c + ')' : '') + '.' };
+  }
+}
+window.__AUTH = { ativo: authAtivo, conta: () => contaAtual, vincular: vincularConta, chave: emailChave };   // inspeção em testes
+
 // ===== Camada de persistência (Firebase Realtime Database) =====
 const firebaseConfig = {
   apiKey: "AIzaSyA1R5kw2Qtex9XFNkJqZyy0UeitG5CEdQ4",
@@ -4463,10 +4617,16 @@ const firebaseConfig = {
   messagingSenderId: "573300982500",
   appId: "1:573300982500:web:703d766c0a0094ac8ca2f1"
 };
-let rtdb = null;
+// ===== Fase 1 de segurança: Firebase Authentication =====
+// AUTH_FIREBASE = true  → a pessoa entra com e-mail e senha (conta do Firebase Authentication) e só então vê os SEUS perfis;
+//                         o PIN continua como desbloqueio do perfil neste aparelho. É o que as novas regras do banco exigem.
+// AUTH_FIREBASE = false → fluxo anterior (sem conta). Só funciona com as regras do banco abertas — é o caminho de volta, nada mais.
+const AUTH_FIREBASE = true;
+let rtdb = null, fbAuth = null;
 try{
   if(typeof firebase !== 'undefined'){
     firebase.initializeApp(firebaseConfig);
+    try{ if(AUTH_FIREBASE && firebase.auth) fbAuth = firebase.auth(); }catch(e){ console.error('Firebase Auth não carregou:', e); }
     rtdb = perfWrapDatabase(rtdbRegistroWrap(firebase.database())); // registro de ouvintes (M1) + PERF_DIAG (só observa), repassam tudo
   } else {
     console.error('SDK do Firebase não carregou (script bloqueado ou sem internet).');
@@ -10404,7 +10564,7 @@ function populateFinanceiroLoginSelect(){
   const sel = document.getElementById('financeiroLoginSelect');
   // Etapa 7: dropdown de login vem exclusivamente de users (profiles.financeiro) — financeiro/
   // (legado) não é mais consultado aqui. Ordem determinística por nome, sem depender do array antigo.
-  const opcoes = USERS.filter(u => u.profiles && u.profiles.financeiro).map(u => nomeHistoricoDoUsuario(u, 'financeiro')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const opcoes = usersComPerfil('financeiro').map(u => nomeHistoricoDoUsuario(u, 'financeiro')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
@@ -11925,7 +12085,7 @@ function populateOficinaLoginSelect(){
   // não reaproveita mais Gestores/Técnicos (managers/TECHS) nem o nó legado "oficina". O genérico
   // "Oficina" nunca teve profiles.oficina em users (Etapa 2 nunca o migrou como pessoa), então
   // continua não aparecendo aqui, sem precisar de nenhum filtro especial.
-  const opcoes = USERS.filter(u => u.profiles && u.profiles.oficina).map(u => nomeHistoricoDoUsuario(u, 'oficina')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const opcoes = usersComPerfil('oficina').map(u => nomeHistoricoDoUsuario(u, 'oficina')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
@@ -12819,7 +12979,7 @@ function switchTab(tab){
   document.getElementById('bottomNavBtnPGestor').classList.toggle('active', tab === 'pgestor');
   document.getElementById('bottomNavBtnPAlex').classList.toggle('active', tab === 'palex');
   if(tab === 'clientes') renderClientes();
-  if(tab === 'acessos') renderAcessosUsuariosList();
+  if(tab === 'acessos'){ renderAcessosUsuariosList(); if(AUTH_FIREBASE) Promise.all([carregarVinculosAcessos(), isCurrentUserMaster() ? carregarPrivadoTodos() : Promise.resolve()]).then(() => { if(currentRole === 'manager') renderAcessosUsuariosList(); }); }   // Fase 1: situação das contas, atualizada ao abrir a aba
   if(tab === 'painel') renderPainelDeControle();
   if(tab === 'oficinagestor') renderOficinaGestorTab();
   if(tab === 'estoque') openEstoqueGestorTab();
@@ -13197,6 +13357,7 @@ let currentTechName = null;
 let currentManagerName = null;
 
 function showLoginStep(step){
+  document.getElementById('loginStepConta').style.display = step === 'conta' ? '' : 'none';
   document.getElementById('loginStepRole').style.display = step === 'role' ? '' : 'none';
   document.getElementById('loginStepManager').style.display = step === 'manager' ? '' : 'none';
   document.getElementById('loginStepTech').style.display = step === 'tech' ? '' : 'none';
@@ -13250,14 +13411,14 @@ function populateTechLoginSelect(){
   // Etapa 7: login vem de users (profiles.tech) — techRoster/techPins não são mais consultados
   // aqui. techRoster continua servindo cor, techPhones continua servindo telefone; techPins hoje
   // só existe como alvo de escrita da ponte de compatibilidade (Etapa 5), sem leitor próprio.
-  const opcoes = USERS.filter(u => u.profiles && u.profiles.tech).map(u => nomeHistoricoDoUsuario(u, 'tech')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const opcoes = usersComPerfil('tech').map(u => nomeHistoricoDoUsuario(u, 'tech')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
 function populateManagerLoginSelect(){
   const sel = document.getElementById('managerLoginSelect');
   // Etapa 7: login vem de users (profiles.manager) — managers/ não é mais consultado aqui.
-  const opcoes = USERS.filter(u => u.profiles && u.profiles.manager).map(u => nomeHistoricoDoUsuario(u, 'manager')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const opcoes = usersComPerfil('manager').map(u => nomeHistoricoDoUsuario(u, 'manager')).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   sel.innerHTML = opcoes.map(nome => `<option value="${escapeHtml(nome)}">${escapeHtml(nome)}</option>`).join('');
 }
 
@@ -14592,6 +14753,7 @@ function logout(){
   document.getElementById('loginView').style.display = '';
   showLoginStep('role');
   encerrarDadosDoPerfil(); // M1: desliga os ouvintes dos dados do perfil; o próximo login recarrega
+  abrirPerfilUnico();      // Fase 1: a conta continua conectada; quem só tem um perfil volta direto para o PIN dele
 }
 document.getElementById('managerLogoutBtn').addEventListener('click', logout);
 document.getElementById('techLogoutBtn').addEventListener('click', logout);
@@ -14609,8 +14771,9 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
     // Etapa 11: cadastro unificado de usuários — exportado exatamente como está em memória
     // (mesmos ids, sem reconstrução a partir das listas legadas), no mesmo formato de users/
     // no Firebase (objeto por id, não array).
+    usersPrivado: Object.fromEntries(USERS.map(u => [u.id, { pinByProfile: Object.assign({}, u.pinByProfile || {}, (privadoDe(u) || {}).pinByProfile || {}), ...(emailDoUsuario(u) ? { email: emailDoUsuario(u) } : {}) }])),   // Fase 1c
     users: Object.fromEntries(USERS.map(u => [u.id, {
-      name: u.name, profiles: u.profiles || {}, pinByProfile: u.pinByProfile || {},
+      name: u.name, profiles: u.profiles || {},
       legacyNames: u.legacyNames || {}, isMaster: !!u.isMaster, createdAt: u.createdAt, updatedAt: u.updatedAt,
       ...(u.tabPermissions ? { tabPermissions: u.tabPermissions } : {}) // permissões de abas: sem isto a restauração devolveria acesso total
     }])),
@@ -14770,6 +14933,7 @@ function validarBackupCompleto(data){
     techPinsMap: (data.techPins && typeof data.techPins === 'object') ? data.techPins : undefined,
     managers: (Array.isArray(data.managers) && data.managers.length > 0) ? data.managers : undefined,
     adminPin: data.adminPin ? data.adminPin : undefined,
+    usersPrivado: (data.usersPrivado && typeof data.usersPrivado === 'object' && !Array.isArray(data.usersPrivado)) ? data.usersPrivado : undefined,   // Fase 1c
     usersInfo
   } };
 }
@@ -14777,26 +14941,31 @@ function validarBackupCompleto(data){
 // Grava o novo conjunto de users, um caminho por usuário (nunca um set global em "users") —
 // remove só os ids que existiam antes e não estão mais no backup (mesma semântica de
 // "substituir" já usada por managers ao importar), preservando id/campos exatamente como vieram.
-async function saveUsersFromBackup(usersRaw){
+async function saveUsersFromBackup(usersRaw, usersPrivadoBackup){
   const idsAntigos = new Set(USERS.map(u => u.id));
   const idsNovos = new Set(Object.keys(usersRaw));
   const updates = {};
   Object.keys(usersRaw).forEach(id => {
     const u = usersRaw[id];
     updates['users/' + id] = {
-      name: u.name, profiles: u.profiles || {}, pinByProfile: u.pinByProfile || {},
+      name: u.name, profiles: u.profiles || {},
       legacyNames: u.legacyNames || {}, isMaster: !!u.isMaster,
       createdAt: u.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString()
     };
+    // Fase 1c: PIN/e-mail do backup vão para usersPrivado (backup antigo traz pinByProfile dentro de users; backup novo traz usersPrivado)
+    const pv = (usersPrivadoBackup && usersPrivadoBackup[id]) || {}; const pins = Object.assign({}, u.pinByProfile || {}, pv.pinByProfile || {});
+    updates['usersPrivado/' + id] = Object.assign({ pinByProfile: pins }, (pv.email || u.email) ? { email: emailNormal(pv.email || u.email) } : {});
+    if(updates['usersPrivado/' + id].email) updates['emailIndex/' + emailChave(updates['usersPrivado/' + id].email)] = id;
     if(u.tabPermissions !== undefined && u.tabPermissions !== null){
       const perm = normalizarPermissoesAbas(u.tabPermissions, true);
       if(perm.ok) updates['users/' + id].tabPermissions = perm.mapa; // já validado antes; abas desconhecidas descartadas
     }
   });
-  idsAntigos.forEach(id => { if(!idsNovos.has(id)) updates['users/' + id] = null; });
+  idsAntigos.forEach(id => { if(!idsNovos.has(id)){ updates['users/' + id] = null; updates['usersPrivado/' + id] = null; } });
   try{
     await rtdb.ref().update(updates);
     USERS = Object.keys(usersRaw).map(id => Object.assign({ id }, updates['users/' + id]));
+    Object.keys(usersRaw).forEach(id => { USERS_PRIVADO[id] = updates['usersPrivado/' + id]; });
     return true;
   }catch(e){ return false; }
 }
@@ -14910,7 +15079,7 @@ const executarImportacaoBackup = (function(){
       for(const t of TECHS){ await etapa('PIN de ' + t.name, () => restaurarPinTecnicoDoBackup(t.name, t.pin || '0000')); } // função privada desta IIFE — não existe fora daqui
       if(plano.adminPin !== undefined) await etapa('PIN administrativo', () => dbSetRaw('adminPin', adminPin));
       if(plano.managers) await etapa('gestores (cadastro legado)', () => restaurarGestoresLegadoDoBackup(plano.managers)); // função privada desta IIFE — não existe fora daqui
-      if(plano.usersInfo.tipo === 'valido') await etapa('usuários', () => saveUsersFromBackup(plano.usersInfo.users));
+      if(plano.usersInfo.tipo === 'valido') await etapa('usuários', () => saveUsersFromBackup(plano.usersInfo.users, plano.usersPrivado));
       return { ok: true, usersInfo: plano.usersInfo, concluidas };
     }catch(e){
       // Nunca inclui PIN na mensagem/console — só o nome da etapa que falhou.
@@ -16116,10 +16285,13 @@ async function consultarChavesShallow(path){
   if(!rtdb || typeof fetch !== 'function') throw new Error('consulta leve indisponível');
   const base = String(rtdb.ref(path).toString()).replace(/\/+$/, '');
   if(!/^https:\/\//.test(base)) throw new Error('URL do banco indisponível');
+  // Fase 1c: a REST não herda a sessão do SDK — vai o ID token atual em "auth". O token nunca entra em log ou mensagem.
+  let autenticacao = '';
+  if(authAtivo() && fbAuth.currentUser){ try{ autenticacao = '&auth=' + encodeURIComponent(await fbAuth.currentUser.getIdToken()); }catch(e){ throw new Error('token indisponível'); } }
   const ctl = (typeof AbortController === 'function') ? new AbortController() : null;
   const timer = setTimeout(() => { try{ ctl && ctl.abort(); }catch(e){} }, AGENDA_CONTAGEM_TIMEOUT_MS);
   try{
-    const resp = await fetch(base + '.json?shallow=true', { method: 'GET', cache: 'no-store', signal: ctl ? ctl.signal : undefined });
+    const resp = await fetch(base + '.json?shallow=true' + autenticacao, { method: 'GET', cache: 'no-store', signal: ctl ? ctl.signal : undefined });
     if(!resp.ok) throw new Error('HTTP ' + resp.status);
     const j = await resp.json();
     if(j === null) return 0;                                           // campo inexistente = 0 itens
@@ -16837,6 +17009,25 @@ async function init(){
   document.getElementById('appLoadStatus').style.display = '';
   document.getElementById('appLoadError').style.display = 'none';
   try{
+    if(authAtivo()){
+      const u = await esperarContaFirebase();
+      if(!u){ appInitState = 'conta'; document.getElementById('appLoadStatus').style.display = 'none'; showLoginStep('conta'); setTimeout(() => document.getElementById('contaEmailInput').focus(), 50); return; }
+      const v = await vincularConta(u);
+      if(!v.ok && v.motivo === 'nao_verificado'){
+        appInitState = 'conta'; document.getElementById('appLoadStatus').style.display = 'none';
+        showLoginStep('conta'); mostrarAvisoVerificacao(u.email || ''); return;     // continua conectado, sem acesso ao banco, até verificar
+      }
+      if(!v.ok){
+        appInitState = 'conta'; document.getElementById('appLoadStatus').style.display = 'none';
+        try{ await fbAuth.signOut(); }catch(e){}
+        showLoginStep('conta'); document.getElementById('contaEmailInput').value = u.email || ''; esconderAvisoVerificacao();
+        document.getElementById('contaLoginErr').textContent = v.motivo === 'sem_vinculo'
+          ? 'A conta ' + (u.email || '') + ' ainda não está vinculada a um usuário do app. Peça ao Gestor para cadastrar este e-mail em Acessos.'
+          : 'Não foi possível confirmar o seu acesso agora (' + ((v.erro && (v.erro.code || v.erro.message)) || 'erro') + '). Tente de novo.';
+        return;
+      }
+      contaAtual = { uid: u.uid, email: emailNormal(u.email), userId: v.userId, perfis: [] };
+    }
     await Promise.race([
       initAuthBootstrap(),
       new Promise((_, reject) => setTimeout(() => reject(new Error('Tempo esgotado ao carregar. Verifique sua internet.')), 15000))
@@ -16849,6 +17040,7 @@ async function init(){
     perfMark('login_screen_ready');
     document.getElementById('appLoadStatus').style.display = 'none';
     document.getElementById('roleGrid').classList.remove('disabled');
+    if(authAtivo()){ restringirPerfisAoUsuario(); showLoginStep('role'); abrirPerfilUnico(); }
   }catch(e){
     appInitState = 'error';
     console.error('Falha ao carregar a aplicação:', e);
@@ -18259,14 +18451,18 @@ document.getElementById('sidebarBtnEstoque').addEventListener('click', () => swi
 async function initAuthBootstrap(){
   perfMark('auth_bootstrap_start');
   await loadTechRoster();
-  await loadTechPins();
-  await loadManagers();
-  await loadFinanceiro();
   await ensureUsersLoaded(); // Etapa 3: fonte principal de login — uma leitura só, cacheada
   attachRealtimeTechRosterListener();
-  attachRealtimeTechPinsListener();
-  attachRealtimeManagersListener();
-  attachRealtimeFinanceiroListener();
+  // Fase 1c: managers/techPins/financeiro/oficina/adminPin guardam PINs e só servem à aba legada de Acessos, às pontes e ao backup
+  // (tudo Master). Com a conta ativa, quem não é Master nem tenta ler (as regras negam); com a flag desligada, tudo como antes.
+  if(!authAtivo() || souMasterDaConta()){
+    await loadTechPins();
+    await loadManagers();
+    await loadFinanceiro();
+    attachRealtimeTechPinsListener();
+    attachRealtimeManagersListener();
+    attachRealtimeFinanceiroListener();
+  }
   perfMark('auth_bootstrap_done', {
     approxKB: perfApproxKB(TECHS) + perfApproxKB(MANAGERS) + perfApproxKB(FINANCEIRO) + perfApproxKB(USERS)
   });
@@ -18394,16 +18590,17 @@ async function ensureExtraContactsEtcLoaded(){
   if(nodeLoaded.extraContactsEtc) return;
   nodeLoaded.extraContactsEtc = true;
   const g = geracaoDados; // M1b
+  const legadoOk = !authAtivo() || souMasterDaConta();   // Fase 1c: oficina (legado) e adminPin só o Master lê
   await Promise.all([
     loadExtraContacts(),
-    loadOficina(), // nó legado (Acessos do Gestor) — nunca mais usado pra login
-    loadAdminPin() // só usado na exportação/backup de Acessos do Gestor
+    legadoOk ? loadOficina() : Promise.resolve(), // nó legado (Acessos do Gestor) — nunca mais usado pra login
+    legadoOk ? loadAdminPin() : Promise.resolve() // só usado na exportação/backup de Acessos do Gestor
   ]);
   if(sessaoMudou(g, 'extraContacts')) return;
   document.getElementById('alexPhoneInput').value = extraContacts.alex.phone;
   document.getElementById('marceloPhoneInput').value = extraContacts.marcelo.phone;
   attachRealtimeExtraContactsListener();
-  attachRealtimeOficinaListener();
+  if(legadoOk) attachRealtimeOficinaListener();
   perfMark('node_loaded', { node: 'extraContacts+oficina(legado)+adminPin' });
 }
 
@@ -18685,6 +18882,14 @@ async function migrarUsuariosUnificados(){
 // Acessos, não altera Rules, não migra histórico.
 // =====================================================================================
 let USERS = [];
+// Fase 1c: PIN e e-mail ficam em usersPrivado/<id> (o próprio e o Master leem; só o Master grava). Em memória: { <id>: { pinByProfile, email } }.
+// Com AUTH_FIREBASE desligado (regras abertas) o app continua lendo os campos antigos em users/<id>, se ainda existirem.
+let USERS_PRIVADO = {};
+function privadoDe(u){ return (u && USERS_PRIVADO[u.id]) || null; }
+function emailDoUsuario(u){ const p = privadoDe(u); return (p && p.email) || (u && u.email) || ''; }
+function souMasterDaConta(){ const u = (typeof usuarioDaConta === 'function') ? usuarioDaConta() : null; return !!(u && u.isMaster === true); }
+async function carregarPrivado(id){ if(!rtdb || !id) return; try{ const s = await rtdb.ref('usersPrivado/' + id).get(); USERS_PRIVADO[id] = s.exists() ? s.val() || {} : {}; }catch(e){ console.warn('usersPrivado/' + id + ' indisponível:', e && e.code || e); } }
+async function carregarPrivadoTodos(){ if(!rtdb) return; try{ const s = await rtdb.ref('usersPrivado').get(); USERS_PRIVADO = s.exists() ? s.val() || {} : {}; }catch(e){ console.warn('usersPrivado (todos) indisponível:', e && e.code || e); } }
 let currentUserId = null; // novo (Etapa 3) — usado em etapas futuras; não substitui current*Name
 let usersLoadedPromise = null;
 // Uma leitura só, cacheada em memória e reaproveitada durante toda a sessão — nenhuma leitura
@@ -18697,6 +18902,8 @@ function ensureUsersLoaded(){
       const snap = await rtdb.ref('users').get();
       const raw = snap.exists() ? snap.val() : {};
       USERS = Object.keys(raw).map(id => Object.assign({ id }, raw[id]));
+      if(authAtivo() && contaAtual){ if(souMasterDaConta()) await carregarPrivadoTodos(); else await carregarPrivado(contaAtual.userId); }   // Fase 1c
+      else if(!authAtivo()) await carregarPrivadoTodos();   // flag desligada (regras abertas): sem isso, pessoa já migrada ficaria sem PIN e cairia no padrão '0000'
     }catch(e){ console.error('Falha ao carregar users (login não funcionará sem esta leitura — Etapa 7 removeu o fallback legado):', e); USERS = []; }
   })();
   return usersLoadedPromise;
@@ -18705,12 +18912,14 @@ function ensureUsersLoaded(){
 // Etapa 7: quem pode entrar por um perfil vem exclusivamente de users.profiles — sem mais unir
 // manager/tech pra "oficina" (isso agora é responsabilidade só de profiles.oficina===true).
 function usersComPerfil(perfil){
-  return USERS.filter(u => u.profiles && u.profiles[perfil]);
+  return USERS.filter(u => u.profiles && u.profiles[perfil] && (!authAtivo() || !contaAtual || u.id === contaAtual.userId));   // Fase 1: só a pessoa da conta conectada
 }
 // PIN a validar pro perfil pedido — direto de pinByProfile[perfil], sem precedência especial.
 function pinDoUsuarioParaPerfil(user, perfil){
-  if(!user || !user.pinByProfile) return null;
-  return user.pinByProfile[perfil];
+  if(!user) return null;
+  const p = privadoDe(user);                                   // Fase 1c: registro privado primeiro
+  if(p && p.pinByProfile && p.pinByProfile[perfil] != null) return p.pinByProfile[perfil];
+  return user.pinByProfile ? user.pinByProfile[perfil] : null;  // campo antigo (ainda não migrado / regras abertas)
 }
 // Nome a usar no resto do app pra esse perfil — o nome LEGADO daquele perfil (histórico continua
 // batendo), nunca um nome novo/normalizado.
@@ -18868,14 +19077,22 @@ function atualizarVisibilidadeAcessos(){
 }
 
 const ACESSOS_PERFIL_LABEL = { manager: 'Gestor', tech: 'Técnico', oficina: 'Oficina', financeiro: 'Financeiro' };
+// Fase 1: quais usuários já têm conta vinculada (authUsers/<uid>.userId) — leitura só do Master, só ao abrir Acessos.
+let acessosVinculos = {};
+async function carregarVinculosAcessos(){
+  if(!AUTH_FIREBASE || !rtdb) return;
+  try{ const s = await rtdb.ref('authUsers').get(); const v = s.exists() ? s.val() : {}; acessosVinculos = {}; Object.keys(v).forEach(uid => { if(v[uid] && v[uid].userId) acessosVinculos[v[uid].userId] = uid; }); }
+  catch(e){ /* sem permissão ou offline: a lista mostra só o e-mail */ }
+}
 function renderAcessosUsuariosList(){
   const box = document.getElementById('acessosUsuariosList'); if(!box) return;
+
   const lista = USERS.slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'pt-BR'));
   box.innerHTML = lista.length ? lista.map(u => {
     const perfisTxt = Object.keys(u.profiles || {}).filter(p => u.profiles[p]).map(p => ACESSOS_PERFIL_LABEL[p] || p).join(' · ');
     return `<div class="tech-pin-row" data-acessosuser="${u.id}">
       <div class="tech-pin-name">${escapeHtml(u.name)}</div>
-      <div class="sub" style="flex:1; color:var(--text-dim); font-size:12.5px;">${escapeHtml(perfisTxt)}${u.isMaster ? ' · <b>Master</b>' : ''}</div>
+      <div class="sub" style="flex:1; color:var(--text-dim); font-size:12.5px;">${escapeHtml(perfisTxt)}${u.isMaster ? ' · <b>Master</b>' : ''}${AUTH_FIREBASE ? `<br>${emailDoUsuario(u) ? '✉ ' + escapeHtml(emailDoUsuario(u)) + (acessosVinculos[u.id] ? ' · <span style="color:#1D5E39;">vinculado</span>' : ' · <span style="color:#8a6d00;">aguardando 1º acesso</span>') : '<span style="color:var(--danger-dark);">sem e-mail de acesso</span>'}` : ''}</div>
       <div class="acessos-acoes">
         <button type="button" class="btn-ghost" data-acessoseditar="${u.id}">Editar</button>
         ${u.id === currentUserId
@@ -18940,19 +19157,87 @@ function abrirAcessosUsuarioModal(userId){
   document.getElementById('acessosMasterInput').checked = !!(u && u.isMaster);
   acessosPreencherAbas(u);
   acessosAtualizarCamposPin();
-  if(u && u.pinByProfile){
-    Object.keys(u.pinByProfile).forEach(p => {
-      const inp = document.querySelector(`#acessosPinsContainer [data-acessospinperfil="${p}"]`);
-      if(inp) inp.value = u.pinByProfile[p];
+  if(u){
+    ['manager', 'tech', 'oficina', 'financeiro'].forEach(p => {
+      const inp = document.querySelector(`#acessosPinsContainer [data-acessospinperfil="${p}"]`); const v = pinDoUsuarioParaPerfil(u, p);
+      if(inp && v != null) inp.value = v;
     });
   }
   document.getElementById('acessosNomeAvisoAlteracao').textContent = '';
   document.getElementById('acessosUsuarioModalErr').textContent = '';
+  document.getElementById('acessosEmailInput').value = u ? emailDoUsuario(u) : '';
+  document.getElementById('acessosSenhaInicialInput').value = ''; document.getElementById('acessosContaMsg').textContent = '';
+  document.getElementById('acessosContaBox').style.display = AUTH_FIREBASE ? '' : 'none';
+  document.getElementById('acessosContaStatus').innerHTML = !AUTH_FIREBASE ? '' : !u ? 'Salve o usuário com o e-mail; depois, se a pessoa ainda não tiver conta, crie a conta de acesso aqui. Toda conta precisa verificar o e-mail (link enviado na criação) antes do 1º acesso.' : !emailDoUsuario(u) ? 'Sem e-mail de acesso: esta pessoa <b>não consegue entrar</b> no app.' : acessosVinculos[u.id] ? '✅ Conta vinculada (já entrou pelo menos uma vez).' : 'E-mail salvo. Falta a conta existir no Firebase e a pessoa entrar uma vez.';
   document.getElementById('acessosUsuarioModalOverlay').classList.add('open');
   setTimeout(() => nomeInput.focus(), 50);
 }
 function fecharAcessosUsuarioModal(){ document.getElementById('acessosUsuarioModalOverlay').classList.remove('open'); acessosUsuarioEditandoId = null; }
 document.getElementById('acessosNovoUsuarioBtn').addEventListener('click', () => abrirAcessosUsuarioModal(null));
+// ---- Fase 1c: migração controlada de PIN/e-mail para usersPrivado ----
+// Nunca roda sozinha: só por este botão, depois da prévia e da confirmação do Master. Idempotente: o que já está no privado não é
+// sobrescrito; users/<id> só perde pinByProfile/email depois de o privado ser lido de volta do servidor com os valores esperados.
+function preverMigracaoPrivado(){
+  return USERS.map(u => { const p = privadoDe(u) || {}; const pins = {}, pinsJa = {};
+    Object.keys(u.pinByProfile || {}).forEach(k => { if(p.pinByProfile && p.pinByProfile[k] != null) pinsJa[k] = true; else pins[k] = u.pinByProfile[k]; });
+    const email = u.email ? emailNormal(u.email) : ''; const emailMove = email && !(p.email) ? email : '';
+    const limpar = !!(u.pinByProfile && Object.keys(u.pinByProfile).length) || u.email !== undefined;
+    return { id: u.id, nome: u.name, pins, pinsJa: Object.keys(pinsJa), emailMove, emailJa: !!(email && p.email), limpar }; })
+    .filter(x => x.limpar);
+}
+function renderPreviaMigracao(){
+  const box = document.getElementById('acessosMigrarBox'); const itens = preverMigracaoPrivado(); box.style.display = '';
+  if(!itens.length){ box.innerHTML = '<b>Nada a migrar.</b> Nenhum registro em users/ tem PIN ou e-mail antigos. <button type="button" class="btn-ghost oe-mini" data-migrar="fechar">Fechar</button>'; return; }
+  box.innerHTML = `<p style="margin:0 0 8px;"><b>Prévia da migração</b> — nada foi gravado ainda. Para cada pessoa abaixo, o PIN e o e-mail serão copiados para <code>usersPrivado/</code> e depois apagados de <code>users/</code>. O que já existir no privado não é sobrescrito.</p>
+    <table class="obr-tab" style="margin:0 0 10px;"><thead><tr><th>Pessoa</th><th>PINs a mover</th><th>E-mail a mover</th><th>Observação</th></tr></thead><tbody>
+    ${itens.map(x => `<tr><td>${escapeHtml(x.nome)}</td><td>${Object.keys(x.pins).length ? Object.keys(x.pins).map(k => ACESSOS_PERFIL_LABEL[k] || k).join(', ') : '—'}</td><td>${x.emailMove ? escapeHtml(x.emailMove) : '—'}</td><td>${[x.pinsJa.length ? 'PIN de ' + x.pinsJa.map(k => ACESSOS_PERFIL_LABEL[k] || k).join(', ') + ' já no privado (mantido)' : '', x.emailJa ? 'e-mail já no privado (mantido)' : ''].filter(Boolean).join('; ') || '—'}</td></tr>`).join('')}</tbody></table>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn-primary" data-migrar="confirmar">Confirmar e migrar ${itens.length} ${itens.length === 1 ? 'registro' : 'registros'}</button><button type="button" class="btn-ghost" data-migrar="fechar">Cancelar</button></div><div id="acessosMigrarMsg" style="margin-top:8px;"></div>`;
+}
+async function executarMigracaoPrivado(){
+  const msg = (t) => { const el = document.getElementById('acessosMigrarMsg'); if(el) el.textContent = t; };
+  if(!isCurrentUserMaster()){ msg('Só um Gestor Master pode migrar.'); return { ok: false }; }
+  const itens = preverMigracaoPrivado(); const feitos = [], falhas = [];
+  for(const x of itens){
+    try{
+      // passo 1: grava no privado só o que falta (e garante o índice do e-mail)
+      const up = {}; Object.keys(x.pins).forEach(k => { up['usersPrivado/' + x.id + '/pinByProfile/' + k] = x.pins[k]; });
+      if(x.emailMove){ up['usersPrivado/' + x.id + '/email'] = x.emailMove; up['emailIndex/' + emailChave(x.emailMove)] = x.id; }
+      if(Object.keys(up).length) await rtdb.ref().update(up);
+      // passo 2: lê de volta e confere
+      const s = await rtdb.ref('usersPrivado/' + x.id).get(); const p = s.exists() ? s.val() || {} : {};
+      const u = USERS.find(y => y.id === x.id) || {};
+      const pinsOk = Object.keys(u.pinByProfile || {}).every(k => p.pinByProfile && p.pinByProfile[k] != null);
+      const emailOk = !u.email || (p.email && emailNormal(p.email) === emailNormal(u.email)) || !!p.email;
+      if(!pinsOk || !emailOk) throw new Error('privado gravado incompleto para ' + x.nome);
+      USERS_PRIVADO[x.id] = p;
+      // passo 3: só agora apaga os campos antigos de users/
+      const limpa = {}; if(u.pinByProfile) limpa['users/' + x.id + '/pinByProfile'] = null; if(u.email !== undefined) limpa['users/' + x.id + '/email'] = null;
+      if(Object.keys(limpa).length) await rtdb.ref().update(limpa);
+      delete u.pinByProfile; delete u.email; feitos.push(x.nome);
+    }catch(e){ console.error('migração usersPrivado:', x.nome, e); falhas.push(x.nome + ' (' + ((e && (e.code || e.message)) || 'erro') + ')'); }
+  }
+  renderAcessosUsuariosList();
+  const box = document.getElementById('acessosMigrarBox');
+  box.innerHTML = `<b>Migração concluída.</b> Movidos: ${feitos.length}${feitos.length ? ' (' + feitos.map(escapeHtml).join(', ') + ')' : ''}. ${falhas.length ? '<span style="color:var(--danger-dark);">Falharam: ' + falhas.map(escapeHtml).join(', ') + ' — rode de novo; o que já foi movido não se repete.</span>' : 'Nenhuma falha.'} <button type="button" class="btn-ghost oe-mini" data-migrar="fechar">Fechar</button>`;
+  return { ok: !falhas.length, feitos, falhas };
+}
+document.getElementById('acessosMigrarPrivadoBtn').addEventListener('click', () => { if(!isCurrentUserMaster()){ alert('Só um Gestor Master pode fazer isso.'); return; } renderPreviaMigracao(); });
+document.getElementById('acessosMigrarBox').addEventListener('click', (e) => { const b = e.target.closest('[data-migrar]'); if(!b) return;
+  if(b.dataset.migrar === 'fechar'){ document.getElementById('acessosMigrarBox').style.display = 'none'; return; }
+  if(b.dataset.migrar === 'confirmar'){ customConfirm('Mover agora os PINs e e-mails listados para usersPrivado/ e apagá-los de users/? Depois disso, só o Master e a própria pessoa conseguem ler o PIN dela.', () => { b.disabled = true; b.textContent = 'Migrando…'; executarMigracaoPrivado(); }, 'Migrar'); } });
+window.__ACESSOS_TESTE = { preverMigracaoPrivado, executarMigracaoPrivado, privado: () => USERS_PRIVADO };
+document.getElementById('acessosCriarContaBtn').addEventListener('click', async () => {
+  const msg = (t, cor) => { const el = document.getElementById('acessosContaMsg'); el.textContent = t || ''; el.style.color = cor || ''; };
+  if(!isCurrentUserMaster()) return msg('Só um Gestor Master pode criar contas.', 'var(--danger-dark)');
+  const email = emailNormal(document.getElementById('acessosEmailInput').value), senha = document.getElementById('acessosSenhaInicialInput').value;
+  if(!emailValido(email)) return msg('Informe o e-mail de acesso primeiro.', 'var(--danger-dark)');
+  if(!senha || senha.length < 6) return msg('Digite uma senha inicial com pelo menos 6 caracteres (a pessoa pode trocar com "Esqueci a senha").', 'var(--danger-dark)');
+  const btn = document.getElementById('acessosCriarContaBtn'); btn.disabled = true; btn.textContent = 'Criando…';
+  const r = await criarContaAcesso(email, senha);
+  btn.disabled = false; btn.textContent = 'Criar conta de acesso';
+  if(r.ok){ document.getElementById('acessosSenhaInicialInput').value = ''; msg('Conta criada para ' + email + (r.verifEnviada ? '; e-mail de verificação enviado' : '; o e-mail de verificação será reenviado quando a pessoa entrar') + '. Salve o usuário com este e-mail (se ainda não salvou) e passe a senha inicial. A pessoa precisa abrir o link de verificação antes do 1º acesso.', '#1D5E39'); }
+  else msg(r.reason, r.jaExiste ? '#8a6d00' : 'var(--danger-dark)');
+});
 document.getElementById('acessosUsuarioModalCancelBtn').addEventListener('click', fecharAcessosUsuarioModal);
 document.getElementById('acessosUsuarioModalOverlay').addEventListener('click', (e) => { if(e.target === e.currentTarget) fecharAcessosUsuarioModal(); });
 document.getElementById('acessosUsuarioNomeInput').addEventListener('input', () => {
@@ -19134,6 +19419,8 @@ async function salvarUsuarioAcessos(dados){
   const perfisSelecionados = Object.keys(dados.profiles).filter(p => dados.profiles[p]);
   if(!perfisSelecionados.length) return { ok: false, reason: 'Selecione ao menos um perfil.' };
   if(dados.isMaster && !dados.profiles.manager) return { ok: false, reason: 'Master só é permitido com o perfil Gestor selecionado.' };
+  const emailNovo = dados.email === undefined ? undefined : emailNormal(dados.email);   // undefined = chamada antiga, não mexe no e-mail
+  if(emailNovo){ if(!emailValido(emailNovo)) return { ok: false, reason: 'E-mail de acesso inválido.' }; const dono = USERS.find(u => u.id !== dados.id && emailNormal(emailDoUsuario(u)) === emailNovo); if(dono) return { ok: false, reason: 'Este e-mail já é o acesso de "' + dono.name + '".' }; }
   if(USERS.some(u => u.id !== dados.id && normNomeExato(u.name) === normNomeExato(nome))) return { ok: false, reason: 'Já existe um usuário com esse nome. Se o cadastro dele ficou incompleto, abra-o em "Editar" e salve de novo para completar.' };
 
   // Permissões de abas (só Gestor comum). undefined = não mexe (chamadas antigas continuam iguais).
@@ -19159,11 +19446,13 @@ async function salvarUsuarioAcessos(dados){
       if(dono) return { ok: false, reason: 'A chave legada "' + chave + '" já pertence ao usuário "' + dono.name + '" neste perfil. Use um nome diferente.' };
     }
     perfisSelecionados.forEach(p => { profiles[p] = true; pinByProfile[p] = (dados.pinByProfile[p] || '').trim() || '0000'; legacyNames[p] = chave; });
-    const registro = { name: nome, profiles, pinByProfile, legacyNames, isMaster: !!dados.isMaster, createdAt: now, updatedAt: now };
+    const registro = { name: nome, profiles, legacyNames, isMaster: !!dados.isMaster, createdAt: now, updatedAt: now };   // Fase 1c: sem PIN e sem e-mail aqui
     if(permissoesNorm && !ABAS_GESTOR_IDS.every(id => permissoesNorm[id])) registro.tabPermissions = permissoesNorm; // todas marcadas = sem restrição, nada a gravar
+    const privado = { pinByProfile }; if(emailNovo) privado.email = emailNovo;
     try{
-      await rtdb.ref('users/' + novoId).set(registro);
-      USERS.push(Object.assign({ id: novoId }, registro));
+      const upNovo = { ['users/' + novoId]: registro, ['usersPrivado/' + novoId]: privado }; if(emailNovo) upNovo['emailIndex/' + emailChave(emailNovo)] = novoId;
+      await rtdb.ref().update(upNovo);
+      USERS.push(Object.assign({ id: novoId }, registro)); USERS_PRIVADO[novoId] = privado;
     }catch(e){ return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.', nos: { users: 'falhou' } }; }
     // users já confirmado — a ponte agora só REFLETE pro legado; falha aqui não desfaz o usuário
     // já criado (não fingir sucesso total, mas também não apagar o que já foi salvo de verdade).
@@ -19209,16 +19498,17 @@ async function salvarUsuarioAcessos(dados){
     if(tem && !tinha){
       const pin = (dados.pinByProfile[p] || '').trim() || '0000';
       updates[`users/${existente.id}/profiles/${p}`] = true;
-      updates[`users/${existente.id}/pinByProfile/${p}`] = pin;
+      updates[`usersPrivado/${existente.id}/pinByProfile/${p}`] = pin;
       const nomeLegadoNovo = resolverChaveLegada(p);
       if(nomeLegadoNovo) acoesPonte.push({ perfil: p, tipo: 'criarOuAtualizar', nomeLegado: nomeLegadoNovo, pin });
     } else if(!tem && tinha){
       updates[`users/${existente.id}/profiles/${p}`] = null;
-      updates[`users/${existente.id}/pinByProfile/${p}`] = null; // legacyNames preservado de propósito (histórico)
+      updates[`usersPrivado/${existente.id}/pinByProfile/${p}`] = null; // legacyNames preservado de propósito (histórico)
+      if(existente.pinByProfile && existente.pinByProfile[p] !== undefined) updates[`users/${existente.id}/pinByProfile/${p}`] = null;   // resto antigo, se houver
       acoesPonte.push({ perfil: p, tipo: 'remover', nomeLegado: existente.legacyNames && existente.legacyNames[p] });
     } else if(tem && tinha){
       const novoPin = (dados.pinByProfile[p] || '').trim() || '0000';
-      if(!existente.pinByProfile || existente.pinByProfile[p] !== novoPin) updates[`users/${existente.id}/pinByProfile/${p}`] = novoPin;
+      if(pinDoUsuarioParaPerfil(existente, p) !== novoPin || !(privadoDe(existente) && privadoDe(existente).pinByProfile && privadoDe(existente).pinByProfile[p] != null)) updates[`usersPrivado/${existente.id}/pinByProfile/${p}`] = novoPin;
       // Sempre reafirma a ponte pra esse perfil, mesmo sem mudança de PIN — auto-corrige uma
       // reflexão legada que tenha falhado numa tentativa anterior (retry seguro e idempotente:
       // as funções de ponte só gravam de verdade se algo realmente estiver diferente no legado).
@@ -19240,18 +19530,26 @@ async function salvarUsuarioAcessos(dados){
     }
   }
   if(!!existente.isMaster !== !!dados.isMaster) updates[`users/${existente.id}/isMaster`] = !!dados.isMaster;
+  const emailAtual = emailNormal(emailDoUsuario(existente));
+  if(emailNovo !== undefined && emailAtual !== emailNovo){      // Fase 1c: e-mail de acesso no privado + índice (a chave antiga sai, a nova entra)
+    updates[`usersPrivado/${existente.id}/email`] = emailNovo || null;
+    if(existente.email !== undefined) updates[`users/${existente.id}/email`] = null;   // resto antigo, se houver
+    if(emailAtual) updates['emailIndex/' + emailChave(emailAtual)] = null;
+    if(emailNovo) updates['emailIndex/' + emailChave(emailNovo)] = existente.id;
+  }
 
   if(Object.keys(updates).length > 0){
     updates[`users/${existente.id}/updatedAt`] = now;
     try{
       await rtdb.ref().update(updates); // mesmo padrão já usado no app (ex.: createEstoqueStore): update na raiz com caminhos completos
-      Object.keys(updates).forEach(path => {
-        const parts = path.split('/').slice(2); // remove "users/<id>/" — o resto é o caminho dentro do registro
-        if(parts.length === 1){ existente[parts[0]] = updates[path]; }
+      Object.keys(updates).filter(path => path.indexOf('users/') === 0 || path.indexOf('usersPrivado/') === 0).forEach(path => {
+        const parts = path.split('/').slice(2); // remove "users/<id>/" ou "usersPrivado/<id>/" — o resto é o caminho dentro do registro
+        const alvo = path.indexOf('usersPrivado/') === 0 ? (USERS_PRIVADO[existente.id] = USERS_PRIVADO[existente.id] || {}) : existente;
+        if(parts.length === 1){ if(updates[path] === null) delete alvo[parts[0]]; else alvo[parts[0]] = updates[path]; }
         else {
-          existente[parts[0]] = existente[parts[0]] || {};
-          if(updates[path] === null) delete existente[parts[0]][parts[1]];
-          else existente[parts[0]][parts[1]] = updates[path];
+          alvo[parts[0]] = alvo[parts[0]] || {};
+          if(updates[path] === null) delete alvo[parts[0]][parts[1]];
+          else alvo[parts[0]][parts[1]] = updates[path];
         }
       });
     }catch(e){ return { ok: false, reason: 'Não foi possível salvar. Verifique sua internet e tente novamente.', nos: { users: 'falhou' } }; }
@@ -19376,6 +19674,9 @@ async function excluirUsuarioAcessos(id){
     aplicarLocal.push({ perfil: p, chave });
   }
   caminhos['users/' + id] = null;
+  caminhos['usersPrivado/' + id] = null;                                                                   // Fase 1c
+  { const em = emailNormal(emailDoUsuario(USERS.find(x => x.id === id))); if(em) caminhos['emailIndex/' + emailChave(em)] = null; }
+  if(typeof acessosVinculos === 'object' && acessosVinculos[id]) caminhos['authUsers/' + acessosVinculos[id]] = null;
 
   // UMA escrita multi-caminho: atômica no Firebase. Falhou = nada mudou no servidor.
   let timer;
@@ -19395,7 +19696,7 @@ async function excluirUsuarioAcessos(id){
   clearTimeout(timer);
 
   // Servidor confirmou — agora (e só agora) o estado local acompanha.
-  USERS = USERS.filter(u => u.id !== id);
+  USERS = USERS.filter(u => u.id !== id); delete USERS_PRIVADO[id];
   aplicarLocal.forEach(a => limparAcessoLegadoLocal(a.perfil, a.chave));
   try{ renderManagerPinList(); renderTechPinList(); renderFinanceiroPinList(); renderOficinaPinList(); }catch(e){ /* painéis legados ocultos — só higiene visual */ }
   try{ if(aplicarLocal.some(a => a.perfil === 'tech')) renderAll(); }catch(e){ console.error('Falha ao atualizar telas após a exclusão:', e); }
@@ -19433,7 +19734,8 @@ document.getElementById('acessosUsuarioModalSalvarBtn').addEventListener('click'
       financeiro: document.getElementById('acessosPerfilFinanceiro').checked
     },
     pinByProfile: {},
-    isMaster: document.getElementById('acessosMasterInput').checked
+    isMaster: document.getElementById('acessosMasterInput').checked,
+    email: document.getElementById('acessosEmailInput').value
   };
   document.querySelectorAll('#acessosPinsContainer [data-acessospinperfil]').forEach(inp => { dados.pinByProfile[inp.dataset.acessospinperfil] = inp.value; });
   if(dados.profiles.manager){
@@ -19454,6 +19756,14 @@ document.getElementById('acessosUsuarioModalSalvarBtn').addEventListener('click'
 });
 
 document.getElementById('appRetryBtn').addEventListener('click', init);
+document.getElementById('contaLoginBtn').addEventListener('click', entrarComConta);
+document.getElementById('contaSenhaInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') entrarComConta(); });
+document.getElementById('contaEmailInput').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('contaSenhaInput').focus(); });
+document.getElementById('contaEsqueciBtn').addEventListener('click', esqueciSenhaConta);
+document.getElementById('contaTrocarBtn').addEventListener('click', trocarDeConta);
+document.getElementById('contaJaVerifiqueiBtn').addEventListener('click', jaVerifiquei);
+document.getElementById('contaReenviarBtn').addEventListener('click', reenviarVerificacao);
+document.getElementById('contaVerifTrocarBtn').addEventListener('click', trocarDeConta);
 window.addEventListener('error', (e) => {
   console.error('Erro não tratado na aplicação:', e.error || e.message);
 });
