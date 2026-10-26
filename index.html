@@ -3548,7 +3548,7 @@
         <div class="tecnicos-title">Acessos</div>
       </div>
     </div>
-    <div style="padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button><button type="button" class="btn-ghost" id="acessosMigrarPrivadoBtn" title="Move PIN e e-mail de users/ para usersPrivado/ (mostra uma prévia antes)">Mover PINs e e-mails para o nó privado</button><button type="button" class="btn-ghost" id="acessosMidiasStorageBtn" title="Move as fotos e áudios dos serviços que ainda estão em base64 no banco para o Cloud Storage, em lotes, verificando cada arquivo antes de trocar a referência">Fotos e áudios → Storage</button></div>
+    <div style="padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button><button type="button" class="btn-ghost" id="acessosMigrarPrivadoBtn" title="Move PIN e e-mail de users/ para usersPrivado/ (mostra uma prévia antes)">Mover PINs e e-mails para o nó privado</button><button type="button" class="btn-ghost" id="acessosMidiasStorageBtn" title="Move as fotos, áudios, fotos de preventivas e PDFs de manuais que ainda estão em base64 no banco para o Cloud Storage, em lotes, verificando cada arquivo antes de trocar a referência">Fotos e áudios → Storage</button><button type="button" class="btn-ghost" id="acessosOrfaosStorageBtn" title="Lista os arquivos do Storage que nenhum registro usa mais e permite apagá-los">Varrer arquivos órfãos</button></div>
     <div id="acessosMigrarBox" style="display:none; margin:0 20px 14px; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface); font-size:13px;"></div>
     <div id="acessosUsuariosList" style="padding:0 20px 30px;"></div>
 
@@ -4688,7 +4688,7 @@ const firebaseConfig = {
 // AUTH_FIREBASE = false → fluxo anterior (sem conta). Só funciona com as regras do banco abertas — é o caminho de volta, nada mais.
 const AUTH_FIREBASE = true;
 // Fase 4: chave do site reCAPTCHA v3 registrada em Firebase → App Check. Vazio = App Check desligado.
-const APP_CHECK_SITE_KEY = '';
+const APP_CHECK_SITE_KEY = '6LeFEwIuAAAAAN4gDhZ17W5kwFRVqSysVuafTI_c';
 let rtdb = null, fbAuth = null;
 // ===== Fase 5 — fotos e áudios dos serviços no Cloud Storage =====
 // Cada item de foto/áudio continua sendo um texto na mesma lista de sempre; a diferença é que, com o Storage ligado e com rede, o
@@ -4724,6 +4724,27 @@ async function enviarListaParaStorage(arr, servicoId, campo){
 async function apagarMidiaStorage(url){ if(!fbStorage) return false; try{ await fbStorage.refFromURL(url).delete(); return true; }catch(e){ if(!(e && e.code === 'storage/object-not-found')) console.warn('Storage: não apagou o arquivo (a varredura de órfãos recolhe depois):', e && e.message); return false; } }
 function urlsRemovidas(jsonAntes, arrDepois){ let antes = []; try{ antes = jsonAntes ? JSON.parse(jsonAntes) : []; }catch(e){ antes = []; } const agora = new Set(Array.isArray(arrDepois) ? arrDepois : []); return (Array.isArray(antes) ? antes : []).filter(x => ehMidiaStorage(x) && !agora.has(x)); }
 async function apagarMidiasRemovidas(lista){ for(const u of (lista || [])) await apagarMidiaStorage(u); }
+const STORAGE_PASTA_PREVENTIVAS = 'preventivas'; // preventivas/<id do serviço>/<id da foto>.jpg
+const STORAGE_PASTA_MANUAIS = 'manuais';         // manuais/<id do modelo>.pdf
+// Baixa um arquivo do Storage pela URL de download (exige CORS configurado no bucket — ver cors.json). Devolve Blob.
+async function baixarMidiaStorage(url){
+  const resp = await fetch(url, { cache: 'force-cache' });
+  if(!resp.ok) throw new Error('HTTP ' + resp.status + ' ao baixar do Storage');
+  return resp.blob();
+}
+const midiaDataUrlCache = {}; // url -> dataURL (fotos de relatório já convertidas nesta sessão)
+async function midiaComoDataUrl(x){ // item (base64 ou URL do Storage) → dataURL (para PDF/jsPDF)
+  if(!ehMidiaStorage(x)) return x;
+  if(midiaDataUrlCache[x]) return midiaDataUrlCache[x];
+  const blob = await baixarMidiaStorage(x);
+  const d = await new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = rej; fr.readAsDataURL(blob); });
+  midiaDataUrlCache[x] = d; return d;
+}
+async function enviarArquivoParaStorage(caminho, dado, formato, contentType){ // formato: 'data_url' | 'base64'
+  const ref = fbStorage.ref(caminho);
+  await ref.putString(dado, formato, contentType ? { contentType } : undefined);
+  return ref.getDownloadURL();
+}
 window.__STORAGE_MIDIA = { ativo: () => STORAGE_MIDIA_ATIVO, disponivel: storageDisponivel, ehStorage: ehMidiaStorage, ehBase64: ehMidiaBase64 };
 try{
   if(typeof firebase !== 'undefined'){
@@ -19481,6 +19502,50 @@ async function migrarMidiasParaStorage(opts){
     }
     feitos++;
   }
+  // Fase 6: fotos das preventivas (preventivoFotos/<sid>/<fid>) e PDFs dos manuais (manuaisArquivos/<id>)
+  if(feitos < lote){
+    try{
+      const sn = await rtdb.ref('preventivoFotos').get(); const todas = sn.exists() ? (sn.val() || {}) : {};
+      for(const sid of Object.keys(todas)){
+        if(feitos >= lote){ rel.parouNoLote = true; break; }
+        const fotos = todas[sid] || {}; const ids = Object.keys(fotos).filter(f => ehMidiaBase64(fotos[f]));
+        if(!ids.length) continue;
+        rel.servicosVistos++; ids.forEach(f => { rel.itensBase64++; rel.kbBase64 += tamanhoDaDataUrl(fotos[f]) / 1024; });
+        if(simular){ feitos++; continue; }
+        for(const f of ids){
+          const item = fotos[f]; const esperado = tamanhoDaDataUrl(item); let url = null;
+          try{
+            url = await enviarArquivoParaStorage(STORAGE_PASTA_PREVENTIVAS + '/' + sid + '/' + f + '.' + extensaoDoMime(mimeDaDataUrl(item)), item, 'data_url', mimeDaDataUrl(item) || 'image/jpeg');
+            const meta = await fbStorage.refFromURL(url).getMetadata();
+            if(Number(meta.size) !== esperado) throw new Error('tamanho no Storage (' + meta.size + ') diferente do esperado (' + esperado + ')');
+            await rtdb.ref('preventivoFotos/' + sid + '/' + f).set(url); rel.enviados++; rel.kbEnviados += esperado / 1024;
+          }catch(e){ rel.falhas.push({ id: 'preventiva ' + sid, campo: f, motivo: e && e.message }); if(url) await apagarMidiaStorage(url); }
+        }
+        feitos++;
+      }
+    }catch(e){ rel.falhas.push({ id: 'preventivoFotos', motivo: 'não leu o nó: ' + (e && e.message) }); }
+  }
+  if(feitos < lote){
+    try{
+      const chaves = await chavesShallow('manuaisArquivos');
+      for(const id of chaves){
+        if(feitos >= lote){ rel.parouNoLote = true; break; }
+        const sn = await rtdb.ref('manuaisArquivos/' + id).get(); const v = sn.exists() ? sn.val() : null;
+        if(typeof v !== 'string' || ehMidiaStorage(v) || !v) continue;
+        const esperado = Math.floor(v.length * 3 / 4) - (v.endsWith('==') ? 2 : v.endsWith('=') ? 1 : 0);
+        rel.servicosVistos++; rel.itensBase64++; rel.kbBase64 += esperado / 1024;
+        if(simular){ feitos++; continue; }
+        let url = null;
+        try{
+          url = await enviarArquivoParaStorage(STORAGE_PASTA_MANUAIS + '/' + id + '.pdf', v, 'base64', 'application/pdf');
+          const meta = await fbStorage.refFromURL(url).getMetadata();
+          if(Number(meta.size) !== esperado) throw new Error('tamanho no Storage (' + meta.size + ') diferente do esperado (' + esperado + ')');
+          await rtdb.ref('manuaisArquivos/' + id).set(url); rel.enviados++; rel.kbEnviados += esperado / 1024;
+        }catch(e){ rel.falhas.push({ id: 'manual ' + id, motivo: e && e.message }); if(url) await apagarMidiaStorage(url); }
+        feitos++;
+      }
+    }catch(e){ rel.falhas.push({ id: 'manuaisArquivos', motivo: 'não leu as chaves: ' + (e && e.message) }); }
+  }
   rel.kbBase64 = Math.round(rel.kbBase64); rel.kbEnviados = Math.round(rel.kbEnviados);
   if(simular){ try{ const chaves = await chavesShallowServicesMedia(); const ids = new Set(services.map(x => String(x.id))); rel.nosSemServico = (chaves || []).filter(c => !ids.has(String(c))); }catch(e){ rel.nosSemServico = null; } } // mídia de serviço que já não existe: fica como está (não é migrada nem apagada aqui)
   return rel;
@@ -19496,15 +19561,23 @@ async function varrerStorageOrfaos(opts){
   services.forEach(svc => SERVICE_MEDIA_FIELDS.forEach(f => registrar(svc[f])));
   try{ const sn = await rtdb.ref('servicesMedia').get(); const all = sn.exists() ? (sn.val() || {}) : {}; Object.values(all).forEach(v => { if(v && typeof v === 'object') SERVICE_MEDIA_FIELDS.forEach(f => registrar(v[f])); }); }
   catch(e){ return Object.assign(rel, { erro: 'não leu servicesMedia: ' + (e && e.message) }); }
-  const pilha = [fbStorage.ref(STORAGE_PASTA_SERVICOS)];
+  try{ const sn = await rtdb.ref('preventivoFotos').get(); const all = sn.exists() ? (sn.val() || {}) : {}; Object.values(all).forEach(v => registrar(v)); }catch(e){ return Object.assign(rel, { erro: 'não leu preventivoFotos: ' + (e && e.message) }); } // Fase 6
+  try{ const sn = await rtdb.ref('manuaisArquivos').get(); const all = sn.exists() ? (sn.val() || {}) : {}; registrar(all); }catch(e){ return Object.assign(rel, { erro: 'não leu manuaisArquivos: ' + (e && e.message) }); } // Fase 6
+  const pilha = [fbStorage.ref(STORAGE_PASTA_SERVICOS), fbStorage.ref(STORAGE_PASTA_PREVENTIVAS), fbStorage.ref(STORAGE_PASTA_MANUAIS)];
   while(pilha.length){
     const r = pilha.pop(); let res;
-    try{ res = await r.listAll(); }catch(e){ return Object.assign(rel, { erro: 'não listou ' + r.fullPath + ': ' + (e && e.message) }); }
+    try{ res = await r.listAll(); }catch(e){ if(e && e.code === 'storage/object-not-found') continue; return Object.assign(rel, { erro: 'não listou ' + r.fullPath + ': ' + (e && e.message) }); }
     res.prefixes.forEach(p => pilha.push(p));
     for(const item of res.items){ rel.arquivos++; if(usados.has(item.fullPath)) rel.referenciados++; else rel.orfaos.push(item.fullPath); }
   }
   if(opts.apagar){ for(const p of rel.orfaos.slice()){ try{ await fbStorage.ref(p).delete(); rel.apagados++; }catch(e){} } }
   return rel;
+}
+async function chavesShallow(no){ // lista só as CHAVES de um nó (REST shallow), sem baixar o conteúdo
+  const base = String(rtdb.ref(no).toString()).replace(/\/+$/, ''); let auth = '';
+  if(authAtivo() && fbAuth && fbAuth.currentUser) auth = '&auth=' + encodeURIComponent(await fbAuth.currentUser.getIdToken());
+  const resp = await fetch(base + '.json?shallow=true' + auth, { cache: 'no-store' }); if(!resp.ok) throw new Error('HTTP ' + resp.status);
+  const j = await resp.json(); return j && typeof j === 'object' ? Object.keys(j) : [];
 }
 async function chavesShallowServicesMedia(){ // lista só as CHAVES de servicesMedia (REST shallow), sem baixar as mídias
   const base = String(rtdb.ref('servicesMedia').toString()).replace(/\/+$/, ''); let auth = '';
@@ -19521,6 +19594,20 @@ document.getElementById('acessosMidiasStorageBtn').addEventListener('click', asy
   if(prev.erro){ box.innerHTML = '<div style="color:var(--danger-dark);">' + escapeHtml(prev.erro) + '</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
   if(!prev.itensBase64){ box.innerHTML = '<div>Nada a migrar: todas as fotos e áudios dos serviços já estão no Storage.</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
   box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Fotos e áudios → Storage</div><div>' + prev.itensBase64 + ' item(ns) em base64 (~' + prev.kbBase64 + ' KB) em serviços com mídia. A migração sobe cada arquivo, confere o tamanho no Storage e só então troca a referência no banco; roda em lotes de 10 serviços por clique e pode ser repetida. Faça um backup (Exportar) antes da primeira vez.</div><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"><button type="button" class="btn-primary" data-midias="lote">Migrar 10 serviços agora</button><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
+});
+document.getElementById('acessosOrfaosStorageBtn').addEventListener('click', async () => { // Fase 6
+  if(!isCurrentUserMaster()){ alert('Só um Gestor Master pode fazer isso.'); return; }
+  const box = document.getElementById('acessosMigrarBox'); box.style.display = '';
+  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Arquivos órfãos no Storage</div><div>Conferindo o que está no Storage e o que o banco ainda usa…</div>';
+  const r = await varrerStorageOrfaos({});
+  if(r.erro){ box.innerHTML = '<div style="color:var(--danger-dark);">' + escapeHtml(r.erro) + '</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
+  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Arquivos órfãos no Storage</div><div>' + r.arquivos + ' arquivo(s) no Storage, ' + r.referenciados + ' em uso, <b>' + r.orfaos.length + ' órfão(s)</b> (ninguém usa mais).</div><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">' + (r.orfaos.length ? '<button type="button" class="btn-primary" data-orfaos="apagar">Apagar os ' + r.orfaos.length + ' órfão(s)</button>' : '') + '<button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
+});
+document.getElementById('acessosMigrarBox').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-orfaos]'); if(!b) return;
+  b.disabled = true; b.textContent = 'Apagando…';
+  const r = await varrerStorageOrfaos({ apagar: true });
+  document.getElementById('acessosMigrarBox').innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Arquivos órfãos no Storage</div><div>Apagados: ' + r.apagados + '.' + (r.erro ? ' ' + escapeHtml(r.erro) : '') + '</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
 });
 document.getElementById('acessosMigrarBox').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-midias]'); if(!b) return;
@@ -20952,6 +21039,7 @@ async function fotosDoRelatorio(rel){
   const snap = await comTimeout(rtdb.ref(NOS.fotos + '/' + sid).get(), 15000);
   const obj = snap.exists() ? snap.val() : {};
   const lista = Object.keys(obj).sort().filter(k => obj[k]).map(k => ({ id: k, src: obj[k], u: unidadeDaFoto(k) }));
+  for(const f of lista){ if(ehMidiaStorage(f.src)){ f.url = f.src; f.src = await midiaComoDataUrl(f.src); } } // Fase 6: o PDF precisa do conteúdo (exige CORS no bucket)
   estado.fotosRel[sid] = lista;
   return lista;
 }
@@ -21173,6 +21261,12 @@ function gravarFoto(sid, dataUrl, unitId){
   if(Object.keys(r.fotos).length >= MAX_FOTOS) return false;
   const id = 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + (unitId ? '~' + unitId : '');
   r.fotos[id] = dataUrl;
+  if(storageDisponivel()){ // Fase 6: sobe primeiro; só grava a referência no banco depois (ou o base64, se o upload falhar)
+    enviarArquivoParaStorage(STORAGE_PASTA_PREVENTIVAS + '/' + sid + '/' + id + '.' + extensaoDoMime(mimeDaDataUrl(dataUrl)), dataUrl, 'data_url', mimeDaDataUrl(dataUrl) || 'image/jpeg')
+      .then(url => { if(r.fotos[id] === dataUrl){ r.fotos[id] = url; } escrever(NOS.fotos + '/' + sid + '/' + id, url); })
+      .catch(e => { console.warn('Storage: upload da foto da preventiva falhou (fica em base64 no banco):', e && e.message); escrever(NOS.fotos + '/' + sid + '/' + id, dataUrl); });
+    return true;
+  }
   escrever(NOS.fotos + '/' + sid + '/' + id, dataUrl);
   return true;
 }
@@ -21190,7 +21284,7 @@ function ligarSlot(slot){
       const fid = rm.dataset.prvRmfoto;
       customConfirm('Excluir esta foto? Essa ação não pode ser desfeita.', () => {
         const r = estado.rascunhos[sid]; if(!r) return;
-        delete r.fotos[fid]; escrever(NOS.fotos + '/' + sid + '/' + fid, null); remontarSlots(sid); aposAlterar(sid);
+        { const antiga = r.fotos[fid]; delete r.fotos[fid]; escrever(NOS.fotos + '/' + sid + '/' + fid, null); if(ehMidiaStorage(antiga)) apagarMidiaStorage(antiga); } remontarSlots(sid); aposAlterar(sid); // Fase 6
       });
       return;
     }
@@ -23548,7 +23642,7 @@ function alertaUrgentes(){
   box.innerHTML = htmlRet + htmlPend;
 }
 
-window.PREV_API = { origemAtividade,
+window.PREV_API = { origemAtividade, fotosDoRelatorioTeste: fotosDoRelatorio, /* Fase 6: inspeção em testes */
   montarSlot,
   gerarRelatorioAoConcluir,
   carregarUnidades,
@@ -26878,8 +26972,17 @@ let manCarregado = false, manCarregando = null; const manArqCache = {};
 aoSairDoPerfil(() => { manCarregado = false; manCarregando = null; }); // M1
 async function garantirManuais(){ if(manCarregado) return; const g = geracaoDados; /* M1b */ if(!manCarregando) manCarregando = storeMan.load().then(() => { if(sessaoMudou(g, 'manuaisOperacao')) return; storeMan.attach(() => { try{ renderManuais(); }catch(e){} }); manCarregado = true; }); await manCarregando; }
 const modelos = () => storeMan.items.filter(m => m && m.id && m.active !== false).sort((a, b) => MAN_ORDEM(a.tipo) - MAN_ORDEM(b.tipo) || (a.ordem || 0) - (b.ordem || 0) || String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
-async function manArquivo(id){ if(manArqCache[id]) return manArqCache[id]; if(!rtdb) throw new Error('sem conexão com o servidor'); const sn = await comTempo(rtdb.ref('manuaisArquivos/' + id).get(), 90000); if(!sn.exists()) throw new Error('arquivo do modelo não encontrado no servidor'); manArqCache[id] = sn.val(); return manArqCache[id]; }
-async function manSalvarArquivo(id, b64){ if(!rtdb) throw new Error('sem conexão'); await rtdb.ref('manuaisArquivos/' + id).set(b64); manArqCache[id] = b64; }
+async function manArquivo(id){ if(manArqCache[id]) return manArqCache[id]; if(!rtdb) throw new Error('sem conexão com o servidor'); const sn = await comTempo(rtdb.ref('manuaisArquivos/' + id).get(), 90000); if(!sn.exists()) throw new Error('arquivo do modelo não encontrado no servidor');
+  let v = sn.val();
+  if(ehMidiaStorage(v)){ const blob = await comTempo(baixarMidiaStorage(v), 90000); v = bytesParaB64(new Uint8Array(await blob.arrayBuffer())); } // Fase 6: PDF no Storage (exige CORS no bucket)
+  manArqCache[id] = v; return manArqCache[id]; }
+async function manSalvarArquivo(id, b64){ if(!rtdb) throw new Error('sem conexão');
+  if(storageDisponivel()){ // Fase 6: PDF vai para o Storage; no banco fica a URL. Falha no upload → base64 no banco, como antes.
+    try{ const url = await enviarArquivoParaStorage(STORAGE_PASTA_MANUAIS + '/' + id + '.pdf', b64, 'base64', 'application/pdf'); await rtdb.ref('manuaisArquivos/' + id).set(url); manArqCache[id] = b64; return; }
+    catch(e){ console.warn('Storage: upload do PDF do manual falhou (fica em base64 no banco):', e && e.message); }
+  }
+  await rtdb.ref('manuaisArquivos/' + id).set(b64); manArqCache[id] = b64; }
+window.__MAN_TESTE = { manArquivo, manSalvarArquivo, cache: manArqCache }; // inspeção em testes
 const b64ParaBytes = (b64) => { const bin = atob(b64); const u = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
 const bytesParaB64 = (u8) => { let s = ''; const CH = 0x8000; for(let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s); };
 let pdfLibPromessa = null;
@@ -27055,7 +27158,7 @@ async function abrirManuais(container){
       if(a === 'novo-modelo') novoModelo(); else if(a === 'novo-manual') novoManualAvulso(); else if(a === 'abrir-manual') abrirManualOperacao(b.dataset.ids.split(',')); else if(a === 'importar') importarPadrao(); else if(a === 'capa') trocarCapa();
       else if(a === 'ver') verModelo(id); else if(a === 'substituir') substituirPdf(id);
       else if(a === 'editar'){ const m = storeMan.items.find(x => x.id === id); if(m) formModelo(m, async (v) => { Object.assign(m, v, { atualizadoEm: new Date().toISOString() }); await storeMan.save(true); renderManuais(); }); }
-      else if(a === 'apagar'){ const m = storeMan.items.find(x => x.id === id); if(!m) return; customConfirm('Apagar o modelo "' + m.nome + '"?', () => customConfirm('Confirma? O PDF é removido do servidor e não dá para desfazer.', async () => { m.active = false; await storeMan.save(true); try{ if(rtdb) await rtdb.ref('manuaisArquivos/' + id).remove(); }catch(e){} delete manArqCache[id]; renderManuais(); }, 'Apagar'), 'Continuar'); } });
+      else if(a === 'apagar'){ const m = storeMan.items.find(x => x.id === id); if(!m) return; customConfirm('Apagar o modelo "' + m.nome + '"?', () => customConfirm('Confirma? O PDF é removido do servidor e não dá para desfazer.', async () => { m.active = false; await storeMan.save(true); try{ if(rtdb){ const sn = await rtdb.ref('manuaisArquivos/' + id).get(); const v = sn.exists() ? sn.val() : null; await rtdb.ref('manuaisArquivos/' + id).remove(); if(ehMidiaStorage(v)) apagarMidiaStorage(v); } }catch(e){} delete manArqCache[id]; /* Fase 6 */ renderManuais(); }, 'Apagar'), 'Continuar'); } });
   }
   container.innerHTML = '<div class="empty-state">Carregando…</div>';
   try{ await garantirCarregado(); await carregarInstTodos(); await garantirManuais(); await garantirAvulsos(); await cmCarregarCfg(); if(!window.__manPadrao){ try{ const r = await fetch('./manuais/manifest.json', { cache: 'no-store' }); if(r.ok) window.__manPadrao = await r.json(); }catch(e){} } }catch(e){ console.error('manuais: carregar', e); }
