@@ -4692,12 +4692,13 @@ let rtdb = null, fbAuth = null;
 try{
   if(typeof firebase !== 'undefined'){
     firebase.initializeApp(firebaseConfig);
-    // Fase 4: App Check (reCAPTCHA v3). Vazio = desligado (nada muda). Com a chave do site preenchida, o SDK anexa um token de
+    // Fase 4: App Check (reCAPTCHA Enterprise / Fraud Defense). Vazio = desligado (nada muda). Com a chave do site preenchida, o SDK anexa um token de
     // App Check a cada chamada; o bloqueio de chamadas sem token só acontece quando a aplicação ("enforce") é ligada no console.
     try{
       if(APP_CHECK_SITE_KEY && firebase.appCheck){
         const ac = firebase.appCheck();
-        const prov = (firebase.appCheck.ReCaptchaV3Provider) ? new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY) : APP_CHECK_SITE_KEY;
+        // Chave criada no reCAPTCHA novo (Fraud Defense / Enterprise), registrada no App Check como "Fraud Defense": provedor Enterprise.
+        const prov = (firebase.appCheck.ReCaptchaEnterpriseProvider) ? new firebase.appCheck.ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY) : (firebase.appCheck.ReCaptchaV3Provider ? new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY) : APP_CHECK_SITE_KEY);
         ac.activate(prov, true);
         window.__APP_CHECK_ATIVO = true;
       }
