@@ -4384,7 +4384,12 @@ PERF_DIAG.report = function(sessionIndex){
 // Independe do PERF_DIAG (instrumentação temporária): se o PERF_DIAG for removido, este proxy
 // continua sendo a camada que envolve firebase.database().
 const LOGOUT_ENCERRA_OUVINTES = true;            // reversão: false = comportamento anterior (ouvintes ficam ligados após logout)
-const NOS_SEMPRE_LIGADOS = ['techRoster', 'techPins', 'managers', 'financeiro', 'users', 'catalogoEquip']; // login + catálogo compartilhado (minúsculos)
+// Fase 2b: os nós legados de PIN (managers, techPins, financeiro, oficina, adminPin) foram aposentados — o app não lê,
+// não grava e não exporta mais esses nós (login e administração usam só users/usersPrivado). As regras candidatas
+// da Fase 2b bloqueiam esses nós para todo mundo, inclusive Master. Trocar para true só volta o comportamento antigo
+// (com regras antigas); as funções legadas continuam no código, intocadas, por compatibilidade.
+const LEGADO_PINS_ATIVO = false;
+const NOS_SEMPRE_LIGADOS = LEGADO_PINS_ATIVO ? ['techRoster', 'techPins', 'managers', 'financeiro', 'users', 'catalogoEquip'] : ['techRoster', 'users', 'catalogoEquip']; // login + catálogo compartilhado (minúsculos)
 const rtdbOuvintes = [];                          // { path, no, ref, cb }
 // M1b — geração de sessão de dados: muda no logout, no início de cada tentativa de login e no
 // tempo esgotado do login. Toda carga assíncrona guarda a geração em que começou e, ao terminar,
@@ -7781,7 +7786,7 @@ async function deleteTechPhoneAndPin(name, attempt){
   attempt = attempt || 1;
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
-    await rtdb.ref().update({ ['techPhones/' + name]: null, ['techPins/' + name]: null });
+    await rtdb.ref().update(LEGADO_PINS_ATIVO ? { ['techPhones/' + name]: null, ['techPins/' + name]: null } : { ['techPhones/' + name]: null });   // Fase 2b
     delete techPhonesSnapshot[name];
     delete techPinsSnapshot[name];
     return true;
@@ -14766,8 +14771,7 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
     clients: clients,
     maintenanceContracts: maintenanceContracts,
     techPhones: Object.fromEntries(TECHS.map(t => [t.name, t.phone || ''])),
-    techPins: Object.fromEntries(TECHS.map(t => [t.name, t.pin || '0000'])),
-    managers: MANAGERS,
+    ...(LEGADO_PINS_ATIVO ? { techPins: Object.fromEntries(TECHS.map(t => [t.name, t.pin || '0000'])), managers: MANAGERS } : {}),   // Fase 2b: PIN só em usersPrivado
     // Etapa 11: cadastro unificado de usuários — exportado exatamente como está em memória
     // (mesmos ids, sem reconstrução a partir das listas legadas), no mesmo formato de users/
     // no Firebase (objeto por id, não array).
@@ -14777,7 +14781,7 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
       legacyNames: u.legacyNames || {}, isMaster: !!u.isMaster, createdAt: u.createdAt, updatedAt: u.updatedAt,
       ...(u.tabPermissions ? { tabPermissions: u.tabPermissions } : {}) // permissões de abas: sem isto a restauração devolveria acesso total
     }])),
-    adminPin: adminPin
+    ...(LEGADO_PINS_ATIVO ? { adminPin: adminPin } : {})
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const link = document.createElement('a');
@@ -14804,7 +14808,7 @@ function validarUsersBackup(usersRaw){
     const u = usersRaw[id];
     if(!u || typeof u !== 'object' || typeof u.name !== 'string' || !u.name.trim() ||
        typeof u.profiles !== 'object' || u.profiles === null ||
-       typeof u.pinByProfile !== 'object' || u.pinByProfile === null){
+       (u.pinByProfile !== undefined && (typeof u.pinByProfile !== 'object' || u.pinByProfile === null))){   // Fase 2b: pinByProfile pode estar só em usersPrivado (backup novo)
       return { ok: false, reason: `registro de usuário inválido (id "${id}")` };
     }
     if(u.tabPermissions !== undefined && u.tabPermissions !== null && !normalizarPermissoesAbas(u.tabPermissions, true).ok){
@@ -15076,9 +15080,9 @@ const executarImportacaoBackup = (function(){
       // Mesmo comportamento de sempre: reafirma telefone/PIN de TODOS os técnicos (não só os
       // mencionados no backup) — cada um com seu próprio caminho, nunca o nó inteiro de uma vez.
       for(const t of TECHS){ await etapa('telefone de ' + t.name, () => saveTechPhone(t.name, t.phone || '')); } // backup/importação é legítimo pra qualquer Gestor (checagem própria em saveTechPhone)
-      for(const t of TECHS){ await etapa('PIN de ' + t.name, () => restaurarPinTecnicoDoBackup(t.name, t.pin || '0000')); } // função privada desta IIFE — não existe fora daqui
-      if(plano.adminPin !== undefined) await etapa('PIN administrativo', () => dbSetRaw('adminPin', adminPin));
-      if(plano.managers) await etapa('gestores (cadastro legado)', () => restaurarGestoresLegadoDoBackup(plano.managers)); // função privada desta IIFE — não existe fora daqui
+      if(LEGADO_PINS_ATIVO) for(const t of TECHS){ await etapa('PIN de ' + t.name, () => restaurarPinTecnicoDoBackup(t.name, t.pin || '0000')); }   // Fase 2b: pulado // função privada desta IIFE — não existe fora daqui
+      if(LEGADO_PINS_ATIVO && plano.adminPin !== undefined) await etapa('PIN administrativo', () => dbSetRaw('adminPin', adminPin));   // Fase 2b: pulado
+      if(LEGADO_PINS_ATIVO && plano.managers) await etapa('gestores (cadastro legado)', () => restaurarGestoresLegadoDoBackup(plano.managers)); // função privada desta IIFE — não existe fora daqui
       if(plano.usersInfo.tipo === 'valido') await etapa('usuários', () => saveUsersFromBackup(plano.usersInfo.users, plano.usersPrivado));
       return { ok: true, usersInfo: plano.usersInfo, concluidas };
     }catch(e){
@@ -18455,7 +18459,7 @@ async function initAuthBootstrap(){
   attachRealtimeTechRosterListener();
   // Fase 1c: managers/techPins/financeiro/oficina/adminPin guardam PINs e só servem à aba legada de Acessos, às pontes e ao backup
   // (tudo Master). Com a conta ativa, quem não é Master nem tenta ler (as regras negam); com a flag desligada, tudo como antes.
-  if(!authAtivo() || souMasterDaConta()){
+  if(LEGADO_PINS_ATIVO && (!authAtivo() || souMasterDaConta())){   // Fase 2b: nunca, com a flag desligada
     await loadTechPins();
     await loadManagers();
     await loadFinanceiro();
@@ -18590,7 +18594,7 @@ async function ensureExtraContactsEtcLoaded(){
   if(nodeLoaded.extraContactsEtc) return;
   nodeLoaded.extraContactsEtc = true;
   const g = geracaoDados; // M1b
-  const legadoOk = !authAtivo() || souMasterDaConta();   // Fase 1c: oficina (legado) e adminPin só o Master lê
+  const legadoOk = LEGADO_PINS_ATIVO && (!authAtivo() || souMasterDaConta());   // Fase 1c: só o Master lia; Fase 2b: ninguém lê
   await Promise.all([
     loadExtraContacts(),
     legadoOk ? loadOficina() : Promise.resolve(), // nó legado (Acessos do Gestor) — nunca mais usado pra login
@@ -19344,8 +19348,8 @@ async function ponteTecnico(nomeLegado, pin){
     }
     // Técnico padrão já existente: a falha do roster não impede gravar PIN/telefone (nós independentes).
   }
-  const okPin = await saveTechPin(nomeLegado, pinFinal);
-  nos.techPins = okPin ? 'ok' : 'falhou';
+  const okPin = LEGADO_PINS_ATIVO ? await saveTechPin(nomeLegado, pinFinal) : true;   // Fase 2b: PIN legado não é mais gravado
+  nos.techPins = LEGADO_PINS_ATIVO ? (okPin ? 'ok' : 'falhou') : 'nao-tentado';
   // techPhones: só grava se AINDA NÃO está confirmado no Firebase. Valor = o que já existe no código
   // (telefone padrão do técnico; vazio se for novo) — nunca inventado, nunca sobrescreve um
   // telefone já confirmado no servidor.
@@ -19366,10 +19370,15 @@ async function ponteRemoverTecnico(nomeLegado){
   await removeTechnician(nomeLegado); // já reaproveita retry/telefone+PIN — sem lógica nova
   return { ok: true };
 }
-const PONTE_LEGADO = {
+const PONTE_LEGADO = LEGADO_PINS_ATIVO ? {
   manager: { criarOuAtualizar: ponteGestor, remover: ponteRemoverGestor },
   financeiro: { criarOuAtualizar: ponteFinanceiro, remover: ponteRemoverFinanceiro },
   oficina: { criarOuAtualizar: ponteOficina, remover: ponteRemoverOficina },
+  tech: { criarOuAtualizar: ponteTecnico, remover: ponteRemoverTecnico }
+} : { // Fase 2b: Gestor/Financeiro/Oficina não refletem mais nada no legado; Técnico só mantém roster e telefone (sem PIN)
+  manager: { criarOuAtualizar: async () => ({ ok: true, nos: { managers: 'nao-tentado' } }), remover: async () => ({ ok: true }) },
+  financeiro: { criarOuAtualizar: async () => ({ ok: true, nos: { financeiro: 'nao-tentado' } }), remover: async () => ({ ok: true }) },
+  oficina: { criarOuAtualizar: async () => ({ ok: true, nos: { oficina: 'nao-tentado' } }), remover: async () => ({ ok: true }) },
   tech: { criarOuAtualizar: ponteTecnico, remover: ponteRemoverTecnico }
 };
 
@@ -19651,9 +19660,9 @@ async function excluirUsuarioAcessos(id){
   const removidos = ['users'];
   const preservados = [];
   const aplicarLocal = []; // { perfil, chave }
-  const NOS_POR_PERFIL = {
+  const NOS_POR_PERFIL = LEGADO_PINS_ATIVO ? {
     manager: ['managers'], financeiro: ['financeiro'], oficina: ['oficina'], tech: ['techRoster', 'techPins', 'techPhones']
-  };
+  } : { manager: [], financeiro: [], oficina: [], tech: ['techRoster', 'techPhones'] };   // Fase 2b
   for(const p of ['manager', 'tech', 'oficina', 'financeiro']){
     if(!(alvo.profiles && alvo.profiles[p] === true)) continue;
     const rotulo = ACESSOS_PERFIL_LABEL[p] || p;
@@ -19667,9 +19676,9 @@ async function excluirUsuarioAcessos(id){
       continue;
     }
     // Mesmas travas de "última pessoa" já usadas ao remover um perfil (evita recriar a lista padrão).
-    if(p === 'manager' && MANAGERS.some(m => m.name === chave) && MANAGERS.length <= 1) return { ok: false, reason: 'Este é o último registro do cadastro legado de Gestores; a exclusão foi bloqueada para não recriar a lista padrão. Nada foi excluído.' };
-    if(p === 'financeiro' && FINANCEIRO.some(f => f.name === chave) && FINANCEIRO.length <= 1) return { ok: false, reason: 'Esta é a última pessoa do cadastro legado de Financeiro; a exclusão foi bloqueada. Nada foi excluído.' };
-    if(p === 'oficina' && OFICINA.some(o => o.name === chave) && OFICINA.length <= 1) return { ok: false, reason: 'Esta é a última pessoa do cadastro legado de Oficina; a exclusão foi bloqueada. Nada foi excluído.' };
+    if(LEGADO_PINS_ATIVO && p === 'manager' && MANAGERS.some(m => m.name === chave) && MANAGERS.length <= 1) return { ok: false, reason: 'Este é o último registro do cadastro legado de Gestores; a exclusão foi bloqueada para não recriar a lista padrão. Nada foi excluído.' };
+    if(LEGADO_PINS_ATIVO && p === 'financeiro' && FINANCEIRO.some(f => f.name === chave) && FINANCEIRO.length <= 1) return { ok: false, reason: 'Esta é a última pessoa do cadastro legado de Financeiro; a exclusão foi bloqueada. Nada foi excluído.' };
+    if(LEGADO_PINS_ATIVO && p === 'oficina' && OFICINA.some(o => o.name === chave) && OFICINA.length <= 1) return { ok: false, reason: 'Esta é a última pessoa do cadastro legado de Oficina; a exclusão foi bloqueada. Nada foi excluído.' };
     NOS_POR_PERFIL[p].forEach(no => { caminhos[no + '/' + chave] = null; if(!removidos.includes(no)) removidos.push(no); });
     aplicarLocal.push({ perfil: p, chave });
   }
