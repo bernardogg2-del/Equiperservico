@@ -5808,6 +5808,45 @@ function renderPersonDetailsBlock(svc, label){
   `;
 }
 
+// Fase 7: PDF do relatório da atividade (botão no card de detalhes). Só lê: nada é gravado no banco.
+// Fotos no Storage são baixadas e convertidas (exige CORS no bucket); foto que falhar sai como "(foto não pôde ser incluída)".
+async function gerarPdfDaAtividade(id, btn){
+  const s = services.find(x => x.id === id);
+  if(!s) return;
+  if(!window.PREV_API || !PREV_API.gerarPdfAtividade){ alert('O gerador de PDF não está disponível agora.'); return; }
+  const rotulo = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Gerando PDF…'; }
+  try{
+    await loadServiceMedia(id, 'detalhes');
+    // Formato antigo (legado): parceiro é um SEGUNDO registro ligado por pairId, com horários, observação e fotos próprios.
+    const partner = s.pairId ? services.find(x => x.pairId === s.pairId && x.id !== s.id) : null;
+    if(partner) await loadServiceMediaForMany([partner], 'detalhes');
+    const pessoa = async (svc, nome) => {
+      const fotos = [];
+      for(const p of getServiceMedia(svc, 'photos')){
+        try{ fotos.push(await midiaComoDataUrl(p)); }catch(e){ console.warn('pdf da atividade: foto não baixou', e); fotos.push(null); }
+      }
+      return { tecnico: nome, inicio: svc.checkIn || '', fim: svc.checkOut || '', observacao: svc.observations || '', fotos };
+    };
+    const pessoas = partner
+      ? [await pessoa(s, s.technician || 'Técnico 1'), await pessoa(partner, partner.technician || 'Técnico 2')]
+      : [await pessoa(s, getServiceTechnicians(s).join(' e '))];
+    const blob = PREV_API.gerarPdfAtividade({ cliente: s.client, data: s.date, endereco: s.address, descricao: s.description,
+      numeroOS: s.numeroOS, status: statusLabelOf(s.status), pessoas });
+    const base = String(s.client || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const nome = 'Relatorio-Atividade-' + (base || 'cliente') + (s.date ? '-' + s.date : '') + '.pdf';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 5000);
+  }catch(e){
+    console.error('pdf da atividade', e);
+    alert('Não foi possível gerar o PDF: ' + (e && e.message || e));
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = rotulo; }
+  }
+}
+
 let currentDetailsServiceId = null;
 async function openServiceDetails(id){
   currentDetailsServiceId = id;
@@ -5850,6 +5889,14 @@ async function openServiceDetails(id){
       ? renderPersonDetailsBlock(s, s.technician || 'Técnico 1') + renderPersonDetailsBlock(partner, partner.technician || 'Técnico 2')
       : renderPersonDetailsBlock(s, '')
     }
+
+    ${currentRole === 'manager' ? `
+    <div class="repeat-section">
+      <div class="repeat-label">Relatório</div>
+      <div class="repeat-buttons">
+        <button type="button" class="btn-ghost" id="pdfAtividadeBtn">📄 Gerar PDF do relatório</button>
+      </div>
+    </div>` : ''}
 
     ${currentRole === 'manager' && s.status !== 'concluido' ? `
     <div class="repeat-section">
@@ -5962,6 +6009,8 @@ async function openServiceDetails(id){
       openServiceDetails(id);
     });
   }
+  const pdfAtividadeBtn = document.getElementById('pdfAtividadeBtn');
+  if(pdfAtividadeBtn) pdfAtividadeBtn.addEventListener('click', () => gerarPdfDaAtividade(id, pdfAtividadeBtn));
   const repeatInFlight = { current: false };
   if(currentRole === 'manager'){
     const rescheduleBtn = document.getElementById('detailsRescheduleBtn');
@@ -23642,6 +23691,128 @@ function alertaUrgentes(){
   box.innerHTML = htmlRet + htmlPend;
 }
 
+// ====================================================================================
+// PDF DO RELATÓRIO DA ATIVIDADE (Fase 7) — botão no card de detalhes da atividade (Gestor). Mesmo desenho dos outros
+// relatórios (logo, faixa vermelha, cartões). Sem as orientações internas e sem áudios. Devolve um Blob.
+// dados = { cliente, data, endereco, descricao, numeroOS, status, pessoas:[{ tecnico, inicio, fim, observacao, fotos:[dataURL|null] }] }
+// ====================================================================================
+function gerarPdfAtividade(dados){
+  const J = carregarJsPdf(); const doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+  doc.addFileToVFS('LibSans.ttf', FONTE_SANS); doc.addFont('LibSans.ttf', 'LibSans', 'normal');
+  doc.addFileToVFS('LibSansB.ttf', FONTE_SANS_B); doc.addFont('LibSansB.ttf', 'LibSans', 'bold');
+  doc.addFileToVFS('LibSerifB.ttf', FONTE_SERIF_B); doc.addFont('LibSerifB.ttf', 'LibSerif', 'bold');
+  const PW = 210, PH = 297, M = 12, W = PW - 2 * M, LIM = PH - 17; const C = PDF_COR; let y = 12;
+  const setF = (f, tam, cor) => { doc.setFont(f === 'serifB' ? 'LibSerif' : 'LibSans', f === 'sans' ? 'normal' : 'bold'); doc.setFontSize(tam); doc.setTextColor(cor || C.texto); };
+  const txt = (t, x, yy, op) => doc.text(limparPdf(t), x, yy, op);
+  const cliente = limparPdf(dados.cliente || '');
+  const pessoas = (dados.pessoas && dados.pessoas.length) ? dados.pessoas : [{ tecnico: '', inicio: '', fim: '', observacao: '', fotos: [] }];
+  const dupla = pessoas.length > 1;
+  const horario = (p) => (p.inicio ? 'Início ' + p.inicio : '') + (p.inicio && p.fim ? ' · ' : '') + (p.fim ? 'Fim ' + p.fim : '');
+  function novaPagina(){ doc.addPage(); setF('sans', 7.5, C.dim); txt('Equiper · Relatório de atendimento — ' + cliente, M, 10.5); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, 12.3, PW - M, 12.3); y = 17.5; }
+  const garantir = (h) => { if(y + h > LIM) novaPagina(); };
+  // Cartão com paginação (o mesmo do relatório de manutenção): a cada quebra de página fecha um pedaço do cartão.
+  function cartao(itens, est){
+    let seg = [], topo = y, jaColocou = false;
+    const fechar = () => {
+      if(!seg.length) return;
+      const ult = seg[seg.length - 1]; const base = ult.y + ult.h + (est.padB || 0);
+      doc.setFillColor(est.fill || '#FFFFFF'); doc.setDrawColor(est.stroke || C.linha); doc.setLineWidth(est.sw || 0.25);
+      doc.roundedRect(M, topo, W, base - topo, est.r || 2, est.r || 2, 'FD');
+      seg.forEach(it => it.draw(it.y));
+      if(est.barra){ doc.setFillColor(est.barra); doc.roundedRect(M, topo, est.barraW || 1.6, base - topo, 0.8, 0.8, 'F'); }
+      doc.setDrawColor(est.stroke || C.linha); doc.setLineWidth(est.sw || 0.25); doc.roundedRect(M, topo, W, base - topo, est.r || 2, est.r || 2, 'S');
+      y = base; seg = [];
+    };
+    for(let i = 0; i < itens.length; i++){
+      const it = itens[i], prox = itens[i + 1];
+      const precisa = it.h + (it.keep && prox ? prox.h : 0);
+      if(y + precisa > LIM && (seg.length || y > 40)){
+        fechar(); novaPagina(); topo = y;
+        if(jaColocou && est.continuacao){ const ci = { h: 7, y, draw: (yy) => { setF('sans', 7.6, C.dim); txt(est.continuacao, M + 5, yy + 4.8); } }; seg.push(ci); y += 7; }
+      }
+      it.y = y; seg.push(it); y += it.h; jaColocou = true;
+    }
+    fechar(); y += (est.gap != null ? est.gap : 3.5);
+  }
+  function blocoTexto(titulo, texto, barra, continuacao){
+    setF('sans', 9.5, C.texto); const ln = doc.splitTextToSize(limparPdf(texto), W - 11);
+    const itens = [{ h: 9, keep: true, draw: (yy) => { setF('sansB', 10.5, C.ink); txt(titulo, M + 6, yy + 6.2); } }];
+    ln.forEach(t2 => itens.push({ h: 4.7, draw: (yy) => { setF('sans', 9.5, C.texto); txt(t2, M + 6, yy + 3.5); } }));
+    cartao(itens, { fill: '#FFFFFF', stroke: C.linha, r: 2.2, barra, barraW: 1.7, padB: 3, gap: 5, continuacao });
+  }
+
+  // ---------------- cabeçalho ----------------
+  const lh = 17, lw = lh * 1.093;
+  try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 3.6, { align: 'right' }); doc.setCharSpace(0);
+  setF('serifB', 21, C.ink); txt('Atendimento técnico', PW - M, y + 11.4, { align: 'right' }); setF('sans', 8, C.dim); txt('Equiper Serviços', PW - M, y + 16, { align: 'right' });
+  y += lh + 3.2; doc.setFillColor(C.red); doc.rect(M, y, W, 0.9, 'F'); y += 5.5;
+
+  // ---------------- dados do cliente e da visita ----------------
+  const colA = W * 0.555, colB = W - colA, pad = 4.2;
+  const celula = (rotulo, valor, extra, larguraCel) => {
+    setF('sansB', 11, C.texto); const linhas = doc.splitTextToSize(limparPdf(valor || '—'), larguraCel - 2 * pad);
+    return { rotulo, linhas, extra, h: 4.5 + linhas.length * 4.9 + (extra ? 4 : 0) + 2.6 };
+  };
+  const tecnicos = pessoas.map(p => p.tecnico).filter(Boolean).join(' e ');
+  const c1 = celula('CLIENTE', dados.cliente, dados.numeroOS ? 'OS nº ' + dados.numeroOS : '', colA);
+  const c2 = celula('DATA DA VISITA', fmtData(dados.data), dupla ? '' : horario(pessoas[0]), colB);
+  const c3 = celula('ENDEREÇO', dados.endereco, '', colA), c4 = celula(dupla ? 'TÉCNICOS' : 'TÉCNICO', tecnicos, '', colB);
+  const h1 = Math.max(c1.h, c2.h), h2 = Math.max(c3.h, c4.h), infoH = h1 + h2;
+  garantir(infoH + 4);
+  doc.setFillColor(C.cinzaInfo); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(M, y, W, infoH, 2.5, 2.5, 'FD');
+  doc.setDrawColor(C.linha2); doc.line(M + colA, y + 1, M + colA, y + infoH - 1); doc.line(M + 1.8, y + h1, M + W - 1, y + h1);
+  const desenhaCel = (c, x, yy) => {
+    setF('sansB', 6.4, C.dim); doc.setCharSpace(0.35); txt(c.rotulo, x + pad, yy + 4.6); doc.setCharSpace(0);
+    setF('sansB', 11, C.texto); c.linhas.forEach((ln, i) => txt(ln, x + pad, yy + 9.6 + i * 4.9));
+    if(c.extra){ setF('sans', 8.3, C.dim); txt(c.extra, x + pad, yy + 9.6 + c.linhas.length * 4.9 + 0.2); }
+  };
+  desenhaCel(c1, M, y); desenhaCel(c2, M + colA, y); desenhaCel(c3, M, y + h1); desenhaCel(c4, M + colA, y + h1);
+  doc.setFillColor(C.red); doc.roundedRect(M, y, 1.7, infoH, 0.8, 0.8, 'F');
+  y += infoH + 5;
+
+  // ---------------- serviço ----------------
+  if(String(dados.descricao || '').trim()) blocoTexto('Serviço', dados.descricao, C.ink, 'Serviço (continuação)');
+
+  // ---------------- por técnico: observação e fotos ----------------
+  pessoas.forEach(p => {
+    const sufixo = dupla ? ' — ' + (p.tecnico || 'Técnico') : '';
+    if(dupla && horario(p)){ garantir(8); setF('sansB', 8.5, C.dim); txt((p.tecnico || 'Técnico') + ' · ' + horario(p), M, y + 4); y += 7; }
+    if(String(p.observacao || '').trim()) blocoTexto('Observação do técnico' + sufixo, p.observacao, C.red, 'Observação do técnico' + sufixo + ' (continuação)');
+    const fotos = p.fotos || [];
+    if(!fotos.length) return;
+    const colW = (W - 2 * 3) / 3, maxH = 46;
+    const medir = (src, n) => {
+      let w = colW, h = colW * 0.75, ok = !!src, fmt = 'JPEG';
+      if(ok){ try{ const pr = doc.getImageProperties(src); fmt = String(pr.fileType || 'JPEG'); const e2 = Math.min(colW / pr.width, maxH / pr.height); w = pr.width * e2; h = pr.height * e2; }catch(e){ ok = false; } }
+      return { src, w, h: ok ? h : 8, ok, fmt, n };
+    };
+    for(let i = 0; i < fotos.length; i += 3){
+      const linha = fotos.slice(i, i + 3).map((f, k) => medir(f, i + k + 1));
+      const hLinha = Math.max(...linha.map(o => o.h)) + 3.4 + 3.1 + 3;
+      if(i === 0){ garantir(8 + hLinha); setF('sansB', 10.5, C.ink); txt('Fotos da visita' + sufixo, M, y + 4.5); y += 8; }   // o título vai junto com a 1ª linha de fotos
+      else garantir(hLinha);
+      linha.forEach((o, k) => {
+        const x = M + k * (colW + 3);
+        if(o.ok){ try{ doc.addImage(o.src, o.fmt, x, y, o.w, o.h); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.roundedRect(x, y, o.w, o.h, 1.2, 1.2, 'S'); }catch(e){ o.ok = false; } }
+        if(!o.ok){ setF('sans', 8, C.dim); txt('(foto não pôde ser incluída)', x, y + 6); }
+        setF('sansB', 7, C.texto); txt('Foto ' + o.n, x, y + o.h + 3.4);
+      });
+      y += hLinha;
+    }
+    y += 2;
+  });
+
+  // ---------------- rodapé em todas as páginas ----------------
+  const total = doc.getNumberOfPages();
+  for(let pg = 1; pg <= total; pg++){
+    doc.setPage(pg); doc.setDrawColor(C.linha); doc.setLineWidth(0.3); doc.line(M, PH - 12.5, PW - M, PH - 12.5);
+    setF('sans', 7.5, C.dim); txt('Relatório gerado pelo Equiper Serviços' + (dados.status ? ' · ' + dados.status : ''), M, PH - 8.6);
+    txt('Página ' + pg + ' de ' + total, PW - M, PH - 8.6, { align: 'right' });
+  }
+  return new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
+}
+
 window.PREV_API = { origemAtividade, fotosDoRelatorioTeste: fotosDoRelatorio, /* Fase 6: inspeção em testes */
   montarSlot,
   gerarRelatorioAoConcluir,
@@ -23650,7 +23821,7 @@ window.PREV_API = { origemAtividade, fotosDoRelatorioTeste: fotosDoRelatorio, /*
   flush,
   gerarPdfRelatorio,
   pendenciasRelatorio,
-  gerarPdfInstalacao, gerarPdfContratoManut, gerarPdfCapaManual,
+  gerarPdfInstalacao, gerarPdfContratoManut, gerarPdfCapaManual, gerarPdfAtividade, /* Fase 7 */
   relatorioDoRascunho,
   estruturaDaUnidade,
   garantirRascunho,
