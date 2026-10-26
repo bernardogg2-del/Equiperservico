@@ -3548,7 +3548,7 @@
         <div class="tecnicos-title">Acessos</div>
       </div>
     </div>
-    <div style="padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button><button type="button" class="btn-ghost" id="acessosMigrarPrivadoBtn" title="Move PIN e e-mail de users/ para usersPrivado/ (mostra uma prévia antes)">Mover PINs e e-mails para o nó privado</button></div>
+    <div style="padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button><button type="button" class="btn-ghost" id="acessosMigrarPrivadoBtn" title="Move PIN e e-mail de users/ para usersPrivado/ (mostra uma prévia antes)">Mover PINs e e-mails para o nó privado</button><button type="button" class="btn-ghost" id="acessosMidiasStorageBtn" title="Move as fotos e áudios dos serviços que ainda estão em base64 no banco para o Cloud Storage, em lotes, verificando cada arquivo antes de trocar a referência">Fotos e áudios → Storage</button></div>
     <div id="acessosMigrarBox" style="display:none; margin:0 20px 14px; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface); font-size:13px;"></div>
     <div id="acessosUsuariosList" style="padding:0 20px 30px;"></div>
 
@@ -4155,6 +4155,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 // =====================================================================================
 // INSTRUMENTAÇÃO TEMPORÁRIA DE DIAGNÓSTICO — PERF_DIAG (Etapa 1 criou; Etapa 2 ampliou).
@@ -4689,6 +4690,41 @@ const AUTH_FIREBASE = true;
 // Fase 4: chave do site reCAPTCHA v3 registrada em Firebase → App Check. Vazio = App Check desligado.
 const APP_CHECK_SITE_KEY = '';
 let rtdb = null, fbAuth = null;
+// ===== Fase 5 — fotos e áudios dos serviços no Cloud Storage =====
+// Cada item de foto/áudio continua sendo um texto na mesma lista de sempre; a diferença é que, com o Storage ligado e com rede, o
+// item novo vira a URL do arquivo no bucket (em vez do "data:..." base64 dentro do banco). Telas, galeria e áudio não mudam. Sem rede,
+// com o Storage desligado ou se o upload falhar, o item fica em base64 como sempre — nada se perde. Os itens em base64 antigos são
+// movidos pela ferramenta de migração do Master (Acessos), em lotes, com verificação do tamanho no Storage antes de trocar a referência.
+const STORAGE_MIDIA_ATIVO = true;          // false = comportamento anterior (tudo em base64 no banco)
+const STORAGE_PASTA_SERVICOS = 'servicos'; // servicos/<id do serviço>/<campo>/<arquivo>
+let fbStorage = null;
+function storageDisponivel(){ return STORAGE_MIDIA_ATIVO && !!fbStorage && rtdbConectado === true; }
+function ehMidiaStorage(x){ return typeof x === 'string' && /^https:\/\/firebasestorage\.googleapis\.com\//.test(x); }
+function ehMidiaBase64(x){ return typeof x === 'string' && x.startsWith('data:'); }
+function mimeDaDataUrl(d){ const m = /^data:([^;,]+)/.exec(d); return m ? m[1] : ''; }
+function extensaoDoMime(mime){ return ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'audio/webm': 'webm', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/ogg': 'ogg', 'audio/wav': 'wav' })[mime] || (mime.startsWith('image/') ? 'img' : mime.startsWith('audio/') ? 'audio' : 'bin'); }
+function tamanhoDaDataUrl(d){ const b64 = d.slice(d.indexOf(',') + 1); const pad = b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0; return Math.floor(b64.length * 3 / 4) - pad; }
+async function enviarMidiaParaStorage(dataUrl, servicoId, campo){ // devolve a URL de download; lança em falha
+  const mime = mimeDaDataUrl(dataUrl); const nome = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8) + '.' + extensaoDoMime(mime);
+  const ref = fbStorage.ref(STORAGE_PASTA_SERVICOS + '/' + servicoId + '/' + campo + '/' + nome);
+  await ref.putString(dataUrl, 'data_url', mime ? { contentType: mime } : undefined);
+  return ref.getDownloadURL();
+}
+// Troca cada item base64 da lista pela URL no Storage. Item que falhar fica como está (base64 no banco, como antes).
+async function enviarListaParaStorage(arr, servicoId, campo){
+  if(!storageDisponivel() || !Array.isArray(arr) || !arr.some(ehMidiaBase64)) return { arr, enviados: 0, falhas: 0 };
+  const out = arr.slice(); let enviados = 0, falhas = 0;
+  for(let i = 0; i < out.length; i++){
+    if(!ehMidiaBase64(out[i])) continue;
+    try{ out[i] = await enviarMidiaParaStorage(out[i], servicoId, campo); enviados++; }
+    catch(e){ falhas++; console.warn('Storage: upload falhou (o item fica em base64 no banco):', e && e.message); }
+  }
+  return { arr: out, enviados, falhas };
+}
+async function apagarMidiaStorage(url){ if(!fbStorage) return false; try{ await fbStorage.refFromURL(url).delete(); return true; }catch(e){ if(!(e && e.code === 'storage/object-not-found')) console.warn('Storage: não apagou o arquivo (a varredura de órfãos recolhe depois):', e && e.message); return false; } }
+function urlsRemovidas(jsonAntes, arrDepois){ let antes = []; try{ antes = jsonAntes ? JSON.parse(jsonAntes) : []; }catch(e){ antes = []; } const agora = new Set(Array.isArray(arrDepois) ? arrDepois : []); return (Array.isArray(antes) ? antes : []).filter(x => ehMidiaStorage(x) && !agora.has(x)); }
+async function apagarMidiasRemovidas(lista){ for(const u of (lista || [])) await apagarMidiaStorage(u); }
+window.__STORAGE_MIDIA = { ativo: () => STORAGE_MIDIA_ATIVO, disponivel: storageDisponivel, ehStorage: ehMidiaStorage, ehBase64: ehMidiaBase64 };
 try{
   if(typeof firebase !== 'undefined'){
     firebase.initializeApp(firebaseConfig);
@@ -4704,6 +4740,7 @@ try{
       }
     }catch(e){ console.error('App Check não ativou (o app continua; se a aplicação estiver ligada no console, as chamadas serão recusadas):', e); }
     try{ if(AUTH_FIREBASE && firebase.auth) fbAuth = firebase.auth(); }catch(e){ console.error('Firebase Auth não carregou:', e); }
+    try{ if(STORAGE_MIDIA_ATIVO && firebase.storage) fbStorage = firebase.storage(); }catch(e){ console.error('Firebase Storage não carregou (as mídias seguem em base64 no banco):', e); } // Fase 5
     rtdb = perfWrapDatabase(rtdbRegistroWrap(firebase.database())); // registro de ouvintes (M1) + PERF_DIAG (só observa), repassam tudo
   } else {
     console.error('SDK do Firebase não carregou (script bloqueado ou sem internet).');
@@ -5286,6 +5323,8 @@ async function writeServicesDiff(attempt){
     const sentFieldSnapshots = {};
     const removedIds = [];
     let hasChanges = false;
+    const removidasStorage = []; // Fase 5
+    if(storageDisponivel()){ for(const s of services){ for(const f of SERVICE_MEDIA_FIELDS){ if(Array.isArray(s[f]) && s[f].some(ehMidiaBase64)){ const r = await enviarListaParaStorage(s[f], s.id, f); s[f] = r.arr; } } } } // Fase 5: mídia inline nova sobe antes do diff
     services.forEach(s => {
       aplicarTecnico2(s); // Fase 3: campo derivado da dupla, sempre em dia antes do diff
       const id = String(s.id);
@@ -5303,6 +5342,7 @@ async function writeServicesDiff(attempt){
           updates['services/' + id + '/' + field] = hasField ? JSON.parse(fieldJson) : null;
           changedFields[field] = fieldJson; // pode ser undefined de propósito, representando "campo removido"
           changed = true;
+          if(SERVICE_MEDIA_FIELDS.includes(field)) removidasStorage.push(...urlsRemovidas(confirmedFields[field], hasField ? s[field] : [])); // Fase 5
         }
       });
       if(changed){
@@ -5327,6 +5367,7 @@ async function writeServicesDiff(attempt){
         servicesSnapshot[id] = Object.assign({}, servicesSnapshot[id], sentFieldSnapshots[id]);
       });
       removedIds.forEach(id => { delete servicesSnapshot[id]; });
+      apagarMidiasRemovidas(removidasStorage); // Fase 5
     }
     return true;
   }catch(e){
@@ -16532,11 +16573,12 @@ async function saveServiceMediaDiff(id, attempt){
   const svc = services.find(x => x.id === id);
   const c = serviceMediaCacheEntry(id);
   const confirmed = serviceMediaSnapshot[k] || {};
-  const updates = {}; const sent = {};
+  for(const f of SERVICE_MEDIA_FIELDS){ if(Array.isArray(c[f]) && c[f].some(ehMidiaBase64)){ const r = await enviarListaParaStorage(c[f], k, f); c[f] = r.arr; } } // Fase 5: sobe o que for novo
+  const updates = {}; const sent = {}; const removidasStorage = [];
   SERVICE_MEDIA_FIELDS.forEach(f => {
     const arr = Array.isArray(c[f]) ? c[f] : [];
     const json = arr.length ? JSON.stringify(arr) : undefined;
-    if(confirmed[f] !== json){ updates['servicesMedia/' + k + '/' + f] = arr.length ? arr.slice() : null; sent[f] = json; }
+    if(confirmed[f] !== json){ updates['servicesMedia/' + k + '/' + f] = arr.length ? arr.slice() : null; sent[f] = json; removidasStorage.push(...urlsRemovidas(confirmed[f], arr)); }
   });
   const marcar = svc && !svc.mediaExternal;
   if(marcar) updates['services/' + k + '/mediaExternal'] = true;
@@ -16552,6 +16594,7 @@ async function saveServiceMediaDiff(id, attempt){
     if(marcar){ svc.mediaExternal = true; servicesSnapshot[k] = Object.assign({}, servicesSnapshot[k] || {}, { mediaExternal: JSON.stringify(true) }); }
     serviceMediaPending.delete(id);
     outboxGravar('servicesMedia/' + k, {});
+    apagarMidiasRemovidas(removidasStorage); // Fase 5: só depois de o banco confirmar; falha aqui vira órfão (varredura recolhe)
     return true;
   }catch(e){
     console.error('Falha ao gravar mídia da atividade ' + k + ' (tentativa ' + attempt + '):', e);
@@ -16930,7 +16973,10 @@ async function cleanupExpiredExternalMedia(){
   if(!paths.length) return 0;
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
+    const arquivos = []; // Fase 5: o que está no Storage nesses campos sai junto
+    if(fbStorage){ for(const p of paths){ try{ const sn = await rtdb.ref(p).get(); const v = sn.exists() ? sn.val() : null; const arr = Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); arr.forEach(x => { if(ehMidiaStorage(x)) arquivos.push(x); }); }catch(e){} } }
     await rtdb.ref().update(updates);
+    apagarMidiasRemovidas(arquivos);
     paths.forEach(p => {
       const [, id, field] = p.split('/');
       const c = serviceMediaCacheEntry(id); c[field] = [];
@@ -19387,6 +19433,103 @@ document.getElementById('acessosMigrarBox').addEventListener('click', (e) => { c
   if(b.dataset.migrar === 'fechar'){ document.getElementById('acessosMigrarBox').style.display = 'none'; return; }
   if(b.dataset.migrar === 'confirmar'){ customConfirm('Mover agora os PINs e e-mails listados para usersPrivado/ e apagá-los de users/? Depois disso, só o Master e a própria pessoa conseguem ler o PIN dela.', () => { b.disabled = true; b.textContent = 'Migrando…'; executarMigracaoPrivado(); }, 'Migrar'); } });
 window.__ACESSOS_TESTE = { preverMigracaoPrivado, executarMigracaoPrivado, privado: () => USERS_PRIVADO };
+// ===== Fase 5 — migração das mídias em base64 para o Storage (Master, em lotes, verificada, idempotente) =====
+// Para cada serviço: lê a mídia (inline em services/<id> ou em servicesMedia/<id>), sobe cada item base64, confere no Storage que o
+// tamanho gravado é o esperado (getMetadata), e só então troca o item pela URL no banco (um campo por vez). Item que falhar fica em
+// base64 e aparece no relatório. Nunca apaga nada do Storage; nunca mexe em item que já é URL. Pode rodar quantas vezes quiser.
+async function migrarMidiasParaStorage(opts){
+  opts = opts || {}; const simular = opts.simular !== false; const lote = simular ? Infinity : Math.max(1, Math.min(50, Number(opts.lote) || 10));
+  const rel = { simulado: simular, servicosVistos: 0, itensBase64: 0, kbBase64: 0, enviados: 0, kbEnviados: 0, falhas: [], parouNoLote: false, nosSemServico: [] };
+  if(!isCurrentUserMaster()) return Object.assign(rel, { erro: 'Só um Gestor Master pode migrar as mídias.' });
+  if(!STORAGE_MIDIA_ATIVO || !fbStorage) return Object.assign(rel, { erro: 'Storage desligado ou indisponível neste navegador.' });
+  if(!simular && rtdbConectado !== true) return Object.assign(rel, { erro: 'Sem conexão confirmada com o banco. Tente de novo com internet.' });
+  let feitos = 0;
+  for(const svc of services){
+    if(feitos >= lote){ rel.parouNoLote = true; break; }
+    rel.servicosVistos++;
+    const k = String(svc.id);
+    const inline = serviceMediaModel(svc) === 'inline';
+    let fonte = {};
+    if(inline){ SERVICE_MEDIA_FIELDS.forEach(f => { if(Array.isArray(svc[f]) && svc[f].length) fonte[f] = svc[f]; }); }
+    else if(svc.mediaExternal){
+      try{ const sn = await rtdb.ref('servicesMedia/' + k).get(); const raw = sn.exists() ? (sn.val() || {}) : {}; SERVICE_MEDIA_FIELDS.forEach(f => { const v = raw[f]; const arr = Array.isArray(v) ? v : (v && typeof v === 'object' ? Object.values(v) : []); if(arr.length) fonte[f] = arr; }); }
+      catch(e){ rel.falhas.push({ id: k, motivo: 'não leu servicesMedia: ' + (e && e.message) }); continue; }
+    } else continue;
+    const campos = Object.keys(fonte).filter(f => fonte[f].some(ehMidiaBase64));
+    if(!campos.length) continue;
+    campos.forEach(f => fonte[f].forEach(x => { if(ehMidiaBase64(x)){ rel.itensBase64++; rel.kbBase64 += tamanhoDaDataUrl(x) / 1024; } }));
+    if(simular){ feitos++; continue; }
+    for(const f of campos){
+      const novo = fonte[f].slice(); let mudou = false, falhou = false;
+      for(let i = 0; i < novo.length; i++){
+        const item = novo[i]; if(!ehMidiaBase64(item)) continue;
+        const esperado = tamanhoDaDataUrl(item);
+        let url = null;
+        try{
+          url = await enviarMidiaParaStorage(item, k, f);
+          const meta = await fbStorage.refFromURL(url).getMetadata();
+          if(Number(meta.size) !== esperado) throw new Error('tamanho no Storage (' + meta.size + ') diferente do esperado (' + esperado + ')');
+          novo[i] = url; mudou = true; rel.enviados++; rel.kbEnviados += esperado / 1024;
+        }catch(e){ falhou = true; rel.falhas.push({ id: k, campo: f, motivo: e && e.message }); if(url) await apagarMidiaStorage(url); }
+      }
+      if(!mudou) continue;
+      try{
+        if(inline){ svc[f] = novo; servicesSnapshot[k] = servicesSnapshot[k] || {}; await rtdb.ref('services/' + k + '/' + f).set(novo); servicesSnapshot[k][f] = JSON.stringify(novo); }
+        else { await rtdb.ref('servicesMedia/' + k + '/' + f).set(novo); const c = serviceMediaCacheEntry(k); if(c.loaded) c[f] = novo.slice(); serviceMediaSnapshot[k] = serviceMediaSnapshot[k] || {}; if(serviceMediaSnapshot[k][f] !== undefined) serviceMediaSnapshot[k][f] = JSON.stringify(novo); }
+      }catch(e){ rel.falhas.push({ id: k, campo: f, motivo: 'subiu para o Storage mas não gravou a referência no banco (os arquivos ficam; rode de novo): ' + (e && e.message) }); }
+      if(falhou) break;
+    }
+    feitos++;
+  }
+  rel.kbBase64 = Math.round(rel.kbBase64); rel.kbEnviados = Math.round(rel.kbEnviados);
+  if(simular){ try{ const chaves = await chavesShallowServicesMedia(); const ids = new Set(services.map(x => String(x.id))); rel.nosSemServico = (chaves || []).filter(c => !ids.has(String(c))); }catch(e){ rel.nosSemServico = null; } } // mídia de serviço que já não existe: fica como está (não é migrada nem apagada aqui)
+  return rel;
+}
+// Varredura de órfãos: arquivos em servicos/ que nenhum serviço referencia mais (foto removida sem apagar, serviço excluído, falha de rede).
+// Só lista por padrão; apaga só com { apagar: true }. Lê servicesMedia inteiro — use depois da migração, quando o nó já estiver leve.
+async function varrerStorageOrfaos(opts){
+  opts = opts || {}; const rel = { arquivos: 0, referenciados: 0, orfaos: [], apagados: 0, erro: null };
+  if(!isCurrentUserMaster()) return Object.assign(rel, { erro: 'Só um Gestor Master pode varrer o Storage.' });
+  if(!fbStorage) return Object.assign(rel, { erro: 'Storage indisponível.' });
+  const usados = new Set();
+  const registrar = (arr) => { (Array.isArray(arr) ? arr : (arr && typeof arr === 'object' ? Object.values(arr) : [])).forEach(x => { if(ehMidiaStorage(x)){ try{ usados.add(decodeURIComponent(new URL(x).pathname.split('/o/')[1] || '')); }catch(e){} } }); };
+  services.forEach(svc => SERVICE_MEDIA_FIELDS.forEach(f => registrar(svc[f])));
+  try{ const sn = await rtdb.ref('servicesMedia').get(); const all = sn.exists() ? (sn.val() || {}) : {}; Object.values(all).forEach(v => { if(v && typeof v === 'object') SERVICE_MEDIA_FIELDS.forEach(f => registrar(v[f])); }); }
+  catch(e){ return Object.assign(rel, { erro: 'não leu servicesMedia: ' + (e && e.message) }); }
+  const pilha = [fbStorage.ref(STORAGE_PASTA_SERVICOS)];
+  while(pilha.length){
+    const r = pilha.pop(); let res;
+    try{ res = await r.listAll(); }catch(e){ return Object.assign(rel, { erro: 'não listou ' + r.fullPath + ': ' + (e && e.message) }); }
+    res.prefixes.forEach(p => pilha.push(p));
+    for(const item of res.items){ rel.arquivos++; if(usados.has(item.fullPath)) rel.referenciados++; else rel.orfaos.push(item.fullPath); }
+  }
+  if(opts.apagar){ for(const p of rel.orfaos.slice()){ try{ await fbStorage.ref(p).delete(); rel.apagados++; }catch(e){} } }
+  return rel;
+}
+async function chavesShallowServicesMedia(){ // lista só as CHAVES de servicesMedia (REST shallow), sem baixar as mídias
+  const base = String(rtdb.ref('servicesMedia').toString()).replace(/\/+$/, ''); let auth = '';
+  if(authAtivo() && fbAuth && fbAuth.currentUser) auth = '&auth=' + encodeURIComponent(await fbAuth.currentUser.getIdToken());
+  const resp = await fetch(base + '.json?shallow=true' + auth, { cache: 'no-store' }); if(!resp.ok) throw new Error('HTTP ' + resp.status);
+  const j = await resp.json(); return j && typeof j === 'object' ? Object.keys(j) : [];
+}
+window.migrarMidiasParaStorage = migrarMidiasParaStorage; window.varrerStorageOrfaos = varrerStorageOrfaos;
+document.getElementById('acessosMidiasStorageBtn').addEventListener('click', async () => {
+  if(!isCurrentUserMaster()){ alert('Só um Gestor Master pode fazer isso.'); return; }
+  const box = document.getElementById('acessosMigrarBox'); box.style.display = '';
+  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Fotos e áudios → Storage</div><div>Verificando o que ainda está em base64 no banco…</div>';
+  const prev = await migrarMidiasParaStorage({ simular: true, lote: 10000 });
+  if(prev.erro){ box.innerHTML = '<div style="color:var(--danger-dark);">' + escapeHtml(prev.erro) + '</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
+  if(!prev.itensBase64){ box.innerHTML = '<div>Nada a migrar: todas as fotos e áudios dos serviços já estão no Storage.</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
+  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Fotos e áudios → Storage</div><div>' + prev.itensBase64 + ' item(ns) em base64 (~' + prev.kbBase64 + ' KB) em serviços com mídia. A migração sobe cada arquivo, confere o tamanho no Storage e só então troca a referência no banco; roda em lotes de 10 serviços por clique e pode ser repetida. Faça um backup (Exportar) antes da primeira vez.</div><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"><button type="button" class="btn-primary" data-midias="lote">Migrar 10 serviços agora</button><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
+});
+document.getElementById('acessosMigrarBox').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-midias]'); if(!b) return;
+  if(b.dataset.midias !== 'lote') return;
+  b.disabled = true; b.textContent = 'Migrando…';
+  const r = await migrarMidiasParaStorage({ simular: false, lote: 10 });
+  const box = document.getElementById('acessosMigrarBox');
+  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Fotos e áudios → Storage</div><div>Enviados: ' + r.enviados + ' (~' + r.kbEnviados + ' KB). Falhas: ' + r.falhas.length + (r.falhas.length ? ' — ' + escapeHtml(r.falhas.slice(0, 3).map(f => 'serviço ' + f.id + (f.campo ? '/' + f.campo : '') + ': ' + f.motivo).join(' · ')) : '') + '.' + (r.erro ? ' ' + escapeHtml(r.erro) : '') + '</div><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">' + (r.parouNoLote ? '<button type="button" class="btn-primary" data-midias="lote">Migrar mais 10</button>' : '<span>Não há mais serviços com mídia em base64 nesta lista.</span>') + '<button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
+});
 document.getElementById('acessosCriarContaBtn').addEventListener('click', async () => {
   const msg = (t, cor) => { const el = document.getElementById('acessosContaMsg'); el.textContent = t || ''; el.style.color = cor || ''; };
   if(!isCurrentUserMaster()) return msg('Só um Gestor Master pode criar contas.', 'var(--danger-dark)');
