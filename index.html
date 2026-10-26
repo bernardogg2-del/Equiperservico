@@ -4154,6 +4154,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script>
 // =====================================================================================
 // INSTRUMENTAÇÃO TEMPORÁRIA DE DIAGNÓSTICO — PERF_DIAG (Etapa 1 criou; Etapa 2 ampliou).
@@ -4685,10 +4686,22 @@ const firebaseConfig = {
 //                         o PIN continua como desbloqueio do perfil neste aparelho. É o que as novas regras do banco exigem.
 // AUTH_FIREBASE = false → fluxo anterior (sem conta). Só funciona com as regras do banco abertas — é o caminho de volta, nada mais.
 const AUTH_FIREBASE = true;
+// Fase 4: chave do site reCAPTCHA v3 registrada em Firebase → App Check. Vazio = App Check desligado.
+const APP_CHECK_SITE_KEY = '';
 let rtdb = null, fbAuth = null;
 try{
   if(typeof firebase !== 'undefined'){
     firebase.initializeApp(firebaseConfig);
+    // Fase 4: App Check (reCAPTCHA v3). Vazio = desligado (nada muda). Com a chave do site preenchida, o SDK anexa um token de
+    // App Check a cada chamada; o bloqueio de chamadas sem token só acontece quando a aplicação ("enforce") é ligada no console.
+    try{
+      if(APP_CHECK_SITE_KEY && firebase.appCheck){
+        const ac = firebase.appCheck();
+        const prov = (firebase.appCheck.ReCaptchaV3Provider) ? new firebase.appCheck.ReCaptchaV3Provider(APP_CHECK_SITE_KEY) : APP_CHECK_SITE_KEY;
+        ac.activate(prov, true);
+        window.__APP_CHECK_ATIVO = true;
+      }
+    }catch(e){ console.error('App Check não ativou (o app continua; se a aplicação estiver ligada no console, as chamadas serão recusadas):', e); }
     try{ if(AUTH_FIREBASE && firebase.auth) fbAuth = firebase.auth(); }catch(e){ console.error('Firebase Auth não carregou:', e); }
     rtdb = perfWrapDatabase(rtdbRegistroWrap(firebase.database())); // registro de ouvintes (M1) + PERF_DIAG (só observa), repassam tudo
   } else {
@@ -14875,12 +14888,55 @@ document.getElementById('exportDataBtn').addEventListener('click', () => {
     }])),
     ...(LEGADO_PINS_ATIVO ? { adminPin: adminPin } : {})
   };
-  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `equiper-backup-${todayStr()}.json`;
-  link.click();
+  // Fase 4: o arquivo sai CIFRADO com uma senha (AES-256-GCM, chave derivada por PBKDF2-SHA256). Sem a senha o backup não abre —
+  // nem por este app nem por ninguém. Senha esquecida = backup perdido (o banco continua intacto; é só o arquivo).
+  (async () => {
+    const senha = pedirSenhaBackup('exportar'); if(senha === null) return;
+    let envelope;
+    try{ envelope = await cifrarBackup(JSON.stringify(backup), senha); }
+    catch(e){ console.error('Falha ao cifrar o backup:', e); alert('Não foi possível cifrar o backup neste navegador. Nada foi exportado.'); return; }
+    const blob = new Blob([JSON.stringify(envelope)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `equiper-backup-${todayStr()}.cifrado.json`;
+    link.click();
+  })();
 });
+// ===== Fase 4 — backup cifrado =====
+const BACKUP_CIFRADO_FORMATO = 'equiper-backup-cifrado-v1';
+const BACKUP_PBKDF2_ITERACOES = 310000;
+function pedirSenhaBackup(modo){
+  if(modo === 'exportar'){
+    const s1 = prompt('Senha para proteger o backup (mínimo 8 caracteres). Guarde-a: sem ela o arquivo não abre.');
+    if(s1 === null) return null;
+    if(s1.length < 8){ alert('A senha precisa ter pelo menos 8 caracteres. Nada foi exportado.'); return null; }
+    const s2 = prompt('Digite a senha de novo para confirmar:');
+    if(s2 === null) return null;
+    if(s1 !== s2){ alert('As senhas não conferem. Nada foi exportado.'); return null; }
+    return s1;
+  }
+  const s = prompt('Este backup está protegido por senha. Digite a senha usada na exportação:');
+  return s === null ? null : s;
+}
+function bytesParaB64(bytes){ let bin = ''; const CH = 0x8000; for(let i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH)); return btoa(bin); }
+function b64ParaBytes(b64){ const bin = atob(b64); const out = new Uint8Array(bin.length); for(let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i); return out; }
+async function chaveDoBackup(senha, salt, iteracoes){
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: iteracoes, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function cifrarBackup(texto, senha){
+  if(!(crypto && crypto.subtle)) throw new Error('WebCrypto indisponível');
+  const salt = crypto.getRandomValues(new Uint8Array(16)); const iv = crypto.getRandomValues(new Uint8Array(12));
+  const chave = await chaveDoBackup(senha, salt, BACKUP_PBKDF2_ITERACOES);
+  const cifrado = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, chave, new TextEncoder().encode(texto)));
+  return { formato: BACKUP_CIFRADO_FORMATO, kdf: 'PBKDF2-SHA256', iteracoes: BACKUP_PBKDF2_ITERACOES, cifra: 'AES-256-GCM', criadoEm: new Date().toISOString(), salt: bytesParaB64(salt), iv: bytesParaB64(iv), dados: bytesParaB64(cifrado) };
+}
+async function decifrarBackup(envelope, senha){
+  const chave = await chaveDoBackup(senha, b64ParaBytes(envelope.salt), Number(envelope.iteracoes) || BACKUP_PBKDF2_ITERACOES);
+  const claro = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ParaBytes(envelope.iv) }, chave, b64ParaBytes(envelope.dados)); // senha errada → lança
+  return new TextDecoder().decode(claro);
+}
+function ehBackupCifrado(obj){ return !!(obj && typeof obj === 'object' && obj.formato === BACKUP_CIFRADO_FORMATO && typeof obj.dados === 'string' && typeof obj.salt === 'string' && typeof obj.iv === 'string'); }
 
 // Etapa 11: valida o bloco "users" de um backup ANTES de gravar qualquer coisa — nunca aceita
 // um backup que apague/esvazie os usuários atuais ou que deixe o sistema sem nenhum Master válido.
@@ -15193,7 +15249,7 @@ document.getElementById('importDataInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
-  reader.onload = () => {
+  reader.onload = async () => {
     let data;
     try{
       data = JSON.parse(reader.result);
@@ -15201,6 +15257,12 @@ document.getElementById('importDataInput').addEventListener('change', (e) => {
       alert('Não foi possível ler esse arquivo. Verifique se é um backup exportado por este app.');
       e.target.value = '';
       return;
+    }
+    if(ehBackupCifrado(data)){ // Fase 4: backup protegido por senha (backups antigos, sem senha, continuam aceitos abaixo)
+      const senha = pedirSenhaBackup('importar');
+      if(senha === null){ e.target.value = ''; return; }
+      try{ data = JSON.parse(await decifrarBackup(data, senha)); }
+      catch(err){ alert('Senha incorreta ou arquivo danificado. Nenhum dado foi alterado.'); e.target.value = ''; return; }
     }
     // Etapa 13: valida o backup INTEIRO agora, antes de mostrar a confirmação — se algo estiver
     // errado (formato geral, alguma estrutura, ou "users" presente e inválido/vazio/sem Master),
