@@ -4530,6 +4530,64 @@ function mensagemErroAuth(e){
   return 'Não foi possível entrar agora' + (c ? ' (' + c + ')' : '') + '.';
 }
 function usuarioDaConta(){ return contaAtual ? USERS.find(x => x.id === contaAtual.userId) || null : null; }
+// ===== Fase 3 — técnico lê só os próprios serviços =====
+// Conta "restrita a técnico" = conta vinculada cujo usuário NÃO é Master e NÃO tem perfil Gestor nem Financeiro (hoje: Adão, Aldir,
+// Ricardo, Paulo — Técnico+Oficina). Para ela, services é lido por DUAS consultas (technician == nome e technician2 == nome) em vez
+// do nó inteiro; as regras candidatas só aceitam essas consultas para esse tipo de conta. Devolve: null = conta sem restrição
+// (lê tudo, como antes); '' = restrita mas sem nome de técnico (não lê nada); 'Nome' = restrita, lê os serviços desse técnico.
+function nomeTecnicoRestrito(){
+  if(!authAtivo()) return null;
+  const u = usuarioDaConta(); if(!u) return null;
+  if(u.isMaster === true || (u.profiles && (u.profiles.manager === true || u.profiles.financeiro === true))) return null;
+  return (u.legacyNames && u.legacyNames.tech) || '';
+}
+// technician2 = o OUTRO técnico de uma dupla nova (technicians[] no mesmo registro), gravado como campo simples para que as regras e
+// a consulta do técnico enxerguem a dupla. Derivado sempre de technicians[] (lista desatualizada, que não inclui technician, não conta).
+function tecnico2Derivado(s){
+  if(!s || !Array.isArray(s.technicians) || s.technicians.length < 2 || !s.technician || s.technicians.indexOf(s.technician) < 0) return null;
+  const outro = s.technicians.find(n => n && n !== s.technician);
+  return outro || null;
+}
+function aplicarTecnico2(s){ const t2 = tecnico2Derivado(s); if(t2) s.technician2 = t2; else if(s.technician2 !== undefined) delete s.technician2; }
+// Gestor: preenche technician2 nos registros antigos que ainda não têm (só grava diferenças; idempotente; nunca apaga nada além do campo derivado)
+async function backfillTecnico2(){
+  if(!rtdb || nomeTecnicoRestrito() !== null) return 0;
+  const updates = {}; let n = 0;
+  services.forEach(s => {
+    const t2 = tecnico2Derivado(s); const atual = s.technician2 === undefined ? null : s.technician2;
+    if((t2 || null) !== atual){ updates['services/' + s.id + '/technician2'] = t2; n++; }
+  });
+  if(!n) return 0;
+  try{
+    await rtdb.ref().update(updates);
+    services.forEach(s => { aplicarTecnico2(s); const snap = servicesSnapshot[String(s.id)]; if(snap){ if(s.technician2) snap.technician2 = JSON.stringify(s.technician2); else delete snap.technician2; } });
+  }catch(e){ console.warn('Fase 3: não foi possível preencher technician2 agora (tenta no próximo login):', e && e.message); return 0; }
+  return n;
+}
+// ===== Fase 3 — abas negadas ao Gestor comum também nas regras =====
+// Mesmo critério de gestorPodeAbrirAba(), mas pela CONTA (vale antes de currentRole existir, na carga dos dados). Master e Gestor sem
+// tabPermissions salvas = tudo liberado. As regras candidatas usam exatamente users/<id>/tabPermissions com o mesmo mapa nó→abas.
+function gestorContaPodeAlgumaAba(abas){
+  if(!authAtivo()) return true;
+  const u = usuarioDaConta(); if(!u) return true;
+  if(u.isMaster === true) return true;
+  if(u.profiles && (u.profiles.tech === true || u.profiles.financeiro === true || u.profiles.oficina === true) && !u.profiles.manager) return true; // não é sessão de Gestor
+  const perm = u.tabPermissions;
+  if(!perm || typeof perm !== 'object' || Array.isArray(perm)) return true;
+  return abas.some(a => perm[a] === true);
+}
+const ABAS_POR_NO = { // nó → abas do Gestor que usam esse nó (qualquer uma liberada basta). Nós fora desta lista não dependem de aba.
+  clients: ['clientes', 'agenda', 'os'],
+  maintenanceContracts: ['manutencoes', 'agenda', 'os'], contratosManutencao: ['manutencoes', 'agenda', 'os'],
+  preventivo: ['manutencoes', 'os', 'agenda'],
+  ordensServico: ['os', 'agenda'],
+  obras: ['obras', 'agenda', 'manutencoes'],
+  orcamentos: ['orcamentos', 'pgestor', 'painel'],
+  oficinaEquipamentos: ['oficinagestor', 'agenda'],
+  quadros: ['oficinagestor', 'tecnicos', 'os'],
+  estoque: ['estoque'],
+  galeria: ['galeria']
+};
 const CARDS_PERFIL = { manager: 'roleCardManager', tech: 'roleCardTech', financeiro: 'roleCardFinanceiro', oficina: 'roleCardOficina' };
 // Depois de carregar users/: só os perfis da pessoa conectada ficam visíveis; os seletores de nome mostram só ela.
 function restringirPerfisAoUsuario(){
@@ -4746,8 +4804,20 @@ let servicesSnapshot = {};
 async function loadServices(){
   try{
     if(!rtdb) throw new Error('Firebase indisponível');
-    const snap = await rtdb.ref('services').get();
-    const raw = snap.exists() ? snap.val() : {};
+    const nomeRestrito = nomeTecnicoRestrito(); // Fase 3
+    let raw;
+    if(nomeRestrito === null){
+      const snap = await rtdb.ref('services').get();
+      raw = snap.exists() ? snap.val() : {};
+    } else if(!nomeRestrito){
+      raw = {}; // conta restrita sem nome de técnico: não há o que ler (as regras também negam)
+    } else {
+      const [s1, s2] = await Promise.all([
+        rtdb.ref('services').orderByChild('technician').equalTo(nomeRestrito).get(),
+        rtdb.ref('services').orderByChild('technician2').equalTo(nomeRestrito).get()
+      ]);
+      raw = Object.assign({}, s2.exists() ? s2.val() : {}, s1.exists() ? s1.val() : {});
+    }
     if(typeof raw === 'string'){
       // Formato antigo (lista inteira guardada como um texto só). Migra pro formato novo
       // (um registro por atividade) num único envio, com TODOS os registros de uma vez,
@@ -4886,9 +4956,32 @@ let realtimeServicesAttached = false;
 function attachRealtimeServicesListener(){
   if(!rtdb || realtimeServicesAttached) return;
   realtimeServicesAttached = true;
+  const nomeRestrito = nomeTecnicoRestrito(); // Fase 3: conta restrita a técnico ouve só os próprios serviços (duas consultas, fundidas)
+  if(nomeRestrito !== null){
+    if(!nomeRestrito) return;
+    const parciais = { technician: null, technician2: null };
+    const aoChegar = (campo) => (snap) => {
+      parciais[campo] = snap.exists() ? snap.val() : {};
+      if(parciais.technician === null || parciais.technician2 === null) return; // espera os dois primeiros disparos
+      aoReceberServices(Object.assign({}, parciais.technician2, parciais.technician));
+    };
+    const aoFalhar = (err) => { console.error('Falha na sincronização em tempo real das atividades (consulta do técnico):', err); };
+    ['technician', 'technician2'].forEach(campo => {
+      const q = rtdb.ref('services').orderByChild(campo).equalTo(nomeRestrito);
+      rtdbRegistrarOn(q, 'services', 'services', 'value', aoChegar(campo), aoFalhar); // registrado como os demais: o logout desliga
+    });
+    return;
+  }
   rtdb.ref('services').on('value', (snap) => {
     const raw = snap.exists() ? snap.val() : {};
     if(typeof raw === 'string') return; // formato antigo — o próximo carregamento completo migra isso
+    aoReceberServices(raw || {});
+  }, (err) => {
+    console.error('Falha na sincronização em tempo real das atividades:', err);
+  });
+}
+function aoReceberServices(raw){ // Fase 3: corpo do ouvinte de services, compartilhado pelo nó inteiro e pelas consultas do técnico
+  {
     services = mergeRemoteServices(raw || {});
     cacheGravarSnapshot('services', servicesSnapshot); // mergeRemoteServices já atualizou o snapshot com o confirmado
     if(window.REINST_API) REINST_API.agendar();        // confere equipamentos x atividades (reinstalação)
@@ -4905,9 +4998,7 @@ function attachRealtimeServicesListener(){
     } else if(currentRole === 'financeiro'){
       renderFinanceiroOS();
     }
-  }, (err) => {
-    console.error('Falha na sincronização em tempo real das atividades:', err);
-  });
+  }
 }
 
 
@@ -5182,6 +5273,7 @@ async function writeServicesDiff(attempt){
     const removedIds = [];
     let hasChanges = false;
     services.forEach(s => {
+      aplicarTecnico2(s); // Fase 3: campo derivado da dupla, sempre em dia antes do diff
       const id = String(s.id);
       const confirmedFields = servicesSnapshot[id] || {};
       // Une os campos atuais do objeto com os campos que já tinham sido confirmados antes —
@@ -18656,26 +18748,28 @@ async function ensureRoleDataLoaded(role){
     // dependem dele já carregado — ordem interna de ensureServicesLoaded() intocada).
     await ensureServicesLoaded();
     if(sessaoMudou(g, 'perfil gestor')) return;
+    try{ const nb = await backfillTecnico2(); if(nb) console.log('Fase 3: technician2 preenchido em ' + nb + ' atividade(s)'); }catch(e){ console.warn('Fase 3: backfill technician2', e); }
+    const pode = (no) => gestorContaPodeAlgumaAba(ABAS_POR_NO[no]); // Fase 3: módulos de abas negadas ao Gestor comum não são carregados (as regras também negam)
     // Etapa 2: todo o resto da Fase B do Gestor é independente entre si (rastreado nó a nó na
     // auditoria de latência) — roda em paralelo. Cada ensureXLoaded() preserva sua própria
     // ordem/dependência interna exatamente como antes (ex.: maintenanceContracts→importPreventivasPlanilha,
     // estoque+estoqueCategorias→seedEstoqueInicial); só a ESPERA entre os grupos deixou de ser sequencial.
     await Promise.all([
-      ensureClientsLoaded(),
+      pode('clients') ? ensureClientsLoaded() : Promise.resolve(),
       ensureTechPhonesLoaded(),
-      ensureMaintenanceContractsLoaded(),
-      ensureOficinaEquipamentosLoaded(),
-      ensureEstoqueLoaded(),
+      pode('maintenanceContracts') ? ensureMaintenanceContractsLoaded() : Promise.resolve(),
+      pode('oficinaEquipamentos') ? ensureOficinaEquipamentosLoaded() : Promise.resolve(),
+      pode('estoque') ? ensureEstoqueLoaded() : Promise.resolve(),
       ensureExtraContactsEtcLoaded()
     ]);
     if(sessaoMudou(g, 'perfil gestor')) return;
-    await garantirImportarEquipNomesExistentes(); // só depois do Promise.all: precisa de oficinaEquipamentos E do catálogo já carregados
+    if(pode('oficinaEquipamentos')) await garantirImportarEquipNomesExistentes(); // só depois do Promise.all: precisa de oficinaEquipamentos E do catálogo já carregados
     if(sessaoMudou(g, 'perfil gestor')) return;
-    if(window.PREV_API) PREV_API.iniciarGestor(); // relatório preventivo: em segundo plano, não atrasa o login
-    if(window.QUADROS_API) QUADROS_API.iniciar();  // quadros de comando: em segundo plano (alimenta o contador de Cadastros e OS)
-    if(window.REINST_API) REINST_API.agendar();    // confere equipamentos x atividades (reinstalação)
-    if(window.OS_API) OS_API.iniciar();            // ordens de serviço (agrupamento por número)
-    if(window.OBR_API) OBR_API.iniciarGestor();    // obras: acompanha a instalação (andamento do pedido e Saldo a cobrar)
+    if(window.PREV_API && pode('preventivo')) PREV_API.iniciarGestor(); // relatório preventivo: em segundo plano, não atrasa o login
+    if(window.QUADROS_API && pode('quadros')) QUADROS_API.iniciar();  // quadros de comando: em segundo plano (alimenta o contador de Cadastros e OS)
+    if(window.REINST_API && pode('oficinaEquipamentos')) REINST_API.agendar();    // confere equipamentos x atividades (reinstalação)
+    if(window.OS_API && pode('ordensServico')) OS_API.iniciar();            // ordens de serviço (agrupamento por número)
+    if(window.OBR_API && pode('obras')) OBR_API.iniciarGestor();    // obras: acompanha a instalação (andamento do pedido e Saldo a cobrar)
   } else if(role === 'tech'){
     await ensureServicesLoaded();
     if(sessaoMudou(g, 'perfil técnico')) return;
