@@ -15,7 +15,7 @@
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>(function(){try{var t=localStorage.getItem("equiperTema");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <style>
   :root{
@@ -95,7 +95,7 @@
     min-height:100vh;
     -webkit-font-smoothing: antialiased;
   }
-  .mono{ font-family:'IBM Plex Mono', monospace; }
+  .mono{ font-family: var(--mono); }
 
   /* ===== Scrollbar (fundação premium) ===== */
   ::-webkit-scrollbar{ width: 10px; height: 10px; }
@@ -181,7 +181,7 @@
     border-bottom: 1px solid var(--line);
   }
   .day-box-title{ font-size: 16px; font-weight:700; }
-  .day-box-date{ font-family:'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-dim); text-transform:capitalize; }
+  .day-box-date{ font-family: var(--mono); font-size: 11.5px; color: var(--text-dim); text-transform:capitalize; }
 
   .mini-empty{ color: var(--text-dim); font-size: 13px; padding: 14px 0 6px; text-align:center; font-style:italic; }
 
@@ -220,7 +220,7 @@
   .mini-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
   .mini-client{ font-size: 14px; font-weight:700; }
   .mini-desc{ font-size: 12px; color: var(--text-dim); margin-top:3px; line-height:1.4; }
-  .mini-tech{ font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim); margin-top: 6px; }
+  .mini-tech{ font-family: var(--mono); font-size: 11px; color: var(--text-dim); margin-top: 6px; }
   .mini-tech-row{ margin-top: 10px; }
   .mini-tech-select{ width: 100%; font-size: 12.5px; padding: 6px 8px; }
   /* Linha de metadados (horário / endereço / retorno) — só aparece quando existe informação real
@@ -251,7 +251,7 @@
   }
   .pair-person-label:first-of-type{ margin-top:0; padding-top:0; border-top:none; }
   .mini-tag{
-    font-family:'IBM Plex Mono', monospace;
+    font-family: var(--mono);
     font-size: 10.5px;
     padding: 3px 9px;
     border-radius: 999px;
@@ -405,7 +405,7 @@
   }
   .tecnico-card-name{ font-size: 15px; font-weight:600; }
   .tecnico-card-count{
-    margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-dim);
+    margin-left:auto; font-family: var(--mono); font-size: 11px; color: var(--text-dim);
   }
   .tecnico-tasklist{ /* container dos itens arrastáveis */ }
   .tecnico-task{
@@ -491,7 +491,7 @@
   .week-day-col.is-today{ background: var(--accent-soft); }
   .week-day-col-head{
     display:flex; align-items:baseline; justify-content:space-between; gap:8px;
-    font-family:'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-dim);
+    font-family: var(--mono); font-size: 11.5px; color: var(--text-dim);
     text-transform:capitalize; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid var(--line);
   }
   .week-day-col-head.today{ color: var(--accent); font-weight:700; border-bottom-color: var(--accent-line); }
@@ -567,7 +567,7 @@
     gap: 1px;
   }
   .cal-dow{
-    font-family:'IBM Plex Mono', monospace;
+    font-family: var(--mono);
     font-size: 11px;
     color: var(--text-dim);
     padding: 10px 10px;
@@ -589,7 +589,7 @@
   .cal-cell.today{ background: var(--accent-soft); }
   .cal-cell.selected{ box-shadow: inset 0 0 0 2px var(--accent); border-radius: 4px; }
   .cal-daynum{
-    font-family:'IBM Plex Mono', monospace;
+    font-family: var(--mono);
     font-size: 12.5px;
     color: var(--text-dim);
   }
@@ -647,10 +647,10 @@
   }
   .service-client{ font-size: 15px; font-weight:700; }
   .service-desc{ font-size: 13px; color: var(--text-dim); margin-top:4px; line-height:1.5; }
-  .service-addr{ font-size: 12px; color: var(--text-dim); margin-top:6px; font-family:'IBM Plex Mono', monospace; }
+  .service-addr{ font-size: 12px; color: var(--text-dim); margin-top:6px; font-family: var(--mono); }
 
   .status-tag{
-    font-family:'IBM Plex Mono', monospace;
+    font-family: var(--mono);
     font-size: 10.5px;
     padding: 3px 9px;
     border-radius: 999px;
@@ -734,7 +734,7 @@
   .instr-view .instr-title{ margin-bottom:8px; }
   .instr-view .field{ margin-bottom:8px; }
   .instr-view .field label{ color: var(--accent); font-weight:600; }
-  .rec-timer{ font-family:'IBM Plex Mono', monospace; font-size:12px; }
+  .rec-timer{ font-family: var(--mono); font-size:12px; }
   /* Padronização das ações da atividade (Técnico): iniciar/concluir, retirar equipamento e
      "precisa retornar" passam a compartilhar a mesma família visual — mesma altura, cantos e peso
      de fonte — em vez de três linguagens diferentes (botão cheio, botão apagado, cartão grande). */
@@ -1139,7 +1139,7 @@
   .tech-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
   .tech-name{ font-size:14px; }
   .tech-count{
-    font-family:'IBM Plex Mono', monospace;
+    font-family: var(--mono);
     font-size:11.5px;
     color: var(--text-dim);
     background: var(--surface-2);
@@ -1179,7 +1179,7 @@
   }
   .fin-os-main{ min-width:180px; }
   .fin-os-client{ font-weight:700; font-size:14px; }
-  .fin-os-date{ font-size:12px; color:var(--text-dim); font-family:'IBM Plex Mono', monospace; }
+  .fin-os-date{ font-size:12px; color:var(--text-dim); font-family: var(--mono); }
   .fin-os-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .fin-os-osinput{ width:150px; }
   .fin-status-select{
@@ -1428,7 +1428,7 @@
   .maint-alert-meta{ font-size: 11.5px; color: var(--text-dim); margin-top:2px; }
   .maint-alert-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .maint-alert-actions input[type="date"]{ padding:8px 10px; font-size:12.5px; }
-  .maint-scheduled-tag{ font-size: 11.5px; color: var(--success-dark); font-family:'IBM Plex Mono', monospace; }
+  .maint-scheduled-tag{ font-size: 11.5px; color: var(--success-dark); font-family: var(--mono); }
   .field-hint{ font-style:italic; font-weight:400; text-transform:none; letter-spacing:0; color: var(--text-dim); font-size: 10.5px; }
 
   /* ===== Atividades não concluídas ===== */
@@ -1437,7 +1437,7 @@
     display:inline-flex; align-items:center; justify-content:center;
     min-width:18px; height:18px; padding:0 5px; margin-left:6px;
     background: var(--red); color:#fff; border-radius:9px;
-    font-size:11px; font-weight:700; font-family:'IBM Plex Mono', monospace;
+    font-size:11px; font-weight:700; font-family: var(--mono);
   }
   .os-row{
     background: var(--panel); border:1px solid var(--line); border-left: 4px solid var(--teal);
@@ -1447,7 +1447,7 @@
   .os-client{ font-size: 16px; font-weight:700; }
   .os-meta{ font-size: 12px; color: var(--text-dim); margin-top:3px; }
   .os-retorno-tag{
-    font-family:'IBM Plex Mono', monospace; font-size: 10.5px; padding: 3px 9px;
+    font-family: var(--mono); font-size: 10.5px; padding: 3px 9px;
     border-radius: 999px; background: var(--warning-soft); color: var(--amber); border:1px solid var(--warning-line);
     white-space:nowrap;
   }
@@ -1494,7 +1494,7 @@
   }
   .cliente-row .field{ flex:1; min-width:180px; margin-bottom:0; }
   .cliente-row-actions{ display:flex; gap:8px; align-items:center; }
-  .cliente-saved-tag{ font-size:11.5px; color: var(--success-dark); font-family:'IBM Plex Mono', monospace; }
+  .cliente-saved-tag{ font-size:11.5px; color: var(--success-dark); font-family: var(--mono); }
   /* Clientes — refinamentos escopados a #tabClientes, pra não afetar Manutenções/Acessos/modais
      que reaproveitam algumas destas mesmas classes (.field, .search-clear-wrap, .os-empty). */
   /* A primeira linha (cadastrar cliente novo) ganha um leve destaque de "ação", pra não se
@@ -1549,7 +1549,7 @@
   }
 
   .maint-status{
-    font-family:'IBM Plex Mono', monospace; font-size: 10.5px; padding: 3px 9px;
+    font-family: var(--mono); font-size: 10.5px; padding: 3px 9px;
     border-radius: 999px; white-space:nowrap; border:1px solid var(--line);
   }
   .maint-status.overdue{ background: var(--danger-soft); color: var(--red); border-color: var(--danger-line); }
@@ -1577,7 +1577,7 @@
   .login-head h1{ font-size: 20px; margin: 0 0 4px; }
   .login-head p{ margin:0; color: var(--text-dim); font-size: 12.5px; }
   .app-load-status{
-    font-size: 12.5px; color: var(--text-dim); font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px; color: var(--text-dim); font-family: var(--mono);
   }
   .app-load-error{
     background: rgba(192,57,43,0.08); border:1px solid var(--danger-line); border-radius: var(--radius);
@@ -2585,6 +2585,191 @@
   :root[data-theme="dark"] tfoot td{background:var(--surface-2) !important}
   :root[data-theme="dark"] .vazio{color:var(--text-secondary) !important}
   :root[data-theme="dark"] body{background:var(--surface) !important}
+
+  /* ===== Fase 8 — fonte mono vira Inter com algarismos tabulares (datas, contadores, horários) ===== */
+  :root{ --mono: var(--sans); }
+  .mono, .day-box-date, .mini-tech, .cal-dow, .cal-daynum, .service-addr, .fin-os-date, .maint-scheduled-tag, .cliente-saved-tag,
+  .rec-timer, .sf-time, .tech-select, .tecnico-phone-input, .oe-summary-count, .estoque-row-qtd .val, .estoque-qty-input{ font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  .day-box-date, .cal-dow{ text-transform: none; font-weight: 600; }
+  .cal-dow{ text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.06em; }
+  /* ===== Fase 8 — tela de entrada: nada "pula" entre o carregando e o carregado ===== */
+  .login-wrap{ position: relative; }
+  .app-load-status{
+    position: absolute; top: 72px; left: 0; right: 0; text-align: center;
+    font-family: var(--sans); font-size: 12.5px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.02em;
+    animation: f8pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes f8pulse{ 0%,100%{ opacity: 0.45; } 50%{ opacity: 1; } }
+  /* A caixa "Conectado como" já reserva o lugar enquanto carrega (fica invisível, não ausente) */
+  #loginContaInfo[style*="display:none"]{ display: flex !important; visibility: hidden; }
+  .login-conta-info{ width: 100%; max-width: 360px; box-sizing: border-box; }
+  .role-card{ box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-1); border-color: var(--f8-edge); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
+  .role-card:hover{ border-color: rgba(20,20,22,0.30); transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-2); }
+  .role-grid.disabled .role-card{ transform: none; box-shadow: none; }
+  /* Chip da dupla: menos "rosa", mais firme */
+  .pair-label{ background: #FFFFFF; border: 1px solid rgba(217,26,34,0.35); color: var(--accent-dark); box-shadow: var(--f8-sh-1); }
+  :root[data-theme="dark"] .pair-label{ background: rgba(240,68,76,0.10); color: #FF8A80; }
+
+  /* ===== Fase 8 — refinamento visual: botões com profundidade e status como selos sólidos =====
+     Só CSS. Vem depois de tudo (inclusive do tema escuro) para vencer por ordem, sem mexer nas regras antigas. */
+  :root{
+    --f8-ring: 0 0 0 3px rgba(217,26,34,0.22);
+    --f8-edge: rgba(20,20,22,0.16);
+    --f8-sh-1: 0 1px 2px rgba(20,20,22,0.10), 0 2px 6px rgba(20,20,22,0.05);
+    --f8-sh-2: 0 2px 4px rgba(20,20,22,0.12), 0 6px 14px rgba(20,20,22,0.08);
+    --f8-sh-in: inset 0 1px 2px rgba(20,20,22,0.10);
+    --f8-pri-a: #33353A; --f8-pri-b: #141517; --f8-pri-edge: #0B0C0D;
+    --f8-acc-a: #EA2E36; --f8-acc-b: #C6141C; --f8-acc-edge: #9C0F16;
+    --f8-st-attr: #E3A400; --f8-st-attr-tx: #2B1F00;
+    --f8-st-prog: #2F7DB8; --f8-st-prog-tx: #FFFFFF;
+    --f8-st-done: #2C8A5A; --f8-st-done-tx: #FFFFFF;
+    --f8-st-wait: #6B7076; --f8-st-wait-tx: #FFFFFF;
+  }
+  /* Primário: preto com leve gradiente, brilho interno no topo, sombra em camadas, afunda ao clicar */
+  .btn-primary{
+    background: linear-gradient(180deg, var(--f8-pri-a) 0%, var(--f8-pri-b) 100%);
+    border: 1px solid var(--f8-pri-edge);
+    padding: 10px 19px;
+    letter-spacing: 0.01em;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), var(--f8-sh-1);
+    transition: box-shadow 0.15s, transform 0.15s, filter 0.15s;
+  }
+  .btn-primary:hover{ filter: brightness(1.12); transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), var(--f8-sh-2); }
+  .btn-primary:active{ transform: translateY(0); filter: brightness(0.96); box-shadow: inset 0 2px 3px rgba(0,0,0,0.35); }
+  .btn-primary:focus-visible{ outline: none; box-shadow: var(--f8-ring), var(--f8-sh-1); }
+  .btn-primary:disabled{ opacity: 0.45; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+  /* Vermelho Equiper nas duas ações principais do topo */
+  #openAddBtn, #openLembreteBtn{ background: linear-gradient(180deg, var(--f8-acc-a) 0%, var(--f8-acc-b) 100%); border-color: var(--f8-acc-edge); }
+  #openAddBtn:hover, #openLembreteBtn:hover{ filter: brightness(1.06); }
+  /* Secundário: superfície branca, borda definida, texto escuro, mesma profundidade */
+  .btn-ghost{
+    background: linear-gradient(180deg, #FFFFFF 0%, #F6F6F7 100%);
+    border: 1px solid var(--f8-edge);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 13px;
+    padding: 8px 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-1);
+    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s, background 0.15s, color 0.15s;
+  }
+  .btn-ghost:hover{ border-color: rgba(20,20,22,0.30); color: var(--ink); background: #FFFFFF; transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-2); }
+  .btn-ghost:active{ transform: translateY(0); background: #F0F1F2; box-shadow: var(--f8-sh-in); }
+  .btn-ghost:focus-visible{ outline: none; box-shadow: var(--f8-ring), var(--f8-sh-1); }
+  .btn-ghost:disabled{ opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost.done{ border-color: rgba(44,138,90,0.55); color: var(--success); }
+  .btn-ghost.done:hover{ border-color: var(--success); color: var(--success-dark); }
+  .acessos-acoes .btn-excluir{ color: var(--danger); border-color: rgba(192,57,43,0.45); }
+  .acessos-acoes .btn-excluir:hover{ border-color: var(--danger); color: var(--danger-dark); }
+  .btn-ghost.oe-mini, .btn-primary.oe-mini{ padding: 6px 12px; font-size: 12.5px; }
+  /* Excluir em texto: mais nítido, vermelho só no hover */
+  .btn-text-danger{ color: var(--text-dim); font-weight: 600; border-radius: 6px; }
+  .btn-text-danger:hover{ color: var(--danger); background: var(--danger-soft); }
+  /* Destaque (Estoque) e cartões-botão de relatório: mesma profundidade do sistema, sem o "degrau" de 2px */
+  .btn-destaque, .rel-btn{
+    border: 1px solid var(--f8-edge);
+    background: linear-gradient(180deg, #FFFFFF 0%, #F6F6F7 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-1);
+    transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+  }
+  .btn-destaque:hover, .rel-btn:hover{ transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-2); background: #FFFFFF; }
+  .btn-destaque:active, .rel-btn:active{ transform: translateY(0); box-shadow: var(--f8-sh-in); }
+  .btn-destaque.escuro, .rel-btn.escuro{ background: linear-gradient(180deg, var(--f8-pri-a) 0%, var(--f8-pri-b) 100%); border-color: var(--f8-pri-edge); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), var(--f8-sh-1); }
+  .btn-destaque.escuro:hover, .rel-btn.escuro:hover{ background: linear-gradient(180deg, #3C3E44 0%, #1A1B1E 100%); }
+  .btn-destaque.perigo{ background: linear-gradient(180deg, var(--f8-acc-a) 0%, var(--f8-acc-b) 100%); border-color: var(--f8-acc-edge); color: #fff; box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), var(--f8-sh-1); }
+  .btn-destaque:disabled, .rel-btn:disabled{ transform: none; box-shadow: none; }
+  /* WhatsApp: verde com profundidade, texto escuro mantido pelo contraste */
+  .btn-whatsapp{
+    background: linear-gradient(180deg, #3BE07A 0%, #1EBE5B 100%);
+    border: 1px solid #169A47; color: #052E16; font-weight: 700;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), var(--f8-sh-1);
+    transition: box-shadow 0.15s, transform 0.15s, filter 0.15s;
+  }
+  .btn-whatsapp:hover{ filter: brightness(1.04); transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), var(--f8-sh-2); }
+  .btn-whatsapp:active{ transform: translateY(0); box-shadow: inset 0 2px 3px rgba(0,0,0,0.20); }
+  /* Botões pequenos de navegação (setas, +/−, adicionar no dia, dupla, gravar): a mesma linguagem do secundário */
+  .nav-btn, .day-toggle-arrow, .pair-btn, .btn-record, .sidebar-logout-btn{
+    background: linear-gradient(180deg, #FFFFFF 0%, #F6F6F7 100%);
+    border: 1px solid var(--f8-edge); color: var(--text);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-1);
+    transition: box-shadow 0.15s, transform 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .nav-btn:hover, .day-toggle-arrow:hover{ background: linear-gradient(180deg, var(--f8-pri-a) 0%, var(--f8-pri-b) 100%); border-color: var(--f8-pri-edge); color: #fff; }
+  .pair-btn:hover, .sidebar-logout-btn:hover{ border-color: rgba(20,20,22,0.30); color: var(--ink); background: #FFFFFF; }
+  .pair-btn{ font-weight: 600; padding: 6px 9px; }
+  .pair-label{ font-size: 12px; padding: 6px 10px; }
+  .btn-record.recording{ background: linear-gradient(180deg, var(--f8-acc-a) 0%, var(--f8-acc-b) 100%); border-color: var(--f8-acc-edge); color: #fff; }
+  .week-day-add{ border: 1px dashed rgba(20,20,22,0.28); color: var(--text-dim); font-weight: 600; background: rgba(255,255,255,0.5); }
+  .week-day-add:hover{ background: #FFFFFF; border-color: var(--accent); color: var(--accent); }
+  .estoque-qty-btn{ background: linear-gradient(180deg, #FFFFFF 0%, #F0F1F2 100%); }
+  /* Abas em pílula (Agenda/Painel) e abas de portal: trilho rebaixado + aba ativa levantada */
+  .tabs, .painel-period-row{ background: rgba(20,20,22,0.045); box-shadow: inset 0 1px 2px rgba(20,20,22,0.06); }
+  .tab-btn.active, .period-btn.active{ box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-1); }
+  .portal-tabs .portal-tab{ transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
+  .portal-tabs .portal-tab.active{ background: linear-gradient(180deg, var(--f8-pri-a) 0%, var(--f8-pri-b) 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), var(--f8-sh-1); }
+  .estoque-subnav-v2.portal-tabs .portal-tab.active{ background: linear-gradient(180deg, var(--f8-acc-a) 0%, var(--f8-acc-b) 100%); }
+  .sidebar-nav-btn.active{ background: linear-gradient(180deg, var(--f8-acc-a) 0%, var(--f8-acc-b) 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), var(--f8-sh-1); }
+  /* Seletor de tema (login) */
+  .tema-toggle button[aria-pressed="true"]{ background: linear-gradient(180deg, var(--f8-pri-a) 0%, var(--f8-pri-b) 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.14), var(--f8-sh-1); }
+  /* Etiquetas de status: selo sólido, texto em caixa alta, sem a transparência "lavada" */
+  .status-tag, .mini-tag{
+    font-family: var(--sans); font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 10px; border: none; border-radius: 999px; line-height: 1.3;
+    background: var(--f8-st-wait); color: var(--f8-st-wait-tx);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 1px 2px rgba(20,20,22,0.18);
+  }
+  .status-tag.atribuido, .mini-tag.atribuido{ background: var(--f8-st-attr); color: var(--f8-st-attr-tx); }
+  .status-tag.em_andamento, .mini-tag.em_andamento{ background: var(--f8-st-prog); color: var(--f8-st-prog-tx); }
+  .status-tag.concluido, .mini-tag.concluido{ background: var(--f8-st-done); color: var(--f8-st-done-tx); }
+  /* Cartões concluídos: menos desbotados (o selo verde já diz o estado) */
+  .mini-card.status-concluido, .week-client-bar.status-concluido, .service-card.status-concluido{ opacity: 0.88; }
+  /* Barra lateral de cor dos cartões acompanha os selos */
+  .mini-card.status-atribuido, .week-client-bar.status-atribuido, .service-card.status-atribuido{ border-left-color: var(--f8-st-attr); }
+  .mini-card.status-em_andamento, .week-client-bar.status-em_andamento, .service-card.status-em_andamento{ border-left-color: var(--f8-st-prog); }
+  .mini-card.status-concluido, .week-client-bar.status-concluido, .service-card.status-concluido{ border-left-color: var(--f8-st-done); }
+
+  /* ---- Tema escuro: as mesmas peças, invertidas ---- */
+  :root[data-theme="dark"]{
+    --f8-edge: rgba(255,255,255,0.14);
+    --f8-sh-1: 0 1px 2px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.30);
+    --f8-sh-2: 0 2px 4px rgba(0,0,0,0.50), 0 6px 14px rgba(0,0,0,0.40);
+    --f8-sh-in: inset 0 1px 3px rgba(0,0,0,0.55);
+    --f8-pri-a: #F7F7F8; --f8-pri-b: #D9DADE; --f8-pri-edge: #B9BBC2;
+    --f8-acc-a: #F4555C; --f8-acc-b: #D21E26; --f8-acc-edge: #A5141B;
+    --f8-st-attr: #D99C00; --f8-st-attr-tx: #1A1200;
+    --f8-st-prog: #3C8CC8; --f8-st-done: #35A06A; --f8-st-wait: #5A5F66;
+  }
+  :root[data-theme="dark"] .btn-primary,
+  :root[data-theme="dark"] .portal-tabs .portal-tab.active,
+  :root[data-theme="dark"] .btn-destaque.escuro,
+  :root[data-theme="dark"] .rel-btn.escuro,
+  :root[data-theme="dark"] .tema-toggle button[aria-pressed="true"]{
+    background: linear-gradient(180deg, var(--f8-pri-a) 0%, var(--f8-pri-b) 100%) !important; color: #17181A !important;
+    border-color: var(--f8-pri-edge); box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), var(--f8-sh-1);
+  }
+  :root[data-theme="dark"] .btn-primary:active{ box-shadow: inset 0 2px 3px rgba(0,0,0,0.25); }
+  :root[data-theme="dark"] #openAddBtn, :root[data-theme="dark"] #openLembreteBtn,
+  :root[data-theme="dark"] .btn-destaque.perigo, :root[data-theme="dark"] .sidebar-nav-btn.active,
+  :root[data-theme="dark"] .estoque-subnav-v2.portal-tabs .portal-tab.active, :root[data-theme="dark"] .btn-record.recording{
+    background: linear-gradient(180deg, var(--f8-acc-a) 0%, var(--f8-acc-b) 100%) !important; color: #fff !important; border-color: var(--f8-acc-edge) !important;
+  }
+  :root[data-theme="dark"] .btn-ghost, :root[data-theme="dark"] .btn-destaque, :root[data-theme="dark"] .rel-btn,
+  :root[data-theme="dark"] .nav-btn, :root[data-theme="dark"] .day-toggle-arrow, :root[data-theme="dark"] .pair-btn,
+  :root[data-theme="dark"] .btn-record, :root[data-theme="dark"] .sidebar-logout-btn{
+    background: linear-gradient(180deg, #2B2D32 0%, #1F2024 100%) !important; color: var(--text); border-color: var(--f8-edge);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), var(--f8-sh-1);
+  }
+  :root[data-theme="dark"] .btn-ghost:hover, :root[data-theme="dark"] .btn-destaque:hover, :root[data-theme="dark"] .rel-btn:hover,
+  :root[data-theme="dark"] .pair-btn:hover, :root[data-theme="dark"] .sidebar-logout-btn:hover{ border-color: rgba(255,255,255,0.30); color: #fff; }
+  :root[data-theme="dark"] .btn-ghost:active, :root[data-theme="dark"] .btn-destaque:active, :root[data-theme="dark"] .rel-btn:active{ box-shadow: var(--f8-sh-in); }
+  :root[data-theme="dark"] .nav-btn:hover, :root[data-theme="dark"] .day-toggle-arrow:hover{ background: linear-gradient(180deg, var(--f8-pri-a) 0%, var(--f8-pri-b) 100%) !important; color: #17181A; }
+  :root[data-theme="dark"] .btn-ghost.done{ color: var(--success); border-color: rgba(79,178,122,0.55); }
+  :root[data-theme="dark"] .portal-tabs .portal-tab{ background: rgba(255,255,255,0.07); }
+  :root[data-theme="dark"] .week-day-add{ background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.22); }
+  :root[data-theme="dark"] .week-day-add:hover{ background: rgba(255,255,255,0.06); }
+  :root[data-theme="dark"] .estoque-qty-btn{ background: linear-gradient(180deg, #2B2D32 0%, #1F2024 100%); }
+  :root[data-theme="dark"] .tabs, :root[data-theme="dark"] .painel-period-row{ background: rgba(255,255,255,0.05); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
+  :root[data-theme="dark"] .status-tag, :root[data-theme="dark"] .mini-tag{ box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 2px rgba(0,0,0,0.45); }
+  :root[data-theme="dark"] .btn-whatsapp{ background: linear-gradient(180deg, #2BC866 0%, #189E4C 100%); border-color: #11733A; color: #04210F !important; }
 </style>
 </head>
 <body>
@@ -3548,8 +3733,7 @@
         <div class="tecnicos-title">Acessos</div>
       </div>
     </div>
-    <div style="padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button><button type="button" class="btn-ghost" id="acessosMigrarPrivadoBtn" title="Move PIN e e-mail de users/ para usersPrivado/ (mostra uma prévia antes)">Mover PINs e e-mails para o nó privado</button><button type="button" class="btn-ghost" id="acessosMidiasStorageBtn" title="Move as fotos, áudios, fotos de preventivas e PDFs de manuais que ainda estão em base64 no banco para o Cloud Storage, em lotes, verificando cada arquivo antes de trocar a referência">Fotos e áudios → Storage</button><button type="button" class="btn-ghost" id="acessosOrfaosStorageBtn" title="Lista os arquivos do Storage que nenhum registro usa mais e permite apagá-los">Varrer arquivos órfãos</button></div>
-    <div id="acessosMigrarBox" style="display:none; margin:0 20px 14px; padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--surface); font-size:13px;"></div>
+    <div style="padding:0 20px 14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;"><button type="button" class="btn-primary" id="acessosNovoUsuarioBtn">+ Novo usuário</button></div>
     <div id="acessosUsuariosList" style="padding:0 20px 30px;"></div>
 
     <!-- Estruturas legadas (Etapas 1-3): funções e nós ainda existem e continuam sendo lidos/
@@ -19498,10 +19682,6 @@ async function executarMigracaoPrivado(){
   box.innerHTML = `<b>Migração concluída.</b> Movidos: ${feitos.length}${feitos.length ? ' (' + feitos.map(escapeHtml).join(', ') + ')' : ''}. ${falhas.length ? '<span style="color:var(--danger-dark);">Falharam: ' + falhas.map(escapeHtml).join(', ') + ' — rode de novo; o que já foi movido não se repete.</span>' : 'Nenhuma falha.'} <button type="button" class="btn-ghost oe-mini" data-migrar="fechar">Fechar</button>`;
   return { ok: !falhas.length, feitos, falhas };
 }
-document.getElementById('acessosMigrarPrivadoBtn').addEventListener('click', () => { if(!isCurrentUserMaster()){ alert('Só um Gestor Master pode fazer isso.'); return; } renderPreviaMigracao(); });
-document.getElementById('acessosMigrarBox').addEventListener('click', (e) => { const b = e.target.closest('[data-migrar]'); if(!b) return;
-  if(b.dataset.migrar === 'fechar'){ document.getElementById('acessosMigrarBox').style.display = 'none'; return; }
-  if(b.dataset.migrar === 'confirmar'){ customConfirm('Mover agora os PINs e e-mails listados para usersPrivado/ e apagá-los de users/? Depois disso, só o Master e a própria pessoa conseguem ler o PIN dela.', () => { b.disabled = true; b.textContent = 'Migrando…'; executarMigracaoPrivado(); }, 'Migrar'); } });
 window.__ACESSOS_TESTE = { preverMigracaoPrivado, executarMigracaoPrivado, privado: () => USERS_PRIVADO };
 // ===== Fase 5 — migração das mídias em base64 para o Storage (Master, em lotes, verificada, idempotente) =====
 // Para cada serviço: lê a mídia (inline em services/<id> ou em servicesMedia/<id>), sobe cada item base64, confere no Storage que o
@@ -19635,37 +19815,6 @@ async function chavesShallowServicesMedia(){ // lista só as CHAVES de servicesM
   const j = await resp.json(); return j && typeof j === 'object' ? Object.keys(j) : [];
 }
 window.migrarMidiasParaStorage = migrarMidiasParaStorage; window.varrerStorageOrfaos = varrerStorageOrfaos;
-document.getElementById('acessosMidiasStorageBtn').addEventListener('click', async () => {
-  if(!isCurrentUserMaster()){ alert('Só um Gestor Master pode fazer isso.'); return; }
-  const box = document.getElementById('acessosMigrarBox'); box.style.display = '';
-  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Fotos e áudios → Storage</div><div>Verificando o que ainda está em base64 no banco…</div>';
-  const prev = await migrarMidiasParaStorage({ simular: true, lote: 10000 });
-  if(prev.erro){ box.innerHTML = '<div style="color:var(--danger-dark);">' + escapeHtml(prev.erro) + '</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
-  if(!prev.itensBase64){ box.innerHTML = '<div>Nada a migrar: todas as fotos e áudios dos serviços já estão no Storage.</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
-  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Fotos e áudios → Storage</div><div>' + prev.itensBase64 + ' item(ns) em base64 (~' + prev.kbBase64 + ' KB) em serviços com mídia. A migração sobe cada arquivo, confere o tamanho no Storage e só então troca a referência no banco; roda em lotes de 10 serviços por clique e pode ser repetida. Faça um backup (Exportar) antes da primeira vez.</div><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"><button type="button" class="btn-primary" data-midias="lote">Migrar 10 serviços agora</button><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
-});
-document.getElementById('acessosOrfaosStorageBtn').addEventListener('click', async () => { // Fase 6
-  if(!isCurrentUserMaster()){ alert('Só um Gestor Master pode fazer isso.'); return; }
-  const box = document.getElementById('acessosMigrarBox'); box.style.display = '';
-  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Arquivos órfãos no Storage</div><div>Conferindo o que está no Storage e o que o banco ainda usa…</div>';
-  const r = await varrerStorageOrfaos({});
-  if(r.erro){ box.innerHTML = '<div style="color:var(--danger-dark);">' + escapeHtml(r.erro) + '</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>'; return; }
-  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Arquivos órfãos no Storage</div><div>' + r.arquivos + ' arquivo(s) no Storage, ' + r.referenciados + ' em uso, <b>' + r.orfaos.length + ' órfão(s)</b> (ninguém usa mais).</div><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">' + (r.orfaos.length ? '<button type="button" class="btn-primary" data-orfaos="apagar">Apagar os ' + r.orfaos.length + ' órfão(s)</button>' : '') + '<button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
-});
-document.getElementById('acessosMigrarBox').addEventListener('click', async (e) => {
-  const b = e.target.closest('[data-orfaos]'); if(!b) return;
-  b.disabled = true; b.textContent = 'Apagando…';
-  const r = await varrerStorageOrfaos({ apagar: true });
-  document.getElementById('acessosMigrarBox').innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Arquivos órfãos no Storage</div><div>Apagados: ' + r.apagados + '.' + (r.erro ? ' ' + escapeHtml(r.erro) : '') + '</div><div style="margin-top:8px;"><button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
-});
-document.getElementById('acessosMigrarBox').addEventListener('click', async (e) => {
-  const b = e.target.closest('[data-midias]'); if(!b) return;
-  if(b.dataset.midias !== 'lote') return;
-  b.disabled = true; b.textContent = 'Migrando…';
-  const r = await migrarMidiasParaStorage({ simular: false, lote: 10 });
-  const box = document.getElementById('acessosMigrarBox');
-  box.innerHTML = '<div style="font-weight:700; margin-bottom:6px;">Fotos e áudios → Storage</div><div>Enviados: ' + r.enviados + ' (~' + r.kbEnviados + ' KB). Falhas: ' + r.falhas.length + (r.falhas.length ? ' — ' + escapeHtml(r.falhas.slice(0, 3).map(f => 'serviço ' + f.id + (f.campo ? '/' + f.campo : '') + ': ' + f.motivo).join(' · ')) : '') + '.' + (r.erro ? ' ' + escapeHtml(r.erro) : '') + '</div><div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">' + (r.parouNoLote ? '<button type="button" class="btn-primary" data-midias="lote">Migrar mais 10</button>' : '<span>Não há mais serviços com mídia em base64 nesta lista.</span>') + '<button type="button" class="btn-ghost" data-migrar="fechar">Fechar</button></div>';
-});
 document.getElementById('acessosCriarContaBtn').addEventListener('click', async () => {
   const msg = (t, cor) => { const el = document.getElementById('acessosContaMsg'); el.textContent = t || ''; el.style.color = cor || ''; };
   if(!isCurrentUserMaster()) return msg('Só um Gestor Master pode criar contas.', 'var(--danger-dark)');
