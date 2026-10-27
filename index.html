@@ -2422,6 +2422,17 @@
   .obrg-pontos{ display:flex; align-items:center; gap:4px; flex-wrap:wrap; max-width:150px; } .obrg-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; background:var(--c); } .obrg-mais{ font-size:10px; font-weight:600; color:var(--text-secondary); }
   .obrg-resumo .obrg-prog{ margin-left:0; min-width:34px; text-align:right; font-size:13px; font-weight:600; color:var(--text-secondary); font-variant-numeric:tabular-nums; }
   .obrg-detalhe{ border-top:1px solid var(--border); padding:6px 16px 10px; background:#FCFCFD; }
+  /* Fase 11: cartão do cliente numa janela por cima da lista */
+  .obrg-card-modal{ max-width:1100px; padding:0; background:transparent; border:0; box-shadow:none; max-height:calc(100vh - 24px); }
+  .obrg-card-bar{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:0 4px 8px; color:#fff; font-size:12.5px; font-weight:600; text-shadow:0 1px 2px rgba(0,0,0,.4); }
+  .obrg-card-bar .btn-ghost{ color:var(--text); }
+  .obrg-card-modal .obrg-cliente{ margin:0; box-shadow:0 18px 50px rgba(0,0,0,.35); }
+  .obrg-card-modal .obrg-resumo{ cursor:default; } .obrg-card-modal .obrg-resumo:hover{ background:transparent; }
+  .obrg-card-ov{ padding:12px; }
+  /* Fase 11: rodapé "Equipe de campo" (fichas dos técnicos + legenda) deixa de aparecer em todas as abas (pedido do Bernardo, 27/10) */
+  .footer{ display:none !important; }
+  /* Fase 11: no PC a linha do cliente não quebra — o anel de % fica sempre na mesma posição, à direita */
+  @media (min-width:641px){ .obrg-resumo{ flex-wrap:nowrap; } .obrg-princ{ flex:0 1 auto; flex-wrap:wrap; justify-content:flex-end; min-width:0; } .obrg-pontos{ flex:none; } .obrg-anel{ margin-left:auto; } }
   /* Anel de progresso do cliente: % de pedidos finalizados */
   .obrg-anel{ --p:0; flex:none; width:42px; height:42px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; position:relative;
     background:conic-gradient(#2E7D4F calc(var(--p) * 1%), var(--line, #e3e4e6) 0); }
@@ -2772,7 +2783,28 @@
   :root[data-theme="dark"] .btn-whatsapp{ background: linear-gradient(180deg, #2BC866 0%, #189E4C 100%); border-color: #11733A; color: #04210F !important; }
 
   /* ===== Fase 9 — Painel do Gestor em três camadas ===== */
-  .pg{ max-width:680px; }
+  .pg{ max-width:680px; } .pg-col{ min-width:0; }
+  /* Fase 11: no PC a página do Gestor ocupa a tela toda (barra lateral no canto) e o painel usa a largura:
+     cartões de "Precisa de você" em grade, pulso + ontem numa linha, áreas em duas colunas. No celular segue a coluna de 680px. */
+  @media (min-width:1100px){
+    .page:has(> .app-shell > #appSidebar){ max-width:none; padding:24px 28px 0; }
+    #tabPGestor.pn-tab, .pg{ max-width:none; }
+    .pg-col-a{ display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,0.42fr); gap:0 16px; align-items:stretch; }
+    .pg-col-a > .pg-sec-t, .pg-col-a > .pg-ex{ grid-column:1 / -1; }
+    .pg-ex{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px; background:none; border:0; box-shadow:none; border-radius:0; overflow:visible; }
+    .pg-ex-i{ background:var(--surface); border:1px solid var(--f8-edge); border-radius:13px; box-shadow:var(--f8-sh-1); padding:12px 12px 12px 0; min-height:64px; }
+    .pg-ex-i:last-child{ border-bottom:1px solid var(--f8-edge); }
+    .pg-ex-b{ border-radius:13px 0 0 13px; }
+    .pg-ex-t b{ font-size:14px; } .pg-ex-t span{ font-size:12px; }
+    .pg-ok{ grid-column:1 / -1; background:var(--surface); border:1px solid var(--f8-edge); border-radius:13px; }
+    .pg-pulso{ grid-template-columns:repeat(4,1fr); gap:12px; }
+    .pg-k{ padding:14px 14px 12px; } .pg-k .v{ font-size:28px; } .pg-k .l{ font-size:12px; }
+    .pg-ontem{ margin-top:0; display:flex; flex-direction:column; justify-content:center; font-size:12.5px; }
+    .pg-col-b{ column-count:2; column-gap:16px; margin-top:4px; }
+    .pg-col-b > .pg-sec-t{ column-span:all; }
+    .pg-area{ display:inline-block; width:100%; box-sizing:border-box; break-inside:avoid; -webkit-column-break-inside:avoid; margin-bottom:10px; }
+    .pg-area-h{ padding:13px 14px 13px 16px; }
+  }
   .pg-sec-t{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); margin:18px 0 8px; display:flex; align-items:center; gap:8px; }
   .pg-sec-t:first-child{ margin-top:4px; }
   .pg-sec-t .n{ background:var(--f8-st-wait); color:#fff; border-radius:999px; font-size:10.5px; padding:1px 7px; letter-spacing:0; }
@@ -26705,10 +26737,10 @@ function montarGestor(){
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrgBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrgEmpresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>
       <select id="obrgStatus"><option value="">Qualquer andamento</option>${opcoesAndamento('')}</select>
-      <span class="obrg-exp"><button type="button" class="btn-ghost oe-mini" data-obrg-exp="todos">Expandir tudo</button><button type="button" class="btn-ghost oe-mini" data-obrg-exp="nenhum">Recolher tudo</button></span>
     </div>
     <div class="portal-tabs obrg-sub" id="obrgSubAbas"><button type="button" class="portal-tab active" data-obrg-sub="andamento">Em andamento<span class="obr-tab-n" id="obrgSubN1"></span></button><button type="button" class="portal-tab" data-obrg-sub="docs" title="Obras finalizadas que ainda não receberam o contrato de manutenção ou o manual de operação">Manual e contrato<span class="obr-tab-n" id="obrgSubN3"></span></button><button type="button" class="portal-tab" data-obrg-sub="finalizados" title="Obras finalizadas com contrato e manual já resolvidos">Finalizados<span class="obr-tab-n" id="obrgSubN2"></span></button></div>
     <div id="obrgLista"></div>
+    <div class="overlay obrg-card-ov" id="obrgCardOv"><div class="modal obrg-card-modal" role="dialog" aria-modal="true" aria-label="Cartão do cliente"><div class="obrg-card-bar"><span>Cartão do cliente · a lista se reorganiza quando você fechar</span><button type="button" class="btn-ghost oe-mini" data-obrg-fechar>✕ Fechar</button></div><div id="obrgCardCorpo"></div></div></div>
     </div>
     <div id="obrgPaneSistemas" style="display:none;">
       <p class="prv-hint" style="margin:0 0 10px;">Bases dos sistemas que a Equiper instala. Cada base tem os subitens (equipamentos) que o técnico vai marcando como instalados. Começam com os sistemas da manutenção preventiva e você pode criar, editar e excluir à vontade; mexer aqui <b>não altera</b> a manutenção preventiva.</p>
@@ -26727,8 +26759,9 @@ function montarGestor(){
   v.addEventListener('change', (e) => { const sel = e.target.closest('[data-obrg-st]'); if(sel){ const [rid, pid, tr] = sel.dataset.obrgSt.split('|'); mudarAndamento(rid, pid, tr, sel.value); } });
   v.addEventListener('click', (e) => {
     const ex = e.target.closest('[data-obrg-exp]'); if(ex){ uiG.clientes = ex.dataset.obrgExp === 'todos' ? new Set(uiG.chaves) : new Set(); renderGestor(); return; }
-    const nv = e.target.closest('[data-obrg-irnovo]'); if(nv){ const [chave, rid, pid] = nv.dataset.obrgIrnovo.split('|'); uiG.sub = 'andamento'; uiG.busca = ''; const bi = document.getElementById('obrgBusca'); if(bi) bi.value = ''; uiG.clientes.add(chave); uiG.abertos.add(rid + '|' + pid); renderGestor(); setTimeout(() => { const el = document.querySelector('[data-obrg-eq="' + rid + '|' + pid + '"]'); if(el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 60); return; }   // revisão 7
-    const cl = e.target.closest('[data-obrg-cli]'); if(cl){ const k = cl.dataset.obrgCli; if(uiG.clientes.has(k)) uiG.clientes.delete(k); else uiG.clientes.add(k); renderGestor(); return; }
+    const nv = e.target.closest('[data-obrg-irnovo]'); if(nv){ const [chave, rid, pid] = nv.dataset.obrgIrnovo.split('|'); uiG.sub = 'andamento'; uiG.busca = ''; const bi = document.getElementById('obrgBusca'); if(bi) bi.value = ''; uiG.card = chave; uiG.abertos.add(rid + '|' + pid); renderGestor(); setTimeout(() => { const el = document.querySelector('[data-obrg-eq="' + rid + '|' + pid + '"]'); if(el) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 60); return; }   // revisão 7
+    const fx = e.target.closest('[data-obrg-fechar]'); if(fx || e.target.id === 'obrgCardOv'){ uiG.card = null; renderGestor(); return; }
+    const cl = e.target.closest('[data-obrg-cli]'); if(cl){ const k = cl.dataset.obrgCli; uiG.card = uiG.card === k ? null : k; renderGestor(); return; }
     const c = e.target.closest('[data-obrg-chip]'); if(c){ uiG.status = uiG.status === c.dataset.obrgChip ? '' : c.dataset.obrgChip; document.getElementById('obrgStatus').value = uiG.status; renderGestor(); return; }
     const a = e.target.closest('[data-obrg-ativ]'); if(a){ const [rid, pid] = a.dataset.obrgAtiv.split('|'); criarAtividade(rid, pid); return; }
     const sb2 = e.target.closest('[data-obrg-sub]'); if(sb2){ uiG.sub = sb2.dataset.obrgSub; renderGestor(); return; }
@@ -26737,6 +26770,7 @@ function montarGestor(){
   });
   v.addEventListener('click', cliqueEquip);
   const sb = document.getElementById('obrgSisBusca'); sb.addEventListener('input', () => { uiG.sisBusca = sb.value; renderSistemas(); }); sb.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ sb.value = ''; uiG.sisBusca = ''; renderSistemas(); } });
+  v.addEventListener('keydown', (e) => { if(e.key === 'Escape' && uiG.card && !(e.target.matches && e.target.matches('input, select, textarea'))){ uiG.card = null; renderGestor(); } });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-sis')){ e.preventDefault(); abrirSistema(e.target.dataset.id); } else if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-resumo, .obrg-pc')){ e.preventDefault(); e.target.click(); } });
 }
 function mostrarAbaGestor(aba){
@@ -26810,6 +26844,7 @@ function renderGestor(){
   document.getElementById('obrgChips').innerHTML = `<div class="obrg-resumo4">${tile(nAnd + nFin, 'Clientes registrados', 'var(--ink)')}${tile(cliFase.interna.size, 'Na etapa interna', '#b45309')}${tile(cliFase.obra.size, 'Na etapa obra', '#1a56db')}${tile(nFin, 'Finalizados', '#1f6b45')}</div>` + htmlPedidosNovos();   // revisão 7
   const nNovosT = pedidosNovos().length, nSemEqT = pedidosSemEquip().length; document.getElementById('obrgSubN1').innerHTML = nAnd + (nNovosT ? ` <span class="obrg-cm-n obrg-novo-n" title="Pedidos cadastrados há menos de ${NOVO_PEDIDO_DIAS} dias"><em>🆕 </em>${nNovosT}<i> ${nNovosT === 1 ? 'novo' : 'novos'}</i></span>` : '') + (nSemEqT ? ` <span class="obrg-cm-n" title="Pedidos em andamento sem equipamentos cadastrados"><em>⚠ </em>${nSemEqT}<i> sem equipamentos</i></span>` : '');   /* revisão 7 */ const nCm = cmPendentes().length, nMan = manPendentes().length; const nDocs = lista_.filter(g => g.grp === 'f' && g.docsPend).length; document.getElementById('obrgSubN2').textContent = nFin - nDocs; document.getElementById('obrgSubN3').innerHTML = nDocs + (nCm ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem contrato de manutenção enviado"><em>📄 </em>${nCm}<i> sem contrato</i></span>` : '') + (nMan ? ` <span class="obrg-cm-n" title="Clientes com obra finalizada sem manual de operação enviado"><em>📘 </em>${nMan}<i> sem manual</i></span>` : '');
   document.querySelectorAll('#obrgSubAbas .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.obrgSub === uiG.sub));
+  const todosGrupos = lista_.slice();   // Fase 11: o cartão aberto é achado aqui, mesmo que o cliente tenha mudado de aba
   lista_ = lista_.filter(g => uiG.sub === 'andamento' ? g.grp !== 'f' : uiG.sub === 'docs' ? (g.grp === 'f' && g.docsPend) : (g.grp === 'f' && !g.docsPend));   // revisão 8: três abas
   if(uiG.sub === 'andamento') lista_.sort((a, b) => (a.grp - b.grp) || (a.rankPrin - b.rankPrin) || fold(a.nome).localeCompare(fold(b.nome)));
   uiG.chaves = lista_.map(g => g.chave);
@@ -26820,8 +26855,8 @@ function renderGestor(){
   const TIT_GRP = { 1: 'Obra em andamento · iniciado / entregue parcialmente / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para entrega', 4: 'Liberados para iniciar', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
   let grpAnt = null;
   const cabGrp = (g) => { if(uiG.sub !== 'andamento' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
-  box.innerHTML = lista_.length ? lista_.map((g_) => { const { chave, nome, itens } = g_; const cab = cabGrp(g_);
-    const regs = itens.map(x => x.r); const varias = regs.length > 1; const aberto = uiG.clientes.has(chave);        // o cliente tem registros nas duas empresas
+  const htmlCli = (g_, aberto) => { const { chave, nome, itens } = g_; const cab = aberto ? '' : cabGrp(g_);
+    const regs = itens.map(x => x.r); const varias = regs.length > 1;        // o cliente tem registros nas duas empresas
     const pares = itens.flatMap(({ r, peds }) => peds.map(p => ({ r, p })));
     const todosPeds = regs.flatMap(r => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const fin = todosPeds.filter(x => statusObraDe(x.r, x.p.id) === 'finalizado').length;
@@ -26846,8 +26881,12 @@ function renderGestor(){
           <div class="obrg-ped-st"><select class="obr-sp obr-sp-${ki}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|i" aria-label="Etapa interna do pedido ${esc(p.numero)}" title="Etapa interna · compras${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'interna').map(([k, n]) => `<option value="${k}" ${k === ki ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${ko ? `<select class="obr-sp obr-sp-${ko}" data-obrg-st="${esc(r.id)}|${esc(p.id)}|o" aria-label="Etapa obra do pedido ${esc(p.numero)}" title="Etapa obra${quando ? ' — ' + esc(quando) : ''}">${STATUS_OBRA.filter(([k]) => faseDe(k) === 'obra').map(([k, n]) => `<option value="${k}" ${k === ko ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>` : '<span class="obrg-obra-vazia" title="A etapa obra só abre depois de marcar o pedido como Entregue na etapa interna">Obra · abre após Entregue</span>'}</div>
           <div class="obrg-ped-a"><button type="button" class="btn-ghost oe-mini obrg-btn-eq ${ab ? 'obrg-btn-eq-on' : ''} ${pedidoSemEquip(r, p, d) ? 'obrg-cm-pend' : ''}" data-obrg-eq="${esc(key)}" aria-label="Equipamentos${res.total ? ': ' + res.finalizados + ' de ' + res.total + ' finalizados' : ''}"><span>Equipamentos</span>${bolas.length ? `<span class="obrg-pontos-eq">${dotsEq}</span>` : ''}<span class="obrg-seta-eq">${ab ? '▴' : '▾'}</span></button>${botaoQuadros(r.id, p.id, key)}<button type="button" class="btn-ghost oe-mini" data-obrg-ativ="${esc(key)}">+ Atividade</button></div>
           ${ab ? painelEquip(r, p, d) : ''}</div>`; }).join(''); }).join('')}</div>` : ''}
-    </div>`; }).join('')
+    </div>`; };
+  box.innerHTML = lista_.length ? lista_.map(g_ => htmlCli(g_, false)).join('')
     : `<div class="empty-state">${registros().length ? (uiG.sub === 'finalizados' ? 'Nenhum cliente finalizado com contrato e manual já resolvidos.' : uiG.sub === 'docs' ? 'Nenhuma obra finalizada aguardando contrato de manutenção ou manual de operação.' : 'Nenhum pedido em andamento com esses filtros.') : 'Nenhum pedido cadastrado ainda. Os pedidos são lançados pelo Financeiro, em Obras e Pedidos.'}</div>`;
+  const ov = document.getElementById('obrgCardOv'), corpo = document.getElementById('obrgCardCorpo');
+  const gCard = uiG.card ? todosGrupos.find(g => g.chave === uiG.card) : null;
+  if(ov && corpo){ if(gCard){ corpo.innerHTML = htmlCli(gCard, true); ov.classList.add('open'); } else { uiG.card = null; ov.classList.remove('open'); corpo.innerHTML = ''; } }
 }
 function gravarEntradaSt(r, pid, i, o, extra){          // grava as duas trilhas (e a mais avançada em `s`, para compatibilidade), sem campos vazios
   const antigo = entradaSt(r, pid); const entrada = { i, s: o || i, em: new Date().toISOString(), por: quem() }; if(o) entrada.o = o; if(antigo.auto) entrada.auto = antigo.auto; Object.assign(entrada, extra || {});
@@ -28283,7 +28322,7 @@ const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&a
 const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const num = (n) => Number(n) || 0;
 const O = () => window.OBR_API || {};
-const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo', jornalDia: null, jornalAbertos: new Set(), pgAbertas: new Set(['obras']), pgPer: 'semana' };
+const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo', jornalDia: null, jornalAbertos: new Set(), pgAbertas: new Set((typeof window !== 'undefined' && window.innerWidth >= 1100) ? ['obras', 'tecs', 'manut'] : ['obras']), pgPer: 'semana' };
 let obrasPronto = false, osPronto = false;
 
 function dataHoje(){ try{ const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }catch(e){ return ''; } }
@@ -28580,7 +28619,7 @@ function renderGestor(){
   const sEst = area('estoque', 'Estoque', (rep.length || aten.length) ? `${rep.length} em reposição · ${aten.length} no mínimo` : 'Nenhum item abaixo do mínimo', [rep.length ? 'r' : aten.length ? 'a' : 'g'], cEst);
   const cOs = `<div class="pn-kpis">${kpi(pendOS, 'Aguardando cadastro', pendOS ? 'red' : 'gray', 'os', 'prvOsTabAguardando')}${kpi(osPronto ? osSt('decidir') : '…', 'OS a definir', 'amber', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? osSt('aguardando') : '…', 'OS aguardando', 'blue', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? osSt('cobrar') : '…', 'OS cobradas', 'green', 'os', 'prvOsTabDecisao')}</div>${abrir('os', '', 'Abrir Cadastros e OS')}`;
   const sOs = area('os', 'Cadastros e OS', osPronto ? `${pendOS} aguardando cadastro · ${osSt('decidir')} a definir · ${osSt('aguardando')} aguardando` : 'carregando…', [pendOS ? 'a' : 'g'], cOs);
-  box.innerHTML = topo + `<div class="pg">${bEx}${bPulso}<div class="pg-sec-t">Por área</div>${sObras}${sOf}${sMan}${sTec}${sFin}${sEst}${sOs}</div>`;
+  box.innerHTML = topo + `<div class="pg"><div class="pg-col pg-col-a">${bEx}${bPulso}</div><div class="pg-col pg-col-b"><div class="pg-sec-t">Por área</div>${sObras}${sOf}${sMan}${sTec}${sFin}${sEst}${sOs}</div></div>`;
 }
 
 // ---------- PAINEL ALEX ----------
