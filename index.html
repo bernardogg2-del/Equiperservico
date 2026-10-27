@@ -2855,6 +2855,24 @@
   :root[data-theme="dark"] .prv-kpi.tom-neutro{ color:#17181A; }
   :root[data-theme="dark"] .prv-kpi.tom-neutro .prv-kpi-num{ text-shadow:none; }
   :root[data-theme="dark"] .prv-kpi{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.10), var(--f8-sh-1); }
+
+  /* ===== Fase 10 — Estatísticas: blocos novos (barras, tabela, lista) ===== */
+  .painel-f10-sub{ font-size:11.5px; color:var(--text-dim); margin:0 0 6px; line-height:1.4; }
+  .painel-f10-barras{ margin:10px 0 4px; display:grid; gap:6px; }
+  .painel-f10-barra{ display:grid; grid-template-columns:minmax(64px,auto) 1fr auto; gap:8px; align-items:center; font-size:11.5px; }
+  .painel-f10-barra .r{ color:var(--text-dim); white-space:nowrap; } .painel-f10-barra .v{ font-weight:700; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .painel-f10-barra .t{ position:relative; height:9px; border-radius:999px; background:var(--surface-2); overflow:hidden; }
+  .painel-f10-barra .t i, .painel-f10-barra .t em{ position:absolute; left:0; top:0; bottom:0; border-radius:999px; }
+  .painel-f10-barra .t em{ background:rgba(20,20,22,0.14); } .painel-f10-barra .t i{ background:linear-gradient(180deg, var(--f8-acc-a), var(--f8-acc-b)); z-index:1; }
+  .painel-f10-tbl{ width:100%; border-collapse:collapse; margin-top:10px; font-size:12px; }
+  .painel-f10-tbl th{ text-align:left; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-dim); padding:5px 6px; border-bottom:1px solid var(--border); background:var(--surface-2); }
+  .painel-f10-tbl td{ padding:6px 6px; border-bottom:1px dashed var(--border); vertical-align:top; }
+  .painel-f10-tbl th.n, .painel-f10-tbl td.n{ text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .painel-f10-tbl tr:last-child td{ border-bottom:none; }
+  .painel-f10-lista{ margin:10px 0 0; padding-left:18px; font-size:12px; line-height:1.5; color:var(--text); }
+  .painel-f10-lista li{ margin:2px 0; }
+  .painel-block .painel-stat-value{ text-align:right; max-width:60%; }
+  :root[data-theme="dark"] .painel-f10-barra .t em{ background:rgba(255,255,255,0.18); }
 </style>
 </head>
 <body>
@@ -4065,6 +4083,7 @@
       </div>
     </div>
     <div class="backup-bar">
+      <button type="button" class="btn-primary" id="painelPdfBtn">📄 Relatório em PDF</button>
       <button class="btn-ghost" id="exportDataBtn">⤓ Exportar dados</button>
       <button class="btn-ghost" id="importDataBtn">⤒ Importar dados</button>
       <input type="file" id="importDataInput" accept="application/json" style="display:none;">
@@ -4148,6 +4167,76 @@
           <div class="painel-block-desc">Quantidade de atendimentos por cliente no período</div>
         </div>
         <div class="painel-block-body" id="painelBlockClientesLista">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Ritmo semanal</div>
+          <div class="painel-block-desc">Agendadas e concluídas por semana no período</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockRitmo">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Tipos de serviço e duração</div>
+          <div class="painel-block-desc">Quantidade e tempo médio em campo por tipo</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockTipos">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Retornos por técnico</div>
+          <div class="painel-block-desc">Visitas que precisaram de segunda ida</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockQualidade">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Obras: tempo nas etapas</div>
+          <div class="painel-block-desc">Onde os pedidos ficam parados e por quanto tempo</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockObras">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Financeiro: recebimentos</div>
+          <div class="painel-block-desc">Programado × recebido e atraso médio</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockFinanceiro">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">OS: decisões e cobrança</div>
+          <div class="painel-block-desc">Cobrar / não cobrar, motivos e tempo de decisão</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockOS">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Manutenções: carteira</div>
+          <div class="painel-block-desc">Saúde dos contratos e visitas realizadas</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockCarteira">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Oficina: tempo por estágio</div>
+          <div class="painel-block-desc">Quanto tempo o equipamento fica em cada fase</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockOficina">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Estoque: consumo e cobertura</div>
+          <div class="painel-block-desc">Itens mais consumidos e dias de cobertura</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockEstoque">Em breve.</div>
+      </div>
+      <div class="painel-block painel-block-f10">
+        <div class="painel-block-title-row">
+          <div class="painel-block-title">Orçamentos: funil</div>
+          <div class="painel-block-desc">Anotados → feitos → enviados → viraram obra</div>
+        </div>
+        <div class="painel-block-body" id="painelBlockOrcamentos">Em breve.</div>
       </div>
     </div>
     <div id="painelOsRel"></div>
@@ -7584,7 +7673,186 @@ function renderPainelDeControle(){
   renderPainelBlockRetornos();
   renderPainelBlockManutencoes();
   renderPainelBlockClientes();
+  renderPainelEstatisticasExtra();
 }
+
+// ===== Fase 10 — Estatísticas: blocos novos. Cada função devolve {titulo, sub, linhas:[[rótulo, valor]], tabela:{cab, linhas, num},
+// barras:[{rot, v, max, txt}], lista:[texto]} — a tela e o PDF leem a mesma estrutura. Tudo é calculado em cima do que já
+// está em memória (services, OBR_API, OS_API, ORC_API, maintenanceContracts, oficinaEquipamentos, estoque*); nada é gravado.
+const F10 = (() => {
+  const diaDe = (iso) => { if(!iso) return ''; const m = /^(\d{4}-\d{2}-\d{2})/.exec(String(iso)); if(m && String(iso).length === 10) return m[1]; const d = new Date(iso); if(isNaN(d)) return m ? m[1] : ''; return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  const dias = (a, b) => { const da = diaDe(a), db = diaDe(b); if(!da || !db) return null; const x = new Date(+da.slice(0, 4), +da.slice(5, 7) - 1, +da.slice(8, 10)), y = new Date(+db.slice(0, 4), +db.slice(5, 7) - 1, +db.slice(8, 10)); return Math.round((y - x) / 86400000); };
+  const hoje = () => todayStr();
+  const media = (l) => l.length ? l.reduce((a, b) => a + b, 0) / l.length : null;
+  const mediana = (l) => { if(!l.length) return null; const o = l.slice().sort((a, b) => a - b); const m = Math.floor(o.length / 2); return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2; };
+  const r1 = (v) => v == null ? '—' : (Math.round(v * 10) / 10).toLocaleString('pt-BR');
+  const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '—';
+  const dur = (min) => min == null ? '—' : Math.floor(min / 60) + 'h' + String(Math.round(min % 60)).padStart(2, '0');
+  const ddmm = (ymd) => ymd ? ymd.slice(8, 10) + '/' + ymd.slice(5, 7) : '';
+  const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  const per = () => { const r = getDashboardDateRange(); const h = hoje(); const ini = r.startDate < '2000-01-01' ? '2000-01-01' : r.startDate; const fim = r.endDate > h ? h : r.endDate; return { ini, fim, aberto: r.startDate < '2000-01-01', nd: Math.max(1, (dias(ini, fim) || 0) + 1) }; };
+  const dentro = (iso, p) => { const d = diaDe(iso); return !!d && d >= p.ini && d <= p.fim; };
+  const svcs = () => groupPaired(getDashboardServices(getDashboardDateRange().startDate, getDashboardDateRange().endDate));
+  const minutos = (s) => { const a = timeToMinutes(s.checkIn), b = timeToMinutes(s.checkOut); return (a != null && b != null && b >= a) ? b - a : null; };
+  const tipoDe = (s) => s.isRetorno ? 'Retorno' : (s.maintenanceContractId || /preventiva/i.test(s.client || '') || /preventiva/i.test(s.description || '')) ? 'Preventiva' : /instala/i.test(s.description || '') ? 'Instalação' : /vistoria|visita t[eé]cnica|or[cç]amento/i.test(s.description || '') ? 'Vistoria / orçamento' : 'Reparo / outros';
+  const A = () => window.OBR_API || {};
+  const plural = (n, um, mais) => n + ' ' + (n === 1 ? um : mais);
+
+  function ritmo(){
+    const p = per(); const porSem = new Map();
+    svcs().forEach(s => { if(!s.date) return; const k = startOfWeek(s.date); if(!porSem.has(k)) porSem.set(k, { ag: 0, ok: 0 }); const b = porSem.get(k); b.ag++; if(s.status === 'concluido') b.ok++; });
+    const sem = [...porSem.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-12);
+    const tot = sem.reduce((n, [, b]) => n + b.ag, 0), ok = sem.reduce((n, [, b]) => n + b.ok, 0);
+    const melhor = sem.slice().sort((a, b) => b[1].ok - a[1].ok)[0];
+    return { titulo: 'Ritmo semanal', sub: sem.length ? plural(sem.length, 'semana', 'semanas') + ' com atividade no período' : 'Sem atividades no período',
+      linhas: [['Média por semana', sem.length ? r1(tot / sem.length) + ' agendadas · ' + r1(ok / sem.length) + ' concluídas' : '—'], ['Conclusão no período', pct(ok, tot)], ['Melhor semana', melhor ? 'de ' + ddmm(melhor[0]) + ' · ' + melhor[1].ok + ' concluídas' : '—']],
+      barras: sem.map(([k, b]) => ({ rot: 'Sem. ' + ddmm(k), v: b.ok, max: Math.max(...sem.map(x => x[1].ag), 1), v2: b.ag, txt: b.ok + '/' + b.ag })) };
+  }
+  function tipos(){
+    const m = new Map();
+    svcs().forEach(s => { const t = tipoDe(s); if(!m.has(t)) m.set(t, { n: 0, ok: 0, min: [] }); const b = m.get(t); b.n++; if(s.status === 'concluido') b.ok++; const d = minutos(s); if(d != null) b.min.push(d); });
+    const l = [...m.entries()].sort((a, b) => b[1].n - a[1].n);
+    const todas = l.flatMap(([, b]) => b.min);
+    return { titulo: 'Tipos de serviço e duração', sub: 'Duração = início → fim registrados pelo técnico (só atividades com os dois horários)',
+      linhas: [['Duração média geral', dur(media(todas))], ['Mediana', dur(mediana(todas))], ['Atividades com horário completo', todas.length + ' de ' + l.reduce((n, [, b]) => n + b.n, 0)]],
+      tabela: { cab: ['Tipo', 'Ativ.', 'Concl.', 'Duração média'], num: [1, 2, 3], linhas: l.map(([t, b]) => [t, b.n, b.ok, dur(media(b.min))]) } };
+  }
+  function qualidade(){
+    const r = getDashboardDateRange(); const st = getTechnicianDashboardStats(r.startDate, r.endDate);
+    const l = Object.keys(st).filter(k => st[k].atividades).map(k => ({ k, ...st[k], taxa: st[k].atividades ? st[k].retornos / st[k].atividades : 0 })).sort((a, b) => b.taxa - a.taxa || b.atividades - a.atividades);
+    const tot = l.reduce((n, x) => n + x.atividades, 0), ret = l.reduce((n, x) => n + x.retornos, 0);
+    return { titulo: 'Retornos por técnico', sub: 'Retorno = atividade marcada como segunda ida (isRetorno)',
+      linhas: [['Taxa de retorno geral', pct(ret, tot) + (ret ? ' (' + ret + ' de ' + tot + ')' : '')], ['Técnico com mais retornos', l.length && l[0].retornos ? l[0].k + ' · ' + l[0].retornos : '—']],
+      tabela: { cab: ['Técnico', 'Ativ.', 'Retornos', 'Taxa', 'Jornada média'], num: [1, 2, 3, 4], linhas: l.map(x => [x.k, x.atividades, x.retornos, pct(x.retornos, x.atividades), dur(x.averageOperationalMinutes)]) } };
+  }
+  function obras(){
+    const O = A(); if(!O.registros) return { titulo: 'Obras: tempo nas etapas', sub: 'Obras e Pedidos ainda não carregado', linhas: [] };
+    const p = per(); const h = hoje(); const porEt = new Map(); const parados = []; const ciclos = []; let fin = 0, novos = 0;
+    O.registros().forEach(r => { const nome = O.nomeCliente(r); O.pedidosDe(r).filter(x => !x.cancelado).forEach(pd => {
+      const e = (r.statusPedidos || {})[pd.id] || {}; const i = O.internoDe(r, pd.id), o = O.obraDe(r, pd.id);
+      const criado = pd.criadoEm || r.criadoEm; if(criado && dentro(criado, p)) novos++;
+      if(o === 'finalizado'){ if(e.em && dentro(e.em, p)){ fin++; const c = dias(criado, e.em); if(c != null && c >= 0) ciclos.push(c); } return; }
+      const k = (o && o !== 'aguardando_inicio') ? o : i; const desde = e.em || criado; const d = desde ? dias(desde, h) : null;
+      if(!porEt.has(k)) porEt.set(k, []); porEt.get(k).push(d);
+      if(d != null) parados.push({ nome, num: pd.numero, et: O.rotObra(k), d });
+    }); });
+    const ordem = (O.STATUS_OBRA || []).map(x => x[0]);
+    const linhasT = [...porEt.entries()].sort((a, b) => ordem.indexOf(a[0]) - ordem.indexOf(b[0])).map(([k, l]) => { const v = l.filter(x => x != null); return [O.rotObra(k), l.length, r1(media(v)), v.length ? Math.max(...v) : '—']; });
+    parados.sort((a, b) => b.d - a.d);
+    return { titulo: 'Obras: tempo nas etapas', sub: 'Dias na etapa ATUAL (desde a última mudança de andamento) dos pedidos em andamento',
+      linhas: [['Pedidos em andamento', parados.length], ['Novos no período', novos], ['Finalizados no período', fin + (ciclos.length ? ' · ciclo mediano ' + r1(mediana(ciclos)) + ' dias' : '')], ['Parados há mais de 30 dias', parados.filter(x => x.d > 30).length]],
+      tabela: { cab: ['Etapa', 'Pedidos', 'Média (dias)', 'Máx.'], num: [1, 2, 3], linhas: linhasT },
+      lista: parados.slice(0, 6).map(x => x.nome + ' · pedido ' + x.num + ' · ' + x.et + ' · ' + x.d + ' dias') };
+  }
+  function financeiro(){
+    const O = A(); if(!O.registros) return { titulo: 'Financeiro: recebimentos', sub: 'Obras e Pedidos ainda não carregado', linhas: [] };
+    const p = per(); const h = hoje(); let prog = 0, progV = 0, noPrazo = 0, atras = [], atrasV = 0, abertoN = 0, abertoV = 0, recN = 0, recV = 0, avulsoN = 0;
+    O.registros().forEach(r => Object.values(r.parcelas || {}).forEach(pc => { if(!pc) return; const rec = (pc.status || (pc.pago ? 'recebido' : '')) === 'recebido' || !!pc.pagoEm; const v = Number(pc.valor || 0);
+      if(pc.agendadoPara && dentro(pc.agendadoPara, p)){ prog++; progV += v; if(rec && pc.pagoEm){ const d = dias(pc.agendadoPara, pc.pagoEm); if(d != null && d > 0){ atras.push(d); atrasV += v; } else noPrazo++; } else if(!rec && pc.agendadoPara < h){ abertoN++; abertoV += v; } }
+      if(pc.pagoEm && dentro(pc.pagoEm, p)){ recN++; recV += v; if(!pc.agendadoPara) avulsoN++; } }));
+    return { titulo: 'Financeiro: recebimentos', sub: 'Parcelas das obras com data programada no período',
+      linhas: [['Programado no período', prog + ' · ' + brl(progV)], ['Recebido no prazo', noPrazo + ' (' + pct(noPrazo, prog) + ')'], ['Recebido com atraso', atras.length + (atras.length ? ' · atraso médio ' + r1(media(atras)) + ' dias · ' + brl(atrasV) : '')], ['Vencido e em aberto', abertoN + ' · ' + brl(abertoV)], ['Total recebido no período', recN + ' · ' + brl(recV) + (avulsoN ? ' (' + avulsoN + ' sem data programada)' : '')]],
+      barras: [{ rot: 'No prazo', v: noPrazo, max: Math.max(prog, 1) }, { rot: 'Com atraso', v: atras.length, max: Math.max(prog, 1) }, { rot: 'Em aberto', v: abertoN, max: Math.max(prog, 1) }] };
+  }
+  function os(){
+    if(!window.OS_API || !OS_API.todas) return { titulo: 'OS: decisões e cobrança', sub: 'OS ainda não carregadas', linhas: [] };
+    const p = per(); const h = hoje(); const todas = OS_API.todas(); const dec = todas.filter(o => o.decididoEm && dentro(o.decididoEm, p));
+    const cob = dec.filter(o => o.status === 'cobrar'), nao = dec.filter(o => o.status === 'nao_cobrar');
+    const vCob = cob.reduce((n, o) => n + Number((o.fin && o.fin.valor) || 0), 0);
+    const tDec = dec.map(o => dias(o.criadoEm, o.decididoEm)).filter(d => d != null && d >= 0);
+    const motivos = new Map(); nao.forEach(o => { const m = String(o.motivo || 'sem motivo').trim(); motivos.set(m, (motivos.get(m) || 0) + 1); });
+    const aDef = todas.filter(o => o.status === 'decidir'); const idade = aDef.map(o => dias(o.criadoEm, h)).filter(d => d != null);
+    const fin = { a_cobrar: [0, 0], agendado: [0, 0], cobrada: [0, 0], recebida: [0, 0] }; todas.filter(o => o.status === 'cobrar' && o.fin).forEach(o => { const k = o.fin.status; if(fin[k]){ fin[k][0]++; fin[k][1] += Number(o.fin.valor || 0); } });
+    return { titulo: 'OS: decisões e cobrança', sub: 'Decididas no período · situação atual das cobranças',
+      linhas: [['Decididas no período', dec.length + ' · ' + cob.length + ' cobrar (' + brl(vCob) + ') · ' + nao.length + ' não cobrar'], ['Tempo médio até decidir', tDec.length ? r1(media(tDec)) + ' dias' : '—'], ['A definir agora', aDef.length + (idade.length ? ' · a mais antiga há ' + Math.max(...idade) + ' dias' : '')], ['Cobranças: a cobrar / agendadas', fin.a_cobrar[0] + ' (' + brl(fin.a_cobrar[1]) + ') / ' + fin.agendado[0] + ' (' + brl(fin.agendado[1]) + ')'], ['Cobradas, não recebidas', fin.cobrada[0] + ' · ' + brl(fin.cobrada[1])], ['Recebidas', fin.recebida[0] + ' · ' + brl(fin.recebida[1])]],
+      tabela: motivos.size ? { cab: ['Motivo de não cobrar', 'OS'], num: [1], linhas: [...motivos.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6) } : null };
+  }
+  function carteira(){
+    const p = per(); const cs = (typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []).map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, d: daysUntil(prox) }; });
+    const atr = cs.filter(x => x.d < 0), prox = cs.filter(x => x.d >= 0 && x.d <= 15), ok = cs.length - atr.length - prox.length;
+    const vis = svcs().filter(s => s.maintenanceContractId && s.status === 'concluido'); const porTec = new Map(); vis.forEach(s => getGroupedServiceTechnicians(s).forEach(t => { if(t) porTec.set(t, (porTec.get(t) || 0) + 1); }));
+    const semAg = atr.filter(x => !x.c.scheduledFor).length;
+    return { titulo: 'Manutenções: carteira', sub: cs.length + ' contratos · ' + plural(vis.length, 'visita concluída', 'visitas concluídas') + ' no período',
+      linhas: [['Em dia / vencendo em 15 dias / atrasados', ok + ' / ' + prox.length + ' / ' + atr.length], ['Atraso médio dos atrasados', atr.length ? r1(media(atr.map(x => -x.d))) + ' dias (máx. ' + Math.max(...atr.map(x => -x.d)) + ')' : '—'], ['Atrasados sem visita agendada', semAg], ['% da carteira em dia', pct(ok, cs.length)]],
+      barras: [{ rot: 'Em dia', v: ok, max: Math.max(cs.length, 1) }, { rot: 'Vencendo', v: prox.length, max: Math.max(cs.length, 1) }, { rot: 'Atrasados', v: atr.length, max: Math.max(cs.length, 1) }],
+      tabela: porTec.size ? { cab: ['Técnico', 'Visitas preventivas'], num: [1], linhas: [...porTec.entries()].sort((a, b) => b[1] - a[1]) } : null };
+  }
+  function oficina(){
+    const p = per(); const h = hoje(); const eqs = typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : [];
+    const EST = [['withdrawnAt', 'vistoriaStartedAt', 'Espera para vistoria'], ['vistoriaStartedAt', 'vistoriaCompletedAt', 'Vistoria'], ['vistoriaCompletedAt', 'manutencaoStartedAt', 'Espera para manutenção'], ['manutencaoStartedAt', 'manutencaoCompletedAt', 'Manutenção'], ['manutencaoCompletedAt', 'testeStartedAt', 'Espera para teste'], ['testeStartedAt', 'testeCompletedAt', 'Teste'], ['testeCompletedAt', 'reinstaladoAt', 'Espera para reinstalar']];
+    const conc = eqs.filter(e => e.reinstaladoAt && dentro(e.reinstaladoAt, p)); const base = conc.length ? conc : eqs.filter(e => e.reinstaladoAt);
+    const linhasT = EST.map(([a, b, rot]) => { const l = base.map(e => (e[a] && e[b]) ? dias(e[a], e[b]) : null).filter(d => d != null && d >= 0); return [rot, l.length, r1(media(l)), l.length ? Math.max(...l) : '—']; });
+    const total = base.map(e => (e.withdrawnAt && e.reinstaladoAt) ? dias(e.withdrawnAt, e.reinstaladoAt) : null).filter(d => d != null && d >= 0);
+    const abertos = eqs.filter(e => !e.reinstaladoAt && oficinaEquipGrupo(e)).map(e => { const ult = ['testeCompletedAt', 'testeStartedAt', 'manutencaoCompletedAt', 'manutencaoStartedAt', 'vistoriaCompletedAt', 'vistoriaStartedAt', 'withdrawnAt', 'createdAt'].map(k => e[k]).find(Boolean); return { e, d: ult ? dias(ult, h) : null }; }).filter(x => x.d != null).sort((a, b) => b.d - a.d);
+    return { titulo: 'Oficina: tempo por estágio', sub: (conc.length ? plural(conc.length, 'equipamento reinstalado', 'equipamentos reinstalados') + ' no período' : 'Sem reinstalação no período; médias de todo o histórico') ,
+      linhas: [['Ciclo total médio (retirada → reinstalação)', total.length ? r1(media(total)) + ' dias (mediana ' + r1(mediana(total)) + ')' : '—'], ['Na oficina agora', abertos.length + (abertos.length ? ' · o mais antigo há ' + abertos[0].d + ' dias' : '')], ['Parados há mais de 15 dias no estágio', abertos.filter(x => x.d > 15).length]],
+      tabela: { cab: ['Estágio', 'Equip.', 'Média (dias)', 'Máx.'], num: [1, 2, 3], linhas: linhasT },
+      lista: abertos.slice(0, 5).map(x => (x.e.client || '') + ' — ' + (x.e.equipment || '') + ' · ' + (OE_GRUPO_LABEL[oficinaEquipGrupo(x.e)] || '') + ' · ' + x.d + ' dias') };
+  }
+  function estoque(){
+    const p = per(); const itens = typeof estoqueItens !== 'undefined' ? estoqueItens : []; const cons = new Map(); const porTec = new Map();
+    (typeof estoqueMovimentacoes !== 'undefined' ? estoqueMovimentacoes : []).forEach(m => { if(m && m.type === 'saida' && dentro(m.createdAt, p)) cons.set(m.estoqueItemId, (cons.get(m.estoqueItemId) || 0) + Number(m.quantity || 0)); });
+    const rets = (typeof estoqueRetiradasStore !== 'undefined' && estoqueRetiradasStore.items) ? estoqueRetiradasStore.items.filter(r => r && dentro(r.createdAt, p)) : [];
+    rets.forEach(r => { (r.items || []).forEach(i => cons.set(i.estoqueItemId, (cons.get(i.estoqueItemId) || 0) + Number(i.quantity || 0))); const t = r.technician || '—'; porTec.set(t, (porTec.get(t) || 0) + 1); });
+    const nd = p.aberto ? Math.max(p.nd, 30) : p.nd;
+    const l = [...cons.entries()].map(([id, q]) => { const it = itens.find(x => String(x.id) === String(id)); if(!it || !q) return null; const porDia = q / nd; const cob = porDia > 0 ? Number(it.quantity || 0) / porDia : null; return { nome: it.name, un: it.unit || '', q, cob, min: Number(it.minimumQuantity || 0), qt: Number(it.quantity || 0) }; }).filter(Boolean).sort((a, b) => b.q - a.q);
+    const risco = l.filter(x => x.cob != null && x.cob < 15).sort((a, b) => a.cob - b.cob);
+    return { titulo: 'Estoque: consumo e cobertura', sub: 'Consumo = saídas + retiradas no período (' + nd + ' dias) · cobertura = quantidade atual ÷ consumo por dia',
+      linhas: [['Itens com consumo', l.length], ['Retiradas registradas', rets.length + (porTec.size ? ' · ' + [...porTec.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t, q]) => t + ' ' + q).join(', ') : '')], ['Itens que acabam em menos de 15 dias', risco.length]],
+      tabela: l.length ? { cab: ['Item', 'Consumo', 'Em estoque', 'Cobertura'], num: [1, 2, 3], linhas: l.slice(0, 8).map(x => [x.nome, x.q + ' ' + x.un, x.qt + ' ' + x.un, x.cob == null ? '—' : x.cob > 999 ? '> 999 d' : r1(x.cob) + ' d']) } : null,
+      lista: risco.slice(0, 5).map(x => x.nome + ' · acaba em ' + r1(x.cob) + ' dias' + (x.qt < x.min ? ' · já abaixo do mínimo' : '')) };
+  }
+  function orcamentos(){
+    if(!window.ORC_API || !ORC_API.itens) return { titulo: 'Orçamentos: funil', sub: 'Orçamentos ainda não carregados', linhas: [] };
+    const p = per(); const h = hoje(); const O = A(); const todos = ORC_API.itens();
+    const cri = todos.filter(o => dentro(o.criadoEm, p)), fei = todos.filter(o => dentro(o.feitoEm, p)), env = todos.filter(o => dentro(o.enviadoEm, p));
+    const tEnv = env.map(o => dias(o.criadoEm, o.enviadoEm)).filter(d => d != null && d >= 0);
+    const regs = O.registros ? O.registros() : []; const conv = env.filter(o => regs.some(r => fold(O.nomeCliente(r)) === fold(o.cliente) && (!r.criadoEm || !o.enviadoEm || diaDe(r.criadoEm) >= diaDe(o.enviadoEm)))).length;
+    const abertos = todos.filter(o => o.status === 'aberto' || (!o.enviadoEm && o.status !== 'cancelado' && o.status !== 'perdido')); const atras = abertos.filter(o => o.dataLimite && o.dataLimite < h);
+    return { titulo: 'Orçamentos: funil', sub: 'Pelo que foi anotado, feito e enviado no período',
+      linhas: [['Anotados → feitos → enviados', cri.length + ' → ' + fei.length + ' → ' + env.length], ['Tempo médio anotado → enviado', tEnv.length ? r1(media(tEnv)) + ' dias' : '—'], ['Enviados que viraram obra', conv + ' (' + pct(conv, env.length) + ')'], ['Em aberto agora / atrasados', abertos.length + ' / ' + atras.length]],
+      barras: [{ rot: 'Anotados', v: cri.length, max: Math.max(cri.length, 1) }, { rot: 'Feitos', v: fei.length, max: Math.max(cri.length, 1) }, { rot: 'Enviados', v: env.length, max: Math.max(cri.length, 1) }, { rot: 'Viraram obra', v: conv, max: Math.max(cri.length, 1) }] };
+  }
+  const SECOES = [['Ritmo', ritmo], ['Tipos', tipos], ['Qualidade', qualidade], ['Obras', obras], ['Financeiro', financeiro], ['OS', os], ['Carteira', carteira], ['Oficina', oficina], ['Estoque', estoque], ['Orcamentos', orcamentos]];
+  function calcular(){ return SECOES.map(([k, f]) => { try{ return Object.assign({ k }, f()); }catch(e){ console.error('Estatísticas: bloco ' + k, e); return { k, titulo: k, sub: 'Não foi possível calcular este bloco.', linhas: [] }; } }); }
+  function html(sec){
+    const esc = escapeHtml; let h = '';
+    if(sec.sub) h += `<div class="painel-f10-sub">${esc(sec.sub)}</div>`;
+    (sec.linhas || []).forEach(([k, v]) => { h += `<div class="painel-stat-row"><div class="painel-stat-label">${esc(k)}</div><div class="painel-stat-value">${esc(String(v))}</div></div>`; });
+    if(sec.barras && sec.barras.length) h += `<div class="painel-f10-barras">${sec.barras.map(b => `<div class="painel-f10-barra"><span class="r">${esc(b.rot)}</span><span class="t"><i style="width:${Math.round(Math.min(1, b.v / (b.max || 1)) * 100)}%"></i>${b.v2 != null ? `<em style="width:${Math.round(Math.min(1, b.v2 / (b.max || 1)) * 100)}%"></em>` : ''}</span><span class="v">${esc(b.txt != null ? b.txt : String(b.v))}</span></div>`).join('')}</div>`;
+    if(sec.tabela && sec.tabela.linhas.length) h += `<table class="painel-f10-tbl"><thead><tr>${sec.tabela.cab.map((c, i) => `<th class="${(sec.tabela.num || []).includes(i) ? 'n' : ''}">${esc(c)}</th>`).join('')}</tr></thead><tbody>${sec.tabela.linhas.map(l => `<tr>${l.map((c, i) => `<td class="${(sec.tabela.num || []).includes(i) ? 'n' : ''}">${esc(String(c))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+    if(sec.lista && sec.lista.length) h += `<ul class="painel-f10-lista">${sec.lista.map(t => `<li>${esc(t)}</li>`).join('')}</ul>`;
+    if(!h) h = '<div class="painel-block-empty">Sem dados no período.</div>';
+    return h;
+  }
+  return { calcular, html };
+})();
+let F10_ULTIMO = [];
+function renderPainelEstatisticasExtra(){
+  F10_ULTIMO = F10.calcular();
+  F10_ULTIMO.forEach(sec => { const box = document.getElementById('painelBlock' + sec.k); if(box) box.innerHTML = F10.html(sec); });
+}
+// Relatório em PDF do que está na tela (período atual): blocos antigos + os novos, pelo mesmo módulo dos outros PDFs.
+async function gerarPdfEstatisticasTela(btn){
+  if(!window.PREV_API || !PREV_API.gerarPdfEstatisticas){ alert('O gerador de PDF não está disponível agora.'); return; }
+  const rot = btn ? btn.textContent : ''; if(btn){ btn.disabled = true; btn.textContent = 'Gerando PDF…'; }
+  try{
+    const r = getDashboardDateRange(); const op = computeOperationSummary(r.startDate, r.endDate); const ex = computeExecutionSummary(r.startDate, r.endDate); const ho = getScheduleStats(getDashboardServices(r.startDate, r.endDate)); const re = computeRetornosSummary(r.startDate, r.endDate); const ma = computeManutencoesSummary(r.startDate, r.endDate); const cl = computeClientesSummary(r.startDate, r.endDate); const tec = getTechnicianDashboardStats(r.startDate, r.endDate);
+    const basicos = [
+      { titulo: 'Resumo da operação', linhas: [['Total de atividades', op.total], ['Concluídas', op.concluidas], ['Em andamento', op.emAndamento], ['Não concluídas', op.naoConcluidas], ['Retornos', op.retornos], ['Taxa de conclusão', ex.taxaConclusao + '%']] },
+      { titulo: 'Métricas por técnico', tabela: { cab: ['Técnico', 'Ativ.', 'Concl.', 'Pend.', 'Ret.', '1º início', 'Últ. concl.', 'Jornada'], num: [1, 2, 3, 4], linhas: TECHS.map(t => { const s = tec[t.name] || {}; return [t.name, s.atividades || 0, s.concluidas || 0, s.pendentes || 0, s.retornos || 0, s.firstCheckIn || '—', s.lastCheckOut || '—', formatDurationLabel(s.averageOperationalMinutes)]; }) } },
+      { titulo: 'Execução e horários', linhas: [['Com check-in / check-out', ex.comCheckIn + ' / ' + ex.comCheckOut], ['Sem execução', ex.semExecucao], ['Concluídas sem check-in / sem check-out', ex.concluidasSemCheckIn + ' / ' + ex.concluidasSemCheckOut], ['Primeiro check-in / último check-out', (ho.firstCheckIn || '—') + ' / ' + (ho.lastCheckOut || '—')], ['Primeira atividade / última conclusão (médias)', (ho.averageFirstCheckIn || '—') + ' / ' + (ho.averageLastCheckOut || '—')], ['Período operacional médio', formatDurationLabel(ho.averageOperationalMinutes)]] },
+      { titulo: 'Retornos e manutenções', linhas: [['Retornos: total / concluídos / pendentes', re.total + ' / ' + re.concluidos + ' / ' + re.pendentes], ['Contratos de manutenção', ma.totalContratos + ' (' + ma.comAgendamento + ' com visita agendada)'], ['Visitas preventivas no período', ma.totalVisitas + ' · ' + ma.concluidas + ' concluídas']] },
+      { titulo: 'Clientes', linhas: [['Clientes cadastrados', cl.totalCadastrados], ['Clientes atendidos no período', cl.totalAtendidos != null ? cl.totalAtendidos : (cl.atividadesPorCliente || []).length]], tabela: (cl.atividadesPorCliente || []).length ? { cab: ['Cliente', 'Atividades'], num: [1], linhas: cl.atividadesPorCliente.slice(0, 25).map(x => [x.label, x.count]) } : null },
+    ];
+    const secoes = basicos.concat(F10_ULTIMO.length ? F10_ULTIMO : F10.calcular());
+    const blob = await PREV_API.gerarPdfEstatisticas({ periodo: painelPeriodLabel(), geradoEm: new Date().toLocaleString('pt-BR'), secoes });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Estatisticas-Equiper-' + todayStr() + '.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }catch(e){ console.error(e); alert('Não foi possível gerar o PDF: ' + (e && e.message ? e.message : e)); }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = rot; } }
+}
+document.getElementById('painelPdfBtn').addEventListener('click', (e) => gerarPdfEstatisticasTela(e.currentTarget));
 
 function setDashboardPeriod(period){
   dashboardPeriod = period;
@@ -24047,6 +24315,62 @@ function gerarPdfAtividade(dados){
   return new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
 }
 
+// Fase 10: PDF das Estatísticas — mesmo desenho dos outros relatórios (logo, faixa vermelha, cartões com barra, rodapé paginado).
+// dados = { periodo, geradoEm, secoes: [{ titulo, sub, linhas:[[k, v]], tabela:{cab, linhas, num}, barras:[{rot, v, max, txt}], lista:[t] }] }
+function gerarPdfEstatisticas(dados){
+  const J = carregarJsPdf(); const doc = new J({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+  doc.addFileToVFS('LibSans.ttf', FONTE_SANS); doc.addFont('LibSans.ttf', 'LibSans', 'normal');
+  doc.addFileToVFS('LibSansB.ttf', FONTE_SANS_B); doc.addFont('LibSansB.ttf', 'LibSans', 'bold');
+  doc.addFileToVFS('LibSerifB.ttf', FONTE_SERIF_B); doc.addFont('LibSerifB.ttf', 'LibSerif', 'bold');
+  const PW = 210, PH = 297, M = 12, W = PW - 2 * M, LIM = PH - 17; const C = PDF_COR; let y = 12;
+  const setF = (f, tam, cor) => { doc.setFont(f === 'serifB' ? 'LibSerif' : 'LibSans', f === 'sans' ? 'normal' : 'bold'); doc.setFontSize(tam); doc.setTextColor(cor || C.texto); };
+  const txt = (t, x, yy, op) => doc.text(limparPdf(String(t == null ? '' : t)), x, yy, op);
+  function novaPagina(){ doc.addPage(); setF('sans', 7.5, C.dim); txt('Equiper · Estatísticas — ' + (dados.periodo || ''), M, 10.5); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, 12.3, PW - M, 12.3); y = 17.5; }
+  function cartao(itens, est){
+    let seg = [], topo = y, jaColocou = false;
+    const fechar = () => { if(!seg.length) return; const ult = seg[seg.length - 1]; const base = ult.y + ult.h + (est.padB || 0);
+      doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(M, topo, W, base - topo, 2.2, 2.2, 'FD');
+      seg.forEach(it => it.draw(it.y));
+      if(est.barra){ doc.setFillColor(est.barra); doc.roundedRect(M, topo, 1.7, base - topo, 0.8, 0.8, 'F'); }
+      doc.setDrawColor(C.linha); doc.setLineWidth(0.25); doc.roundedRect(M, topo, W, base - topo, 2.2, 2.2, 'S'); y = base; seg = []; };
+    for(let i = 0; i < itens.length; i++){ const it = itens[i], prox = itens[i + 1]; const precisa = it.h + (it.keep && prox ? prox.h : 0);
+      if(y + precisa > LIM && (seg.length || y > 40)){ fechar(); novaPagina(); topo = y; if(jaColocou && est.continuacao){ seg.push({ h: 7, y, draw: (yy) => { setF('sans', 7.6, C.dim); txt(est.continuacao, M + 5, yy + 4.8); } }); y += 7; } }
+      it.y = y; seg.push(it); y += it.h; jaColocou = true; }
+    fechar(); y += 4;
+  }
+  // cabeçalho
+  const lh = 17, lw = lh * 1.093;
+  try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 3.6, { align: 'right' }); doc.setCharSpace(0);
+  setF('serifB', 21, C.ink); txt('Estatísticas', PW - M, y + 11.4, { align: 'right' }); setF('sans', 8, C.dim); txt('Equiper Serviços', PW - M, y + 16, { align: 'right' });
+  y += lh + 3.2; doc.setFillColor(C.red); doc.rect(M, y, W, 0.9, 'F'); y += 5.5;
+  // faixa do período
+  doc.setFillColor(C.cinzaInfo); doc.setDrawColor(C.linha); doc.roundedRect(M, y, W, 12, 2.5, 2.5, 'FD'); doc.setFillColor(C.red); doc.roundedRect(M, y, 1.7, 12, 0.8, 0.8, 'F');
+  setF('sansB', 6.4, C.dim); doc.setCharSpace(0.35); txt('PERÍODO', M + 4.2, y + 4.4); txt('GERADO EM', M + W * 0.55, y + 4.4); doc.setCharSpace(0);
+  setF('sansB', 10.5, C.texto); txt(dados.periodo || '—', M + 4.2, y + 9.6); txt(dados.geradoEm || '', M + W * 0.55, y + 9.6); y += 17;
+  const X2 = M + W - 5;
+  (dados.secoes || []).forEach((sec, idx) => {
+    const itens = [{ h: 9.5, keep: true, draw: (yy) => { setF('sansB', 11, C.ink); txt(sec.titulo || '', M + 6, yy + 6.4); } }];
+    if(sec.sub){ setF('sans', 8, C.dim); doc.splitTextToSize(limparPdf(sec.sub), W - 12).forEach(t2 => itens.push({ h: 4.2, draw: (yy) => { setF('sans', 8, C.dim); txt(t2, M + 6, yy + 3); } })); itens.push({ h: 1.5, draw: () => {} }); }
+    (sec.linhas || []).forEach(([k, v]) => { const vv = String(v == null ? '' : v); setF('sansB', 9.2, C.texto); const vw = doc.getTextWidth(limparPdf(vv)); const kw = W - 12 - Math.min(vw, W * 0.55) - 4; setF('sans', 9.2, C.texto); const kl = doc.splitTextToSize(limparPdf(String(k)), kw); const vl = doc.splitTextToSize(limparPdf(vv), W * 0.55); const nl = Math.max(kl.length, vl.length);
+      itens.push({ h: 4.9 * nl + 1.6, draw: (yy) => { setF('sans', 9.2, C.texto); kl.forEach((t2, i) => txt(t2, M + 6, yy + 3.6 + i * 4.9)); setF('sansB', 9.2, C.texto); vl.forEach((t2, i) => txt(t2, X2, yy + 3.6 + i * 4.9, { align: 'right' })); doc.setDrawColor(C.linha2); doc.setLineWidth(0.2); doc.line(M + 6, yy + 4.9 * nl + 1.2, X2, yy + 4.9 * nl + 1.2); } }); });
+    if(sec.barras && sec.barras.length){ itens.push({ h: 2, draw: () => {} }); const bw = W - 12 - 34 - 16;
+      sec.barras.forEach(b => { const f = Math.min(1, (b.v || 0) / (b.max || 1)), f2 = b.v2 != null ? Math.min(1, b.v2 / (b.max || 1)) : null;
+        itens.push({ h: 6.2, draw: (yy) => { setF('sans', 8, C.texto); txt(b.rot, M + 6, yy + 3.8); const x0 = M + 6 + 34; doc.setFillColor(C.linha2); doc.roundedRect(x0, yy + 1.1, bw, 3.4, 1, 1, 'F'); if(f2 != null){ doc.setFillColor('#C9CBD0'); doc.roundedRect(x0, yy + 1.1, Math.max(bw * f2, 0.5), 3.4, 1, 1, 'F'); } doc.setFillColor(C.red); doc.roundedRect(x0, yy + 1.1, Math.max(bw * f, 0.5), 3.4, 1, 1, 'F'); setF('sansB', 8, C.texto); txt(b.txt != null ? b.txt : String(b.v), X2, yy + 3.8, { align: 'right' }); } }); }); }
+    if(sec.tabela && sec.tabela.linhas && sec.tabela.linhas.length){ const T = sec.tabela; const nc = T.cab.length; const tw = W - 12; const w0 = nc > 1 ? tw * (nc > 4 ? 0.3 : 0.42) : tw; const wk = nc > 1 ? (tw - w0) / (nc - 1) : 0; const xs = T.cab.map((_, i) => M + 6 + (i === 0 ? 0 : w0 + (i - 1) * wk)); const num = T.num || [];
+      itens.push({ h: 2, draw: () => {} });
+      itens.push({ h: 6.5, keep: true, draw: (yy) => { doc.setFillColor(C.cinzaInfo); doc.rect(M + 6, yy, tw, 6, 'F'); setF('sansB', 7.2, C.dim); T.cab.forEach((c, i) => { const num_ = num.includes(i); txt(c, num_ ? xs[i] + (i === 0 ? w0 : wk) - 2 : xs[i] + 2, yy + 4.1, num_ ? { align: 'right' } : undefined); }); } });
+      T.linhas.forEach((l, ri) => { setF('sans', 8.4, C.texto); const cel = l.map((c, i) => doc.splitTextToSize(limparPdf(String(c == null ? '' : c)), (i === 0 ? w0 : wk) - 4)); const nl = Math.max(...cel.map(x => x.length), 1);
+        itens.push({ h: 4.6 * nl + 1.4, draw: (yy) => { if(ri % 2) { doc.setFillColor('#FAFAFB'); doc.rect(M + 6, yy, tw, 4.6 * nl + 1.4, 'F'); } setF('sans', 8.4, C.texto); cel.forEach((ls, i) => { const num_ = num.includes(i); ls.forEach((t2, li) => txt(t2, num_ ? xs[i] + (i === 0 ? w0 : wk) - 2 : xs[i] + 2, yy + 3.5 + li * 4.6, num_ ? { align: 'right' } : undefined)); }); doc.setDrawColor(C.linha2); doc.setLineWidth(0.2); doc.line(M + 6, yy + 4.6 * nl + 1.4, M + 6 + tw, yy + 4.6 * nl + 1.4); } }); }); }
+    if(sec.lista && sec.lista.length){ itens.push({ h: 2, draw: () => {} }); sec.lista.forEach(t => { setF('sans', 8.4, C.texto); const ls = doc.splitTextToSize(limparPdf('• ' + t), W - 14); itens.push({ h: 4.4 * ls.length + 0.6, draw: (yy) => { setF('sans', 8.4, C.texto); ls.forEach((t2, i) => txt(t2, M + 7, yy + 3.3 + i * 4.4)); } }); }); }
+    if(itens.length === 1) itens.push({ h: 6, draw: (yy) => { setF('sans', 8.4, C.dim); txt('Sem dados no período.', M + 6, yy + 3.5); } });
+    cartao(itens, { barra: idx < 5 ? C.ink : C.red, padB: 3.5, continuacao: (sec.titulo || '') + ' (continuação)' });
+  });
+  const total = doc.getNumberOfPages();
+  for(let pg = 1; pg <= total; pg++){ doc.setPage(pg); doc.setDrawColor(C.linha); doc.setLineWidth(0.3); doc.line(M, PH - 12.5, PW - M, PH - 12.5); setF('sans', 7.5, C.dim); txt('Relatório gerado pelo Equiper Serviços · uso interno', M, PH - 8.6); txt('Página ' + pg + ' de ' + total, PW - M, PH - 8.6, { align: 'right' }); }
+  return new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
+}
+
 window.PREV_API = { origemAtividade, fotosDoRelatorioTeste: fotosDoRelatorio, /* Fase 6: inspeção em testes */
   montarSlot,
   gerarRelatorioAoConcluir,
@@ -24055,7 +24379,7 @@ window.PREV_API = { origemAtividade, fotosDoRelatorioTeste: fotosDoRelatorio, /*
   flush,
   gerarPdfRelatorio,
   pendenciasRelatorio,
-  gerarPdfInstalacao, gerarPdfContratoManut, gerarPdfCapaManual, gerarPdfAtividade, /* Fase 7 */
+  gerarPdfInstalacao, gerarPdfContratoManut, gerarPdfCapaManual, gerarPdfAtividade, /* Fase 7 */ gerarPdfEstatisticas, /* Fase 10 */
   relatorioDoRascunho,
   estruturaDaUnidade,
   garantirRascunho,
