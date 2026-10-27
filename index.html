@@ -312,6 +312,7 @@
   /* align-items: start faz cada card manter sua própria altura, sem esticar pelo vizinho mais
      alto na mesma linha da grade (ex: Resumo da operação x Métricas por técnico). */
   .painel-blocks{ display:grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  @media (min-width:1500px){ #tabPainel .painel-blocks{ grid-template-columns: 1fr 1fr 1fr; } }   /* Fase 16: Estatísticas em 3 colunas no monitor largo */
   @media (max-width: 700px){ .painel-blocks{ grid-template-columns: 1fr; gap:14px; } }
   @media (min-width: 1280px){ .painel-blocks{ grid-template-columns: 1fr 1fr 1fr; } }
   /* O bloco de Resumo e o de Atividades por cliente continuam ocupando a largura toda mesmo na
@@ -2443,7 +2444,7 @@
   .obrg-card-bar .btn-ghost{ color:var(--text); }
   .obrg-card-modal .obrg-cliente{ margin:0; box-shadow:0 18px 50px rgba(0,0,0,.35); }
   .obrg-card-modal .obrg-resumo{ cursor:default; } .obrg-card-modal .obrg-resumo:hover{ background:transparent; }
-  .obrg-card-ov{ padding:12px; }
+  .obrg-card-ov{ padding:12px; overscroll-behavior:contain; } .obrg-card-modal{ overscroll-behavior:contain; }   /* Fase 15: a rolagem do cartão não passa para o fundo */
   /* Fase 11: rodapé "Equipe de campo" (fichas dos técnicos + legenda) deixa de aparecer em todas as abas (pedido do Bernardo, 27/10) */
   .footer{ display:none !important; }
   /* Fase 11: no PC a linha do cliente não quebra — o anel de % fica sempre na mesma posição, à direita */
@@ -2805,6 +2806,9 @@
   @media (min-width:1100px){
     .page:has(> .app-shell > #appSidebar), .page:has(> .app-shell > #finSidebar){ max-width:none; padding:24px 28px 0; }
     #tabPGestor.pn-tab, #tabPAlex.pn-tab, #finPainelView.pn-tab, .pg{ max-width:none; }
+    /* Fase 16: dentro do Gestor, as telas montadas no painel estreito (Oficina, Galeria, Estoque, Orçamentos, Quadros…) usam a largura toda */
+    #managerView .app-content .tech-day-panel{ max-width:none; margin:0; padding-left:0; padding-right:0; }
+    #managerView .app-content .tech-day-panel .tech-day-panel{ padding:0; }
     .pg-col-a{ display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,0.42fr); gap:0 16px; align-items:stretch; }
     .pg-col-a > .pg-sec-t, .pg-col-a > .pg-ex{ grid-column:1 / -1; }
     .pg-ex{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:10px; background:none; border:0; box-shadow:none; border-radius:0; overflow:visible; }
@@ -26853,6 +26857,7 @@ function montarGestor(){
     const ss = e.target.closest('[data-obrg-sis]'); if(ss){ const k = ss.dataset.obrgSis; if(k === 'novo') abrirSistema(null); else if(k === 'importar') importarDaPreventiva(); else if(k === 'abrir') abrirSistema(ss.dataset.id); }
   });
   v.addEventListener('click', cliqueEquip);
+  const ovCard = document.getElementById('obrgCardOv'); if(ovCard) ovCard.addEventListener('wheel', (e) => { const m = ovCard.querySelector('.obrg-card-modal'); if(!m || !m.contains(e.target) || m.scrollHeight <= m.clientHeight + 1) e.preventDefault(); }, { passive: false });   // Fase 15
   const sb = document.getElementById('obrgSisBusca'); sb.addEventListener('input', () => { uiG.sisBusca = sb.value; renderSistemas(); }); sb.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ sb.value = ''; uiG.sisBusca = ''; renderSistemas(); } });
   v.addEventListener('keydown', (e) => { if(e.key === 'Escape' && uiG.card && !(e.target.matches && e.target.matches('input, select, textarea'))){ uiG.card = null; renderGestor(); } });
   v.addEventListener('keydown', (e) => { if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-sis')){ e.preventDefault(); abrirSistema(e.target.dataset.id); } else if((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('.obrg-resumo, .obrg-pc')){ e.preventDefault(); e.target.click(); } });
@@ -26919,7 +26924,7 @@ function renderGestor(){
     const todos = g.itens.flatMap(({ r }) => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const completo = todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado');
     const prinG = todos.length ? andamentoPrincipal(todos) : null;          // o MESMO andamento principal mostrado no cartão (o que segura a obra)
-    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes' || prinG === 'parcial') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_entrega' ? 3 : prinG === 'liberado_inicio' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;
+    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes' || prinG === 'parcial') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_inicio' ? 3 : prinG === 'liberado_entrega' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;   // Fase 15: liberados para iniciar antes dos liberados para entrega
     g.rankPrin = g.grp === 5 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
     g.docsPend = g.grp === 'f' && (!cmEnviado(g.itens.map(x => x.r)) || !manEnviado(g.itens.map(x => x.r)));   // revisão 8: finalizada, mas falta contrato de manutenção ou manual de operação
   });
@@ -26936,7 +26941,7 @@ function renderGestor(){
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  const TIT_GRP = { 1: 'Obra em andamento · iniciado / entregue parcialmente / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para entrega', 4: 'Liberados para iniciar', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
+  const TIT_GRP = { 1: 'Obra em andamento · iniciado / entregue parcialmente / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para iniciar', 4: 'Liberados para entrega', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
   let grpAnt = null;
   const cabGrp = (g) => { if(uiG.sub !== 'andamento' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
   const htmlCli = (g_, aberto) => { const { chave, nome, itens } = g_; const cab = aberto ? '' : cabGrp(g_);
