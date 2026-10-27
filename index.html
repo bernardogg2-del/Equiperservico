@@ -2628,10 +2628,11 @@
   @keyframes f8pulse{ 0%,100%{ opacity: 0.45; } 50%{ opacity: 1; } }
   /* A caixa "Conectado como" já reserva o lugar enquanto carrega (fica invisível, não ausente) */
   #loginContaInfo[style*="display:none"]{ display: flex !important; visibility: hidden; }
-  .login-conta-info{ width: 100%; max-width: 360px; box-sizing: border-box; }
+  .login-conta-info{ width: 100%; max-width: 360px; box-sizing: border-box; min-height: 68px; }   /* Fase 14: mesma altura vazia e preenchida */
   .role-card{ box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-1); border-color: var(--f8-edge); transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s; }
   .role-card:hover{ border-color: rgba(20,20,22,0.30); transform: translateY(-1px); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-2); }
-  .role-grid.disabled .role-card{ transform: none; box-shadow: none; }
+  .role-grid.disabled .role-card{ transform: none; opacity: 1; cursor: progress; }   /* Fase 14: mesmo visual carregando e carregado */
+  .role-grid.disabled .role-card:hover{ transform: none; border-color: var(--f8-edge); box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), var(--f8-sh-1); }
   /* Chip da dupla: menos "rosa", mais firme */
   .pair-label{ background: #FFFFFF; border: 1px solid rgba(217,26,34,0.35); color: var(--accent-dark); box-shadow: var(--f8-sh-1); }
   :root[data-theme="dark"] .pair-label{ background: rgba(240,68,76,0.10); color: #FF8A80; }
@@ -9304,6 +9305,7 @@ function galeriaVisibleClients(){
   if(currentRole === 'manager'){
     clients.forEach(c => { if(c.name) names.add(c.name); });
   } else if(currentRole === 'tech'){
+    clients.forEach(c => { if(c.name) names.add(c.name); });   // Fase 14: todos os clientes do cadastro (regras v4 liberam a leitura ao Técnico)
     services.forEach(s => { if(s.client && getServiceTechnicians(s).includes(currentTechName)) names.add(s.client); });
   } else if(currentRole === 'financeiro'){
     financeiroOSServices().forEach(s => { if(s.client) names.add(s.client); });
@@ -15571,6 +15573,7 @@ function logout(){
   currentUserId = null; // Etapa 3
   if(galeriaNoGestor){ galeriaFecharNoGestor(); galeriaPrecisaRestaurarAba = true; } // saiu de dentro da Galeria do gestor
   galeriaMoverParaOrigem();
+  { const g = document.getElementById('galeriaView'); g.style.display = 'none'; g.classList.remove('galeria-embutida'); galeriaReturnViewId = null; galeriaNoGestor = false; }   // Fase 14: a Galeria embutida do Técnico ficava visível por cima do próximo perfil
   document.getElementById('managerView').style.display = 'none';
   document.getElementById('techView').style.display = 'none';
   document.getElementById('financeiroView').style.display = 'none';
@@ -19325,6 +19328,7 @@ async function galeriaAbrirEmbutida(mount){
   if(g.parentNode !== mount) mount.appendChild(g);
   g.classList.remove('galeria-no-gestor'); g.classList.add('galeria-embutida');
   galeriaReturnViewId = null; galeriaNoGestor = false; g.style.display = '';
+  if(currentRole === 'tech'){ try{ await ensureClientsLoaded(); }catch(e){ console.warn('galeria: cadastro de clientes indisponível para este perfil', e); } }   // Fase 14
   galeriaSelectedClient = null; galeriaClientSearch = ''; document.getElementById('galeriaClientSearchInput').value = '';
   const box = document.getElementById('galeriaClientList');
   if(!nodeLoaded.galleryPhotos && box) box.innerHTML = '<div class="empty-state">Carregando fotos da galeria...</div>';
