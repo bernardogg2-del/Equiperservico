@@ -2770,6 +2770,91 @@
   :root[data-theme="dark"] .tabs, :root[data-theme="dark"] .painel-period-row{ background: rgba(255,255,255,0.05); box-shadow: inset 0 1px 2px rgba(0,0,0,0.5); }
   :root[data-theme="dark"] .status-tag, :root[data-theme="dark"] .mini-tag{ box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 1px 2px rgba(0,0,0,0.45); }
   :root[data-theme="dark"] .btn-whatsapp{ background: linear-gradient(180deg, #2BC866 0%, #189E4C 100%); border-color: #11733A; color: #04210F !important; }
+
+  /* ===== Fase 9 — Painel do Gestor em três camadas ===== */
+  .pg{ max-width:680px; }
+  .pg-sec-t{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); margin:18px 0 8px; display:flex; align-items:center; gap:8px; }
+  .pg-sec-t:first-child{ margin-top:4px; }
+  .pg-sec-t .n{ background:var(--f8-st-wait); color:#fff; border-radius:999px; font-size:10.5px; padding:1px 7px; letter-spacing:0; }
+  .pg-carregando{ font-weight:600; text-transform:none; letter-spacing:0; opacity:.7; }
+  .pg-ex{ background:var(--surface); border:1px solid var(--f8-edge); border-radius:14px; box-shadow:var(--f8-sh-1); overflow:hidden; }
+  .pg-ex-i{ display:flex; align-items:center; gap:12px; width:100%; padding:11px 12px 11px 0; border:0; border-bottom:1px solid var(--border); background:transparent; font:inherit; color:var(--text); text-align:left; cursor:pointer; }
+  .pg-ex-i:last-child{ border-bottom:none; }
+  .pg-ex-i:hover{ background:var(--surface-2); }
+  .pg-ex-b{ width:4px; align-self:stretch; border-radius:0 3px 3px 0; background:var(--f8-st-wait); flex-shrink:0; }
+  .pg-ex-red .pg-ex-b{ background:#D91A22; } .pg-ex-amber .pg-ex-b{ background:#E3A400; }
+  .pg-ex-q{ font-size:20px; font-weight:800; min-width:30px; text-align:center; font-variant-numeric:tabular-nums; }
+  .pg-ex-red .pg-ex-q{ color:#D91A22; } .pg-ex-amber .pg-ex-q{ color:#B07A00; }
+  .pg-ex-t{ flex:1; min-width:0; } .pg-ex-t b{ display:block; font-size:13.5px; line-height:1.25; } .pg-ex-t span{ font-size:11.5px; color:var(--text-dim); }
+  .pg-ex-act{ font-size:12px; font-weight:700; color:var(--text); padding:6px 10px; border-radius:8px; border:1px solid var(--f8-edge); background:linear-gradient(180deg,#fff,#F6F6F7); box-shadow:var(--f8-sh-1); white-space:nowrap; }
+  .pg-ok{ padding:16px; text-align:center; color:var(--success); font-weight:700; font-size:13.5px; }
+  .pg-pulso{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  @media (max-width:560px){ .pg-pulso{ grid-template-columns:repeat(2,1fr); } }
+  .pg-k{ background:var(--surface); border:1px solid var(--f8-edge); border-radius:12px; padding:10px 10px 9px; box-shadow:var(--f8-sh-1); min-width:0; }
+  .pg-k .v{ font-size:22px; font-weight:800; letter-spacing:-0.02em; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .pg-k .v small{ font-size:12px; color:var(--text-dim); font-weight:600; }
+  .pg-k .l{ font-size:11px; color:var(--text-dim); font-weight:600; margin-top:3px; }
+  .pg-k .d{ font-size:10.5px; font-weight:700; margin-top:5px; display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:1px 6px; border-radius:999px; background:var(--surface-2); color:var(--text-dim); }
+  .pg-k .d.up{ color:#1F6E45; background:rgba(44,138,90,.12); } .pg-k .d.dn{ color:#A81119; background:rgba(217,26,34,.10); }
+  .pg-ontem{ margin-top:8px; font-size:12px; color:var(--text-dim); padding:8px 12px; background:var(--surface-2); border-radius:10px; line-height:1.5; }
+  .pg-ontem b{ color:var(--text); } .pg-ontem .pn-link{ font-weight:600; }
+  .pg-area{ background:var(--surface); border:1px solid var(--f8-edge); border-radius:14px; box-shadow:var(--f8-sh-1); margin-bottom:8px; overflow:hidden; }
+  .pg-area-h{ display:flex; align-items:center; gap:10px; width:100%; padding:12px 12px 12px 14px; border:0; background:transparent; font:inherit; color:var(--text); text-align:left; cursor:pointer; }
+  .pg-area-h:hover{ background:var(--surface-2); }
+  .pg-ic{ width:30px; height:30px; border-radius:9px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .pg-t{ flex:1; min-width:0; } .pg-t b{ font-size:14px; display:block; } .pg-t span{ font-size:11.5px; color:var(--text-dim); }
+  .pg-st{ display:flex; gap:5px; flex-shrink:0; }
+  .pg-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; } .pg-dot-r{ background:#D91A22; } .pg-dot-a{ background:#E3A400; } .pg-dot-g{ background:#2C8A5A; }
+  .pg-chev{ color:var(--text-dim); font-size:16px; transition:transform .15s; }
+  .pg-area.open .pg-chev{ transform:rotate(90deg); }
+  .pg-area-b{ padding:0 14px 14px; border-top:1px solid var(--border); }
+  .pg-area-b .pn-kpis{ margin-top:12px; }
+  .pg-fase{ font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin:12px 0 6px; }
+  .pg-funil{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; }
+  .pg-f{ min-width:0; text-align:center; padding:7px 2px; border-radius:8px; border:0; background:var(--surface-2); color:var(--text); font:inherit; cursor:pointer; overflow:hidden; }
+  .pg-f b{ display:block; font-size:15px; font-weight:800; } .pg-f span{ font-size:9px; color:var(--text-dim); font-weight:600; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap; display:block; overflow:hidden; text-overflow:ellipsis; }
+  .pg-f.r{ background:rgba(217,26,34,.10); } .pg-f.r b{ color:#D91A22; } .pg-f.g b{ color:#2C8A5A; }
+  .pg-nota{ font-size:11.5px; color:var(--text-dim); margin-top:10px; }
+  .pg-mais{ margin-top:10px; }
+  .pg-per{ display:inline-flex; gap:2px; background:var(--surface-2); border-radius:999px; padding:3px; margin-top:12px; }
+  .pg-per button{ border:none; background:transparent; font:600 11.5px var(--sans); color:var(--text-dim); padding:5px 10px; border-radius:999px; cursor:pointer; }
+  .pg-per button.on{ background:var(--surface); color:var(--ink); box-shadow:var(--f8-sh-1); }
+  .pg-lin{ display:grid; grid-template-columns:1fr auto; gap:3px 8px; align-items:center; font-size:12px; padding:7px 0; border-bottom:1px dashed var(--border); }
+  .pg-lin:last-of-type{ border-bottom:none; } .pg-lin .nm{ font-weight:600; font-size:13px; } .pg-lin-s{ grid-column:1/-1; color:var(--text-dim); } .pg-lin b{ color:var(--text); font-variant-numeric:tabular-nums; }
+  .pg-tag{ justify-self:end; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; padding:2px 7px; border-radius:999px; color:#fff; background:var(--f8-st-wait); white-space:nowrap; }
+  .pg-tag.r{ background:#D91A22; } .pg-tag.a{ background:#E3A400; color:#2B1F00; } .pg-tag.g{ background:#2C8A5A; }
+  .pg .pn-kpis + .pg-mais{ margin-top:12px; }
+  .pg .pn-lin{ flex-wrap:wrap; row-gap:4px; } .pg .pn-lin .pn-lin-t{ flex:1 1 55%; min-width:0; } .pg .pn-lin .pn-lin-m{ flex:0 1 auto; } .pg .pn-lin .pn-pill{ margin-left:auto; }
+  :root[data-theme="dark"] .pg-ex-act{ background:linear-gradient(180deg,#2B2D32,#1F2024); }
+  :root[data-theme="dark"] .pg-k .d.up{ color:#86D6A6; } :root[data-theme="dark"] .pg-k .d.dn{ color:#F7A29B; }
+  :root[data-theme="dark"] .pg-f.r b, :root[data-theme="dark"] .pg-ex-red .pg-ex-q{ color:#F26B60; } :root[data-theme="dark"] .pg-ex-amber .pg-ex-q{ color:#F2CB55; }
+  /* ===== Fase 9 — contadores remodelados em todas as abas (variante D, pedida pelo Bernardo em 27/10): o cartão
+     INTEIRO leva a cor do status; número, rótulo e complemento ficam dentro, em branco (texto escuro no âmbar e no
+     zerado). O HTML gerado por kpiCards não muda; o ícone fica oculto. ===== */
+  .prv-kpi{ display:flex !important; align-items:center; gap:0; padding:12px 14px !important; border-radius:13px; border:1px solid rgba(0,0,0,0.12); color:#fff;
+    background:linear-gradient(180deg, var(--kpi-a) 0%, var(--kpi-b) 100%); box-shadow:inset 0 1px 0 rgba(255,255,255,0.18), var(--f8-sh-1); }
+  .prv-kpi::before{ display:none; }
+  .prv-kpi-icone{ display:none !important; }
+  .prv-kpi-texto{ display:grid !important; grid-template-columns:auto minmax(0,1fr); grid-template-areas:'num rot' 'num sub'; column-gap:12px; row-gap:1px; align-items:center; width:100%; min-width:0; }
+  .prv-kpi-num{ grid-area:num; align-self:center; font-size:30px; font-weight:800; letter-spacing:-0.03em; line-height:1; color:inherit; font-variant-numeric:tabular-nums; text-shadow:0 1px 1px rgba(0,0,0,0.15); }
+  .prv-kpi-rotulo{ grid-area:rot; align-self:end; margin-top:0; font-size:12.5px; font-weight:700; color:inherit; }
+  .prv-kpi-sub{ grid-area:sub; align-self:start; margin-top:0; font-size:11px; color:inherit; opacity:0.85; }
+  .prv-kpi.tom-neutro{ --kpi-a:var(--f8-pri-a); --kpi-b:var(--f8-pri-b); border-color:var(--f8-pri-edge); }
+  .prv-kpi.tom-vermelho{ --kpi-a:var(--f8-acc-a); --kpi-b:var(--f8-acc-b); border-color:var(--f8-acc-edge); }
+  .prv-kpi.tom-verde{ --kpi-a:#3A9D6A; --kpi-b:#257A4E; border-color:#1E6440; }
+  .prv-kpi.tom-azul{ --kpi-a:#3C8CC8; --kpi-b:#2A70A6; border-color:#225C88; }
+  .prv-kpi.tom-amarelo{ --kpi-a:#F2B50A; --kpi-b:#D99C00; border-color:#B88300; color:#2B1F00; }
+  .prv-kpi.tom-amarelo .prv-kpi-num{ text-shadow:none; }
+  .prv-kpi.zero{ --kpi-a:var(--surface); --kpi-b:var(--surface-2); border-color:var(--f8-edge); color:var(--text-dim); box-shadow:var(--f8-sh-1); }
+  .prv-kpi.zero .prv-kpi-num{ text-shadow:none; }
+  /* valores em texto (R$, horas, data): o número é largo, então fica em cima e o rótulo embaixo, em largura cheia */
+  .prv-kpi-texto:has(.prv-kpi-txt){ grid-template-columns:1fr; grid-template-areas:'num' 'rot' 'sub'; row-gap:2px; }
+  .prv-kpi-num.prv-kpi-txt{ font-size:21px; letter-spacing:-0.02em; margin-bottom:4px; white-space:nowrap; }
+  .prv-kpi-texto:has(.prv-kpi-txt) .prv-kpi-rotulo{ align-self:auto; }
+  .prv-kpi-grid{ gap:8px; }
+  :root[data-theme="dark"] .prv-kpi.tom-neutro{ color:#17181A; }
+  :root[data-theme="dark"] .prv-kpi.tom-neutro .prv-kpi-num{ text-shadow:none; }
+  :root[data-theme="dark"] .prv-kpi{ box-shadow:inset 0 1px 0 rgba(255,255,255,0.10), var(--f8-sh-1); }
 </style>
 </head>
 <body>
@@ -27874,7 +27959,7 @@ const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&':'&a
 const fold = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 const num = (n) => Number(n) || 0;
 const O = () => window.OBR_API || {};
-const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo', jornalDia: null, jornalAbertos: new Set() };
+const ui = { alexEtapa: '', alexBusca: '', alexAba: 'compras', pagAlex: 'resumo', pagGestor: 'resumo', jornalDia: null, jornalAbertos: new Set(), pgAbertas: new Set(['obras']), pgPer: 'semana' };
 let obrasPronto = false, osPronto = false;
 
 function dataHoje(){ try{ const s = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return s.charAt(0).toUpperCase() + s.slice(1); }catch(e){ return ''; } }
@@ -28045,7 +28130,7 @@ function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): s
 function pagBar(quem){
   const atual = quem === 'alex' ? ui.pagAlex : ui.pagGestor; const n = window.PREV_API ? PREV_API.pendenciasContagem() : null;
   const b = (k, t, cont) => `<button type="button" role="tab" aria-selected="${atual === k}" class="os-aba ${atual === k ? 'on' : ''}" data-pn-pag="${quem}:${k}">${t}${cont != null ? `<span class="os-aba-n">${cont}</span>` : ''}</button>`;
-  return `<div class="os-abas pn-abas pn-pags" role="tablist">${b('resumo', 'Painel')}${b('pend', 'Pendências preventivas', n == null ? '…' : n)}</div>`;
+  return `<div class="os-abas pn-abas pn-pags" role="tablist">${b('resumo', 'Painel')}${quem === 'gestor' ? b('jornal', 'Jornal do dia') : ''}${b('pend', 'Pendências preventivas', n == null ? '…' : n)}</div>`;
 }
 function tilesInterna(ped, clicavel, extra){
   const A = O(); const fases = A.FASE_INTERNA || [];
@@ -28054,51 +28139,124 @@ function tilesInterna(ped, clicavel, extra){
 }
 
 // ---------- PAINEL GESTOR ----------
+
+// Fase 9: um painel só, em três camadas — (1) o que precisa de ação, (2) o pulso de hoje, (3) cada área recolhida.
+// Tudo vem das mesmas fontes que os blocos antigos usavam; nenhum cálculo novo no banco.
+const PG_IC = { obras: '🏗️', oficina: '🔧', manut: '🗓️', tecs: '👷', fin: '💰', estoque: '📦', os: '📋' };
+function pgPeriodo(){
+  const h = typeof todayStr === 'function' ? todayStr() : hojeISO();
+  if(ui.pgPer === 'hoje') return { ini: h, fim: h, rot: 'Hoje' };
+  if(ui.pgPer === 'mes'){ const y = +h.slice(0, 4), m = +h.slice(5, 7); const ult = new Date(y, m, 0).getDate(); return { ini: h.slice(0, 8) + '01', fim: h.slice(0, 8) + String(ult).padStart(2, '0'), rot: 'Este mês' }; }
+  const ini = typeof startOfWeek === 'function' ? startOfWeek(h) : somaDia(h, -new Date(+h.slice(0, 4), +h.slice(5, 7) - 1, +h.slice(8, 10)).getDay());
+  return { ini, fim: somaDia(ini, 6), rot: 'Esta semana' };
+}
 function renderGestor(){
   const box = document.getElementById('tabPGestor'); if(!box || box.style.display === 'none') return;
-  const A = O();
-  // atividades de hoje
+  const topo = cab('Painel', dataHoje()) + pagBar('gestor');
+  if(ui.pagGestor === 'pend' && window.PREV_API){ box.innerHTML = topo + PREV_API.pendenciasHtml(); return; }
+  if(ui.pagGestor === 'jornal'){ box.innerHTML = topo + blocoJornal(); return; }
+  const A = O(); const hoje = hojeISO();
+  const tecsDe = (s) => (typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician]).filter(Boolean);
+  // ----- fontes -----
   const ativ = atividadesHoje(); const cont = (st) => ativ.filter(s => s.status === st).length;
-  const ord = { em_andamento: 0, atribuido: 1, aguardando: 2, concluido: 3 };
-  // Lista agrupada por técnico (dupla aparece sob cada um dos dois); sem técnico por último; dentro do técnico, em andamento primeiro.
-  const porTec = new Map();
-  ativ.forEach(s => { const nomes = (typeof getServiceTechnicians === 'function' ? getServiceTechnicians(s) : [s.technician]).filter(Boolean); (nomes.length ? nomes : ['']).forEach(n => { if(!porTec.has(n)) porTec.set(n, []); porTec.get(n).push(s); }); });
-  const tecs = [...porTec.keys()].sort((a, b) => (a === '') - (b === '') || a.localeCompare(b, 'pt-BR'));
-  const linhasAtiv = tecs.map(n => {
-    const lista = porTec.get(n).slice().sort((a, b) => (ord[a.status] ?? 9) - (ord[b.status] ?? 9) || String(a.client).localeCompare(String(b.client), 'pt-BR'));
-    return `<div class="pn-tec-h"><span>${esc(n || 'Sem técnico')}</span><span class="pn-tec-n">${lista.length} ${lista.length === 1 ? 'atividade' : 'atividades'}</span></div>`
-      + lista.map(s => `<div class="pn-lin pn-click" data-pn-svc="${esc(s.id)}"><span class="pn-lin-t">${esc(s.client)}${s.description ? `<small>${esc(s.description)}</small>` : ''}</span><span class="status-tag ${esc(s.status)}">${esc(typeof statusLabelOf === 'function' ? statusLabelOf(s.status) : s.status)}</span></div>`).join('');
-  }).join('');
-  const bAtiv = bloco('Atividades de hoje', 'agenda', ativ.length
-    ? `<div class="pn-kpis">${kpi(ativ.length, 'No dia', 'gray', 'agenda')}${kpi(cont('em_andamento'), 'Em andamento', 'blue', 'agenda')}${kpi(cont('atribuido'), 'Atribuídas', 'amber', 'agenda')}${kpi(cont('aguardando'), 'Sem técnico', 'red', 'agenda')}${kpi(cont('concluido'), 'Concluídas', 'green', 'agenda')}</div>${linhasAtiv}`
-    : '<div class="pn-vazio">Nenhuma atividade agendada para hoje.</div>');
-  // obras
-  const ped = pedidosObras();
-  const cliI = new Set(ped.filter(x => x.i !== 'entregue').map(x => x.r.clienteId || fold(x.r.cliente))), cliO = new Set(ped.filter(x => x.o && x.o !== 'finalizado').map(x => x.r.clienteId || fold(x.r.cliente)));
-  const nPI = ped.filter(x => x.i !== 'entregue').length, nPO = ped.filter(x => x.o && x.o !== 'finalizado').length;
-  const totalI = `<button type="button" class="pn-k pn-t-ink" data-pn-go="obras"><span class="pn-k-n">${cliI.size}</span><span class="pn-k-r">Clientes na etapa interna</span><span class="pn-k-s">${nPI} ${nPI === 1 ? 'pedido' : 'pedidos'}</span></button>`;
-  const totalO = `<button type="button" class="pn-k pn-t-ink" data-pn-go="obras"><span class="pn-k-n">${cliO.size}</span><span class="pn-k-r">Clientes na etapa obra</span><span class="pn-k-s">${nPO} ${nPO === 1 ? 'pedido' : 'pedidos'}</span></button>`;
-  const tilesObra = (A.STATUS_OBRA ? A.STATUS_OBRA.filter(([k]) => !(A.FASE_INTERNA || []).includes(k)) : []).map(([k, n]) => { const sel = ped.filter(x => x.o === k); const q = sel.length; const cl = new Set(sel.map(x => x.r.clienteId || fold(x.r.cliente))).size; return `<button type="button" class="pn-k obr-sp-${k} pn-vars" data-pn-go="obras"><span class="pn-k-n">${cl}</span><span class="pn-k-r">${esc(n)}</span><span class="pn-k-s">${q} ${q === 1 ? 'pedido' : 'pedidos'}</span></button>`; }).join('');
-  const cmPend = A.contratosManutPendentes ? A.contratosManutPendentes() : [];
-  const bContratos = bloco('Contratos de manutenção a enviar', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : cmPend.length
-    ? `<div class="pn-kpis">${kpi(cmPend.length, cmPend.length === 1 ? 'obra finalizada sem contrato enviado' : 'obras finalizadas sem contrato enviado', 'red', 'obras', 'obrgSubFin')}</div>${cmPend.slice(0, 8).map(g => `<div class="pn-lin pn-click" data-pn-cm="${esc(g.regs.map(r => r.id).join(','))}" title="Abrir o contrato de manutenção: gerar, marcar como enviado, já tem contrato ou não quer"><span class="pn-lin-t">${esc(g.nome)}<small>${g.peds.length} ${g.peds.length === 1 ? 'pedido' : 'pedidos'} · obra finalizada</small></span><span class="prv-chip red">a enviar</span></div>`).join('')}${cmPend.length > 8 ? `<div class="pn-nota">+ ${cmPend.length - 8} clientes</div>` : ''}`
-    : '<div class="pn-vazio">Nenhuma obra finalizada aguardando o contrato de manutenção.</div>', 'obrgSubFin');
+  const emCampo = [...new Set(ativ.filter(s => s.status === 'em_andamento').flatMap(tecsDe))];
+  const ped = pedidosObras(); const FI = A.FASE_INTERNA || []; const SO = (A.STATUS_OBRA || []).filter(([k]) => !FI.includes(k));
+  const cliDe = (x) => x.r.clienteId || fold(x.r.cliente);
+  const ativos = ped.filter(x => !(x.o === 'finalizado')); const cliAtivos = new Set(ativos.map(cliDe));
+  const cliI = new Set(ped.filter(x => x.i !== 'entregue').map(cliDe)), cliO = new Set(ped.filter(x => x.o && x.o !== 'finalizado').map(cliDe));
+  const kTrvI = FI[0], kTrvO = SO.length ? SO[0][0] : null;   // primeira etapa de cada fase = "parado esperando alguém"
+  const travI = ped.filter(x => x.i === kTrvI), travO = ped.filter(x => x.o === kTrvO);
+  const cliTrav = new Set(travI.concat(travO).map(cliDe));
+  const cmPend = obrasPronto && A.contratosManutPendentes ? A.contratosManutPendentes() : [];
+  const manPend = obrasPronto && A.manuaisPendentes ? A.manuaisPendentes() : [];
   const orc = window.ORC_API ? ORC_API.resumo() : null;
-  const bOrc = bloco('Orçamentos a fazer', 'orcamentos', !orc || !orc.pronto ? '<div class="pn-vazio">Carregando…</div>' : orc.abertos
-    ? `<div class="pn-kpis">${kpi(orc.abertos, 'Em aberto', 'gray', 'orcamentos')}${kpi(orc.vencendo, 'Vencem em 7 dias', 'amber', 'orcamentos')}${kpi(orc.atrasados, 'Atrasados', 'red', 'orcamentos')}${kpi(orc.feitos, 'Feitos, falta enviar', 'blue', 'orcamentos')}</div>${orc.lista.slice(0, 6).map(o => { const d = (() => { const h = new Date(); const t = new Date(+o.dataLimite.slice(0, 4), +o.dataLimite.slice(5, 7) - 1, +o.dataLimite.slice(8, 10)); return Math.round((t - new Date(h.getFullYear(), h.getMonth(), h.getDate())) / 86400000); })(); return `<div class="pn-lin pn-click" data-pn-go="orcamentos"><span class="pn-lin-t">${esc(o.cliente)}<small>${esc((o.sistemas || []).map(k => (ORC_API.SISTEMAS.find(x => x[0] === k) || [k, k])[1]).join(', ') || o.outros || '')}</small></span><span class="prv-chip ${d < 0 ? 'red' : 'amber'}">${d < 0 ? 'atrasado ' + (-d) + 'd' : d === 0 ? 'vence hoje' : 'vence em ' + d + 'd'}</span></div>`; }).join('')}`
-    : '<div class="pn-vazio">Nenhum orçamento em aberto.</div>');
-  const manPend = A.manuaisPendentes ? A.manuaisPendentes() : [];
-  const bManuais = bloco('Manuais de operação a enviar', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : manPend.length
-    ? `<div class="pn-kpis">${kpi(manPend.length, manPend.length === 1 ? 'obra finalizada sem manual enviado' : 'obras finalizadas sem manual enviado', 'red', 'obras', 'obrgSubFin')}</div>${manPend.slice(0, 8).map(g => `<div class="pn-lin pn-click" data-pn-man="${esc(g.regs.map(r => r.id).join(','))}" title="Abrir o manual de operação: gerar, marcar como enviado, já tem ou não precisa"><span class="pn-lin-t">${esc(g.nome)}<small>${g.peds.length} ${g.peds.length === 1 ? 'pedido' : 'pedidos'} · obra finalizada</small></span><span class="prv-chip red">a enviar</span></div>`).join('')}${manPend.length > 8 ? `<div class="pn-nota">+ ${manPend.length - 8} clientes</div>` : ''}`
-    : '<div class="pn-vazio">Nenhuma obra finalizada aguardando o manual de operação.</div>', 'obrgSubFin');
-  const bObras = bloco('Etapas das obras', 'obras', !obrasPronto ? '<div class="pn-vazio">Carregando…</div>' : `<div class="pn-fase">Etapa interna · compras</div>${tilesInterna(ped, false, totalI)}<div class="pn-fase">Etapa obra</div><div class="pn-kpis">${totalO}${tilesObra}</div><div class="pn-nota">${ped.length} ${ped.length === 1 ? 'pedido' : 'pedidos'} em andamento nas obras</div>`);
-  // oficina
+  const pendOS = (typeof groupPaired === 'function' ? groupPaired((typeof services !== 'undefined' ? services : []).filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido)).length : 0)
+    + (window.QUADROS_API ? num(QUADROS_API.pendentesOS()) : 0) + (window.OSOF_API ? num(OSOF_API.pendentesOS()) : 0);
+  const osTodas = window.OS_API && osPronto ? OS_API.todas() : []; const osSt = (st) => osTodas.filter(o => o.status === st).length;
   const eqs = typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []; const rotG = typeof OE_GRUPO_LABEL !== 'undefined' ? OE_GRUPO_LABEL : {};
-  const tomG = { vistoria: 'red', manutencao: 'amber', teste: 'blue', reinstalacao: 'green' };
   const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
   const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
-  const bOf = bloco('Oficina', 'oficinagestor', `<div class="pn-kpis">${Object.keys(rotG).map(g => kpi(nG(g), rotG[g], tomG[g] || 'gray', 'oficinagestor')).join('')}${kpi(parados, 'Parados além do limite', parados ? 'red' : 'gray', 'oficinagestor')}</div>`);
-  box.innerHTML = cab('Painel Gestor', dataHoje()) + pagBar('gestor') + (ui.pagGestor === 'pend' && window.PREV_API ? PREV_API.pendenciasHtml() : `${blocoJornal()}<div class="pn-grade">${bOrc}${bContratos}${bManuais}${bObras}${bOf}${blocoEstoque()}${blocoManutencao()}</div>`);
+  const contratos = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+  const mRows = contratos.map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, dias: daysUntil(prox) }; }).sort((a, b) => a.prox.localeCompare(b.prox));
+  const mAtr = mRows.filter(r => r.dias < 0), mProx = mRows.filter(r => r.dias >= 0 && r.dias <= 15), mOk = mRows.length - mAtr.length - mProx.length;
+  const { rep, aten } = resumoEstoque();
+  const nPrev = window.PREV_API ? PREV_API.pendenciasContagem() : null;
+  const Rh = resumoDoDia(hoje), Ro = resumoDoDia(somaDia(hoje, -1)); const fin = Rh.financeiro;
+  // ----- 1) precisa de você -----
+  const ex = [];
+  const add = (n, tom, t, sub, acao, attr) => { if(n) ex.push({ n, tom, t, sub, acao, attr }); };
+  const nomes = (l, f) => l.slice(0, 3).map(f).join(' · ') + (l.length > 3 ? ' · +' + (l.length - 3) : '');
+  add(mAtr.length, 'red', 'Contratos de manutenção atrasados', nomes(mAtr, r => r.c.client), 'Agendar', 'data-pn-go="manutencoes"');
+  add(cont('aguardando'), 'red', 'Atividades de hoje sem técnico', 'aguardando atribuição', 'Atribuir', 'data-pn-go="agenda"');
+  add(parados, 'red', 'Equipamentos parados além do limite na Oficina', nG('vistoria') + ' aguardando vistoria', 'Ver', 'data-pn-go="oficinagestor"');
+  add(orc && orc.pronto ? orc.atrasados : 0, 'red', 'Orçamentos atrasados', orc && orc.vencendo ? orc.vencendo + ' vencem em 7 dias' : 'prazo vencido', 'Fazer', 'data-pn-go="orcamentos"');
+  add(rep.length, 'red', 'Itens de estoque em reposição', nomes(rep, i => i.name), 'Repor', 'data-pn-go="estoque"');
+  add(fin.naoFeitos, 'red', 'Pagamentos programados para hoje não recebidos', brlJ(fin.valorNaoFeito), 'Ver', 'data-pn-go="obras"');
+  if(obrasPronto){
+    add(travO.length, 'amber', 'Pedidos ' + (kTrvO ? A.rotObra(kTrvO).toLowerCase() : 'travados na obra'), plural(new Set(travO.map(cliDe)).size, 'cliente', 'clientes'), 'Ver', 'data-pn-go="obras"');
+    add(travI.length, 'amber', 'Pedidos ' + (kTrvI ? A.rotObra(kTrvI).toLowerCase() : 'travados na etapa interna'), plural(new Set(travI.map(cliDe)).size, 'cliente', 'clientes'), 'Ver', 'data-pn-go="obras"');
+  }
+  add(pendOS, 'amber', 'Registros aguardando cadastro de OS', 'atividades, quadros e equipamentos concluídos sem OS', 'Cadastrar', 'data-pn-go="os" data-pn-sub="prvOsTabAguardando"');
+  add(nPrev, 'amber', 'Pendências de preventivas', 'relatórios dos técnicos com pendência', 'Abrir', 'data-pn-pag="gestor:pend"');
+  add(mProx.length, 'amber', 'Contratos de manutenção vencendo em 15 dias', nomes(mProx, r => r.c.client), 'Agendar', 'data-pn-go="manutencoes"');
+  add(cmPend.length, 'amber', 'Contratos de manutenção a enviar', 'obras finalizadas sem contrato enviado', 'Enviar', 'data-pn-go="obras" data-pn-sub="obrgSubFin"');
+  add(manPend.length, 'amber', 'Manuais de operação a enviar', 'obras finalizadas sem manual enviado', 'Enviar', 'data-pn-go="obras" data-pn-sub="obrgSubFin"');
+  add(osPronto ? osSt('decidir') : 0, 'gray', 'OS a definir', 'cobrar ou não cobrar', 'Decidir', 'data-pn-go="os" data-pn-sub="prvOsTabDecisao"');
+  add(orc && orc.pronto ? orc.abertos - orc.atrasados : 0, 'gray', 'Orçamentos em aberto', orc && orc.feitos ? orc.feitos + ' feitos, falta enviar' : 'dentro do prazo', 'Ver', 'data-pn-go="orcamentos"');
+  add(aten.length, 'gray', 'Itens de estoque no mínimo', nomes(aten, i => i.name), 'Ver', 'data-pn-go="estoque"');
+  const ordem = { red: 0, amber: 1, gray: 2 }; ex.sort((a, b) => ordem[a.tom] - ordem[b.tom]);
+  const carregando = !obrasPronto || !osPronto || nPrev == null;
+  const bEx = `<div class="pg-sec-t">Precisa de você${ex.length ? `<span class="n">${ex.length}</span>` : ''}${carregando ? '<span class="pg-carregando">atualizando…</span>' : ''}</div><div class="pg-ex">${ex.length
+    ? ex.map(e => `<button type="button" class="pg-ex-i pg-ex-${e.tom}" ${e.attr}><span class="pg-ex-b"></span><span class="pg-ex-q">${e.n}</span><span class="pg-ex-t"><b>${esc(e.t)}</b><span>${esc(e.sub || '')}</span></span><span class="pg-ex-act">${esc(e.acao)}</span></button>`).join('')
+    : '<div class="pg-ok">✓ Tudo em dia — nada aguardando ação.</div>'}</div>`;
+  // ----- 2) pulso de hoje -----
+  const pct = ativ.length ? Math.round(cont('concluido') / ativ.length * 100) : 0;
+  const tile = (v, l, d, tom) => `<div class="pg-k"><div class="v">${v}</div><div class="l">${esc(l)}</div>${d ? `<div class="d ${tom || ''}">${esc(d)}</div>` : ''}</div>`;
+  const bPulso = `<div class="pg-sec-t">Pulso de hoje</div><div class="pg-pulso">
+    ${tile(ativ.length ? `${cont('concluido')}<small>/${ativ.length}</small>` : '0', 'Atividades concluídas', !ativ.length ? 'nada agendado' : pct === 100 ? 'dia fechado' : cont('em_andamento') + ' em andamento', pct === 100 && ativ.length ? 'up' : cont('aguardando') ? 'dn' : '', 'agenda')}
+    ${tile(String(emCampo.length), 'Técnicos em campo agora', emCampo.length ? emCampo.join(' · ') : 'ninguém em atividade', '')}
+    ${tile(String(cliAtivos.size), 'Clientes com obra ativa', obrasPronto ? (cliTrav.size ? cliTrav.size + (cliTrav.size === 1 ? ' travado' : ' travados') : 'nenhum travado') : 'carregando…', cliTrav.size ? 'dn' : 'up')}
+    ${tile(fin.programados ? `${fin.feitos}<small>/${fin.programados}</small>` : '0', 'Pagamentos de hoje', fin.programados ? (fin.naoFeitos ? brlJ(fin.valorNaoFeito) + ' em aberto' : 'todos recebidos') : (fin.outrosRecebidos ? fin.outrosRecebidos + ' avulso(s)' : 'nenhum programado'), fin.naoFeitos ? 'dn' : fin.programados ? 'up' : '')}
+  </div><div class="pg-ontem"><b>Ontem:</b> ${plural(Ro.atividades.finalizadas, 'atividade finalizada', 'atividades finalizadas')} de ${Ro.atividades.tinha} · ${plural(Ro.os.feitas, 'OS cadastrada', 'OS cadastradas')} · ${Ro.financeiro.programados ? Ro.financeiro.feitos + '/' + Ro.financeiro.programados + ' pagamentos' : 'sem pagamentos programados'} · ${plural(Ro.obras.clientesNovos, 'cliente novo', 'clientes novos')} <button type="button" class="pn-link" data-pn-pag="gestor:jornal">Jornal completo ›</button></div>`;
+  // ----- 3) por área -----
+  const area = (k, titulo, resumo, dots, corpo) => { const ab = ui.pgAbertas.has(k); return `<section class="pg-area ${ab ? 'open' : ''}"><button type="button" class="pg-area-h" data-pg-sec="${k}" aria-expanded="${ab}"><span class="pg-ic" aria-hidden="true">${PG_IC[k] || ''}</span><span class="pg-t"><b>${esc(titulo)}</b><span>${esc(resumo)}</span></span><span class="pg-st">${dots.map(d => `<i class="pg-dot pg-dot-${d}"></i>`).join('')}</span><span class="pg-chev">›</span></button>${ab ? `<div class="pg-area-b">${corpo}</div>` : ''}</section>`; };
+  const abrir = (go, sub, rot) => `<div class="pg-mais"><button type="button" class="pn-ver" data-pn-go="${esc(go)}"${sub ? ` data-pn-sub="${esc(sub)}"` : ''}>${esc(rot || 'Abrir')} ›</button></div>`;
+  const funil = (fases, chaveDe, rotDe, destaqueIdx, okIdx) => `<div class="pg-funil">${fases.map((f, i) => { const k = chaveDe(f); const q = ped.filter(x => (f.__obra ? x.o : x.i) === k).length; return `<button type="button" class="pg-f ${i === destaqueIdx && q ? 'r' : ''} ${i === okIdx ? 'g' : ''}" data-pn-go="obras"><b>${q}</b><span>${esc(rotDe(f))}</span></button>`; }).join('')}</div>`;
+  const abrev = (t) => String(t || '').replace(/^Aguardando /i, 'Ag. ').replace(/^Liberado para /i, 'Lib. ').replace(/ do sinal$/i, '').replace(/ para in[ií]cio$/i, ' início').replace(/ finais$/i, '');
+  const cObras = !obrasPronto ? '<div class="pn-vazio">Carregando…</div>'
+    : `<div class="pg-fase">Etapa interna · compras</div>${funil(FI.map(k => ({ k })), f => f.k, f => abrev(A.rotObra(f.k)), 0, FI.length - 1)}
+       <div class="pg-fase">Etapa obra</div>${funil(SO.map(([k]) => ({ k, __obra: true })), f => f.k, f => abrev(A.rotObra(f.k)), 0, SO.length - 1)}
+       <div class="pg-nota">${plural(ped.length, 'pedido', 'pedidos')} em andamento · ${cliI.size} ${cliI.size === 1 ? 'cliente' : 'clientes'} na etapa interna · ${cliO.size} em obra</div>${abrir('obras', '', 'Abrir Obras e Pedidos')}`;
+  const sObras = area('obras', 'Obras e pedidos', obrasPronto ? `${cliAtivos.size} clientes · ${cliI.size} na etapa interna · ${cliO.size} em obra · ${cliTrav.size} travados` : 'carregando…', [cliTrav.size ? 'r' : 'g', cmPend.length || manPend.length ? 'a' : 'g'], cObras);
+  const cOf = `<div class="pn-kpis">${Object.keys(rotG).map(g => kpi(nG(g), rotG[g], { vistoria: 'red', manutencao: 'amber', teste: 'blue', reinstalacao: 'green' }[g] || 'gray', 'oficinagestor')).join('')}${kpi(parados, 'Parados além do limite', parados ? 'red' : 'gray', 'oficinagestor')}</div>${abrir('oficinagestor', '', 'Abrir Oficina')}`;
+  const sOf = area('oficina', 'Oficina', `${eqs.length} equipamentos · ${nG('vistoria')} aguardando vistoria · ${nG('manutencao')} em manutenção · ${parados} parados além do limite`, [parados ? 'r' : 'g', nG('vistoria') ? 'a' : 'g'], cOf);
+  const mLin = (r) => `<div class="pn-lin pn-click" data-pn-go="manutencoes"><span class="pn-lin-t">${esc(r.c.client)}</span><span class="pn-lin-m">${r.c.scheduledFor ? 'Agendado' : 'Sem visita agendada'}</span><span class="pn-pill pn-p-${r.dias < 0 ? 'red' : 'amber'}">${r.dias < 0 ? 'Atrasada há ' + Math.abs(r.dias) + (Math.abs(r.dias) === 1 ? ' dia' : ' dias') : r.dias === 0 ? 'Vence hoje' : 'Vence em ' + r.dias + (r.dias === 1 ? ' dia' : ' dias')}</span></div>`;
+  const urg = mAtr.concat(mProx);
+  const cMan = `<div class="pn-kpis">${kpi(mRows.length, 'Total de contratos', 'gray', 'manutencoes')}${kpi(mOk, 'Em dia', 'green', 'manutencoes')}${kpi(mProx.length, 'Vencem em 15 dias', 'amber', 'manutencoes')}${kpi(mAtr.length, 'Atrasados', 'red', 'manutencoes')}</div>${urg.slice(0, 6).map(mLin).join('')}${urg.length > 6 ? `<div class="pn-mais">+ ${urg.length - 6} contratos</div>` : ''}${abrir('manutencoes', '', 'Abrir Manutenções')}`;
+  const sMan = area('manut', 'Manutenções preventivas', `${mRows.length} contratos · ${mOk} em dia · ${mProx.length} vencendo · ${mAtr.length} atrasados`, [mAtr.length ? 'r' : 'g', mProx.length ? 'a' : 'g'], cMan);
+  // técnicos e execução: os mesmos cálculos do Painel de Controle, para o período escolhido aqui
+  const per = pgPeriodo(); let cTec = '<div class="pn-vazio">Indisponível.</div>'; let rTec = '';
+  if(typeof computeOperationSummary === 'function' && typeof getTechnicianDashboardStats === 'function'){
+    const st = computeOperationSummary(per.ini, per.fim); const porTec = getTechnicianDashboardStats(per.ini, per.fim);
+    const nomesT = Object.keys(porTec).filter(nm => porTec[nm].atividades).sort((a, b) => porTec[b].atividades - porTec[a].atividades || a.localeCompare(b, 'pt-BR'));
+    rTec = `${per.rot} · ${plural(st.total, 'atividade', 'atividades')} · ${st.concluidas} concluídas · ${plural(st.retornos, 'retorno', 'retornos')}`;
+    const perBtn = (k, t) => `<button type="button" class="${ui.pgPer === k ? 'on' : ''}" data-pg-per="${k}">${t}</button>`;
+    cTec = `<div class="pg-per">${perBtn('hoje', 'Hoje')}${perBtn('semana', 'Semana')}${perBtn('mes', 'Mês')}</div>
+      <div class="pn-kpis">${kpi(st.total, 'Atividades', 'gray', 'painel')}${kpi(st.concluidas, 'Concluídas', 'green', 'painel')}${kpi(st.emAndamento, 'Em andamento', 'blue', 'painel')}${kpi(st.naoConcluidas, 'Não iniciadas', 'amber', 'painel')}${kpi(st.retornos, 'Retornos', st.retornos ? 'red' : 'gray', 'painel')}</div>
+      ${nomesT.length ? nomesT.map(nm => { const t = porTec[nm]; const tag = t.pendentes ? `<span class="pg-tag a">${t.pendentes} pend.</span>` : t.retornos ? `<span class="pg-tag a">${plural(t.retornos, 'retorno', 'retornos')}</span>` : `<span class="pg-tag g">em dia</span>`;
+        return `<div class="pg-lin"><span class="nm">${esc(nm)}</span>${tag}<span class="pg-lin-s"><b>${t.concluidas}</b> de <b>${t.atividades}</b> concluídas${t.firstCheckIn && t.firstCheckIn !== '—' ? ` · início médio ${esc(t.firstCheckIn)}` : ''}${t.lastCheckOut && t.lastCheckOut !== '—' ? ` · término ${esc(t.lastCheckOut)}` : ''}</span></div>`; }).join('') : '<div class="pn-vazio">Nenhuma atividade no período.</div>'}
+      ${abrir('painel', '', 'Abrir Painel de Controle completo')}`;
+  }
+  const sTec = area('tecs', 'Técnicos e execução', rTec || per.rot, [cont('aguardando') ? 'r' : 'g'], cTec);
+  const fLin = (e) => `<div class="pn-lin pn-click" data-pn-go="${esc(e.go || 'obras')}"><span class="pn-jc-m pn-jc-m-${e.tom || 'gray'}"></span><span class="pn-lin-t">${esc(e.t)}${e.m ? `<small>${esc(e.m)}</small>` : ''}</span></div>`;
+  const cFin = `<div class="pn-kpis">${kpi(fin.programados, 'Programados para hoje', 'gray', 'obras')}${kpi(fin.feitos, 'Recebidos', fin.feitos ? 'green' : 'gray', 'obras')}${kpi(fin.naoFeitos, 'Não recebidos', fin.naoFeitos ? 'red' : 'gray', 'obras')}${kpi(fin.outrosRecebidos, 'Avulsos recebidos', 'blue', 'obras')}</div>${fin.lista.slice(0, 6).map(fLin).join('')}${abrir('obras', '', 'Abrir Obras e Pedidos')}`;
+  const sFin = area('fin', 'Financeiro', fin.programados ? `${fin.programados} pagamentos hoje · ${fin.feitos} recebidos · ${fin.naoFeitos} em aberto` : 'Nenhum pagamento programado para hoje' + (fin.outrosRecebidos ? ` · ${fin.outrosRecebidos} avulso(s)` : ''), [fin.naoFeitos ? 'r' : 'g'], cFin);
+  const eLin = (i, c) => `<div class="pn-lin"><span class="pn-lin-t">${esc(i.name)}</span><span class="pn-lin-m">${esc(typeof estoqueCategoriaDoItem === 'function' ? estoqueCategoriaDoItem(i) : '')}</span><span class="pn-pill pn-p-${c}">${num(i.quantity)} / mín. ${num(i.minimumQuantity)} ${esc(i.unit || '')}</span></div>`;
+  const cEst = `<div class="pn-kpis">${kpi(rep.length, 'Reposição necessária', rep.length ? 'red' : 'gray', 'estoque')}${kpi(aten.length, 'No mínimo', aten.length ? 'amber' : 'gray', 'estoque')}</div>${rep.slice(0, 8).map(i => eLin(i, 'red')).join('')}${aten.slice(0, 4).map(i => eLin(i, 'amber')).join('')}${abrir('estoque', '', 'Abrir Estoque')}`;
+  const sEst = area('estoque', 'Estoque', (rep.length || aten.length) ? `${rep.length} em reposição · ${aten.length} no mínimo` : 'Nenhum item abaixo do mínimo', [rep.length ? 'r' : aten.length ? 'a' : 'g'], cEst);
+  const cOs = `<div class="pn-kpis">${kpi(pendOS, 'Aguardando cadastro', pendOS ? 'red' : 'gray', 'os', 'prvOsTabAguardando')}${kpi(osPronto ? osSt('decidir') : '…', 'OS a definir', 'amber', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? osSt('aguardando') : '…', 'OS aguardando', 'blue', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? osSt('cobrar') : '…', 'OS cobradas', 'green', 'os', 'prvOsTabDecisao')}</div>${abrir('os', '', 'Abrir Cadastros e OS')}`;
+  const sOs = area('os', 'Cadastros e OS', osPronto ? `${pendOS} aguardando cadastro · ${osSt('decidir')} a definir · ${osSt('aguardando')} aguardando` : 'carregando…', [pendOS ? 'a' : 'g'], cOs);
+  box.innerHTML = topo + `<div class="pg">${bEx}${bPulso}<div class="pg-sec-t">Por área</div>${sObras}${sOf}${sMan}${sTec}${sFin}${sEst}${sOs}</div>`;
 }
 
 // ---------- PAINEL ALEX ----------
@@ -28149,6 +28307,8 @@ function abrir(){ carregar(); renderTudo(); }
 function ligar(){
   ['tabPGestor', 'tabPAlex'].forEach(id => { const box = document.getElementById(id); if(!box || box._pnLigado) return; box._pnLigado = true;
     box.addEventListener('click', (e) => {
+      const sec = e.target.closest('[data-pg-sec]'); if(sec){ const k = sec.dataset.pgSec; if(ui.pgAbertas.has(k)) ui.pgAbertas.delete(k); else ui.pgAbertas.add(k); renderGestor(); return; }
+      const per = e.target.closest('[data-pg-per]'); if(per){ ui.pgPer = per.dataset.pgPer; renderGestor(); return; }
       const pg = e.target.closest('[data-pn-pag]'); if(pg){ const [q, k] = pg.dataset.pnPag.split(':'); if(q === 'alex') ui.pagAlex = k; else ui.pagGestor = k; renderTudo(); return; }
       const pv = e.target.closest('[data-pv]'); if(pv && window.PREV_API){ PREV_API.pendenciasClique(pv, renderTudo); return; }
       const cm = e.target.closest('[data-pn-cm]'); if(cm){ if(O().abrirContratoManut) O().abrirContratoManut(cm.dataset.pnCm.split(',')); return; }
