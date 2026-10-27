@@ -5701,24 +5701,81 @@ const MSG_OFFLINE_GUARDADO = 'Sem conexão agora — sua alteração ficou guard
 
 // ----- Motor de reenvio -----
 let outboxSincronizando = false;
+const OUTBOX_LIMITE_MS = 30000;   // Fase 17: uma gravação pendurada (SDK esperando reconectar) não pode travar o motor para sempre
 async function outboxTentarSincronizar(motivo){
   if(outboxSincronizando) return;
   if(typeof navigator !== 'undefined' && navigator.onLine === false) return; // sem rede, nem tenta
   outboxSincronizando = true;
-  try{
+  const trabalho = async () => {
     if(outboxTem('services') && typeof saveServices === 'function') await saveServices(true);
     if(outboxTem('oficinaEquipamentos') && typeof saveOficinaEquipamentos === 'function') await saveOficinaEquipamentos(true);
     if(outboxTem('maintenanceContracts') && typeof saveMaintenanceContracts === 'function') await saveMaintenanceContracts(true);
     if(outboxTem('preventivo') && window.PREV_API) await PREV_API.flush();
     if(outboxTem('obraInstalacao') && window.OBR_API) await OBR_API.flushInstalacao();
     if(typeof sincronizarMidiaPendente === 'function') await sincronizarMidiaPendente();
+  };
+  try{
+    const r = await Promise.race([trabalho().then(() => 'ok'), new Promise(res => setTimeout(() => res('tempo'), OUTBOX_LIMITE_MS))]);
+    if(r === 'tempo') console.warn('outbox: sincronização (' + (motivo || 'periódica') + ') passou de ' + (OUTBOX_LIMITE_MS / 1000) + ' s; o motor segue livre para a próxima tentativa');
   }catch(e){ console.error('outbox: falha na sincronização (' + (motivo || 'periódica') + ')', e); }
   finally{ outboxSincronizando = false; outboxAtualizarIndicador(); }
 }
+
+// ----- Fase 17: envio direto pela REST do banco (ao sair do app e ao voltar) -----
+// Não depende da conexão em tempo real do SDK (que cai em segundo plano e demora a voltar). Ao sair, usa fetch com keepalive —
+// o navegador deixa o pedido terminar mesmo com a página saindo de cena. Token da conta na URL (mesmo padrão da consulta leve
+// da agenda; nunca entra em log) e, com App Check ativo, o token dele no cabeçalho. Os valores são os mesmos do outbox; o outbox
+// não é limpo aqui — o motor normal reenvia (idempotente) e confirma.
+let outboxIdToken = null, outboxAppCheckToken = null, outboxRestEmCurso = false;
+const OUTBOX_REST_LOJAS = ['services', 'oficinaEquipamentos', 'maintenanceContracts', 'obraInstalacao'];
+async function outboxAtualizarTokens(){
+  try{ outboxIdToken = (typeof authAtivo === 'function' && authAtivo() && fbAuth && fbAuth.currentUser) ? await fbAuth.currentUser.getIdToken() : null; }catch(e){ outboxIdToken = null; }
+  try{ outboxAppCheckToken = (window.__APP_CHECK_ATIVO && typeof firebase !== 'undefined' && firebase.appCheck) ? (((await firebase.appCheck().getToken()) || {}).token || null) : null; }catch(e){ outboxAppCheckToken = null; }
+}
+function outboxRestBase(){ try{ const b = String(rtdb.ref('/').toString()).replace(/\/+$/, ''); return /^https:\/\//.test(b) ? b : null; }catch(e){ return null; } }
+function outboxPedidosRest(aoSair){
+  const base = outboxRestBase(); if(!base) return [];
+  const out = [];
+  OUTBOX_REST_LOJAS.forEach(nome => {
+    const updates = outboxLer(nome); const chaves = Object.keys(updates); if(!chaves.length) return;
+    if(!chaves.every(k => k.startsWith(nome + '/'))) return;                    // defesa: só caminhos do próprio nó
+    const corpo = JSON.stringify(updates); if(aoSair && corpo.length > 60000) return;   // keepalive: limite de 64 KB por página
+    const headers = { 'Content-Type': 'application/json' }; if(outboxAppCheckToken) headers['X-Firebase-AppCheck'] = outboxAppCheckToken;
+    out.push({ nome, url: base + '/.json?auth=' + encodeURIComponent(outboxIdToken), corpo, headers });
+  });
+  return out;
+}
+// aoSair = true: dispara tudo sem esperar (a página pode congelar a qualquer momento). false: espera, com limite de 8 s por loja.
+async function outboxEnviarRest(motivo, aoSair){
+  if(!rtdb || typeof fetch !== 'function' || !outboxIdToken) return false;
+  if(typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+  if(!aoSair && outboxRestEmCurso) return false;
+  const pedidos = outboxPedidosRest(aoSair); if(!pedidos.length) return false;
+  if(aoSair){
+    pedidos.forEach(p => { try{ fetch(p.url, { method: 'PATCH', body: p.corpo, headers: p.headers, keepalive: true }).catch(() => {}); }catch(e){} });
+    return true;
+  }
+  let enviou = false; outboxRestEmCurso = true;
+  try{
+    for(const p of pedidos){
+      const ctl = (typeof AbortController === 'function') ? new AbortController() : null; const timer = ctl ? setTimeout(() => { try{ ctl.abort(); }catch(e){} }, 8000) : null;
+      try{ const r = await fetch(p.url, { method: 'PATCH', body: p.corpo, headers: p.headers, signal: ctl ? ctl.signal : undefined }); if(r && r.ok) enviou = true; else console.warn('outbox: envio direto (' + p.nome + ', ' + motivo + ') recusado: ' + (r && r.status)); }
+      catch(e){ console.warn('outbox: envio direto (' + p.nome + ', ' + motivo + ') falhou: ' + (e && e.message)); }
+      finally{ if(timer) clearTimeout(timer); }
+    }
+  }finally{ outboxRestEmCurso = false; }
+  return enviou;
+}
 function outboxIniciarMotor(){
   setInterval(() => outboxTentarSincronizar('periódica'), 20000);
+  setInterval(() => { outboxAtualizarTokens(); }, 20000); setTimeout(() => { outboxAtualizarTokens(); }, 3000);
   window.addEventListener('online', () => outboxTentarSincronizar('conexão voltou'));
-  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') outboxTentarSincronizar('voltou ao primeiro plano'); });
+  document.addEventListener('visibilitychange', () => {
+    if(document.visibilityState === 'visible'){ outboxAtualizarTokens().then(() => outboxEnviarRest('voltou ao primeiro plano', false)).catch(() => {}).then(() => outboxTentarSincronizar('voltou ao primeiro plano')); }
+    else outboxEnviarRest('saiu do primeiro plano', true);
+  });
+  window.addEventListener('pagehide', () => outboxEnviarRest('página saindo', true));
+  document.addEventListener('freeze', () => outboxEnviarRest('página congelada', true));
   outboxAtualizarIndicador();
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', outboxIniciarMotor); else outboxIniciarMotor();
