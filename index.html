@@ -28026,7 +28026,7 @@ async function abrirContratosManut(container){
 // manuaisArquivos/<id>. Obra finalizada gera a pendência "enviar manual"; o manual é montado no navegador (pdf-lib) juntando capa,
 // índice e as fichas escolhidas por tipo de instalação. Estado por cliente em r.manualOperacao (mesmo formato de r.contratoManut).
 // =====================================================================================
-const MAN_TIPOS = [['aquecimento', 'Aquecimento a gás'], ['conforto', 'Conforto / recirculação'], ['pressurizacao', 'Pressurização'], ['recalque', 'Recalque'], ['reuso', 'Reúso'], ['piscina', 'Piscina'], ['spa', 'Spa / Pool-Spa'], ['hidro', 'Hidromassagem'], ['sauna', 'Sauna'], ['geral', 'Geral']];
+const MAN_TIPOS = [['aquecimento', 'Aquecimento a gás'], ['solar', 'Aquecimento solar'], ['boiler', 'Boiler / reservatório térmico'], ['conforto', 'Conforto / recirculação'],   /* Fase 24: solar e boiler */ ['pressurizacao', 'Pressurização'], ['recalque', 'Recalque'], ['reuso', 'Reúso'], ['piscina', 'Piscina'], ['spa', 'Spa / Pool-Spa'], ['hidro', 'Hidromassagem'], ['sauna', 'Sauna'], ['geral', 'Geral']];
 const manRotTipo = (k) => (MAN_TIPOS.find(t => t[0] === k) || [k, k])[1];
 const MAN_ORDEM = (k) => { const i = MAN_TIPOS.findIndex(t => t[0] === k); return i < 0 ? 99 : i; };
 const MAN_MAX = 4 * 1024 * 1024;
@@ -28057,8 +28057,8 @@ function carregarPdfLib(){
 async function contarPaginas(bytes){ const L = await carregarPdfLib(); const doc = await L.PDFDocument.load(bytes, { ignoreEncryption: true }); return doc.getPageCount(); }
 // tipos de instalação presentes na obra (pelas categorias do contrato e pelos nomes dos equipamentos)
 function manTiposDaObra(regs){
-  const t = new Set(); const CAT2TIPO = { aquecedor: 'aquecimento', reservatorio: 'aquecimento', coletor: 'aquecimento', bomba_apoio: 'aquecimento', pressurizador: 'pressurizacao', recalque: 'recalque', reuso: 'reuso', piscina: 'piscina', spa: 'spa', pool_spa: 'spa', sauna: 'sauna' };
-  cmEquipamentos(regs).forEach(i => { const n = fold(i.nome + ' ' + (i.sistema || '')); if(CAT2TIPO[i.cat]) t.add(CAT2TIPO[i.cat]); if(/conforto|smartstart|smart start|recircula/.test(n)) t.add('conforto'); if(/hidro/.test(n)) t.add('hidro'); if(/\bspa\b|pool/.test(n)) t.add('spa'); if(/piscina/.test(n)) t.add('piscina'); if(/sauna/.test(n)) t.add('sauna'); if(/reuso|reúso/.test(n)) t.add('reuso'); if(/recalque/.test(n)) t.add('recalque'); if(/pressuriz/.test(n)) t.add('pressurizacao'); });
+  const t = new Set(); const CAT2TIPO = { aquecedor: 'aquecimento', reservatorio: 'boiler', coletor: 'solar', bomba_apoio: 'aquecimento',   /* Fase 24 */ pressurizador: 'pressurizacao', recalque: 'recalque', reuso: 'reuso', piscina: 'piscina', spa: 'spa', pool_spa: 'spa', sauna: 'sauna' };
+  cmEquipamentos(regs).forEach(i => { const n = fold(i.nome + ' ' + (i.sistema || '')); if(CAT2TIPO[i.cat]) t.add(CAT2TIPO[i.cat]); if(/conforto|smartstart|smart start|recircula/.test(n)) t.add('conforto'); if(/boiler|reservatorio termico|reservatorio/.test(n)) t.add('boiler'); if(/solar|coletor/.test(n)) t.add('solar');   /* Fase 24 */ if(/hidro/.test(n)) t.add('hidro'); if(/\bspa\b|pool/.test(n)) t.add('spa'); if(/piscina/.test(n)) t.add('piscina'); if(/sauna/.test(n)) t.add('sauna'); if(/reuso|reúso/.test(n)) t.add('reuso'); if(/recalque/.test(n)) t.add('recalque'); if(/pressuriz/.test(n)) t.add('pressurizacao'); });
   return [...t];
 }
 const MAN_RESOLVIDO = { enviado: 'Manual enviado', ja_tem: 'Já tem manual', nao_precisa: 'Não precisa' };
@@ -28182,7 +28182,7 @@ function formModelo(m, aoSalvar){
 async function novoModelo(){
   const f = await escolherArquivo('application/pdf'); if(!f) return; if(f.size > MAN_MAX){ avisar('O PDF tem ' + (f.size / 1024 / 1024).toFixed(1) + ' MB; o limite é 4 MB.', 7000); return; }
   const bytes = await lerArquivo(f); let paginas = 0; try{ paginas = await contarPaginas(bytes); }catch(e){ console.warn(e); }
-  const tipoSug = (() => { const n = fold(f.name); for(const [k] of MAN_TIPOS) if(n.includes(k.slice(0, 6))) return k; if(/aquec/.test(n)) return 'aquecimento'; if(/press/.test(n)) return 'pressurizacao'; if(/recal/.test(n)) return 'recalque'; if(/pisc|tholz|pentair/.test(n)) return 'piscina'; if(/spa|pool/.test(n)) return 'spa'; if(/hidro/.test(n)) return 'hidro'; if(/sauna/.test(n)) return 'sauna'; if(/confort|smart/.test(n)) return 'conforto'; if(/reuso|reúso/.test(n)) return 'reuso'; if(/geral|manuten/.test(n)) return 'geral'; return 'outro'; })();
+  const tipoSug = (() => { const n = fold(f.name); if(/boiler|reservat/.test(n)) return 'boiler'; if(/solar/.test(n)) return 'solar';   /* Fase 24 */ for(const [k] of MAN_TIPOS) if(n.includes(k.slice(0, 6))) return k; if(/aquec/.test(n)) return 'aquecimento'; if(/press/.test(n)) return 'pressurizacao'; if(/recal/.test(n)) return 'recalque'; if(/pisc|tholz|pentair/.test(n)) return 'piscina'; if(/spa|pool/.test(n)) return 'spa'; if(/hidro/.test(n)) return 'hidro'; if(/sauna/.test(n)) return 'sauna'; if(/confort|smart/.test(n)) return 'conforto'; if(/reuso|reúso/.test(n)) return 'reuso'; if(/geral|manuten/.test(n)) return 'geral'; return 'outro'; })();
   formModelo({ nome: f.name.replace(/\.pdf$/i, '').replace(/[_-]+/g, ' '), tipo: tipoSug, sempre: tipoSug === 'geral', ordem: 0 }, async (v) => {
     const id = uid('man_'); const agora = new Date().toISOString();
     try{ await manSalvarArquivo(id, bytesParaB64(bytes)); }catch(e){ alert('⚠️ Não foi possível gravar o PDF no servidor (' + (e && (e.code || e.message)) + '). Se aparecer PERMISSION_DENIED, libere os nós "manuaisOperacao" e "manuaisArquivos" nas regras do Firebase.'); return; }
