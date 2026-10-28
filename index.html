@@ -28083,6 +28083,7 @@ async function abrirManualOperacao(rids){
   const render = () => {
     const sel = new Set(d.selecionados);
     const tiposLista = MAN_TIPOS;
+    const _m0 = ov.querySelector('.modal'); const _y0 = _m0 ? _m0.scrollTop : 0; if(_y0) Promise.resolve().then(() => { const _m1 = ov.querySelector('.modal'); if(_m1) _m1.scrollTop = _y0; });   /* Fase 25: redesenhar não volta a janela para o topo */
     ov.innerHTML = `<div class="modal obr-modal" style="max-width:820px; max-height:92vh; overflow-y:auto;"><h3 style="margin:0 0 4px;">Manual de operação</h3>
       <p class="prv-hint" style="margin:0 0 10px;"><b>${esc(d.cliente)}</b>${d.endereco ? ' · ' + esc(d.endereco) : ''}${salvo ? ` · <span class="prv-chip ${salvo.status === 'enviado' ? 'green' : MAN_RESOLVIDO[salvo.status] ? 'gray' : 'amber'}">${salvo.status === 'enviado' ? 'enviado em ' + esc(fmtData(String(salvo.enviadoEm || '').slice(0, 10))) + (salvo.enviadoPor ? ' por ' + esc(salvo.enviadoPor) : '') : MAN_RESOLVIDO[salvo.status] || 'PDF gerado, ainda não enviado'}</span>` : ''}</p>
       <div class="obr-sec-t">Tipos de instalação do cliente</div>
@@ -28249,6 +28250,7 @@ async function abrirContratoManut(rids){
   const opcoes = (sel) => cmCats().map(c => `<option value="${c[0]}" ${c[0] === sel ? 'selected' : ''}>${esc(c[1])}${c[2] ? ' · ' + brl(cmValorUnit(c[0])) + '/ano' : ''}</option>`).join('');
   const render = () => {
     const t = cmCalcular(d);
+    const _m0 = ov.querySelector('.modal'); const _y0 = _m0 ? _m0.scrollTop : 0; if(_y0) Promise.resolve().then(() => { const _m1 = ov.querySelector('.modal'); if(_m1) _m1.scrollTop = _y0; });   /* Fase 25: redesenhar não volta a janela para o topo */
     ov.innerHTML = `<div class="modal obr-modal" style="max-width:820px; max-height:92vh; overflow-y:auto;"><h3 style="margin:0 0 4px;">Contrato de manutenção preventiva</h3>
       <p class="prv-hint" style="margin:0 0 10px;"><b>${esc(d.cliente)}</b>${d.endereco ? ' · ' + esc(d.endereco) : ''}${salvo ? ` · <span class="prv-chip ${salvo.status === 'enviado' ? 'green' : CM_RESOLVIDO[salvo.status] ? 'gray' : 'amber'}">${salvo.status === 'enviado' ? 'enviado em ' + esc(fmtData(String(salvo.enviadoEm || '').slice(0, 10))) + (salvo.enviadoPor ? ' por ' + esc(salvo.enviadoPor) : '') : CM_RESOLVIDO[salvo.status] ? CM_RESOLVIDO[salvo.status] + (salvo.enviadoEm ? ' · ' + esc(fmtData(String(salvo.enviadoEm).slice(0, 10))) : '') + (salvo.enviadoPor ? ' por ' + esc(salvo.enviadoPor) : '') : 'PDF gerado, ainda não enviado'}</span>` : ''}</p>
       <div class="obr-grid2">
