@@ -1948,6 +1948,11 @@
   .os-aba.on{ background:#fff; color:var(--text); box-shadow:0 1px 3px rgba(0,0,0,.12); }
   .os-aba-n{ font-size:11px; font-weight:700; min-width:20px; padding:1px 6px; border-radius:999px; background:rgba(0,0,0,.07); }
   .os-aba.on .os-aba-n{ background:var(--text); color:#fff; }
+  /* Fase 22: aprovação dos pedidos de manutenção (Cadastros e OS / Painel Alex) */
+  .apm-lin{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:10px 2px; border-top:1px solid var(--line); font-size:13px; }
+  .apm-lin:first-of-type{ border-top:0; } .apm-cli{ flex:1 1 240px; min-width:0; } .apm-cli b{ font-size:14px; } .apm-cli small{ display:block; color:var(--text-secondary); font-size:12px; margin-top:2px; }
+  .apm-val{ font-weight:700; white-space:nowrap; } .apm-ctl{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; } .apm-ctl select{ min-width:190px; }
+  .apm-vazio{ padding:18px 4px; color:var(--text-secondary); font-size:13px; } .apm-nota{ font-size:12px; color:var(--text-secondary); margin:8px 0 2px; }
 
   /* ===== Painel Gestor / Painel Alex ===== */
   .pn-tab{ max-width:1180px; margin:0 auto; padding:4px 0 28px; }
@@ -3844,6 +3849,7 @@
       <button type="button" class="portal-tab" data-prvos="relatorios" id="prvOsTabRel">Relatórios de manutenção</button>
       <button type="button" class="portal-tab" data-prvos="oficina" id="prvOsTabOficina">Equipamentos da Oficina</button>
       <button type="button" class="portal-tab" data-prvos="decisao" id="prvOsTabDecisao">Não finalizados</button>
+      <button type="button" class="portal-tab" data-prvos="pedmanut" id="prvOsTabPedManut">Pedidos de manutenção<span class="obr-tab-n" id="prvOsPedManutN"></span></button>   <!-- Fase 22 -->
     </div>
     <div id="prvOsAguardando">
     <div class="tecnicos-head">
@@ -3874,6 +3880,7 @@
     <div id="prvOsRelatorios" style="display:none;"></div>
     <div id="prvOsOficina" style="display:none;"></div>
     <div id="prvOsDecisao" style="display:none;"></div>
+    <div id="prvOsPedManut" style="display:none;"></div>   <!-- Fase 22: aprovação dos pedidos de manutenção -->
   </div>
 
   <div id="tabClientes" style="display:none;">
@@ -23647,6 +23654,7 @@ function ligarAbas(){
       document.getElementById('prvOsRelatorios').style.display = tab === 'relatorios' ? '' : 'none';
       const po = document.getElementById('prvOsOficina'); if(po) po.style.display = tab === 'oficina' ? '' : 'none';
       const pd = document.getElementById('prvOsDecisao'); if(pd) pd.style.display = tab === 'decisao' ? '' : 'none';
+      const pm = document.getElementById('prvOsPedManut'); if(pm) pm.style.display = tab === 'pedmanut' ? '' : 'none'; if(tab === 'pedmanut' && window.OBR_API && OBR_API.abrirAprovacaoPedidos) OBR_API.abrirAprovacaoPedidos(pm);   // Fase 22
       if(tab === 'decisao' && window.OS_API){ OS_API.preAba(); OS_API.renderAba(); }
       if(tab === 'relatorios'){ renderOsRelatorios(); garantirRelatorios(); }
       if(tab === 'oficina' && window.OSOF_API) OSOF_API.renderAba();
@@ -26252,7 +26260,7 @@ async function garantirCarregado(){
   if(!carregando) carregando = store.load().then(() => { if(sessaoMudou(g, 'obrasPedidos')) return; store.attach(() => aoMudarRemoto()); carregado = true; });
   await carregando;
 }
-function aoMudarRemoto(){ renderLista(); renderGestor(); reconciliar(); if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
+function aoMudarRemoto(){ renderLista(); renderGestor(); reconciliar(); try{ atualizarAprovacaoTelas(); }catch(e){}   /* Fase 22 */ if(ui.abertoId && document.getElementById('obrDetOverlay') && document.getElementById('obrDetOverlay').classList.contains('open')){ const foco = document.activeElement; if(!(foco && foco.closest && foco.closest('#obrDetOverlay') && /^(INPUT|TEXTAREA|SELECT)$/.test(foco.tagName))){ renderDetalheSecoes(); } } }
 async function gravar(r){ r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderLista(); await store.save(true); if(ehOs(r)) espelharNaOs(r).catch(e => console.error('os: espelhar', e)); }
 
 // ---------- tela principal ----------
@@ -26442,11 +26450,69 @@ function controlesManut(r, p){      // Fase 18: o pedido de manutenção já che
   return `<div class="obr-manut-ctl"><label>Situação do pedido</label><select class="obr-st obr-aprov-sel obr-aprov-${ap}" data-obr-aprov="${esc(p.id)}">${APROVACAO.map(([k, n]) => `<option value="${k}" ${k === ap ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
 }
 async function mudarAprovacao(pid, novo){
-  const r = atual(); if(!r || !r.pedidos || !r.pedidos[pid] || !APROVACAO.some(a => a[0] === novo)) return; const p = r.pedidos[pid]; if(aprovDe(p) === novo) return;
+  const r = atual(); if(!r) return; await aprovarPedidoManut(r.id, pid, novo); renderDetalheSecoes();
+}
+// Fase 22: a ÚNICA gravação da aprovação de um pedido (detalhe do Financeiro, Cadastros e OS e Painel Alex chamam esta).
+// Aprovado → nasce a cobrança "Parcela única" A cobrar (Fase 21) e o pedido vai para Aprovados no Financeiro; não aprovado → sai da cobrança.
+async function aprovarPedidoManut(rid, pid, novo){
+  const r = porId(rid); if(!r || !r.pedidos || !r.pedidos[pid] || !APROVACAO.some(a => a[0] === novo)) return null; const p = r.pedidos[pid]; if(aprovDe(p) === novo) return null;
   p.aprovacao = novo; p.aprovacaoEm = new Date().toISOString(); p.aprovacaoPor = quem() || null; r.pedidos = Object.assign({}, r.pedidos);
   const criou = garantirCobrancaPedido(r, p);   // Fase 21
-  await gravar(r); renderDetalheSecoes();
-  if(ehManut(r)) avisar('Pedido ' + p.numero + (novo === 'aprovado' ? ' aprovado: foi para Aprovados' + (criou ? ' com a cobrança de ' + brl(p.valor) + ' em A cobrar.' : '.') : novo === 'nao_aprovado' ? ' não aprovado: foi para Não aprovados e saiu da cobrança.' : ' voltou para Aguardando aprovação.'), 7000);
+  await gravar(r);
+  if(ehManut(r)) avisar('Pedido ' + p.numero + ' (' + nomeCliente(r) + ')' + (novo === 'aprovado' ? ' aprovado: foi para Aprovados no Financeiro' + (criou ? ' com a cobrança de ' + brl(p.valor) + ' em A cobrar.' : '.') : novo === 'nao_aprovado' ? ' não aprovado: foi para Não aprovados no Financeiro e saiu da cobrança.' : ' voltou para Aguardando aprovação.'), 7000);
+  try{ atualizarAprovacaoTelas(); }catch(e){}
+  return { criou };
+}
+// ---------- Fase 22: aprovação dos pedidos de manutenção nas telas do Gestor (Cadastros e OS · Painel Alex) ----------
+const uiA = { filtro: 'aguardando' };
+const ORIGEM_PED = { os: 'Cadastros e OS', pendencia: 'Pendências da preventiva', oficina: 'Oficina', quadro: 'Quadro de comando' };
+function itensAprovacao(){ const out = []; todosRegistros().filter(ehManut).forEach(r => pedidosDe(r).filter(p => !p.cancelado).forEach(p => out.push({ r, p, ap: aprovDe(p) }))); return out; }
+const nAguardandoAprov = () => carregado ? itensAprovacao().filter(x => x.ap === 'aguardando').length : null;
+function cobrancaDoPedido(r, p){      // situação da cobrança vista pelo Gestor (só leitura; quem controla é o Financeiro)
+  const ps = parcelasDoPedido(r, p.numero); if(!ps.length) return ['Sem cobrança', 'gray'];
+  const sts = ps.map(stDe); if(pedidoQuitado(r, p)) return ['Pago', 'green'];
+  const ag = ps.filter(x => stDe(x) === 'agendado' && x.agendadoPara).map(x => x.agendadoPara).sort()[0];
+  if(sts.includes('agendado')) return ['Agendado' + (ag ? ' · ' + fmtData(ag) : ''), 'blue']; if(sts.includes('enviado')) return ['Cobrança enviada', 'blue'];
+  if(sts.includes('recebido')) return ['Pago em parte', 'amber']; return ['A cobrar', 'amber'];
+}
+function aprovacaoHtml(onde){      // onde: 'os' (aba de Cadastros e OS) | 'alex' (página do Painel Alex)
+  if(!carregado) return '<div class="apm-vazio">Carregando os pedidos de manutenção…</div>';
+  const itens = itensAprovacao(); const c = (k) => itens.filter(x => x.ap === k).length; const f = uiA.filtro;
+  const FILTROS = [['aguardando', 'Aguardando aprovação'], ['aprovado', 'Aprovados'], ['nao_aprovado', 'Não aprovados']];
+  const abas = `<div class="os-abas pn-abas" role="tablist" style="max-width:560px;">${FILTROS.map(([k, nm]) => `<button type="button" role="tab" aria-selected="${f === k}" class="os-aba ${f === k ? 'on' : ''}" data-apm-f="${k}">${nm}<span class="os-aba-n">${c(k)}</span></button>`).join('')}</div>`;
+  const quando = (x) => String(x.p.criadoEm || x.p.aprovacaoEm || x.r.criadoEm || '');
+  const l = itens.filter(x => x.ap === f).sort((a, b) => f === 'aguardando' ? quando(a).localeCompare(quando(b)) : String(b.p.aprovacaoEm || '').localeCompare(String(a.p.aprovacaoEm || '')));
+  const emp = (r) => r.empresa ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : '<span class="obr-emp obr-emp-definir">Empresa a definir</span>';
+  const linha = (x) => { const cb = x.ap === 'aprovado' ? cobrancaDoPedido(x.r, x.p) : null; const dt = quando(x);
+    return `<div class="apm-lin"><div class="apm-cli"><b>${esc(nomeCliente(x.r))}</b> ${emp(x.r)}<small>Pedido <b>${esc(x.p.numero)}</b>${x.p.descricao ? ' · ' + esc(x.p.descricao) : ''}${x.p.osNumero ? ' · OS ' + esc(x.p.osNumero) : ''}${x.p.origem && ORIGEM_PED[x.p.origem] ? ' · ' + esc(ORIGEM_PED[x.p.origem]) : ''}${dt ? ' · ' + (x.ap === 'aguardando' ? 'criado em ' : 'decidido em ') + esc(fmtData(String(x.ap === 'aguardando' ? dt : (x.p.aprovacaoEm || dt)).slice(0, 10))) : ''}${x.ap !== 'aguardando' && x.p.aprovacaoPor ? ' por ' + esc(x.p.aprovacaoPor) : ''}</small></div>
+      <span class="apm-val">${esc(brl(x.p.valor))}</span>
+      <span class="apm-ctl">${cb ? `<span class="prv-chip ${cb[1]}" title="Situação da cobrança no Financeiro">${esc(cb[0])}</span>` : ''}<select class="obr-st obr-aprov-sel obr-aprov-${x.ap}" data-apm-ap="${esc(x.r.id)}|${esc(x.p.id)}" aria-label="Situação do pedido ${esc(x.p.numero)}">${APROVACAO.map(([k, nm]) => `<option value="${k}" ${k === x.ap ? 'selected' : ''}>${nm}</option>`).join('')}</select></span></div>`; };
+  const vazio = { aguardando: 'Nenhum pedido de manutenção aguardando aprovação.', aprovado: 'Nenhum pedido aprovado.', nao_aprovado: 'Nenhum pedido não aprovado.' }[f];
+  return `${onde === 'os' ? '<div class="tecnicos-head"><div><div class="tecnicos-title">Pedidos de manutenção</div><div class="tecnicos-date mono">aprovação dos pedidos enviados ao Financeiro</div></div></div>' : ''}${abas}
+    <div class="apm-nota">${f === 'aguardando' ? 'Mude a situação para <b>Aprovado</b> quando o cliente aprovar: o pedido passa para <b>Aprovados</b> no Financeiro com a cobrança em <b>A cobrar</b>. <b>Não aprovado</b> tira o pedido da cobrança.' : f === 'aprovado' ? 'A cobrança destes pedidos é controlada pelo Financeiro (Pedidos de manutenção › Aprovados); aqui aparece só a situação.' : 'Pedidos que o cliente não aprovou: fora da cobrança. Dá para voltar para Aguardando ou Aprovado.'}</div>
+    <div class="${onde === 'alex' ? 'pg-area-b' : ''}" style="${onde === 'os' ? 'padding:0 0 30px;' : ''}">${l.length ? l.map(linha).join('') : `<div class="apm-vazio">${vazio}</div>`}</div>`;
+}
+// Trata cliques (filtro) e trocas (situação) dentro do componente. Devolve true se o evento era dele. aoMudar = redesenho da tela que o hospeda.
+function aprovacaoEvento(e, aoMudar){
+  const fb = e.target.closest && e.target.closest('[data-apm-f]'); if(fb && e.type === 'click'){ uiA.filtro = fb.dataset.apmF; if(aoMudar) aoMudar(); return true; }
+  const sel = e.target.closest && e.target.closest('[data-apm-ap]'); if(!sel) return false; if(e.type !== 'change') return true;
+  const [rid, pid] = sel.dataset.apmAp.split('|'); const novo = sel.value; const r = porId(rid); const p = r && r.pedidos ? r.pedidos[pid] : null; if(!p) return true;
+  const antes = aprovDe(p); const emCob = parcelasDoPedido(r, p.numero).filter(x => ['enviado', 'agendado', 'recebido'].includes(stDe(x)));
+  const fazer = () => aprovarPedidoManut(rid, pid, novo).then(() => { if(aoMudar) aoMudar(); }).catch(err => { console.error('aprovação do pedido', err); avisar('Não foi possível salvar a situação do pedido. Verifique a internet e tente de novo.', 7000); if(aoMudar) aoMudar(); });
+  if(novo === 'nao_aprovado' && emCob.length){ sel.value = antes; customConfirm('O pedido ' + p.numero + ' já tem cobrança ' + (emCob.some(x => stDe(x) === 'recebido') ? 'recebida' : 'enviada') + ' no Financeiro. Marcar como não aprovado tira o pedido da cobrança. Continuar?', fazer, 'Não aprovado'); return true; }
+  fazer(); return true;
+}
+let apmBox = null;
+async function abrirAprovacaoPedidos(container){
+  apmBox = container; if(!container._apmLigado){ container._apmLigado = true; const re = () => { if(apmBox) apmBox.innerHTML = aprovacaoHtml('os'); };
+    container.addEventListener('click', (e) => aprovacaoEvento(e, re)); container.addEventListener('change', (e) => aprovacaoEvento(e, re)); }
+  container.innerHTML = aprovacaoHtml('os');
+  try{ await garantirCarregado(); }catch(e){ console.error('aprovação: carregar', e); }
+  container.innerHTML = aprovacaoHtml('os'); atualizarAprovacaoTelas();
+}
+function atualizarAprovacaoTelas(){      // contador da aba de Cadastros e OS e a lista, se estiver aberta (chamado também a cada mudança no banco)
+  const n = nAguardandoAprov(); const el = document.getElementById('prvOsPedManutN'); if(el) el.textContent = n ? ' (' + n + ')' : '';
+  if(apmBox && apmBox.style.display !== 'none' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#prvOsPedManut') && document.activeElement.tagName === 'SELECT')) apmBox.innerHTML = aprovacaoHtml('os');
 }
 function renderPed(){
   const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; if(ehPrev(r)) return renderPlanoPrev(r, el); const ped = pedidosDe(r); const t = totais(r);
@@ -26508,10 +26574,10 @@ async function criarPedidoManutencao(d){
   if(r && lista(r.pedidos).some(p => fold(p.numero) === fold(numero))) return r;      // o mesmo pedido já está neste registro: não duplica
   const cl = (typeof clientePorNome === 'function' ? clientePorNome(d.cliente) : null);
   if(!r){ r = { id: uid('mn_'), tipo: 'manutencao', empresa: null, cliente: cl ? cl.name : d.cliente, clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
-  r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero, descricao: d.descricao || null, valor, osNumero: d.osNumero || null, origem: d.origem || null, origemId: d.refId != null ? String(d.refId) : null, aprovacao: d.aprovacao || null, aprovacaoEm: d.aprovacao ? agora : null, aprovacaoPor: d.aprovacao ? (quem() || null) : null } });
+  r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero, descricao: d.descricao || null, valor, osNumero: d.osNumero || null, origem: d.origem || null, origemId: d.refId != null ? String(d.refId) : null, aprovacao: d.aprovacao || null, aprovacaoEm: d.aprovacao ? agora : null, aprovacaoPor: d.aprovacao ? (quem() || null) : null, criadoEm: agora, criadoPor: quem() || null } });   // Fase 22: criadoEm/criadoPor
   garantirCobrancaPedido(r, r.pedidos[pid]);   // Fase 21: pedido que já chega aprovado (pendências da preventiva) entra em Aprovados com a cobrança A cobrar
   r.atualizadoEm = agora; r.atualizadoPor = quem() || null;
-  renderLista(); await store.save(true);
+  renderLista(); await store.save(true); try{ atualizarAprovacaoTelas(); }catch(e){}   // Fase 22
   return r;
 }
 // ---------- Ordens de serviço no Financeiro (15/10): cada OS marcada "Cobrar" vira um PEDIDO (parcela única) no registro tipo 'os' do cliente ----------
@@ -28750,7 +28816,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { _teste: { estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
@@ -29091,14 +29157,15 @@ function blocoCadastrosOS(semCobranca){          // semCobranca (Painel Alex): s
   const pend = (typeof groupPaired === 'function' ? groupPaired((typeof services !== 'undefined' ? services : []).filter(s => s.status === 'concluido' && !s.processedForOS && !s.osExcluido)).length : 0);
   const qd = window.QUADROS_API ? num(QUADROS_API.pendentesOS()) : 0, eq = window.OSOF_API ? num(OSOF_API.pendentesOS()) : 0;
   const todas = window.OS_API && osPronto ? OS_API.todas() : []; const c = (st) => todas.filter(o => o.status === st).length;
-  const corpo = `<div class="pn-kpis">${kpi(pend + qd + eq, 'Aguardando cadastro de OS', 'red', 'os', 'prvOsTabAguardando')}${kpi(osPronto ? c('decidir') : '…', 'OS a definir', 'amber', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('aguardando') : '…', 'OS aguardando', 'blue', 'os', 'prvOsTabDecisao')}${semCobranca ? '' : kpi(osPronto ? c('cobrar') : '…', 'OS cobradas', 'green', 'os', 'prvOsTabDecisao') + kpi(osPronto ? c('nao_cobrar') : '…', 'Não cobrar', 'gray', 'os', 'prvOsTabDecisao')}</div>
+  const corpo = `<div class="pn-kpis">${kpi(pend + qd + eq, 'Aguardando cadastro de OS', 'red', 'os', 'prvOsTabAguardando')}${kpi(osPronto ? c('decidir') : '…', 'OS a definir', 'amber', 'os', 'prvOsTabDecisao')}${kpi(osPronto ? c('aguardando') : '…', 'OS aguardando', 'blue', 'os', 'prvOsTabDecisao')}${(() => { const npm = window.OBR_API && OBR_API.nAguardandoAprov && obrasPronto ? OBR_API.nAguardandoAprov() : null; return kpi(npm == null ? '…' : npm, 'Pedidos de manutenção aguardando aprovação', npm ? 'amber' : 'gray', 'os', 'prvOsTabPedManut'); })()}${semCobranca ? '' : kpi(osPronto ? c('cobrar') : '…', 'OS cobradas', 'green', 'os', 'prvOsTabDecisao') + kpi(osPronto ? c('nao_cobrar') : '…', 'Não cobrar', 'gray', 'os', 'prvOsTabDecisao')}</div>
     ${(pend || qd || eq) ? `<div class="pn-nota">Para cadastrar: ${[pend ? pend + (pend === 1 ? ' atividade' : ' atividades') : '', qd ? qd + (qd === 1 ? ' quadro de comando' : ' quadros de comando') : '', eq ? eq + (eq === 1 ? ' equipamento da oficina' : ' equipamentos da oficina') : ''].filter(Boolean).join(' · ')}</div>` : ''}`;
   return bloco('Cadastros e OS', 'os', corpo);
 }
 function pagBar(quem){
   const atual = quem === 'alex' ? ui.pagAlex : ui.pagGestor; const n = window.PREV_API ? PREV_API.pendenciasContagem() : null;
   const b = (k, t, cont) => `<button type="button" role="tab" aria-selected="${atual === k}" class="os-aba ${atual === k ? 'on' : ''}" data-pn-pag="${quem}:${k}">${t}${cont != null ? `<span class="os-aba-n">${cont}</span>` : ''}</button>`;
-  return `<div class="os-abas pn-abas pn-pags" role="tablist">${b('resumo', 'Painel')}${quem === 'gestor' ? b('jornal', 'Jornal do dia') : ''}${b('pend', 'Pendências preventivas', n == null ? '…' : n)}</div>`;
+  const nPm = window.OBR_API && OBR_API.nAguardandoAprov ? OBR_API.nAguardandoAprov() : null;   // Fase 22
+  return `<div class="os-abas pn-abas pn-pags" role="tablist" ${quem === 'alex' ? 'style="max-width:640px;"' : ''}>${b('resumo', 'Painel')}${quem === 'gestor' ? b('jornal', 'Jornal do dia') : ''}${b('pend', 'Pendências preventivas', n == null ? '…' : n)}${quem === 'alex' ? b('pedmanut', 'Pedidos de manutenção', nPm == null ? '…' : nPm) : ''}</div>`;
 }
 function tilesInterna(ped, clicavel, extra){
   const A = O(); const fases = A.FASE_INTERNA || [];
@@ -29296,7 +29363,7 @@ function renderAlex(){
   const sOs = area('os', 'Cadastros e OS', pendOS ? `${pendOS} aguardando cadastro de OS` : 'Nenhum registro aguardando cadastro', [pendOS ? 'a' : 'g'], blocoCadastrosOS(true));
   const sEst = area('estoque', 'Estoque', (est.rep.length || est.aten.length) ? `${est.rep.length} em reposição · ${est.aten.length} no mínimo` : 'Nenhum item abaixo do mínimo', [est.rep.length ? 'r' : est.aten.length ? 'a' : 'g'], blocoEstoque());
   const sMan = area('manut', 'Manutenções preventivas', 'Contratos e próximas visitas', ['g'], blocoManutencao());
-  box.innerHTML = cab('Painel Alex', dataHoje()) + pagBar('alex') + (ui.pagAlex === 'pend' && window.PREV_API ? PREV_API.pendenciasHtml() : `<div class="pg"><div class="pg-col pg-col-a">${bEx}${bPulso}</div><div class="pg-col pg-col-b"><div class="pg-sec-t">Por área</div>${sCompras}${sOs}${sEst}${sMan}</div></div>`);
+  box.innerHTML = cab('Painel Alex', dataHoje()) + pagBar('alex') + (ui.pagAlex === 'pedmanut' && window.OBR_API && OBR_API.aprovacaoHtml ? OBR_API.aprovacaoHtml('alex') : ui.pagAlex === 'pend' && window.PREV_API ? PREV_API.pendenciasHtml() : `<div class="pg"><div class="pg-col pg-col-a">${bEx}${bPulso}</div><div class="pg-col pg-col-b"><div class="pg-sec-t">Por área</div>${sCompras}${sOs}${sEst}${sMan}</div></div>`);
   if(focoBusca){ const b = document.getElementById('pnAlexBusca'); if(b){ b.focus(); try{ b.setSelectionRange(caret, caret); }catch(e){} } }
 }
 
@@ -29312,6 +29379,7 @@ function abrir(){ carregar(); renderTudo(); }
 function ligar(){
   ['tabPGestor', 'tabPAlex'].forEach(id => { const box = document.getElementById(id); if(!box || box._pnLigado) return; box._pnLigado = true;
     box.addEventListener('click', (e) => {
+      if(window.OBR_API && OBR_API.aprovacaoEvento && OBR_API.aprovacaoEvento(e, renderTudo)) return;   // Fase 22: aprovação dos pedidos de manutenção
       const sec = e.target.closest('[data-pg-sec]'); if(sec){ const k = sec.dataset.pgSec; const st = id === 'tabPAlex' ? ui.paAbertas : ui.pgAbertas; if(st.has(k)) st.delete(k); else st.add(k); if(id === 'tabPAlex') renderAlex(); else renderGestor(); return; }
       const per = e.target.closest('[data-pg-per]'); if(per){ ui.pgPer = per.dataset.pgPer; renderGestor(); return; }
       const pg = e.target.closest('[data-pn-pag]'); if(pg){ const [q, k] = pg.dataset.pnPag.split(':'); if(q === 'alex') ui.pagAlex = k; else ui.pagGestor = k; renderTudo(); return; }
@@ -29326,7 +29394,7 @@ function ligar(){
       const sv = e.target.closest('[data-pn-svc]'); if(sv && typeof openServiceDetails === 'function'){ const s = (typeof services !== 'undefined' ? services : []).find(x => String(x.id) === sv.dataset.pnSvc); if(s) openServiceDetails(s.id); }
     });
     box.addEventListener('input', (e) => { if(e.target.id === 'pnAlexBusca'){ ui.alexBusca = e.target.value; renderAlex(); } });
-    box.addEventListener('change', async (e) => { const sel = e.target.closest('[data-pn-st]'); if(!sel) return; const [rid, pid] = sel.dataset.pnSt.split('|');
+    box.addEventListener('change', async (e) => { if(window.OBR_API && OBR_API.aprovacaoEvento && OBR_API.aprovacaoEvento(e, renderTudo)) return; const sel = e.target.closest('[data-pn-st]'); if(!sel) return;   // Fase 22 const [rid, pid] = sel.dataset.pnSt.split('|');
       try{ await OBR_API.mudarAndamento(rid, pid, 'i', sel.value); }catch(err){ console.error(err); try{ avisoNaoBloqueante('Não foi possível salvar a etapa. Tente de novo.', 5000); }catch(_){} }
       renderTudo(); });
   });
