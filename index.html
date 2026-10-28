@@ -5097,6 +5097,7 @@ async function jaVerifiquei(){
 }
 async function trocarDeConta(){
   try{ if(typeof currentRole !== 'undefined' && currentRole) logout(); }catch(e){}
+  try{ if(outboxSwSuportado()) await outboxSwOp('readwrite', st => st.delete('estado')); }catch(e){}   // Fase 30: a cópia do envio em segundo plano sai com a conta
   try{ await fbAuth.signOut(); }catch(e){}
   contaAtual = null; location.reload();   // recomeça limpo: sem dados de outra pessoa em memória
 }
@@ -5581,6 +5582,7 @@ function outboxGravar(nome, updates){
     if(!keys.length) localStorage.removeItem(OUTBOX_PREFIX + nome);
     else localStorage.setItem(OUTBOX_PREFIX + nome, JSON.stringify(updates));
     outboxAtualizarIndicador();
+    try{ outboxSwAgendar(); outboxRestAgendar(keys.length ? updates : null); }catch(e){}   // Fase 30: cópia para o envio em segundo plano + REST se demorar
     return true;
   }catch(e){
     console.error('outbox: falha ao gravar localmente (' + nome + ') — quota ou storage indisponível:', e);
@@ -5746,19 +5748,29 @@ async function outboxTentarSincronizar(motivo){
 // da agenda; nunca entra em log) e, com App Check ativo, o token dele no cabeçalho. Os valores são os mesmos do outbox; o outbox
 // não é limpo aqui — o motor normal reenvia (idempotente) e confirma.
 let outboxIdToken = null, outboxAppCheckToken = null, outboxRestEmCurso = false;
-const OUTBOX_REST_LOJAS = ['services', 'oficinaEquipamentos', 'maintenanceContracts', 'obraInstalacao'];
+const OUTBOX_REST_LOJAS = ['services', 'oficinaEquipamentos', 'maintenanceContracts', 'obraInstalacao', 'preventivo'];   // Fase 30: + relatório preventivo
+// Fase 30: lojas cujos caminhos não começam pelo nome da própria loja (o preventivo grava em quatro nós)
+const OUTBOX_REST_PREFIXOS = { preventivo: ['preventivoUnidades/', 'preventivoRascunhos/', 'preventivoFotos/', 'preventivoRelatorios/'] };
+function outboxCaminhoDaLoja(nome, k){ return (OUTBOX_REST_PREFIXOS[nome] || [nome + '/']).some(p => k.indexOf(p) === 0); }
 async function outboxAtualizarTokens(){
   try{ outboxIdToken = (typeof authAtivo === 'function' && authAtivo() && fbAuth && fbAuth.currentUser) ? await fbAuth.currentUser.getIdToken() : null; }catch(e){ outboxIdToken = null; }
   try{ outboxAppCheckToken = (window.__APP_CHECK_ATIVO && typeof firebase !== 'undefined' && firebase.appCheck) ? (((await firebase.appCheck().getToken()) || {}).token || null) : null; }catch(e){ outboxAppCheckToken = null; }
 }
 function outboxRestBase(){ try{ const b = String(rtdb.ref('/').toString()).replace(/\/+$/, ''); return /^https:\/\//.test(b) ? b : null; }catch(e){ return null; } }
-function outboxPedidosRest(aoSair){
-  const base = outboxRestBase(); if(!base) return [];
+function outboxCorposRest(){
   const out = [];
   OUTBOX_REST_LOJAS.forEach(nome => {
     const updates = outboxLer(nome); const chaves = Object.keys(updates); if(!chaves.length) return;
-    if(!chaves.every(k => k.startsWith(nome + '/'))) return;                    // defesa: só caminhos do próprio nó
-    const corpo = JSON.stringify(updates); if(aoSair && corpo.length > 60000) return;   // keepalive: limite de 64 KB por página
+    if(!chaves.every(k => outboxCaminhoDaLoja(nome, k))) return;               // defesa: só caminhos do próprio nó
+    out.push({ nome, corpo: JSON.stringify(updates) });
+  });
+  return out;
+}
+function outboxPedidosRest(aoSair){
+  const base = outboxRestBase(); if(!base) return [];
+  const out = [];
+  outboxCorposRest().forEach(({ nome, corpo }) => {
+    if(aoSair && corpo.length > 60000) return;                                  // keepalive: limite de 64 KB por página
     const headers = { 'Content-Type': 'application/json' }; if(outboxAppCheckToken) headers['X-Firebase-AppCheck'] = outboxAppCheckToken;
     out.push({ nome, url: base + '/.json?auth=' + encodeURIComponent(outboxIdToken), corpo, headers });
   });
@@ -5778,23 +5790,108 @@ async function outboxEnviarRest(motivo, aoSair){
   try{
     for(const p of pedidos){
       const ctl = (typeof AbortController === 'function') ? new AbortController() : null; const timer = ctl ? setTimeout(() => { try{ ctl.abort(); }catch(e){} }, 8000) : null;
-      try{ const r = await fetch(p.url, { method: 'PATCH', body: p.corpo, headers: p.headers, signal: ctl ? ctl.signal : undefined }); if(r && r.ok) enviou = true; else console.warn('outbox: envio direto (' + p.nome + ', ' + motivo + ') recusado: ' + (r && r.status)); }
+      try{ const r = await fetch(p.url, { method: 'PATCH', body: p.corpo, headers: p.headers, signal: ctl ? ctl.signal : undefined }); if(r && r.ok){ enviou = true; outboxRestEntregue(p, pedidos); } else console.warn('outbox: envio direto (' + p.nome + ', ' + motivo + ') recusado: ' + (r && r.status)); }
       catch(e){ console.warn('outbox: envio direto (' + p.nome + ', ' + motivo + ') falhou: ' + (e && e.message)); }
       finally{ if(timer) clearTimeout(timer); }
     }
   }finally{ outboxRestEmCurso = false; }
   return enviou;
 }
+// ----- Fase 30: ao sair, o texto da atividade não espera a foto subir -----
+// writeServicesDiff primeiro sobe as fotos novas para o Storage e só depois monta o envio; com a tela bloqueada no meio do upload, nem a mudança de
+// situação/horário saía (o outbox ainda estava vazio). Com um salvamento em andamento, os campos que não são mídia e diferem do confirmado entram no
+// outbox aqui e saem junto com o resto; as fotos seguem pelo caminho normal quando o app voltar. Remoção pendente e mídia em base64 ficam de fora.
+function outboxServicosTextoAoSair(){
+  try{
+    if(!servicesSaveInFlight && !servicesSaveQueued) return 0;
+    const pend = outboxLer('services'); let novos = 0;
+    services.forEach(s => {
+      const id = String(s.id); if(Object.prototype.hasOwnProperty.call(pend, 'services/' + id)) return;
+      const conf = servicesSnapshot[id] || {};
+      Object.keys(s).forEach(campo => {
+        if(SERVICE_MEDIA_FIELDS.includes(campo) || s[campo] === undefined) return;
+        const j = JSON.stringify(s[campo]); if(j === undefined || conf[campo] === j || j.indexOf('"data:') >= 0) return;
+        const k = 'services/' + id + '/' + campo; if(JSON.stringify(pend[k]) === j) return;
+        pend[k] = JSON.parse(j); novos++;
+      });
+    });
+    if(novos) outboxGravar('services', pend);
+    return novos;
+  }catch(e){ console.warn('outbox: texto da atividade não entrou no envio ao sair', e); return 0; }
+}
+
+// ----- Fase 30: envio pelo service worker quando a internet voltar (Background Sync — Chrome/Android) -----
+// O celular congela a página quando a tela bloqueia; sem sinal nessa hora, o keepalive da Fase 17 não tem como sair e a alteração esperava o técnico
+// reabrir o app. Agora uma cópia do outbox (e o que é preciso para autenticar) fica no IndexedDB, que o sw.js enxerga, e o app pede ao navegador um
+// "sync": quando a conexão volta — mesmo com o app fechado e a tela bloqueada — o navegador acorda o sw.js, que envia pela REST do banco.
+// A cópia só existe enquanto há pendência (sem pendência ela é apagada, junto com os tokens). O sw.js não envia com o app na tela (aí o próprio app envia).
+// No iPhone (Safari) não existe Background Sync: lá vale só o envio ao sair.
+var outboxSwDbP = null, outboxSwTimer = null;
+function outboxSwSuportado(){ return typeof indexedDB !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator && typeof SyncManager !== 'undefined'; }
+function outboxSwAbrir(){
+  if(!outboxSwDbP) outboxSwDbP = new Promise((res, rej) => { const r = indexedDB.open('equiper-outbox-sw', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }).catch(e => { outboxSwDbP = null; throw e; });
+  return outboxSwDbP;
+}
+function outboxSwOp(modo, fn){ return outboxSwAbrir().then(db => new Promise((res, rej) => { const tx = db.transaction('kv', modo); const r = fn(tx.objectStore('kv')); let v; if(r) r.onsuccess = () => { v = r.result; }; tx.oncomplete = () => res(v); tx.onerror = tx.onabort = () => rej(tx.error); })); }
+async function outboxSwEspelhar(pedirSync){
+  if(!outboxSwSuportado()) return false;
+  clearTimeout(outboxSwTimer); outboxSwTimer = null;
+  try{
+    const pedidos = outboxCorposRest(); const base = outboxRestBase(); const u = (fbAuth && fbAuth.currentUser) || null;
+    if(!pedidos.length || !base || !u || !u.refreshToken){ await outboxSwOp('readwrite', st => st.delete('estado')); return false; }
+    await outboxSwOp('readwrite', st => st.put({ base, apiKey: firebaseConfig.apiKey, idToken: outboxIdToken, refreshToken: u.refreshToken, appCheck: outboxAppCheckToken, pedidos, gravadoEm: Date.now() }, 'estado'));
+    if(pedirSync){ const reg = await navigator.serviceWorker.ready; if(reg && reg.sync) await reg.sync.register('equiper-outbox'); }
+    return true;
+  }catch(e){ console.warn('outbox: cópia para o envio em segundo plano falhou', e && e.message); return false; }
+}
+function outboxSwAgendar(){ if(!outboxSwSuportado()) return; clearTimeout(outboxSwTimer); outboxSwTimer = setTimeout(() => { outboxSwEspelhar(false); }, 1000); }
+// Ao voltar: o que o sw.js já entregou e não mudou desde então sai do outbox — não reenvia por cima de uma edição mais nova feita no Gestor.
+async function outboxSwRecolher(){
+  if(!outboxSwSuportado()) return;
+  try{
+    const env = await Promise.race([outboxSwOp('readonly', st => st.get('enviados')), new Promise(res => setTimeout(() => res(null), 1500))]);
+    if(!env || typeof env !== 'object') return;
+    Object.keys(env).forEach(nome => { if(JSON.stringify(outboxLer(nome)) === env[nome]){ outboxGravar(nome, {}); console.info('outbox: ' + nome + ' já tinha sido entregue pelo envio em segundo plano'); } });
+    await outboxSwOp('readwrite', st => st.delete('enviados'));
+  }catch(e){}
+}
+function outboxAoSair(motivo){ outboxServicosTextoAoSair(); outboxEnviarRest(motivo, true); outboxSwEspelhar(true); }
+
+// ----- Fase 30: gravação que não sai em 1,5 s vai pela REST (iPhone e Android, com o app na tela) -----
+// Depois de desbloquear, a conexão em tempo real do SDK pode estar morta sem ele saber (o celular derruba a conexão em segundo plano) e a gravação
+// fica parada até ele perceber. No iPhone nada roda depois que a tela bloqueia, então o que conta é sair ANTES: se uma pendência continua no outbox
+// 1,5 s depois de gravada, ela vai pela REST. Ordem garantida: se um caminho mudou de novo enquanto a REST estava a caminho, o valor mais novo vai
+// em seguida (a REST nunca termina com um valor velho). Entregue e sem mudança desde então → sai do outbox (a faixa "aguardando" some).
+var outboxRestTimer = null, outboxRecentes = {};
+function outboxRestAgendar(updates){
+  if(!updates) return;
+  const t = Date.now();
+  Object.keys(outboxRecentes).forEach(k => { if(t - outboxRecentes[k].t > 300000) delete outboxRecentes[k]; });
+  Object.keys(updates).forEach(k => { outboxRecentes[k] = { j: JSON.stringify(updates[k]), t }; });
+  if(outboxRestTimer || typeof document === 'undefined' || document.visibilityState !== 'visible') return;
+  const tentar = () => { outboxRestTimer = null; if(!outboxCorposRest().length || document.visibilityState !== 'visible') return; if(outboxRestEmCurso){ outboxRestTimer = setTimeout(tentar, 1500); return; } outboxEnviarRest('pendente há 1,5 s', false); };
+  outboxRestTimer = setTimeout(tentar, 1500);
+}
+function outboxRestEntregue(p, fila){
+  try{
+    const enviado = JSON.parse(p.corpo), novo = {};
+    Object.keys(enviado).forEach(k => { const r = outboxRecentes[k]; if(r && r.j !== JSON.stringify(enviado[k])) novo[k] = JSON.parse(r.j); });
+    if(Object.keys(novo).length){ if((p.extra || 0) < 3) fila.push({ nome: p.nome, url: p.url, headers: p.headers, corpo: JSON.stringify(novo), extra: (p.extra || 0) + 1 }); return; }
+    if(!p.extra && JSON.stringify(outboxLer(p.nome)) === p.corpo) outboxGravar(p.nome, {});
+  }catch(e){}
+}
+
 function outboxIniciarMotor(){
   setInterval(() => outboxTentarSincronizar('periódica'), 20000);
   setInterval(() => { outboxAtualizarTokens(); }, 20000); setTimeout(() => { outboxAtualizarTokens(); }, 3000);
   window.addEventListener('online', () => outboxTentarSincronizar('conexão voltou'));
   document.addEventListener('visibilitychange', () => {
-    if(document.visibilityState === 'visible'){ outboxAtualizarTokens().then(() => outboxEnviarRest('voltou ao primeiro plano', false)).catch(() => {}).then(() => outboxTentarSincronizar('voltou ao primeiro plano')); }
-    else outboxEnviarRest('saiu do primeiro plano', true);
+    if(document.visibilityState === 'visible'){ outboxSwRecolher().then(() => outboxAtualizarTokens()).then(() => outboxEnviarRest('voltou ao primeiro plano', false)).catch(() => {}).then(() => outboxTentarSincronizar('voltou ao primeiro plano')); }
+    else outboxAoSair('saiu do primeiro plano');
   });
-  window.addEventListener('pagehide', () => outboxEnviarRest('página saindo', true));
-  document.addEventListener('freeze', () => outboxEnviarRest('página congelada', true));
+  window.addEventListener('pagehide', () => outboxAoSair('página saindo'));
+  document.addEventListener('freeze', () => outboxAoSair('página congelada'));
+  if(outboxCorposRest().length) outboxSwAgendar();   // Fase 30: pendência de antes (app reaberto sem sinal) já ganha a cópia
   outboxAtualizarIndicador();
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', outboxIniciarMotor); else outboxIniciarMotor();
