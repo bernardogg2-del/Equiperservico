@@ -10628,18 +10628,44 @@ function clearScheduledForIfMatches(svc){
 }
 
 async function completeMaintenanceIfLinked(svc){
-  if(!svc.maintenanceContractId) return;
-  const c = maintenanceContracts.find(x => x.id === svc.maintenanceContractId);
-  if(!c) return;
-  // Nunca deixa lastDate retroceder: só atualiza se a data da visita concluída for igual ou
-  // mais recente que a já registrada (ou se ainda não houver nenhuma).
-  if(!c.lastDate || svc.date >= c.lastDate){
-    c.lastDate = svc.date;
-  }
-  if(c.scheduledFor === svc.date){
-    c.scheduledFor = null;
-  }
-  await saveMaintenanceContracts();
+  try{      // Fase 23: um erro aqui nunca impede o resto da conclusão (relatório preventivo, reinstalação); o Gestor confere depois
+    if(!svc || svc.maintenanceContractId == null || svc.maintenanceContractId === '') return;
+    const c = maintenanceContracts.find(x => String(x.id) === String(svc.maintenanceContractId));      // Fase 23: número ou texto
+    if(!c){ console.warn('preventiva: contrato ' + svc.maintenanceContractId + ' não está carregado neste aparelho; o Gestor atualiza o controle de visitas ao abrir o app'); return; }
+    if(!aplicarVisitaConcluida(c, svc.date)) return;
+    await saveMaintenanceContracts();
+  }catch(e){ console.error('preventiva: baixa da visita no contrato', e); }
+}
+// Fase 23: aplica uma visita concluída num contrato do controle de visitas. Devolve true se mudou algo.
+// Nunca deixa a última manutenção retroceder; o agendamento sai quando a visita concluída é no dia agendado OU depois dele
+// (visita remarcada e feita em outro dia não deixa o contrato "agendado" para trás).
+function aplicarVisitaConcluida(c, data){
+  if(!c || !data) return false; let mudou = false;
+  if(!c.lastDate || data > c.lastDate){ c.lastDate = data; mudou = true; }
+  if(c.scheduledFor && c.scheduledFor <= data){ c.scheduledFor = null; mudou = true; }
+  return mudou;
+}
+// Fase 23: rede de segurança no Gestor — confere TODAS as atividades concluídas ligadas a um contrato contra o controle de visitas e
+// conserta o que tiver ficado para trás (baixa que não chegou do celular do técnico, visita feita em outro dia, etc.). Idempotente.
+let reconciliandoVisitas = false;
+async function reconciliarVisitasConcluidas(){
+  if(reconciliandoVisitas || currentRole !== 'manager') return 0;
+  if(typeof gestorContaPodeAlgumaAba === 'function' && typeof ABAS_POR_NO !== 'undefined' && !gestorContaPodeAlgumaAba(ABAS_POR_NO.maintenanceContracts)) return 0;
+  if(!Array.isArray(maintenanceContracts) || !maintenanceContracts.length || !Array.isArray(services) || !services.length) return 0;
+  reconciliandoVisitas = true;
+  try{
+    const porId = new Map(maintenanceContracts.map(c => [String(c.id), c])); const mudados = new Map();
+    services.forEach(sv => { if(!sv || sv.status !== 'concluido' || sv.maintenanceContractId == null || sv.maintenanceContractId === '' || !sv.date) return;
+      const c = porId.get(String(sv.maintenanceContractId)); if(!c) return;
+      if(aplicarVisitaConcluida(c, sv.date)) mudados.set(String(c.id), { c, data: c.lastDate }); });
+    if(!mudados.size) return 0;
+    await saveMaintenanceContracts(true);
+    const l = [...mudados.values()].map(x => x.c.client + ' (' + x.data.split('-').reverse().join('/') + ')');
+    try{ avisoNaoBloqueante('Controle de visitas atualizado com ' + (l.length === 1 ? 'a visita concluída de ' : 'as visitas concluídas de ') + l.join(', ') + '.', 9000); }catch(e){}
+    try{ renderManutencoes(); }catch(e){}
+    return mudados.size;
+  }catch(e){ console.error('preventiva: conferência do controle de visitas', e); return 0; }
+  finally{ reconciliandoVisitas = false; }
 }
 
 // Mesmo princípio de completeMaintenanceIfLinked, para a atividade de reinstalação criada pela
@@ -14074,6 +14100,7 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
 
 function renderAll(){
   if(currentRole === 'manager') setTimeout(varrerRetornosPendentes, 0);
+  if(currentRole === 'manager') setTimeout(reconciliarVisitasConcluidas, 0);   // Fase 23: atividade de preventiva concluída sempre chega ao controle de visitas
   renderTechList();
   renderDayBoxes();
   renderTodayIncompleteSection();
