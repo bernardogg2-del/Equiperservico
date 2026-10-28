@@ -824,6 +824,10 @@
 .pgc-ev-o{ font-size:10.5px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; padding:1px 7px; border-radius:999px; background:var(--surface-2); color:var(--text-secondary); border:1px solid var(--border); }
 .pgc-ev-o-obras{ color:#1a56db; border-color:rgba(26,86,219,.3); background:rgba(26,86,219,.08); }
 .pgc-ev-o-manut{ color:#b45309; border-color:rgba(180,83,9,.3); background:rgba(180,83,9,.08); }
+.pgc-ev-o-prev{ color:#0f766e; border-color:rgba(15,118,110,.3); background:rgba(15,118,110,.08); }   /* Fase 19: cobrança de manutenção preventiva no calendário */
+.pv-tab tr.pv-row{ cursor:pointer; } .pv-tab tr.pv-row:hover td{ background:var(--surface-2); } .pv-tab td small{ display:block; color:var(--text-secondary); font-size:11px; }
+.pv-dif{ color:#b45309; font-weight:700; } .pv-nota{ padding:10px 0 0; font-size:13px; color:var(--text-secondary); }
+.prv-chip.blue{ background:rgba(26,86,219,.08); color:#1a56db; border:1px solid rgba(26,86,219,.3); } #pvVisao .portal-tab{ padding:6px 12px; } #prvFinNovos .maint-alert-row{ border-color:var(--warning-line); background:var(--warning-soft); }
 .pgc-ev-o-os{ color:#b4232a; border-color:rgba(180,35,42,.3); background:rgba(180,35,42,.08); }
 .obr-hist{ grid-column:1 / -1; margin-top:2px; font-size:12.5px; }
 .obr-hist summary{ cursor:pointer; color:var(--text-secondary); font-weight:600; user-select:none; }
@@ -3091,6 +3095,7 @@
       <button type="button" class="sidebar-nav-btn" id="finNavOS"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Ordens de serviço</button>
       <button type="button" class="sidebar-nav-btn" id="finNavObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Obras e Pedidos</button>
       <button type="button" class="sidebar-nav-btn" id="finNavManut"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Pedidos de manutenção</button>
+      <button type="button" class="sidebar-nav-btn" id="finNavPrev"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Manutenções preventivas</button>
     </nav>
     <div class="sidebar-footer"><div class="sidebar-user" id="finSidebarUser"></div><button type="button" class="sidebar-logout-btn" id="finSidebarLogout">Sair</button></div>
   </aside>
@@ -3147,6 +3152,7 @@
     <button type="button" class="bottom-nav-btn" id="finBnOS"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg><span>Ordens de serviço</span></button>
     <button type="button" class="bottom-nav-btn" id="finBnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
     <button type="button" class="bottom-nav-btn" id="finBnManut"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Manutenção</span></button>
+    <button type="button" class="bottom-nav-btn" id="finBnPrev"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Preventivas</button>
   </nav>
 </div>
 
@@ -3759,6 +3765,7 @@
 
   <div id="tabManutencoes" style="display:none;">
     <div class="prv-kpi-grid" id="maintResumoCards"></div>
+    <div id="prvFinNovos"></div>   <!-- Fase 19: clientes de preventiva vindos do Financeiro que faltam aqui -->
     <div class="portal-tabs estoque-subnav-v2" id="prvManutTabs" style="padding:0 0 14px;">
       <button type="button" class="portal-tab active" data-prvmanut="visitas">Controle de visitas</button>
       <button type="button" class="portal-tab" data-prvmanut="config">Configuração por cliente</button>
@@ -10814,6 +10821,7 @@ function renderManutencoes(){
       });
     });
   }
+  try{ if(window.OBR_API && OBR_API.renderAvisosFinPrev) OBR_API.renderAvisosFinPrev(); }catch(e){ console.warn('preventivas: aviso ao Gestor', e); }   // Fase 19
 }
 document.getElementById('maintContractSearchInput').addEventListener('input', renderManutencoes);
 
@@ -24543,7 +24551,7 @@ function gerarPdfEstatisticas(dados){
   return new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
 }
 
-window.PREV_API = { origemAtividade, fotosDoRelatorioTeste: fotosDoRelatorio, /* Fase 6: inspeção em testes */
+window.PREV_API = { origemAtividade, unidadesDoCliente, /* Fase 19: o Financeiro/Gestor conferem se o cliente já tem equipamentos cadastrados */ fotosDoRelatorioTeste: fotosDoRelatorio, /* Fase 6: inspeção em testes */
   montarSlot,
   gerarRelatorioAoConcluir,
   carregarUnidades,
@@ -26158,7 +26166,8 @@ const ui = { modo: 'obras', empresaObras: 'equiper', empresa: 'equiper', busca: 
 // ---------- cálculo ----------
 const ehManut = (r) => !!r && r.tipo === 'manutencao';
 const ehOs = (r) => !!r && r.tipo === 'os';                      // ordens de serviço (vindas de Cadastros e OS): mesma tela, mesmas abas e parcelas
-const modoDe = (r) => ehManut(r) ? 'manut' : ehOs(r) ? 'os' : 'obras';
+const ehPrev = (r) => !!r && r.tipo === 'preventiva';                   // Fase 19: cobrança recorrente de manutenção preventiva (um registro por cliente)
+const modoDe = (r) => ehManut(r) ? 'manut' : ehOs(r) ? 'os' : ehPrev(r) ? 'prev' : 'obras';
 const semObra = (r) => ehManut(r) || ehOs(r);                     // registros sem etapas de obra e com empresa a definir           // pedidos de manutenção (vindos de Cadastros e OS) vivem no mesmo nó, marcados com tipo:'manutencao'
 const todosRegistros = () => store.items.filter(r => r && r.id && r.active !== false);
 const registros = () => todosRegistros().filter(r => modoDe(r) === 'obras');      // obras (o Gestor e os painéis só enxergam estas)
@@ -26319,6 +26328,7 @@ function renderTopoOs(){
 }
 function renderLista(){
   try{ if(secao === 'painel') renderPainelFin(); }catch(e){ console.error('painel financeiro', e); }   // Fase 13
+  if(ui.modo === 'prev'){ renderPrev(); return; }   // Fase 19
   const box = document.getElementById('obrLista'); if(!box) return; renderTopoOs();
   abasDoModo().forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
   if(ui.modo !== 'obras'){
@@ -26383,7 +26393,7 @@ const atual = () => ui.abertoId ? porId(ui.abertoId) : null;
 function renderDetalheTudo(){ renderCab(); renderDados(); renderDetalheSecoes(); }
 function renderDetalheSecoes(){ renderCab(); renderPed(); renderPag(); renderRodape(); }
 function renderCab(){
-  const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; const t = totais(r);
+  const r = atual(); const el = document.getElementById('obrDetCab'); if(!r || !el) return; if(ehPrev(r)) return renderCabPrev(r, el); const t = totais(r);
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
   el.innerHTML = `<div class="qd-det-head"><div><h3 style="margin:0;">${esc(nomeCliente(r))}</h3>
       <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">${semObra(r) ? (ehOs(r) ? 'Ordem de serviço · ' : 'Manutenção · ') + (r.empresa ? esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1]) : '⚠ definir empresa') : esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>${semObra(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`}${t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''}</div>
@@ -26391,7 +26401,7 @@ function renderCab(){
       <button type="button" class="btn-ghost" data-obr-d="fechar">Fechar</button></div>`;
 }
 function renderDados(){
-  const r = atual(); const el = document.getElementById('obrDetDados'); if(!r || !el) return;
+  const r = atual(); const el = document.getElementById('obrDetDados'); if(!r || !el) return; if(ehPrev(r)) return renderDadosPrev(r, el);
   const wa = r.fone && typeof phoneDigits === 'function' && phoneDigits(r.fone).length >= 10;
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Dados do registro</div><div class="obr-grid2">
     ${semObra(r) ? `<div class="field"><label>Empresa *</label><select data-obr-campo="empresa" ${r.empresa ? '' : 'style="border-color:#b4232a;"'}><option value="">— Definir —</option>${EMPRESAS.map(([k, n]) => `<option value="${k}" ${r.empresa === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>` : `<div class="field"><label>Situação da obra</label><select data-obr-campo="situacao">${SITUACOES.map(([k, n]) => `<option value="${k}" ${r.situacao === k ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`}
@@ -26411,7 +26421,7 @@ async function mudarAprovacao(pid, novo){
   await gravar(r); renderDetalheSecoes();
 }
 function renderPed(){
-  const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; const ped = pedidosDe(r); const t = totais(r);
+  const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; if(ehPrev(r)) return renderPlanoPrev(r, el); const ped = pedidosDe(r); const t = totais(r);
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">${ehOs(r) ? 'Ordens de serviço' : 'Pedidos'} <span class="obr-sec-n">${t.nPedidos}</span><span class="obr-sec-tot">Total ${esc(brl(t.contratado))}</span></div>
     ${ped.length ? `<table class="obr-tab"><thead><tr><th>Nº</th><th>Descrição</th><th class="obr-d">Valor</th><th></th></tr></thead><tbody>${ped.map(p => `<tr class="${p.cancelado ? 'obr-canc' : ''}"><td class="mono">${esc(p.numero)}</td><td>${esc(p.descricao || '—')}${p.cancelado ? ' <span class="prv-chip gray">cancelado</span>' : ''}<div style="margin-top:3px;">${chipObra(r, p)}</div>${ehManut(r) ? controlesManut(r, p) : ''}${ehOs(r) ? historicoOsHtml(p, false) : ''}</td><td class="obr-d">${esc(brl(p.valor))}</td><td class="obr-acoes"><button type="button" class="obr-ic" data-obr-d="ped-edit" data-id="${esc(p.id)}" title="Editar">✎</button><button type="button" class="obr-ic" data-obr-d="ped-rm" data-id="${esc(p.id)}" title="${ehOs(r) && p.osId ? 'Devolver ao Gestor' : 'Remover'}">${ehOs(r) && p.osId ? '↩' : '✕'}</button></td></tr>`).join('')}</tbody></table>` : '<div class="prv-hint">Nenhum pedido ainda.</div>'}
     <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="ped-add">${ehOs(r) ? '+ Adicionar OS' : '+ Adicionar pedido'}</button></div></div>`;
@@ -26431,7 +26441,7 @@ function linhaParcela(p){
 }
 function tabelaParcelas(l){ return `<table class="obr-tab"><thead><tr><th>Parcela</th><th class="obr-d">Valor</th><th>Situação</th><th></th></tr></thead><tbody>${l.map(linhaParcela).join('')}</tbody></table>`; }
 function renderPag(){
-  const r = atual(); const el = document.getElementById('obrDetPag'); if(!r || !el) return; const t = totais(r); const par = parcelasDe(r); const ped = pedidosDe(r); const pcts = pctsDe(r);
+  const r = atual(); const el = document.getElementById('obrDetPag'); if(!r || !el) return; if(ehPrev(r)) return renderPagPrev(r, el); const t = totais(r); const par = parcelasDe(r); const ped = pedidosDe(r); const pcts = pctsDe(r);
   const numeros = new Set(ped.map(p => String(p.numero)));
   const condTxt = pcts.length ? (pcts.length === 1 ? 'À vista (1 vez)' : pcts.length + ' vezes') + ': ' + pcts.map((pc, i) => rotuloParcela(i, pcts.length) + ' ' + fmtPct(pc) + '%').join(' · ') : 'Nenhuma condição definida';
   const blocos = ped.map(p => {
@@ -26457,7 +26467,7 @@ function renderRodape(){
 }
 async function salvarCampo(campo, valor){
   const r = atual(); if(!r) return; const v = String(valor || '').trim(); if((r[campo] || '') === v) return;
-  r[campo] = v || null; await gravar(r); renderCab();
+  r[campo] = v || null; if(ehPrev(r) && campo === 'formaPagamento') prevAtualizarParcelas(r); await gravar(r); renderCab(); if(ehPrev(r)){ renderPed(); renderPag(); }   // Fase 19: a forma vale para as cobranças ainda não recebidas
 }
 // Chamado por Cadastros e OS quando o card marca "Gerar pedido de manutenção": entra no registro de manutenção do cliente (ou cria um) como um pedido novo.
 async function criarPedidoManutencao(d){
@@ -26624,6 +26634,7 @@ function acaoDetalhe(a, ds){
   if(a === 'fechar') return fecharDetalhe();
   if(a === 'whats'){ openWhatsapp(phoneDigits(r.fone), ''); return; }
   if(a === 'cond') return abrirCondicao();
+  if(a === 'pv-plano'){ const e = prevClientes().find(x => x.r === r) || { nome: nomeCliente(r), r, cli: null, mc: null, cm: null }; return formPlano(e); }   // Fase 19
   if(a === 'ped-gerar'){ const p = r.pedidos[ds.id]; const pcts = pctsDe(r); if(!p || !pcts.length) return; r.parcelas = Object.assign({}, r.parcelas, gerarParcelas(r, p, pcts)); gravar(r).then(() => { renderDetalheSecoes(); avisar('Parcelas do pedido ' + p.numero + ' geradas pela condição.'); }); return; }
   if(a === 'ped-add' || a === 'ped-edit'){
     const p = a === 'ped-edit' ? r.pedidos[ds.id] : null; if(a === 'ped-edit' && !p) return;
@@ -28217,7 +28228,7 @@ function coletarEventos(op){
   });
   return out.sort((a, b) => a.data.localeCompare(b.data) || a.cliente.localeCompare(b.cliente, 'pt-BR'));
 }
-const ORIGENS = [['obras', 'Obra'], ['manut', 'Manutenção'], ['os', 'OS']];
+const ORIGENS = [['obras', 'Obra'], ['manut', 'Manutenção'], ['os', 'OS'], ['prev', 'Preventiva']];   // Fase 19
 const rotOrigem = (k) => (ORIGENS.find(x => x[0] === k) || [0, ''])[1];
 const eventosCal = () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: uiC.origem || 'todos' });
 const previstosTodos = () => coletarEventos({ recebidos: false, modo: 'todos' });
@@ -28227,7 +28238,7 @@ function htmlEvento(e, hoje, comEmpresa){
 }
 function montarAgendados(){      // monta de novo sempre que a tela foi recriada (troca de seção)
   const v = document.getElementById('obrAgendados'); if(!v || (uiC.montado && v.querySelector('#pgagGrid'))) return; uiC.montado = true; const h = hojeStr(); uiC.mes = uiC.mes || h.slice(0, 7); uiC.semana = uiC.semana || segundaDe(h);
-  v.innerHTML = `<div class="pgag-filtros"><select id="pgagOrigem" aria-label="Origem"><option value="">Obras, manutenção e OS</option>${ORIGENS.map(([k, n]) => `<option value="${k}" ${uiC.origem === k ? 'selected' : ''}>${k === 'obras' ? 'Só obras e pedidos' : k === 'manut' ? 'Só pedidos de manutenção' : 'Só ordens de serviço'}</option>`).join('')}</select><select id="pgagEmpresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select><label class="pgag-chk"><input type="checkbox" id="pgagRec" checked> Mostrar recebidos</label></div>
+  v.innerHTML = `<div class="pgag-filtros"><select id="pgagOrigem" aria-label="Origem"><option value="">Obras, manutenção e OS</option>${ORIGENS.map(([k, n]) => `<option value="${k}" ${uiC.origem === k ? 'selected' : ''}>${k === 'obras' ? 'Só obras e pedidos' : k === 'manut' ? 'Só pedidos de manutenção' : k === 'prev' ? 'Só manutenções preventivas' : 'Só ordens de serviço'}</option>`).join('')}</select><select id="pgagEmpresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select><label class="pgag-chk"><input type="checkbox" id="pgagRec" checked> Mostrar recebidos</label></div>
     <div class="week-summary" id="pgagSemana"><div class="week-summary-head"><div class="week-summary-title">Pagamentos da semana</div><div class="week-nav"><button type="button" class="nav-btn" data-pgag="semAnt" title="Semana anterior">‹</button><div class="week-summary-range mono" id="pgagSemRange"></div><button type="button" class="nav-btn" data-pgag="semProx" title="Próxima semana">›</button><button type="button" class="btn-ghost week-current-btn" data-pgag="semHoje" id="pgagSemHoje" style="display:none;">Semana atual</button></div></div>
       <div class="pgag-semtot" id="pgagSemTot"></div><div class="week-days-grid" id="pgagSemGrid"></div></div>
     <div class="month-nav"><button type="button" class="nav-btn" data-pgag="mesAnt" title="Mês anterior">‹</button><div class="month-title" id="pgagMes"></div><button type="button" class="nav-btn" data-pgag="mesProx" title="Próximo mês">›</button><button type="button" class="btn-ghost oe-mini" data-pgag="mesHoje">Hoje</button></div>
@@ -28290,11 +28301,321 @@ function renderAgendados(){
   document.getElementById('pgagDiaL').innerHTML = ld.length ? `<div class="pgag-dia-res">Previsto no dia: <b>${esc(brl(sm(pd)))}</b> (${pd.length})${uiC.recebidos ? ` · Recebido: <b>${esc(brl(sm(rd)))}</b> (${rd.length})` : ''}</div>` + ld.map(e => htmlEvento(e, hoje, !uiC.empresa)).join('') : '<div class="empty-state">Nada previsto nem recebido neste dia.</div>';
 }
 
+// =====================================================================================
+// Fase 19: FINANCEIRO → MANUTENÇÕES PREVENTIVAS — cobrança recorrente dos contratos de manutenção (mensal, trimestral, semestral ou anual).
+// Um registro por cliente no MESMO nó obrasPedidos, marcado com tipo:'preventiva' (nenhuma regra nova no banco). As cobranças são as parcelas
+// do registro: a cada competência nasce uma parcela "Agendado" com a data de vencimento — entra no calendário de pagamentos e no Painel como
+// qualquer outra, e o recebimento é confirmado como nas obras. Lista de clientes alinhada com o Gestor: Manutenções (controle de visitas e
+// contratos de manutenção) e Clientes. Obras, pedidos de manutenção e OS não enxergam estes registros (modoDe = 'prev').
+// =====================================================================================
+const PERIODICIDADES = [['mensal', 'Mensal', 1], ['trimestral', 'Trimestral', 3], ['semestral', 'Semestral', 6], ['anual', 'Anual', 12]];
+const ROT_COMP = { mensal: 'Mensalidade', trimestral: 'Trimestre', semestral: 'Semestre', anual: 'Anuidade' };
+const PREV_HORIZONTE_MESES = 12;       // previsões: as cobranças nascem ("Não liberado", só no calendário) até 12 meses à frente
+const PREV_AVISO_DIAS = 7;             // 7 dias antes do vencimento a cobrança passa a "A cobrar": é o aviso para enviar a cobrança daquele mês
+const VISITAS_FREQ = [[1, 'Mensal'], [2, 'Bimestral'], [3, 'Trimestral'], [6, 'Semestral']];
+const rotVisitas = (k) => { const v = VISITAS_FREQ.find(x => x[0] === Number(k)); return v ? v[1].toLowerCase() : (k ? 'a cada ' + k + ' meses' : '—'); };
+const perDe = (k) => PERIODICIDADES.find(p => p[0] === k) || PERIODICIDADES[0];
+const mesesDe = (k) => perDe(k)[2];
+const planoDe = (r) => (r && r.prev) || {};
+const prevRegs = () => todosRegistros().filter(ehPrev);
+const vencDe = (comp, dia) => { const [y, m] = comp.split('-').map(Number); const ult = new Date(y, m, 0).getDate(); return comp + '-' + pad2(Math.min(Math.max(1, Number(dia) || 1), ult)); };   // dia do vencimento sem passar do fim do mês
+const compSomar = (comp, k) => { const [y, m] = comp.split('-').map(Number); const d = new Date(y, m - 1 + k, 1); return d.getFullYear() + '-' + pad2(d.getMonth() + 1); };
+const rotComp = (per, comp) => (ROT_COMP[per] || 'Cobrança') + ' ' + comp.slice(5, 7) + '/' + comp.slice(0, 4);
+const valorMensalDe = (pl) => pl && pl.valor > 0 ? arred2(Number(pl.valor) / mesesDe(pl.periodicidade)) : 0;
+// (diasEntre(a, b) já existe neste módulo e é usado aqui)
+const prevAuto = (r) => parcelasDe(r).filter(p => p.auto && p.comp);      // cobranças criadas pelo plano (uma parcela avulsa lançada à mão fica fora)
+const diaVencDe = (pl) => pl.diaVenc || (pl.inicio ? Number(pl.inicio.slice(8, 10)) : 1);
+// Cria as cobranças que faltam até o horizonte. Devolve quantas nasceram. Uma competência nunca nasce duas vezes.
+function prevGerar(r, hoje){
+  const pl = planoDe(r); if(!pl.inicio || !(pl.valor > 0) || pl.ativo === false) return 0;
+  hoje = hoje || hojeStr(); const limite = compSomar(hoje.slice(0, 7), PREV_HORIZONTE_MESES) + '-31'; const passo = mesesDe(pl.periodicidade); const dia = diaVencDe(pl);
+  const temComp = new Set(prevAuto(r).map(p => p.comp)); let comp = pl.inicio.slice(0, 7), n = 0;
+  for(let i = 0; i < 600; i++){ const venc = vencDe(comp, dia); if(venc > limite || (pl.fim && venc > pl.fim)) break;
+    if(!temComp.has(comp)){ const id = uid('v'); r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: rotComp(pl.periodicidade, comp), comp, auto: true, valor: arred2(Number(pl.valor)), status: 'nao_liberado', agendadoPara: venc, forma: r.formaPagamento || null, ordem: Number(comp.replace('-', '')) } }); n++; }
+    comp = compSomar(comp, passo); }
+  return n;
+}
+// 7 dias antes do vencimento a cobrança sai de "Não liberado" (previsão) e vira "A cobrar": o aviso de que é hora de enviar a cobrança daquele mês.
+function prevLiberar(r, hoje){
+  hoje = hoje || hojeStr(); const lim = somarDias(hoje, PREV_AVISO_DIAS); let n = 0;
+  prevAuto(r).forEach(p => { if(stDe(p) === 'nao_liberado' && p.agendadoPara && p.agendadoPara <= lim){ p.status = 'a_cobrar'; p.liberadoEm = hoje; p.liberadoAuto = true; n++; } });
+  if(n) r.parcelas = Object.assign({}, r.parcelas); return n;
+}
+async function prevGerarTodos(){      // ao abrir o Financeiro: cria as cobranças que faltam e libera as que vencem em até 7 dias; grava só se algo mudou
+  if(!carregado) return 0; let n = 0; const agora = new Date().toISOString();
+  prevRegs().forEach(r => { const k = prevGerar(r) + prevLiberar(r); if(k){ n += k; r.atualizadoEm = agora; r.atualizadoPor = quem() || 'automático (preventivas)'; } });
+  if(n) await store.save(true);
+  return n;
+}
+// O plano mudou (valor, forma, dia): as cobranças ainda não recebidas acompanham; as recebidas ficam como estão.
+function prevAtualizarParcelas(r){
+  const pl = planoDe(r); const dia = diaVencDe(pl);
+  prevAuto(r).forEach(p => { if(stDe(p) === 'recebido') return; p.valor = arred2(Number(pl.valor) || 0); p.forma = r.formaPagamento || null; p.agendadoPara = vencDe(p.comp, dia); p.tipo = rotComp(pl.periodicidade, p.comp); });
+  r.parcelas = Object.assign({}, r.parcelas);
+}
+// Periodicidade, início ou fim mudaram, ou o plano foi pausado: as cobranças em aberto saem (as recebidas ficam) e, se o plano está ativo, nascem de novo.
+function prevRefazer(r){ const m = Object.assign({}, r.parcelas); prevAuto(r).forEach(p => { if(stDe(p) !== 'recebido') delete m[p.id]; }); r.parcelas = m; const n = prevGerar(r); prevLiberar(r); return n; }
+const CHIP_PV = { vencido: 'red', enviar: 'amber', enviada: 'blue', em_dia: 'green', pausado: 'gray', sem_cobranca: 'gray', sem_valor: 'amber' };
+function prevSituacao(r, hoje){
+  hoje = hoje || hojeStr(); const todas = parcelasDe(r);
+  const ab = todas.filter(p => stDe(p) !== 'recebido' && p.agendadoPara).sort((a, b) => a.agendadoPara.localeCompare(b.agendadoPara));
+  const venc = ab.filter(p => p.agendadoPara < hoje); const prox = ab.find(p => p.agendadoPara >= hoje) || null;
+  const rec = todas.filter(p => stDe(p) === 'recebido' && p.pagoEm).sort((a, b) => b.pagoEm.localeCompare(a.pagoEm))[0] || null; const pl = planoDe(r);
+  let k, rot; const st = prox ? stDe(prox) : null; const d = prox ? diasEntre(hoje, prox.agendadoPara) : null; const vence = d === 0 ? 'vence hoje' : 'vence em ' + d + (d === 1 ? ' dia' : ' dias');
+  if(venc.length){ k = 'vencido'; rot = venc.length === 1 ? 'Vencida há ' + diasEntre(venc[0].agendadoPara, hoje) + (diasEntre(venc[0].agendadoPara, hoje) === 1 ? ' dia' : ' dias') : venc.length + ' vencidas'; }
+  else if(pl.ativo === false){ k = 'pausado'; rot = 'Pausada'; }
+  else if(prox && st === 'a_cobrar'){ k = 'enviar'; rot = 'Enviar cobrança · ' + vence; }
+  else if(prox && (st === 'enviado' || st === 'agendado')){ k = 'enviada'; rot = (st === 'agendado' ? 'Agendada' : 'Enviada') + ' · ' + vence; }
+  else if(prox){ k = 'em_dia'; rot = 'Em dia · próxima ' + fmtData(prox.agendadoPara); }
+  else { k = pl.valor > 0 ? 'sem_cobranca' : 'sem_valor'; rot = pl.valor > 0 ? 'Sem cobrança prevista' : 'Sem valor'; }
+  return { k, rot, venc, prox, rec, emAberto: ab };
+}
+// O que ainda falta no cadastro da cobrança (aviso de informação faltando entre Financeiro e Gestor)
+function prevFaltas(r){ const pl = planoDe(r); const f = []; if(!r.empresa) f.push('empresa'); if(!(pl.valor > 0)) f.push('valor'); if(!pl.visitas) f.push('frequência das visitas'); if(!r.formaPagamento) f.push('forma de cobrança'); if(!r.contato) f.push('pessoa de contato'); if(!r.fone) f.push('telefone'); return f; }
+const htmlFaltas = (r) => { const f = prevFaltas(r); return f.length ? `<small class="pv-dif">Faltam: ${esc(f.join(', '))}</small>` : ''; };
+// Clientes da preventiva, alinhados com o Gestor: controle de visitas (maintenanceContracts), contratos de manutenção (de obra e avulsos,
+// menos os que o cliente recusou) e os registros de cobrança daqui. O nome vem do cadastro de Clientes quando o cliente está lá.
+function prevClientes(){
+  const m = new Map();
+  const add = (nome, campo, v) => { const k = fold(nome); if(!k) return; const e = m.get(k) || { k, nome: String(nome).trim(), mc: null, cm: null, r: null, cli: clientePorNome(nome) }; if(campo) e[campo] = v; if(e.cli) e.nome = e.cli.name; m.set(k, e); };
+  (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts) ? maintenanceContracts : []).forEach(c => { if(c && c.client) add(c.client, 'mc', c); });
+  let cms = []; try{ cms = contratosManut(); }catch(e){} cms.forEach(x => { if(!(x.c && x.c.status === 'recusou')) add(x.cliente, 'cm', x); });
+  prevRegs().forEach(r => add(nomeCliente(r), 'r', r));
+  return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+const ROT_CM = { gerado: ['PDF gerado', 'amber'], enviado: ['Enviado', 'green'], ja_tem: ['Já tem contrato', 'gray'], recusou: ['Não quis', 'gray'] };
+const chipCm = (x) => { if(!x) return '—'; const st = x.c ? (ROT_CM[x.c.status] || [x.c.status, 'gray']) : ['Rascunho', 'gray']; return (x.c && x.c.valor > 0 ? '<b>' + esc(brl(x.c.valor)) + '</b>/mês ' : '') + `<span class="prv-chip ${st[1]}">${esc(st[0])}</span>`; };
+const txtVisitas = (mc) => { if(!mc) return '—'; const n = Number(mc.intervalMonths) || 3; return 'a cada ' + n + (n === 1 ? ' mês' : ' meses') + (mc.lastDate ? ' · última ' + fmtData(mc.lastDate) : '') + (mc.scheduledFor ? ' · <b>agendada ' + fmtData(mc.scheduledFor) + '</b>' : ''); };
+const txtPlano = (r) => { const pl = planoDe(r); if(!(pl.valor > 0)) return '<span class="prv-chip amber">Sem valor</span>'; return '<b>' + esc(brl(pl.valor)) + '</b> · ' + esc(perDe(pl.periodicidade)[1]) + (pl.periodicidade !== 'mensal' ? ' <small>(' + esc(brl(valorMensalDe(pl))) + '/mês)</small>' : '') + (r.formaPagamento ? ' · ' + esc(r.formaPagamento) : '') + ' · dia ' + diaVencDe(pl) + (pl.visitas ? ' · visitas ' + esc(rotVisitas(pl.visitas)) : '') + (pl.ativo === false ? ' <span class="prv-chip gray">Pausada</span>' : ''); };
+// Definir ou alterar a cobrança de um cliente. e = item de prevClientes() (com ou sem registro).
+function formPlano(e){
+  const r = e.r || null; const pl = planoDe(r); const cm = e.cm && e.cm.c; const sugMensal = cm && cm.valor > 0 ? Number(cm.valor) : null; const h = hojeStr();
+  const ini0 = pl.inicio || ((cm && cm.dados && cm.dados.vigenciaEm && cm.dados.vigenciaEm > h) ? cm.dados.vigenciaEm : vencDe(compSomar(h.slice(0, 7), 1), 10));
+  formRapido({ titulo: (r ? 'Alterar cobrança — ' : 'Definir cobrança — ') + e.nome, ok: r ? 'Salvar' : 'Criar cobrança',
+    aviso: (sugMensal ? 'Contrato de manutenção no Gestor: <b>' + esc(brl(sugMensal)) + '/mês</b>' + (cm.status === 'enviado' ? ' (enviado)' : '') + '. ' : '') + 'Cada mês (ou trimestre/ano) é uma cobrança própria: entra no calendário como previsão, <b>' + PREV_AVISO_DIAS + ' dias antes do vencimento</b> passa a <b>A cobrar</b> (aviso para enviar), você marca <b>Enviada</b> (boleto fica <b>Agendado</b> com o vencimento) e depois <b>Recebido</b>. Uma cobrança atrasada continua aparecendo mesmo quando chega a do mês seguinte.' + (r ? ' Mudar valor, forma ou dia atualiza as cobranças ainda não recebidas; mudar periodicidade, início, fim ou pausar refaz as que estão em aberto. As recebidas não mudam.' : ''),
+    campos: [
+      { id: 'empresa', rotulo: 'Empresa', tipo: 'select', opcoes: [['', '— Definir —']].concat(EMPRESAS), valor: r ? r.empresa || '' : '', meio: true },
+      { id: 'visitas', rotulo: 'Frequência das visitas', tipo: 'select', opcoes: VISITAS_FREQ.map(x => [String(x[0]), x[1]]), valor: String(pl.visitas || (e.mc && e.mc.intervalMonths) || 3), meio: true },
+      { id: 'periodicidade', rotulo: 'Frequência dos pagamentos', tipo: 'select', opcoes: PERIODICIDADES.map(p => [p[0], p[1]]), valor: pl.periodicidade || 'mensal', meio: true },
+      { id: 'valor', rotulo: 'Valor de cada cobrança (R$)', tipo: 'valor', valor: pl.valor != null ? campoValor(pl.valor) : (sugMensal ? campoValor(sugMensal) : ''), obrig: true, meio: true, dica: 'mensalidade, trimestre, semestre ou ano' },
+      { id: 'forma', rotulo: 'Forma de cobrança', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: r ? r.formaPagamento || '' : 'PIX', meio: true },
+      { id: 'diaVenc', rotulo: 'Dia do vencimento', valor: String(pl.diaVenc || Number(ini0.slice(8, 10)) || 10), meio: true, dica: '1 a 31' },
+      { id: 'inicio', rotulo: 'Primeiro vencimento', tipo: 'data', valor: ini0, meio: true, obrig: true },
+      { id: 'ativo', rotulo: 'Situação', tipo: 'select', opcoes: [['1', 'Ativa (gera as cobranças)'], ['0', 'Pausada (não gera cobranças)']], valor: pl.ativo === false ? '0' : '1', meio: true },
+      { id: 'fim', rotulo: 'Fim (opcional)', tipo: 'data', valor: pl.fim || '', meio: true, dica: 'último vencimento' },
+      { id: 'obs', rotulo: 'Observação', valor: pl.obs || '', dica: 'Ex.: reajuste em março; boleto emitido pelo banco' } ],
+    aoSalvar: async (v) => {
+      if(!v.empresa) return 'Escolha a empresa (Equiper ou Eqp).'; if(!(v.valor > 0)) return 'Informe o valor da cobrança.';
+      const dia = parseInt(v.diaVenc, 10); if(!(dia >= 1 && dia <= 31)) return 'Dia do vencimento: de 1 a 31.'; if(!v.inicio) return 'Informe o primeiro vencimento.'; if(v.fim && v.fim < v.inicio) return 'O fim não pode ser antes do primeiro vencimento.';
+      const novo = { periodicidade: v.periodicidade, visitas: parseInt(v.visitas, 10) || null, valor: v.valor, diaVenc: dia, inicio: v.inicio, fim: v.fim || null, ativo: v.ativo !== '0', obs: v.obs || null };
+      let reg = r, nasc = 0; const agora = new Date().toISOString();
+      if(!reg){ const cl = e.cli || clientePorNome(e.nome);
+        reg = { id: uid('pv_'), tipo: 'preventiva', empresa: v.empresa, cliente: cl ? cl.name : e.nome, clienteId: cl ? cl.id : null, contato: (e.mc && e.mc.contactName) || (cl && cl.contato) || null, fone: (e.mc && e.mc.contact) || (cl && cl.fone) || null, formaPagamento: v.forma || null, obs: null, active: true, pedidos: {}, parcelas: {}, prev: novo, criadoNo: (e.mc || e.cm) ? 'gestor' : 'financeiro', criadoEm: agora, criadoPor: quem() || null };
+        store.items.push(reg); nasc = prevGerar(reg); prevLiberar(reg); }
+      else { const antes = planoDe(reg); reg.empresa = v.empresa; reg.formaPagamento = v.forma || null; reg.prev = Object.assign({}, antes, novo);
+        const refaz = antes.periodicidade !== novo.periodicidade || antes.inicio !== novo.inicio || (antes.fim || null) !== (novo.fim || null) || (antes.ativo === false) !== (novo.ativo === false);
+        if(refaz) nasc = prevRefazer(reg); else { prevAtualizarParcelas(reg); nasc = prevGerar(reg); prevLiberar(reg); } }
+      reg.atualizadoEm = agora; reg.atualizadoPor = quem() || null;
+      await store.save(true); renderPrev(); if(ui.abertoId === reg.id) renderDetalheTudo();
+      const faltas = prevFaltas(reg);
+      avisar((r ? 'Cobrança de ' + nomeCliente(reg) + ' atualizada.' : 'Cobrança de ' + nomeCliente(reg) + ' criada.') + (nasc ? ' ' + nasc + (nasc === 1 ? ' cobrança prevista' : ' cobranças previstas') + ' no calendário.' : '') + (faltas.length ? ' Falta informar: ' + faltas.join(', ') + '.' : '') + (!r && reg.criadoNo === 'financeiro' ? ' O Gestor recebe o aviso em Manutenções para colocar o cliente no controle de visitas e cadastrar os equipamentos.' : ''), 9000); return null; } });
+}
+// Cliente que ainda não está no Gestor: o Financeiro cria a cobrança e o Gestor recebe o aviso em Manutenções (controle de visitas + equipamentos do relatório)
+function novoClientePrev(){
+  formRapido({ titulo: 'Novo cliente de manutenção preventiva', aviso: 'Para cliente que ainda não está no Gestor (controle de visitas ou contrato). O Gestor recebe o aviso em Manutenções para colocá-lo no controle de visitas e cadastrar os equipamentos do relatório.', ok: 'Continuar', campos: [ { id: 'cliente', rotulo: 'Cliente', valor: '', obrig: true, dica: 'Nome como está (ou vai ficar) em Clientes' } ],
+    aoSalvar: async (v) => { const nome = String(v.cliente || '').trim(); if(!nome) return 'Informe o cliente.'; const e = prevClientes().find(x => x.k === fold(nome)); if(e && e.r) return 'Este cliente já tem cobrança definida: abra-o na lista.'; setTimeout(() => formPlano(e || { k: fold(nome), nome, mc: null, cm: null, r: null, cli: clientePorNome(nome) }), 60); return null; } });
+  setTimeout(() => { const i = document.getElementById('obrF_cliente'); if(i && window.SUG_API) SUG_API.ligar(i, 'clientes'); }, 50);
+}
+// Marcar a cobrança como enviada ao cliente: PIX/transferência fica "Enviado"; boleto fica "Agendado" com a data do vencimento (é a data do boleto)
+async function prevMarcarEnviada(r, pid){
+  const p = r && r.parcelas && r.parcelas[pid]; if(!p || stDe(p) === 'recebido') return; const h = hojeStr(); const boleto = (p.forma || r.formaPagamento) === 'Boleto';
+  p.status = boleto ? 'agendado' : 'enviado'; p.enviadoEm = h; p.liberadoEm = p.liberadoEm || h; r.parcelas = Object.assign({}, r.parcelas);
+  await gravar(r); if(ui.abertoId === r.id) renderDetalheSecoes();
+  avisar('Cobrança "' + (p.tipo || '') + '" de ' + nomeCliente(r) + ' marcada como ' + (boleto ? 'agendada (boleto, vence ' + fmtData(p.agendadoPara) + ')' : 'enviada') + '. Quando o cliente pagar, marque Recebido.', 6000);
+}
+// ---------- tela ----------
+const uiV = { aba: 'pagamentos', visao: 'mes', mes: null, busca: '', empresa: '', sit: '' };
+const ABAS_PREV = [['pagamentos', 'Pagamentos'], ['calendario', 'Calendário'], ['valores', 'Valores e contratos']];
+function montarPrev(){
+  const v = document.getElementById('finObrasView'); if(!v) return; ui.montado = false; uiC.montado = false;      // ao voltar para Obras/OS/manutenção a tela deles é montada de novo
+  v.innerHTML = `<div class="tech-day-panel">
+    <div class="tech-day-head"><div class="tech-day-title">Manutenções preventivas</div><div class="tech-day-date mono" id="obrContagem"></div></div>
+    <div class="portal-tabs" id="pvTabs" style="padding:0 20px 4px;">${ABAS_PREV.map(([k, nm]) => `<button type="button" class="portal-tab ${k === uiV.aba ? 'active' : ''}" data-pv-aba="${k}">${nm}<span class="obr-tab-n" id="pvTabN_${k}"></span></button>`).join('')}</div>
+    <div class="prv-kpi-grid" id="obrKpis" style="margin:12px 20px 14px;"></div>
+    <div class="fin-filtros" id="pvBarra"><div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="pvBusca" placeholder="Buscar cliente…" autocomplete="off" value="${esc(uiV.busca)}"></div>
+      <select id="pvEmpresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, nm]) => `<option value="${k}" ${uiV.empresa === k ? 'selected' : ''}>${nm}</option>`).join('')}</select>
+      <select id="pvSit" aria-label="Situação"><option value="">Todas as situações</option><option value="vencido" ${uiV.sit === 'vencido' ? 'selected' : ''}>Com cobrança vencida</option><option value="enviar" ${uiV.sit === 'enviar' ? 'selected' : ''}>Cobrança para enviar (vence em até 7 dias)</option><option value="enviada" ${uiV.sit === 'enviada' ? 'selected' : ''}>Enviada / agendada, aguardando</option><option value="em_dia" ${uiV.sit === 'em_dia' ? 'selected' : ''}>Em dia</option><option value="pausado" ${uiV.sit === 'pausado' ? 'selected' : ''}>Pausadas</option><option value="sem" ${uiV.sit === 'sem' ? 'selected' : ''}>Sem cobrança definida</option></select>
+      <div class="portal-tabs" id="pvVisao" style="padding:0;"><button type="button" class="portal-tab ${uiV.visao === 'mes' ? 'active' : ''}" data-pv-visao="mes">Por mês</button><button type="button" class="portal-tab ${uiV.visao === 'clientes' ? 'active' : ''}" data-pv-visao="clientes">Por cliente</button></div>
+      <button type="button" class="btn-primary" data-pv="novo" title="Cliente que ainda não está no Gestor">+ Novo cliente</button></div>
+    <div id="pvLista" style="padding:0 20px 30px;"></div>
+    <div id="obrAgendados" style="display:none; padding:0 20px 30px;"></div></div>`;
+  const busca = document.getElementById('pvBusca'); if(busca && window.SUG_API) SUG_API.ligar(busca, 'clientes');
+  if(v._pvLigado) return; v._pvLigado = true;
+  v.addEventListener('click', (e) => { if(ui.modo !== 'prev') return;
+    const t = e.target.closest('[data-pv-aba]'); if(t){ uiV.aba = t.dataset.pvAba; renderPrev(); return; }
+    const vs = e.target.closest('[data-pv-visao]'); if(vs){ uiV.visao = vs.dataset.pvVisao; renderPrev(); return; }
+    const mm = e.target.closest('[data-pv-mes]'); if(mm){ const d = Number(mm.dataset.pvMes); const h = hojeStr().slice(0, 7); uiV.mes = d === 0 ? h : compSomar(uiV.mes || h, d); renderPrev(); return; }
+    const b = e.target.closest('[data-pv]'); if(!b) return; const a = b.dataset.pv;
+    if(a === 'abrir') abrirDetalhe(b.dataset.id);
+    else if(a === 'plano'){ const e2 = prevClientes().find(x => x.k === b.dataset.k); if(e2) formPlano(e2); }
+    else if(a === 'novo') novoClientePrev();
+    else if(a === 'enviada'){ const r = porId(b.dataset.id); if(r) prevMarcarEnviada(r, b.dataset.pid); }
+    else if(a === 'receber-p'){ const r = porId(b.dataset.id); if(!r) return; abrirDetalhe(r.id); abrirRecebimento(b.dataset.pid); }
+    else if(a === 'receber'){ const r = porId(b.dataset.id); if(!r) return; const st = prevSituacao(r); const p = st.venc[0] || st.prox; abrirDetalhe(r.id); if(p) abrirRecebimento(p.id); } });
+  v.addEventListener('keydown', (e) => { if(ui.modo === 'prev' && (e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('tr.pv-row')){ e.preventDefault(); abrirDetalhe(e.target.dataset.id); } });
+  v.addEventListener('input', (e) => { if(ui.modo === 'prev' && e.target.id === 'pvBusca'){ uiV.busca = e.target.value; renderPrev(); } });
+  v.addEventListener('change', (e) => { if(ui.modo !== 'prev') return; if(e.target.id === 'pvEmpresa'){ uiV.empresa = e.target.value; renderPrev(); } else if(e.target.id === 'pvSit'){ uiV.sit = e.target.value; renderPrev(); } });
+}
+const ordemSit = { vencido: 0, enviar: 1, enviada: 2, sem_valor: 3, sem_cobranca: 4, em_dia: 5, pausado: 6 };
+function renderPrev(){
+  if(ui.modo !== 'prev' || !document.getElementById('pvLista')) return;
+  const cal = uiV.aba === 'calendario'; ui.empresa = cal ? 'agendados' : 'prev';
+  document.querySelectorAll('#pvTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.pvAba === uiV.aba));
+  document.querySelectorAll('#pvVisao .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.pvVisao === uiV.visao)); const vis = document.getElementById('pvVisao'); if(vis) vis.style.display = uiV.aba === 'pagamentos' ? '' : 'none';
+  const barra = document.getElementById('pvBarra'), lst = document.getElementById('pvLista'), ag = document.getElementById('obrAgendados');
+  if(barra) barra.style.display = cal ? 'none' : ''; lst.style.display = cal ? 'none' : ''; if(ag) ag.style.display = cal ? '' : 'none';
+  const cs = prevClientes(); const regs = cs.filter(x => x.r).map(x => x.r); const semValor = cs.filter(x => !x.r);
+  const txt = (id, t) => { const el = document.getElementById(id); if(el) el.textContent = t; };
+  const nPrev = previstosTodos().filter(e => e.origem === 'prev').length;
+  txt('pvTabN_pagamentos', ' (' + regs.length + ')'); txt('pvTabN_calendario', ' (' + nPrev + ')'); txt('pvTabN_valores', ' (' + cs.length + ')');
+  if(cal){ montarAgendados(); renderAgendados(); txt('obrContagem', nPrev + (nPrev === 1 ? ' cobrança prevista' : ' cobranças previstas') + ' de preventiva'); return; }
+  if(uiV.aba === 'valores') return renderPrevValores(cs);
+  renderPrevPagamentos(regs, semValor);
+}
+function renderPrevPagamentos(regs, semValor){
+  const hoje = hojeStr(), mes = hoje.slice(0, 7); const lst = document.getElementById('pvLista');
+  const ps = []; regs.forEach(r => parcelasDe(r).forEach(p => ps.push({ r, p, st: stDe(p) })));
+  const aEnv = ps.filter(x => x.st === 'a_cobrar'); const prevMes = ps.filter(x => x.st !== 'recebido' && x.p.agendadoPara && x.p.agendadoPara.slice(0, 7) === mes), recMes = ps.filter(x => x.st === 'recebido' && x.p.pagoEm && x.p.pagoEm.slice(0, 7) === mes), venc = ps.filter(x => x.st !== 'recebido' && x.p.agendadoPara && x.p.agendadoPara < hoje);
+  const ativos = regs.filter(r => planoDe(r).ativo !== false); const mensal = soma(ativos.map(r => valorMensalDe(planoDe(r)))); const sm = (l) => soma(l.map(x => x.p.valor));
+  document.getElementById('obrKpis').innerHTML = PREV_API.kpiCards([
+    { tom: 'neutro', icone: 'total', texto: String(ativos.length), zero: !ativos.length, rotulo: 'Clientes com cobrança ativa', sub: brlCurto(mensal) + ' por mês' },
+    { tom: aEnv.length ? 'amarelo' : 'neutro', icone: 'agenda', texto: String(aEnv.length), zero: !aEnv.length, rotulo: 'Para enviar', sub: aEnv.length ? brlCurto(sm(aEnv)) + ' · vencem em até ' + PREV_AVISO_DIAS + ' dias' : 'nada a enviar agora' },
+    { tom: 'azul', icone: 'andamento', texto: brlCurto(sm(prevMes)), zero: !prevMes.length, rotulo: 'Previsto neste mês', sub: prevMes.length + (prevMes.length === 1 ? ' cobrança' : ' cobranças') },
+    { tom: 'verde', icone: 'ok', texto: brlCurto(sm(recMes)), zero: !recMes.length, rotulo: 'Recebido neste mês', sub: recMes.length + (recMes.length === 1 ? ' cobrança' : ' cobranças') },
+    { tom: venc.length ? 'vermelho' : 'neutro', icone: venc.length ? 'alerta' : 'ok', texto: brlCurto(sm(venc)), zero: !venc.length, rotulo: 'Vencidas', sub: venc.length ? venc.length + ' sem recebimento' : 'nada vencido' },
+    { tom: semValor.length ? 'amarelo' : 'neutro', icone: 'relogio', texto: String(semValor.length), zero: !semValor.length, rotulo: 'Sem cobrança definida', sub: 'clientes do Gestor' } ]);
+  const q = fold(uiV.busca);
+  if(uiV.sit === 'sem'){
+    const l = semValor.filter(x => !q || fold(x.nome).includes(q)); txt_(l.length + (l.length === 1 ? ' cliente' : ' clientes') + ' sem cobrança');
+    lst.innerHTML = l.length ? `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Contrato (Gestor)</th><th>Visitas (Gestor)</th><th></th></tr></thead><tbody>${l.map(x => `<tr><td><b>${esc(x.nome)}</b></td><td>${chipCm(x.cm)}</td><td>${txtVisitas(x.mc)}</td><td class="obr-acoes"><button type="button" class="btn-primary oe-mini" data-pv="plano" data-k="${esc(x.k)}">+ Definir cobrança</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state">Todos os clientes do Gestor já têm cobrança definida.</div>'; return; }
+  if(uiV.visao === 'mes') return renderPrevMes(regs, semValor);
+  let l = regs.map(r => ({ r, s: prevSituacao(r, hoje), pl: planoDe(r) }));
+  l = l.filter(x => (!q || fold([nomeCliente(x.r), x.r.contato, x.r.fone, x.r.formaPagamento, x.pl.obs].join(' ')).includes(q)) && (!uiV.empresa || x.r.empresa === uiV.empresa) && (!uiV.sit || x.s.k === uiV.sit))
+    .sort((a, b) => (ordemSit[a.s.k] - ordemSit[b.s.k]) || String(a.s.prox ? a.s.prox.agendadoPara : '9').localeCompare(String(b.s.prox ? b.s.prox.agendadoPara : '9')) || fold(nomeCliente(a.r)).localeCompare(fold(nomeCliente(b.r))));
+  txt_(l.length + (l.length === 1 ? ' cliente' : ' clientes'));
+  if(!carregado){ lst.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
+  const emp = (r) => r.empresa ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : '<span class="obr-emp obr-emp-definir">⚠ Definir</span>';
+  const linhas = l.map(x => { const p = x.s.venc[0] || x.s.prox; return `<tr class="pv-row" data-pv="abrir" data-id="${esc(x.r.id)}" role="button" tabindex="0"><td><b>${esc(nomeCliente(x.r))}</b>${x.pl.obs ? `<small>${esc(x.pl.obs)}</small>` : ''}${htmlFaltas(x.r)}</td><td>${emp(x.r)}</td><td>${txtPlano(x.r)}</td>
+    <td class="mono">${p ? esc(fmtData(p.agendadoPara)) + '<small>' + esc(p.tipo || '') + ' · ' + esc(brl(p.valor)) + '</small>' : '—'}</td><td><span class="prv-chip ${CHIP_PV[x.s.k] || 'gray'}">${esc(x.s.rot)}</span>${x.s.venc.length > 1 ? `<small>${esc(brl(soma(x.s.venc.map(y => y.valor))))} em atraso</small>` : ''}</td>
+    <td class="mono">${x.s.rec ? esc(fmtData(x.s.rec.pagoEm)) + '<small>' + esc(x.s.rec.tipo || '') + '</small>' : '—'}</td>
+    <td class="obr-acoes">${x.s.k === 'enviar' && x.s.prox ? `<button type="button" class="btn-ghost oe-mini" data-pv="enviada" data-id="${esc(x.r.id)}" data-pid="${esc(x.s.prox.id)}" title="A cobrança foi enviada ao cliente">✓ Enviada</button>` : ''}${p && x.s.k !== 'pausado' ? `<button type="button" class="btn-ghost oe-mini" data-pv="receber" data-id="${esc(x.r.id)}" title="Registrar o recebimento da ${esc(p.tipo || 'cobrança')}">✓ Receber</button>` : ''}<button type="button" class="obr-ic" data-pv="plano" data-k="${esc(fold(nomeCliente(x.r)))}" title="Alterar a cobrança">✎</button></td></tr>`; }).join('');
+  lst.innerHTML = (l.length ? `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Empresa</th><th>Cobrança</th><th>Próximo vencimento</th><th>Situação</th><th>Último recebimento</th><th></th></tr></thead><tbody>${linhas}</tbody></table></div>`
+    : (regs.length ? `<div class="empty-state">Nenhum cliente nesta situação${q ? ' para "' + esc(uiV.busca.trim()) + '"' : ''}.</div>` : '<div class="empty-state">Nenhuma cobrança de preventiva definida ainda.<br>Em <b>Valores e contratos</b> estão os clientes do Gestor: defina valor, periodicidade e forma de cobrança de cada um.</div>'))
+    + (semValor.length && uiV.sit !== 'sem' ? `<div class="pv-nota">${semValor.length} ${semValor.length === 1 ? 'cliente do Gestor ainda sem cobrança definida' : 'clientes do Gestor ainda sem cobrança definida'}: <button type="button" class="btn-ghost oe-mini" data-pv-aba="valores">Valores e contratos ›</button></div>` : '');
+}
+const txt_ = (t) => { const el = document.getElementById('obrContagem'); if(el) el.textContent = t; };
+// Visão por mês: o controle mensal do que foi enviado e pago. Cobranças do mês escolhido + as de meses anteriores ainda em aberto
+// (uma cobrança atrasada não some quando chega o aviso do mês seguinte).
+function renderPrevMes(regs, semValor){
+  const hoje = hojeStr(); uiV.mes = uiV.mes || hoje.slice(0, 7); const [y, m] = uiV.mes.split('-').map(Number); const ini = uiV.mes + '-01'; const lst = document.getElementById('pvLista'); const q = fold(uiV.busca);
+  const passa = (r) => (!q || fold([nomeCliente(r), r.contato, r.fone].join(' ')).includes(q)) && (!uiV.empresa || r.empresa === uiV.empresa);
+  const doMes = [], anteriores = [];
+  regs.filter(passa).forEach(r => parcelasDe(r).forEach(p => { const st = stDe(p); const d = p.agendadoPara || p.pagoEm || ''; if(!d) return; if(d.slice(0, 7) === uiV.mes) doMes.push({ r, p, st, d }); else if(st !== 'recebido' && p.agendadoPara && p.agendadoPara < ini) anteriores.push({ r, p, st, d }); }));
+  const grupo = (x) => x.st === 'recebido' ? 4 : x.d < hoje ? 0 : x.st === 'a_cobrar' ? 1 : x.st === 'nao_liberado' ? 3 : 2;
+  const ord = (a, b) => grupo(a) - grupo(b) || a.d.localeCompare(b.d) || fold(nomeCliente(a.r)).localeCompare(fold(nomeCliente(b.r)));
+  doMes.sort(ord); anteriores.sort(ord);
+  const sm = (l) => soma(l.map(x => x.p.valor)); const aEnv = doMes.filter(x => x.st === 'nao_liberado' || x.st === 'a_cobrar'), env = doMes.filter(x => x.st === 'enviado' || x.st === 'agendado'), rec = doMes.filter(x => x.st === 'recebido'), venc = doMes.filter(x => x.st !== 'recebido' && x.d < hoje);
+  const emp = (r) => r.empresa ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : '<span class="obr-emp obr-emp-definir">⚠ Definir</span>';
+  const linha = (x) => { const passou = x.st !== 'recebido' && x.d < hoje; const dd = diasEntre(hoje, x.d); const emDias = dd === 0 ? 'hoje' : 'em ' + dd + (dd === 1 ? ' dia' : ' dias');
+    const info = x.st === 'recebido' ? 'recebida em ' + fmtData(x.p.pagoEm) : passou ? 'venceu há ' + (-dd) + (dd === -1 ? ' dia' : ' dias') + (x.p.enviadoEm ? ' · enviada em ' + fmtData(x.p.enviadoEm) : ' · ainda não enviada') : x.st === 'a_cobrar' ? 'enviar a cobrança: vence ' + emDias : (x.st === 'enviado' || x.st === 'agendado') ? (x.p.enviadoEm ? 'enviada em ' + fmtData(x.p.enviadoEm) + ' · ' : '') + 'vence ' + emDias : 'previsão · vence ' + fmtData(x.d);
+    return `<tr class="pv-row" data-pv="abrir" data-id="${esc(x.r.id)}" role="button" tabindex="0"><td><b>${esc(nomeCliente(x.r))}</b> ${emp(x.r)}${htmlFaltas(x.r)}</td><td>${esc(x.p.tipo || 'Cobrança')}${x.p.auto ? '' : ' <span class="obr-ped-tag">avulsa</span>'}</td><td class="mono">${esc(fmtData(x.d))}</td><td class="obr-d mono">${esc(brl(x.p.valor))}</td><td>${esc(x.p.forma || x.r.formaPagamento || '—')}</td>
+      <td><span class="obr-st obr-st-${esc(x.st)}">${esc(passou ? 'Vencida · ' + rotuloStatus(x.st) : rotuloStatus(x.st))}</span><small>${esc(info)}</small></td>
+      <td class="obr-acoes">${(x.st === 'nao_liberado' || x.st === 'a_cobrar') ? `<button type="button" class="btn-ghost oe-mini" data-pv="enviada" data-id="${esc(x.r.id)}" data-pid="${esc(x.p.id)}" title="A cobrança foi enviada ao cliente${(x.p.forma || x.r.formaPagamento) === 'Boleto' ? ' (boleto: fica Agendado com o vencimento)' : ''}">✓ Enviada</button>` : ''}${x.st !== 'recebido' ? `<button type="button" class="btn-ghost oe-mini" data-pv="receber-p" data-id="${esc(x.r.id)}" data-pid="${esc(x.p.id)}" title="O cliente pagou">✓ Recebida</button>` : ''}</td></tr>`; };
+  const tabela = (l) => `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Cobrança</th><th>Vencimento</th><th class="obr-d">Valor</th><th>Forma</th><th>Situação</th><th></th></tr></thead><tbody>${l.map(linha).join('')}</tbody></table></div>`;
+  txt_(doMes.length + (doMes.length === 1 ? ' cobrança' : ' cobranças') + ' em ' + MESES[m - 1] + (anteriores.length ? ' · ' + anteriores.length + ' de meses anteriores em aberto' : ''));
+  if(!carregado){ lst.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
+  lst.innerHTML = `<div class="month-nav" style="margin:4px 0 10px;"><button type="button" class="nav-btn" data-pv-mes="-1" title="Mês anterior">‹</button><div class="month-title">${MESES[m - 1]} de ${y}</div><button type="button" class="nav-btn" data-pv-mes="1" title="Próximo mês">›</button>${uiV.mes !== hoje.slice(0, 7) ? '<button type="button" class="btn-ghost oe-mini" data-pv-mes="0">Mês atual</button>' : ''}</div>
+    <div class="pgag-semtot" style="margin-bottom:8px;">No mês: <b>${esc(brl(sm(doMes)))}</b> em ${doMes.length} ${doMes.length === 1 ? 'cobrança' : 'cobranças'} · a enviar <b>${aEnv.length}</b> · enviadas/agendadas <b>${env.length}</b> · recebidas <b>${esc(brl(sm(rec)))}</b> (${rec.length})${venc.length ? ` · <b class="obr-verm">${venc.length} vencida${venc.length === 1 ? '' : 's'}</b>` : ''}</div>
+    ${doMes.length ? tabela(doMes) : `<div class="empty-state">Nenhuma cobrança de preventiva em ${MESES[m - 1]} de ${y}.${regs.length ? '' : '<br>Defina as cobranças em <b>Valores e contratos</b>.'}</div>`}
+    ${anteriores.length ? `<div class="obr-sec-t" style="margin-top:16px;">Meses anteriores ainda em aberto <span class="obr-sec-n">${anteriores.length}</span><span class="obr-sec-tot">${esc(brl(sm(anteriores)))}</span></div><div class="prv-hint" style="margin:0 0 6px;">Continuam aqui até serem recebidas: o aviso do mês seguinte não apaga a cobrança atrasada.</div>${tabela(anteriores)}` : ''}
+    ${semValor.length ? `<div class="pv-nota">${semValor.length} ${semValor.length === 1 ? 'cliente do Gestor ainda sem cobrança definida' : 'clientes do Gestor ainda sem cobrança definida'}: <button type="button" class="btn-ghost oe-mini" data-pv-aba="valores">Valores e contratos ›</button></div>` : ''}`;
+}
+function renderPrevValores(cs){
+  const lst = document.getElementById('pvLista'); const q = fold(uiV.busca);
+  const com = cs.filter(x => x.r), sem = cs.filter(x => !x.r); const ativos = com.filter(x => planoDe(x.r).ativo !== false);
+  const mensal = soma(ativos.map(x => valorMensalDe(planoDe(x.r)))); const incompletos = com.filter(x => prevFaltas(x.r).length);
+  document.getElementById('obrKpis').innerHTML = PREV_API.kpiCards([
+    { tom: 'neutro', icone: 'total', texto: String(cs.length), zero: !cs.length, rotulo: 'Clientes de preventiva', sub: 'Gestor: visitas, contratos e clientes' },
+    { tom: 'verde', icone: 'ok', texto: String(com.length), zero: !com.length, rotulo: 'Com cobrança definida', sub: ativos.length + (ativos.length === 1 ? ' ativa' : ' ativas') },
+    { tom: sem.length ? 'amarelo' : 'neutro', icone: 'relogio', texto: String(sem.length), zero: !sem.length, rotulo: 'Sem cobrança definida', sub: sem.length ? 'defina valor e forma' : 'tudo definido' },
+    { tom: 'azul', icone: 'caixa', texto: brlCurto(mensal), zero: !(mensal > 0), rotulo: 'Cobrança por mês', sub: brlCurto(arred2(mensal * 12)) + ' por ano' },
+    { tom: incompletos.length ? 'amarelo' : 'neutro', icone: 'alerta', texto: String(incompletos.length), zero: !incompletos.length, rotulo: 'Com dados faltando', sub: incompletos.length ? 'contato, telefone, forma…' : 'cadastros completos' } ]);
+  const l = cs.filter(x => (!q || fold(x.nome).includes(q)) && (!uiV.empresa || (x.r && x.r.empresa === uiV.empresa)) && (!uiV.sit || (uiV.sit === 'sem' ? !x.r : x.r && prevSituacao(x.r).k === uiV.sit)));
+  txt_(l.length + (l.length === 1 ? ' cliente' : ' clientes'));
+  const emp = (r) => !r ? '—' : r.empresa ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : '<span class="obr-emp obr-emp-definir">⚠ Definir</span>';
+  const dif = (x) => { if(!x.r || !x.cm || !x.cm.c || !(x.cm.c.valor > 0)) return ''; const d = arred2(valorMensalDe(planoDe(x.r)) - Number(x.cm.c.valor)); return Math.abs(d) > 0.01 ? `<small class="pv-dif">${d > 0 ? '+' : '−'}${esc(brl(Math.abs(d)))}/mês em relação ao contrato</small>` : ''; };
+  lst.innerHTML = l.length ? `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Empresa</th><th>Contrato (Gestor)</th><th>Visitas (Gestor)</th><th>Cobrança (Financeiro)</th><th></th></tr></thead><tbody>${l.map(x => `<tr class="${x.r ? 'pv-row' : ''}" ${x.r ? `data-pv="abrir" data-id="${esc(x.r.id)}" role="button" tabindex="0"` : ''}><td><b>${esc(x.nome)}</b>${x.cli && x.cli.address ? `<small>${esc(x.cli.address)}</small>` : ''}</td><td>${emp(x.r)}</td><td>${chipCm(x.cm)}</td><td>${txtVisitas(x.mc)}</td><td>${x.r ? txtPlano(x.r) + dif(x) + htmlFaltas(x.r) + (x.mc && planoDe(x.r).visitas && Number(x.mc.intervalMonths) !== Number(planoDe(x.r).visitas) ? `<small class="pv-dif">Gestor: visitas ${esc(rotVisitas(x.mc.intervalMonths))}</small>` : '') : '<span class="prv-chip amber">Sem cobrança</span><small>criado no Gestor: defina valor, frequência e forma</small>'}</td><td class="obr-acoes">${x.r ? `<button type="button" class="btn-ghost oe-mini" data-pv="plano" data-k="${esc(x.k)}">✎ Alterar</button>` : `<button type="button" class="btn-primary oe-mini" data-pv="plano" data-k="${esc(x.k)}">+ Definir cobrança</button>`}</td></tr>`).join('')}</tbody></table></div>`
+    : `<div class="empty-state">${cs.length ? 'Nenhum cliente encontrado' + (q ? ' para "' + esc(uiV.busca.trim()) + '"' : '') + '.' : 'Nenhum cliente de manutenção preventiva no Gestor ainda (Manutenções › Controle de visitas e Contratos de manutenção).'}</div>`;
+}
+// ---------- detalhe do registro de preventiva (mesma janela das obras; as parcelas usam os mesmos botões e a mesma troca de situação) ----------
+function renderCabPrev(r, el){
+  const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente); const s = prevSituacao(r);
+  el.innerHTML = `<div class="qd-det-head"><div><h3 style="margin:0;">${esc(nomeCliente(r))}</h3>
+      <div class="qd-linha" style="margin-top:6px;"><span class="qd-tipo">Manutenção preventiva · ${r.empresa ? esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1]) : '⚠ definir empresa'}</span><span class="prv-chip ${CHIP_PV[s.k] || 'gray'}">${esc(s.rot)}</span></div>
+      ${cli && cli.address ? `<div class="prv-hint" style="margin:6px 0 0;">📍 ${esc(cli.address)}</div>` : ''}</div>
+      <button type="button" class="btn-ghost" data-obr-d="fechar">Fechar</button></div>`;
+}
+function renderDadosPrev(r, el){
+  const wa = r.fone && typeof phoneDigits === 'function' && phoneDigits(r.fone).length >= 10;
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Dados do cliente</div><div class="obr-grid2">
+    <div class="field"><label>Empresa *</label><select data-obr-campo="empresa" ${r.empresa ? '' : 'style="border-color:#b4232a;"'}><option value="">— Definir —</option>${EMPRESAS.map(([k, nm]) => `<option value="${k}" ${r.empresa === k ? 'selected' : ''}>${nm}</option>`).join('')}</select></div>
+    <div class="field"><label>Forma de cobrança</label><select data-obr-campo="formaPagamento"><option value="">—</option>${FORMAS.map(f => `<option ${r.formaPagamento === f ? 'selected' : ''}>${esc(f)}</option>`).join('')}</select></div>
+    <div class="field"><label>Pessoa de contato</label><input type="text" data-obr-campo="contato" value="${esc(r.contato || '')}" placeholder="Nome (cargo)"></div>
+    <div class="field"><label>WhatsApp / telefone ${wa ? '<a href="#" data-obr-d="whats" style="font-weight:600;">· abrir conversa</a>' : ''}</label><input type="text" data-obr-campo="fone" value="${esc(r.fone || '')}" placeholder="+55 24 90000-0000"></div>
+    <div class="field obr-largo"><label>Observações</label><textarea data-obr-campo="obs" rows="2" placeholder="Anotações internas do financeiro">${esc(r.obs || '')}</textarea></div></div></div>`;
+}
+function renderPlanoPrev(r, el){
+  const pl = planoDe(r); const e = prevClientes().find(x => x.r === r) || {}; const cm = e.cm, mc = e.mc;
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Plano de cobrança<span style="margin-left:auto;"><button type="button" class="btn-ghost oe-mini" data-obr-d="pv-plano">${pl.valor > 0 ? '✎ Alterar plano' : 'Definir plano'}</button></span></div>
+    ${pl.valor > 0 ? `<div class="obr-resumo"><div><label>Periodicidade</label><b>${esc(perDe(pl.periodicidade)[1])}</b></div><div><label>Valor de cada cobrança</label><b>${esc(brl(pl.valor))}</b></div><div><label>Equivale por mês</label><b>${esc(brl(valorMensalDe(pl)))}</b></div><div><label>Vencimento</label><b>dia ${diaVencDe(pl)}</b></div><div><label>Visitas</label><b>${esc(pl.visitas ? rotVisitas(pl.visitas) : '—')}</b></div></div>${prevFaltas(r).length ? `<div class="prv-hint" style="margin:6px 0 0;"><span class="pv-dif">Falta informar: ${esc(prevFaltas(r).join(', '))}</span></div>` : ''}
+    <div class="prv-hint" style="margin:6px 0 0;">${pl.ativo === false ? '<b>Pausada</b>: não nascem cobranças novas. ' : 'Ativa: previsões até ' + PREV_HORIZONTE_MESES + ' meses à frente; ' + PREV_AVISO_DIAS + ' dias antes do vencimento a cobrança passa a A cobrar. '}Primeiro vencimento ${esc(fmtData(pl.inicio))}${pl.fim ? ' · último ' + esc(fmtData(pl.fim)) : ''}${r.formaPagamento ? ' · ' + esc(r.formaPagamento) : ''}${pl.obs ? '<br>' + esc(pl.obs) : ''}</div>` : '<div class="prv-hint">Sem valor definido: defina o plano para as cobranças nascerem.</div>'}
+    <div class="obr-sec-t" style="margin-top:12px;">No Gestor</div><div class="prv-hint" style="margin:0;">Contrato de manutenção: ${chipCm(cm)}${cm && cm.c && cm.c.enviadoEm ? ' · ' + esc(fmtData(String(cm.c.enviadoEm).slice(0, 10))) : ''}<br>Visitas: ${txtVisitas(mc)}${mc && mc.contactName ? ' · contato ' + esc(mc.contactName) : ''}</div></div>`;
+}
+function renderPagPrev(r, el){
+  const hoje = hojeStr(), ano = hoje.slice(0, 4); const par = parcelasDe(r).slice().sort((a, b) => String(a.agendadoPara || a.pagoEm || '').localeCompare(String(b.agendadoPara || b.pagoEm || '')) || (a.ordem || 0) - (b.ordem || 0)); const s = prevSituacao(r, hoje);
+  const recAno = soma(par.filter(p => stDe(p) === 'recebido' && p.pagoEm && p.pagoEm.slice(0, 4) === ano).map(p => p.valor)); const aberto = soma(s.emAberto.map(p => p.valor)); const vencV = soma(s.venc.map(p => p.valor));
+  el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Cobranças <span class="obr-sec-n">${par.length}</span></div>
+    <div class="obr-resumo"><div><label>Recebido em ${esc(ano)}</label><b class="obr-verde">${esc(brl(recAno))}</b></div><div><label>Em aberto</label><b class="${aberto > 0.005 ? 'obr-ambar' : 'obr-verde'}">${esc(brl(aberto))}</b></div><div><label>Vencido</label><b class="${vencV > 0.005 ? 'obr-verm' : 'obr-verde'}">${esc(brl(vencV))}</b></div><div><label>Próximo vencimento</label><b>${s.prox ? esc(fmtData(s.prox.agendadoPara)) : '—'}</b></div></div>
+    ${par.length ? tabelaParcelas(par) : '<div class="prv-hint" style="margin:6px 0;">Nenhuma cobrança ainda. Elas nascem pelo plano (previsões até ' + PREV_HORIZONTE_MESES + ' meses à frente).</div>'}
+    <div class="prv-linha" style="margin-top:8px;"><button type="button" class="btn-ghost oe-mini" data-obr-d="par-add" data-ped="">+ Cobrança avulsa</button></div>
+    <div class="prv-hint" style="margin:6px 0 0;">Fluxo: <b>Não liberado</b> = previsão · <b>A cobrar</b> = enviar a cobrança (vence em até ' + PREV_AVISO_DIAS + ' dias) · <b>Enviado</b> / <b>Agendado</b> (boleto, com o vencimento) · <b>Recebido</b> = pago, sai da pendência. Cobrança avulsa serve para visita extra, peça ou reajuste fora do plano.</div></div>`;
+}
+
+// ---------- aviso ao Gestor (Manutenções): clientes de preventiva criados pelo Financeiro que não estão no controle de visitas ou ainda sem equipamentos cadastrados ----------
+function renderAvisosFinPrev(){
+  const box = document.getElementById('prvFinNovos'); if(!box) return;
+  if(!carregado){ box.innerHTML = ''; garantirCarregado().then(() => renderAvisosFinPrev()).catch(() => {}); return; }
+  const mcs = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+  const temVisita = (n) => mcs.some(c => fold(c.client) === fold(n));
+  const temEquip = (n) => { try{ return !(window.PREV_API && PREV_API.unidadesDoCliente) || PREV_API.unidadesDoCliente(n).length > 0; }catch(e){ return true; } };
+  const itens = prevRegs().map(r => { const nome = nomeCliente(r); const falta = []; if(!temVisita(nome)) falta.push('visitas'); if(!temEquip(nome)) falta.push('equip'); return { r, nome, falta }; }).filter(x => x.falta.length);
+  box.innerHTML = itens.length ? `<div class="maint-alert-row" style="display:block; margin:0 0 14px;"><div class="maint-alert-client">Clientes de manutenção preventiva do Financeiro que faltam aqui: ${itens.length}</div><div class="prv-hint" style="margin:2px 0 6px;">O Financeiro já definiu a cobrança destes clientes. Falta no Gestor: colocar no <b>controle de visitas</b> e cadastrar os <b>equipamentos</b> (Configuração por cliente) para o relatório da preventiva.</div>
+    ${itens.map(x => { const pl = planoDe(x.r); return `<div class="prv-linha" style="flex-wrap:wrap; gap:8px; align-items:center; padding:6px 0; border-top:1px solid var(--line);"><b>${esc(x.nome)}</b><span class="prv-hint" style="margin:0;">${esc((x.r.criadoPor ? 'por ' + x.r.criadoPor : 'Financeiro') + (x.r.criadoEm ? ' em ' + new Date(x.r.criadoEm).toLocaleDateString('pt-BR') : ''))}${pl.visitas ? ' · visitas ' + esc(rotVisitas(pl.visitas)) : ''}${x.r.contato ? ' · ' + esc(x.r.contato) : ''}${x.r.fone ? ' · ' + esc(x.r.fone) : ''}</span>
+      ${x.falta.includes('visitas') ? `<span class="prv-chip amber">Fora do controle de visitas</span><button type="button" class="btn-ghost oe-mini" data-pvg="visitas" data-id="${esc(x.r.id)}">Preencher no controle de visitas</button>` : ''}
+      ${x.falta.includes('equip') ? `<span class="prv-chip amber">Sem equipamentos cadastrados</span><button type="button" class="btn-ghost oe-mini" data-pvg="equip" data-id="${esc(x.r.id)}">Configuração por cliente</button>` : ''}</div>`; }).join('')}</div>` : '';
+  if(!box._pvgLigado){ box._pvgLigado = true; box.addEventListener('click', (e) => { const b = e.target.closest('[data-pvg]'); if(!b) return; const r = porId(b.dataset.id); if(!r) return; const pl = planoDe(r);
+    if(b.dataset.pvg === 'visitas'){ const set = (id, v) => { const el = document.getElementById(id); if(el && v != null) el.value = v; }; const cli = clientePorNome(r.cliente);
+      set('maintClientInput', nomeCliente(r)); set('maintContactNameInput', r.contato || ''); set('maintContactInput', r.fone || ''); set('maintFreqInput', String(pl.visitas || 3)); set('maintLocationInput', (cli && cli.address) || '');
+      const i = document.getElementById('maintClientInput'); if(i && i.scrollIntoView){ try{ i.scrollIntoView({ behavior: 'smooth', block: 'center' }); }catch(e){} } const d = document.getElementById('maintDateInput'); if(d && d.focus) d.focus();
+      avisar('Dados de ' + nomeCliente(r) + ' preenchidos no formulário: confira a data da última manutenção e clique em "+ Adicionar".', 8000); }
+    else { const t = document.querySelector('#prvManutTabs [data-prvmanut="config"]'); if(t) t.click(); avisar('Cadastre os equipamentos de ' + nomeCliente(r) + ' em Configuração por cliente (é a lista usada no relatório da preventiva).', 8000); } }); }
+}
+
 // ---------- navegação do Financeiro (menu lateral / abas no celular) ----------
 let secao = 'painel';
 // ===== Fase 13: Painel da Eliane — o que precisa de ação no Financeiro, o pulso de hoje e cada área recolhida =====
 const uiP = { abertas: new Set((typeof window !== 'undefined' && window.innerWidth >= 1100) ? ['os', 'obras', 'semana'] : ['os']) };
-const FP_IC = { os: '📋', obras: '🏗️', manut: '🗓️', semana: '📅' };
+const FP_IC = { os: '📋', obras: '🏗️', manut: '🗓️', prev: '🔁', semana: '📅' };
 function parcelasFin(){            // todas as parcelas vivas (pedido cancelado só conta se já recebida), com registro e origem
   const out = []; todosRegistros().forEach(r => { const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
     parcelasDe(r).forEach(p => { const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && ped.cancelado && st !== 'recebido') return;
@@ -28315,15 +28636,19 @@ function renderPainelFin(){
   const obrasFinSaldo = carregado ? todosRegistros().filter(r => modoDe(r) === 'obras' && r.situacao === 'finalizada' && !ehFinalizado(r) && totais(r).saldo > 0) : [];
   const aProgramar = carregado ? todosRegistros().filter(r => modoDe(r) === 'obras' && !ehFinalizado(r) && totais(r).aProgramar > 0) : [];
   const nomes = (l, max) => { const v = [...new Set(l.map(x => x.cliente || nomeCliente(x)))]; return v.slice(0, max).join(' · ') + (v.length > max ? ' · +' + (v.length - max) : ''); };
-  const goDe = (l) => l.some(x => x.origem === 'obras') ? 'obras' : l.some(x => x.origem === 'manut') ? 'manut' : 'os';
+  const goDe = (l) => l.some(x => x.origem === 'obras') ? 'obras' : l.some(x => x.origem === 'manut') ? 'manut' : l.some(x => x.origem === 'prev') ? 'prev' : 'os';   // Fase 19
+  const semValorPrev = carregado ? prevClientes().filter(x => !x.r) : []; const aEnviarPrev = aCobrar.filter(x => x.origem === 'prev'), aCobrarEx = aCobrar.filter(x => x.origem !== 'prev'), cobVelhasEx = cobVelhas.filter(x => x.origem !== 'prev'); const incompletosPrev = carregado ? prevRegs().filter(r => prevFaltas(r).length) : [];   // Fase 19
   const ex = []; const add = (n, tom, t, sub, acao, attr) => { if(n) ex.push({ n, tom, t, sub, acao, attr }); };
   add(vencidas.length, 'red', 'Pagamentos combinados com a data já passada', brl(soma_(vencidas)) + ' · ' + nomes(vencidas, 3), 'Ver', `data-fp-go="${goDe(vencidas)}" data-fp-aba="agendados"`);
   add(envVelhas.length, 'red', 'Cobranças enviadas há mais de 30 dias sem receber', brl(soma_(envVelhas)) + ' · ' + nomes(envVelhas, 3), 'Ver', `data-fp-go="${goDe(envVelhas)}"`);
-  add(cobVelhas.length, 'red', 'Liberadas para cobrar há mais de 7 dias, ainda não enviadas', brl(soma_(cobVelhas)) + ' · ' + nomes(cobVelhas, 3), 'Cobrar', `data-fp-go="${goDe(cobVelhas)}"`);
-  add(aCobrar.length - cobVelhas.length, 'amber', 'Parcelas liberadas para cobrar', brl(soma_(aCobrar.filter(x => !cobVelhas.includes(x)))) + ' · ' + nomes(aCobrar.filter(x => !cobVelhas.includes(x)), 3), 'Cobrar', `data-fp-go="${goDe(aCobrar)}"`);
+  add(cobVelhasEx.length, 'red', 'Liberadas para cobrar há mais de 7 dias, ainda não enviadas', brl(soma_(cobVelhasEx)) + ' · ' + nomes(cobVelhasEx, 3), 'Cobrar', `data-fp-go="${goDe(cobVelhasEx)}"`);
+  add(aCobrarEx.length - cobVelhasEx.length, 'amber', 'Parcelas liberadas para cobrar', brl(soma_(aCobrarEx.filter(x => !cobVelhasEx.includes(x)))) + ' · ' + nomes(aCobrarEx.filter(x => !cobVelhasEx.includes(x)), 3), 'Cobrar', `data-fp-go="${goDe(aCobrarEx)}"`);
+  add(aEnviarPrev.length, 'amber', 'Cobranças de manutenção preventiva para enviar (vencem em até 7 dias)', brl(soma_(aEnviarPrev)) + ' · ' + nomes(aEnviarPrev, 3), 'Enviar', 'data-fp-go="prev"');   // Fase 19
   add(deHoje.length, 'amber', 'Pagamentos previstos para hoje', brl(soma_(deHoje)) + ' · ' + nomes(deHoje, 3), 'Ver', `data-fp-go="${goDe(deHoje)}" data-fp-aba="agendados"`);
   add(definirOS.length, 'amber', 'Ordens de serviço sem empresa definida', nomes(definirOS.map(r => ({ cliente: nomeCliente(r) })), 3), 'Definir', 'data-fp-go="os" data-fp-aba="definir"');
   add(definirMan.length, 'amber', 'Pedidos de manutenção sem empresa definida', nomes(definirMan.map(r => ({ cliente: nomeCliente(r) })), 3), 'Definir', 'data-fp-go="manut" data-fp-aba="definir"');
+  add(semValorPrev.length, 'amber', 'Clientes de manutenção preventiva sem cobrança definida (vieram do Gestor)', nomes(semValorPrev.map(x => ({ cliente: x.nome })), 3), 'Definir', 'data-fp-go="prev" data-fp-aba="valores"');   // Fase 19
+  add(incompletosPrev.length, 'gray', 'Cobranças de preventiva com dados faltando (contato, telefone, forma…)', nomes(incompletosPrev.map(r => ({ cliente: nomeCliente(r) })), 3), 'Completar', 'data-fp-go="prev" data-fp-aba="valores"');   // Fase 19
   add(obrasFinSaldo.length, 'amber', 'Obras finalizadas com saldo a receber', brl(soma_(obrasFinSaldo.map(r => ({ valor: totais(r).saldo })))) + ' · ' + nomes(obrasFinSaldo.map(r => ({ cliente: nomeCliente(r) })), 3), 'Ver', 'data-fp-go="obras"');
   add(enviadas.length - envVelhas.length, 'gray', 'Cobranças enviadas, aguardando o cliente', brl(soma_(enviadas.filter(x => !envVelhas.includes(x)))), 'Acompanhar', `data-fp-go="${goDe(enviadas)}"`);
   add(proximas.length, 'gray', 'Pagamentos previstos nos próximos 7 dias', brl(soma_(proximas)), 'Ver', `data-fp-go="${goDe(proximas)}" data-fp-aba="agendados"`);
@@ -28354,10 +28679,13 @@ function renderPainelFin(){
   const o3 = porOrig('manut');
   const cMan = `<div class="pn-kpis">${k(definirMan.length, 'Sem empresa definida', definirMan.length ? 'amber' : 'gray', 'manut', 'definir')}${k(o3.ac.length, 'A cobrar', o3.ac.length ? 'amber' : 'gray', 'manut')}${k(o3.env.length, 'Em cobrança', 'blue', 'manut')}${k(o3.rec.length, 'Recebidas no mês', 'green', 'manut', 'finalizados')}</div>${o3.venc.concat(o3.ac).slice(0, 6).map(x => lin(x, 'manut')).join('')}${abrir('manut', 'Abrir Pedidos de manutenção')}`;
   const sMan = area('manut', 'Pedidos de manutenção', carregado ? `${definirMan.length} sem empresa · ${o3.ac.length} a cobrar · ${o3.env.length} em cobrança` : 'carregando…', [definirMan.length || o3.ac.length ? 'a' : 'g'], cMan);
+  const o4 = porOrig('prev'); const regsPrev = carregado ? prevRegs() : []; const prevMes = todasP.filter(x => x.origem === 'prev' && x.st !== 'recebido' && x.data && x.data.slice(0, 7) === mes);   // Fase 19
+  const cPrev = `<div class="pn-kpis">${k(o4.ac.length, 'Para enviar', o4.ac.length ? 'amber' : 'gray', 'prev')}${k(o4.env.length, 'Enviadas / agendadas', 'blue', 'prev')}${k(o4.venc.length, 'Vencidas', o4.venc.length ? 'red' : 'gray', 'prev')}${k(o4.rec.length, 'Recebidas no mês', 'green', 'prev')}${k(semValorPrev.length, 'Sem cobrança definida', semValorPrev.length ? 'amber' : 'gray', 'prev', 'valores')}${k(incompletosPrev.length, 'Dados faltando', incompletosPrev.length ? 'amber' : 'gray', 'prev', 'valores')}</div>${o4.venc.concat(o4.ac).slice(0, 6).map(x => lin(x, 'prev')).join('')}${abrir('prev', 'Abrir Manutenções preventivas')}`;
+  const sPrev = area('prev', 'Manutenções preventivas', carregado ? `${regsPrev.length} ${regsPrev.length === 1 ? 'cliente' : 'clientes'} · ${o4.ac.length} para enviar · ${o4.venc.length} vencidas · ${brl(soma_(prevMes))} previstos no mês` : 'carregando…', [o4.venc.length ? 'r' : (o4.ac.length || semValorPrev.length) ? 'a' : 'g'], cPrev);
   const diasSem = [0, 1, 2, 3, 4, 5, 6].map(i => somarDiasFin(hoje, i)); const DOWC = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   const cSem = `<div class="pg-funil fp-sem">${diasSem.map(d => { const l = abertas.filter(x => x.data === d); const dow = new Date(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)).getDay(); return `<button type="button" class="pg-f ${l.length && d === hoje ? 'r' : ''} ${l.length && d !== hoje ? 'g' : ''}" data-fp-go="${goDe(l)}" data-fp-aba="agendados"><b>${l.length ? esc(brl(soma_(l)).replace('R$', '').trim()) : '—'}</b><span>${DOWC[dow]} ${d.slice(8, 10)}</span></button>`; }).join('')}</div><div class="pg-nota">${vencidas.length ? `<b>${vencidas.length}</b> com a data já passada (${esc(brl(soma_(vencidas)))}) · ` : ''}${proximas.length + deHoje.length} ${proximas.length + deHoje.length === 1 ? 'pagamento previsto' : 'pagamentos previstos'} até ${fmtData(semana)}</div>${abrir(goDe(abertas), 'Abrir o calendário de pagamentos')}`;
   const sSem = area('semana', 'Próximos 7 dias', carregado ? `${brl(soma_(deHoje.concat(proximas)))} previstos · ${vencidas.length} vencidos` : 'carregando…', [vencidas.length ? 'r' : 'g'], cSem);
-  box.innerHTML = `<div class="pn-head"><div><div class="pn-title">Painel</div><div class="pn-sub">${esc(dataHojeFin())}</div></div></div><div class="pg"><div class="pg-col pg-col-a">${bEx}${bPulso}</div><div class="pg-col pg-col-b"><div class="pg-sec-t">Por área</div>${sOs}${sObras}${sMan}${sSem}</div></div>`;
+  box.innerHTML = `<div class="pn-head"><div><div class="pn-title">Painel</div><div class="pn-sub">${esc(dataHojeFin())}</div></div></div><div class="pg"><div class="pg-col pg-col-a">${bEx}${bPulso}</div><div class="pg-col pg-col-b"><div class="pg-sec-t">Por área</div>${sOs}${sObras}${sMan}${sPrev}${sSem}</div></div>`;
 }
 const somarDiasFin = (x, n) => { const [y, m, d] = x.split('-').map(Number); const dt = new Date(y, m - 1, d + n); return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
 function dataHojeFin(){ const d = new Date(); const t = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); }
@@ -28365,28 +28693,33 @@ function ligarPainelFin(){
   const box = document.getElementById('finPainelView'); if(!box || box._fpLigado) return; box._fpLigado = true;
   box.addEventListener('click', (e) => {
     const sec = e.target.closest('[data-fp-sec]'); if(sec){ const k = sec.dataset.fpSec; if(uiP.abertas.has(k)) uiP.abertas.delete(k); else uiP.abertas.add(k); renderPainelFin(); return; }
-    const g = e.target.closest('[data-fp-go]'); if(g){ const aba = g.dataset.fpAba; mostrarSecao(g.dataset.fpGo); if(aba && abasDoModo().some(([k]) => k === aba)){ ui.empresa = aba; const t = document.querySelector('#obrTabs [data-emp="' + aba + '"]'); if(t) t.click(); else renderLista(); } }
+    const g = e.target.closest('[data-fp-go]'); if(g){ const aba = g.dataset.fpAba; if(g.dataset.fpGo === 'prev'){ uiV.aba = aba === 'agendados' ? 'calendario' : aba === 'valores' ? 'valores' : 'pagamentos'; mostrarSecao('prev'); return; }   // Fase 19
+      mostrarSecao(g.dataset.fpGo); if(aba && abasDoModo().some(([k]) => k === aba)){ ui.empresa = aba; const t = document.querySelector('#obrTabs [data-emp="' + aba + '"]'); if(t) t.click(); else renderLista(); } }
   });
 }
 ligarPainelFin();
 function mostrarSecao(s){
   secao = s; const os = document.getElementById('finPaneOS'), ob = document.getElementById('finObrasView'); if(!os || !ob) return;
   os.style.display = 'none'; ob.style.display = '';          // as três seções usam a mesma tela (abas Equiper/Eqp/Geral/Agendados/Finalizados)
-  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
+  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finNavPrev', 'prev'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut'], ['finBnPrev', 'prev']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
   const pv = document.getElementById('finPainelView'); if(pv) pv.style.display = s === 'painel' ? '' : 'none';
-  if(s === 'painel'){ ob.style.display = 'none'; renderPainelFin(); garantirCarregado().then(renderPainelFin).catch(e => console.error('painel financeiro: falha ao carregar', e)); return; }   // Fase 13
+  if(s === 'painel'){ ob.style.display = 'none'; renderPainelFin(); garantirCarregado().then(async () => { renderPainelFin(); try{ await garantirAvulsos(); if(await prevGerarTodos()) renderPainelFin(); }catch(e){ console.warn('preventivas: cobranças do período', e); } }).catch(e => console.error('painel financeiro: falha ao carregar', e)); return; }   // Fase 13 (+ Fase 19: cobranças das preventivas até o horizonte)
+  if(s === 'prev'){   // Fase 19: Manutenções preventivas (tela própria, no mesmo lugar das outras seções)
+    if(ui.modo !== 'prev'){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = 'prev'; ui.busca = ''; ui.fin = ''; ui.sit = ''; }
+    montarPrev(); renderPrev();
+    garantirCarregado().then(async () => { try{ await garantirAvulsos(); }catch(e){} try{ await prevGerarTodos(); }catch(e){ console.warn('preventivas: cobranças do período', e); } renderPrev(); }).catch(e => console.error('preventivas: falha ao carregar', e)); return; }
   {
     const modo = s;
     if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo !== 'obras' ? 'definir' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
     montar(); renderLista(); garantirCarregado().then(async () => { if(modo === 'os'){ try{ await reconciliarOs(); }catch(e){ console.error('os: reconciliar', e); } if(ui.modo === 'os' && ui.empresa !== 'agendados' && registrosDaAba('definir').length){ ui.empresa = 'definir'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === 'definir')); } } renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
 }
 function ligarNavegacao(){
-  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
+  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finNavPrev', 'prev'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut'], ['finBnPrev', 'prev']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
   const sair = document.getElementById('finSidebarLogout'); if(sair) sair.addEventListener('click', () => document.getElementById('financeiroLogoutBtn').click());
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { _teste: { obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { _teste: { prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
