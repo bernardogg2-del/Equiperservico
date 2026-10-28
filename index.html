@@ -647,6 +647,11 @@
     display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;
   }
   .service-client{ font-size: 15px; font-weight:700; }
+  /* Fase 27: selo "Cliente de manutenção" no alto dos cartões de atividade e de OS */
+  .selo-manut-linha{ margin:0 0 5px; line-height:1; }
+  .selo-manut{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; letter-spacing:.02em; padding:3px 9px; border-radius:999px; white-space:nowrap; background:rgba(111,66,193,0.10); color:#5B3AA8; border:1px solid rgba(111,66,193,0.35); }
+  .mini-card .selo-manut{ font-size:9.5px; padding:2px 7px; }
+  :root[data-theme="dark"] .selo-manut{ background:rgba(167,139,250,0.16); color:#C4B5FD; border-color:rgba(167,139,250,0.45); }
   .service-desc{ font-size: 13px; color: var(--text-dim); margin-top:4px; line-height:1.5; }
   .service-addr{ font-size: 12px; color: var(--text-dim); margin-top:6px; font-family: var(--mono); }
 
@@ -6367,7 +6372,7 @@ async function openServiceDetails(id){
 
   const body = document.getElementById('detailsModalBody');
   body.innerHTML = `
-    <h3>${escapeHtml(s.client)}</h3>
+    ${seloManutHtml(s)}<h3>${escapeHtml(s.client)}</h3>
     <p class="sub">${shortLabel(s.date)} · ${technicianLine}</p>
     <div class="status-tag ${s.status}" style="display:inline-block; margin-bottom:14px;">${statusLabelOf(s.status)}</div>
 
@@ -6816,7 +6821,7 @@ function buildMiniCardElement(s){
   el.innerHTML = `
     <div class="mini-card-top">
       <div>
-        <div class="mini-client">${escapeHtml(s.client)}</div>
+        ${seloManutHtml(s)}<div class="mini-client">${escapeHtml(s.client)}</div>
         <div class="mini-desc">${escapeHtml(s.description)}</div>
       </div>
       <div class="mini-tag ${s.status}">${statusLabelOf(s.status)}</div>
@@ -7175,7 +7180,7 @@ function renderDayPanel(){
     card.innerHTML = `
       <div class="service-top">
         <div>
-          <div class="service-client">${escapeHtml(s.client)}</div>
+          ${seloManutHtml(s)}<div class="service-client">${escapeHtml(s.client)}</div>
           <div class="service-desc">${escapeHtml(s.description)}</div>
           ${s.address ? `<div class="service-addr">${escapeHtml(s.address)}</div>` : ''}
         </div>
@@ -7855,7 +7860,7 @@ const F10 = (() => {
     svcs().forEach(s => { const t = tipoDe(s); if(!m.has(t)) m.set(t, { n: 0, ok: 0, min: [] }); const b = m.get(t); b.n++; if(s.status === 'concluido') b.ok++; const d = minutos(s); if(d != null) b.min.push(d); });
     const l = [...m.entries()].sort((a, b) => b[1].n - a[1].n);
     const todas = l.flatMap(([, b]) => b.min);
-    return { titulo: 'Tipos de serviço e duração', sub: 'Duração = início → fim registrados pelo técnico (só atividades com os dois horários)',
+    return { titulo: 'Tipos de serviço e duração', 
       linhas: [['Duração média geral', dur(media(todas))], ['Mediana', dur(mediana(todas))], ['Atividades com horário completo', todas.length + ' de ' + l.reduce((n, [, b]) => n + b.n, 0)]],
       tabela: { cab: ['Tipo', 'Ativ.', 'Concl.', 'Duração média'], num: [1, 2, 3], linhas: l.map(([t, b]) => [t, b.n, b.ok, dur(media(b.min))]) } };
   }
@@ -7863,7 +7868,7 @@ const F10 = (() => {
     const r = getDashboardDateRange(); const st = getTechnicianDashboardStats(r.startDate, r.endDate);
     const l = Object.keys(st).filter(k => st[k].atividades).map(k => ({ k, ...st[k], taxa: st[k].atividades ? st[k].retornos / st[k].atividades : 0 })).sort((a, b) => b.taxa - a.taxa || b.atividades - a.atividades);
     const tot = l.reduce((n, x) => n + x.atividades, 0), ret = l.reduce((n, x) => n + x.retornos, 0);
-    return { titulo: 'Retornos por técnico', sub: 'Retorno = atividade marcada como segunda ida (isRetorno)',
+    return { titulo: 'Retornos por técnico', 
       linhas: [['Taxa de retorno geral', pct(ret, tot) + (ret ? ' (' + ret + ' de ' + tot + ')' : '')], ['Técnico com mais retornos', l.length && l[0].retornos ? l[0].k + ' · ' + l[0].retornos : '—']],
       tabela: { cab: ['Técnico', 'Ativ.', 'Retornos', 'Taxa', 'Jornada média'], num: [1, 2, 3, 4], linhas: l.map(x => [x.k, x.atividades, x.retornos, pct(x.retornos, x.atividades), dur(x.averageOperationalMinutes)]) } };
   }
@@ -7881,7 +7886,7 @@ const F10 = (() => {
     const ordem = (O.STATUS_OBRA || []).map(x => x[0]);
     const linhasT = [...porEt.entries()].sort((a, b) => ordem.indexOf(a[0]) - ordem.indexOf(b[0])).map(([k, l]) => { const v = l.filter(x => x != null); return [O.rotObra(k), l.length, r1(media(v)), v.length ? Math.max(...v) : '—']; });
     parados.sort((a, b) => b.d - a.d);
-    return { titulo: 'Obras: tempo nas etapas', sub: 'Dias na etapa ATUAL (desde a última mudança de andamento) dos pedidos em andamento',
+    return { titulo: 'Obras: tempo nas etapas', 
       linhas: [['Pedidos em andamento', parados.length], ['Novos no período', novos], ['Finalizados no período', fin + (ciclos.length ? ' · ciclo mediano ' + r1(mediana(ciclos)) + ' dias' : '')], ['Parados há mais de 30 dias', parados.filter(x => x.d > 30).length]],
       tabela: { cab: ['Etapa', 'Pedidos', 'Média (dias)', 'Máx.'], num: [1, 2, 3], linhas: linhasT },
       lista: parados.slice(0, 6).map(x => x.nome + ' · pedido ' + x.num + ' · ' + x.et + ' · ' + x.d + ' dias') };
@@ -7892,7 +7897,7 @@ const F10 = (() => {
     O.registros().forEach(r => Object.values(r.parcelas || {}).forEach(pc => { if(!pc) return; const rec = (pc.status || (pc.pago ? 'recebido' : '')) === 'recebido' || !!pc.pagoEm; const v = Number(pc.valor || 0);
       if(pc.agendadoPara && dentro(pc.agendadoPara, p)){ prog++; progV += v; if(rec && pc.pagoEm){ const d = dias(pc.agendadoPara, pc.pagoEm); if(d != null && d > 0){ atras.push(d); atrasV += v; } else noPrazo++; } else if(!rec && pc.agendadoPara < h){ abertoN++; abertoV += v; } }
       if(pc.pagoEm && dentro(pc.pagoEm, p)){ recN++; recV += v; if(!pc.agendadoPara) avulsoN++; } }));
-    return { titulo: 'Financeiro: recebimentos', sub: 'Parcelas das obras com data programada no período',
+    return { titulo: 'Financeiro: recebimentos', 
       linhas: [['Programado no período', prog + ' · ' + brl(progV)], ['Recebido no prazo', noPrazo + ' (' + pct(noPrazo, prog) + ')'], ['Recebido com atraso', atras.length + (atras.length ? ' · atraso médio ' + r1(media(atras)) + ' dias · ' + brl(atrasV) : '')], ['Vencido e em aberto', abertoN + ' · ' + brl(abertoV)], ['Total recebido no período', recN + ' · ' + brl(recV) + (avulsoN ? ' (' + avulsoN + ' sem data programada)' : '')]],
       barras: [{ rot: 'No prazo', v: noPrazo, max: Math.max(prog, 1) }, { rot: 'Com atraso', v: atras.length, max: Math.max(prog, 1) }, { rot: 'Em aberto', v: abertoN, max: Math.max(prog, 1) }] };
   }
@@ -7905,7 +7910,7 @@ const F10 = (() => {
     const motivos = new Map(); nao.forEach(o => { const m = String(o.motivo || 'sem motivo').trim(); motivos.set(m, (motivos.get(m) || 0) + 1); });
     const aDef = todas.filter(o => o.status === 'decidir'); const idade = aDef.map(o => dias(o.criadoEm, h)).filter(d => d != null);
     const fin = { a_cobrar: [0, 0], agendado: [0, 0], cobrada: [0, 0], recebida: [0, 0] }; todas.filter(o => o.status === 'cobrar' && o.fin).forEach(o => { const k = o.fin.status; if(fin[k]){ fin[k][0]++; fin[k][1] += Number(o.fin.valor || 0); } });
-    return { titulo: 'OS: decisões e cobrança', sub: 'Decididas no período · situação atual das cobranças',
+    return { titulo: 'OS: decisões e cobrança', 
       linhas: [['Decididas no período', dec.length + ' · ' + cob.length + ' cobrar (' + brl(vCob) + ') · ' + nao.length + ' não cobrar'], ['Tempo médio até decidir', tDec.length ? r1(media(tDec)) + ' dias' : '—'], ['A definir agora', aDef.length + (idade.length ? ' · a mais antiga há ' + Math.max(...idade) + ' dias' : '')], ['Cobranças: a cobrar / agendadas', fin.a_cobrar[0] + ' (' + brl(fin.a_cobrar[1]) + ') / ' + fin.agendado[0] + ' (' + brl(fin.agendado[1]) + ')'], ['Cobradas, não recebidas', fin.cobrada[0] + ' · ' + brl(fin.cobrada[1])], ['Recebidas', fin.recebida[0] + ' · ' + brl(fin.recebida[1])]],
       tabela: motivos.size ? { cab: ['Motivo de não cobrar', 'OS'], num: [1], linhas: [...motivos.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6) } : null };
   }
@@ -7939,7 +7944,7 @@ const F10 = (() => {
     const nd = p.aberto ? Math.max(p.nd, 30) : p.nd;
     const l = [...cons.entries()].map(([id, q]) => { const it = itens.find(x => String(x.id) === String(id)); if(!it || !q) return null; const porDia = q / nd; const cob = porDia > 0 ? Number(it.quantity || 0) / porDia : null; return { nome: it.name, un: it.unit || '', q, cob, min: Number(it.minimumQuantity || 0), qt: Number(it.quantity || 0) }; }).filter(Boolean).sort((a, b) => b.q - a.q);
     const risco = l.filter(x => x.cob != null && x.cob < 15).sort((a, b) => a.cob - b.cob);
-    return { titulo: 'Estoque: consumo e cobertura', sub: 'Consumo = saídas + retiradas no período (' + nd + ' dias) · cobertura = quantidade atual ÷ consumo por dia',
+    return { titulo: 'Estoque: consumo e cobertura', 
       linhas: [['Itens com consumo', l.length], ['Retiradas registradas', rets.length + (porTec.size ? ' · ' + [...porTec.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([t, q]) => t + ' ' + q).join(', ') : '')], ['Itens que acabam em menos de 15 dias', risco.length]],
       tabela: l.length ? { cab: ['Item', 'Consumo', 'Em estoque', 'Cobertura'], num: [1, 2, 3], linhas: l.slice(0, 8).map(x => [x.nome, x.q + ' ' + x.un, x.qt + ' ' + x.un, x.cob == null ? '—' : x.cob > 999 ? '> 999 d' : r1(x.cob) + ' d']) } : null,
       lista: risco.slice(0, 5).map(x => x.nome + ' · acaba em ' + r1(x.cob) + ' dias' + (x.qt < x.min ? ' · já abaixo do mínimo' : '')) };
@@ -7951,7 +7956,7 @@ const F10 = (() => {
     const tEnv = env.map(o => dias(o.criadoEm, o.enviadoEm)).filter(d => d != null && d >= 0);
     const regs = O.registros ? O.registros() : []; const conv = env.filter(o => regs.some(r => fold(O.nomeCliente(r)) === fold(o.cliente) && (!r.criadoEm || !o.enviadoEm || diaDe(r.criadoEm) >= diaDe(o.enviadoEm)))).length;
     const abertos = todos.filter(o => o.status === 'aberto' || (!o.enviadoEm && o.status !== 'cancelado' && o.status !== 'perdido')); const atras = abertos.filter(o => o.dataLimite && o.dataLimite < h);
-    return { titulo: 'Orçamentos: funil', sub: 'Pelo que foi anotado, feito e enviado no período',
+    return { titulo: 'Orçamentos: funil', 
       linhas: [['Anotados → feitos → enviados', cri.length + ' → ' + fei.length + ' → ' + env.length], ['Tempo médio anotado → enviado', tEnv.length ? r1(media(tEnv)) + ' dias' : '—'], ['Enviados que viraram obra', conv + ' (' + pct(conv, env.length) + ')'], ['Em aberto agora / atrasados', abertos.length + ' / ' + atras.length]],
       barras: [{ rot: 'Anotados', v: cri.length, max: Math.max(cri.length, 1) }, { rot: 'Feitos', v: fei.length, max: Math.max(cri.length, 1) }, { rot: 'Enviados', v: env.length, max: Math.max(cri.length, 1) }, { rot: 'Viraram obra', v: conv, max: Math.max(cri.length, 1) }] };
   }
@@ -8147,7 +8152,7 @@ function renderPendingStyleList(containerId, pending){
     const techLabel = s.isPair ? s.technicianLabel : (getServiceTechnicians(s)[0] || '');
     return `
     <div class="pending-row">
-      <div class="pending-row-top">
+      ${seloManutHtml(s)}<div class="pending-row-top">
         <div class="pending-client">${escapeHtml(s.client)}${s.isRetorno ? ' <span class="os-retorno-tag">↩ RETORNO</span>' : ''}</div>
         <div class="pending-meta mono">${shortLabel(s.date)}${techLabel ? ' · ' + escapeHtml(techLabel) : ' · sem técnico'} · ${statusLabelOf(s.status)}</div>
       </div>
@@ -13530,7 +13535,7 @@ function renderTecnicosAmanha(){
             <div class="tecnico-task-drag" title="Arraste para reordenar">⋮⋮</div>
             <div class="tecnico-task-index mono">${i + 1}.</div>
             <div class="tecnico-task-body">
-              <div class="tecnico-task-client">${escapeHtml(s.client)}</div>
+              ${seloManutHtml(s)}<div class="tecnico-task-client">${escapeHtml(s.client)}</div>
               ${s.description ? `<div class="tecnico-task-desc">${escapeHtml(s.description)}</div>` : ''}
             </div>
           </div>
@@ -13738,7 +13743,7 @@ function renderOS(){
         <div class="os-row">
           <div class="os-row-top">
             <div>
-              <div class="os-client">${escapeHtml(s.client)}</div>
+              ${seloManutHtml(s)}<div class="os-client">${escapeHtml(s.client)}</div>
               <div class="os-meta">${shortLabel(s.date)} · Técnico: ${techLabelDisplay}</div>
             </div>
             ${s.isRetorno ? `<span class="os-retorno-tag">↩ RETORNO${original ? ' de ' + shortLabel(original.date) : ''}</span>` : ''}
@@ -14068,6 +14073,10 @@ async function ligarContatoCliente(nome, contato, fone, origem){
   if(origem !== 'financeiro' && window.OBR_API && OBR_API.prevLigarContato && podeGravarNoLigado('obras')){ try{ n += await OBR_API.prevLigarContato(nome, contato, fone); }catch(e){ console.error('Fase 26: contato no Financeiro', e); } }
   return n;
 }
+// Fase 27: selo "Cliente de manutenção" — cliente no controle de visitas, ou atividade ligada a um contrato de manutenção
+function ehClienteManutencao(s){ if(!s) return false; if(s.maintenanceContractId != null && s.maintenanceContractId !== '') return true;
+  const k = chaveClienteLigada(s.client); return !!k && Array.isArray(maintenanceContracts) && maintenanceContracts.some(c => c && c.client && chaveClienteLigada(c.client) === k); }
+function seloManutHtml(s){ return ehClienteManutencao(s) ? '<div class="selo-manut-linha"><span class="selo-manut" title="Cliente com contrato de manutenção preventiva (está no controle de visitas)">🔧 Cliente de manutenção</span></div>' : ''; }
 // Ao abrir o Gestor: o que está em branco num lugar é preenchido com o que já existe no outro (nunca troca o que já está preenchido).
 let reconciliandoContatos = false;
 async function reconciliarContatosClientes(){
@@ -16387,7 +16396,7 @@ function renderTechView(){
     card.innerHTML = `
       <div class="service-top">
         <div>
-          <div class="service-client">${i + 1}. ${escapeHtml(s.client)}</div>
+          ${seloManutHtml(s)}<div class="service-client">${i + 1}. ${escapeHtml(s.client)}</div>
           ${s.description ? `<div class="service-desc">${escapeHtml(s.description)}</div>` : ''}
           ${s.address ? `<div class="service-addr">${escapeHtml(s.address)}</div>` : ''}
           ${duplaLabelHtml}
@@ -22514,12 +22523,12 @@ function gerarPdfRelatorio(rel, fotos){
   }
 
   // ---------------- cabeçalho ----------------
-  const lh = 17, lw = lh * 1.093;
+  const lh = 22, lw = lh * 1.093;   /* Fase 29: logo maior */
   try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
-  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 3.6, { align: 'right' }); doc.setCharSpace(0);
-  setF('serifB', 21, C.ink); txt('Manutenção preventiva', PW - M, y + 11.4, { align: 'right' });
-  setF('sans', 8, C.dim); txt('Equiper Serviços', PW - M, y + 16, { align: 'right' });
-  y += lh + 3.2; doc.setFillColor(C.red); doc.rect(M, y, W, 0.9, 'F'); y += 5.5;
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 8.2, { align: 'right' }); doc.setCharSpace(0);
+  setF('serifB', 21, C.ink); txt('Manutenção preventiva', PW - M, y + 16.4, { align: 'right' });
+  
+  y += lh + 3.5; doc.setFillColor(C.red); doc.rect(M, y, W, 0.7, 'F'); y += 6;
 
   // ---------------- dados do cliente e da visita ----------------
   const dataTxt = fmtData(r.dataVisita) || fmtDataHora(r.criadoEm);
@@ -22606,7 +22615,7 @@ function gerarPdfRelatorio(rel, fotos){
         doc.setFillColor('#FFFFFF'); doc.setDrawColor('#CFD2D6'); doc.setLineWidth(0.25); doc.roundedRect(x0, yy + 2.9, lw2, 5.1, 2.55, 2.55, 'FD'); txt(u.local, x0 + lw2 / 2, yy + 6.4, { align: 'center' });
       }
     } });
-    if(!grupos.length) itens.push({ h: 9, draw: (yy) => { setF('sans', 8.5, C.dim); txt('Nenhum subitem estava configurado para esta unidade na data da visita.', M + 5, yy + 6); } });
+    if(!grupos.length) itens.push({ h: 9, draw: (yy) => { setF('sans', 8.5, C.dim); txt('Sem itens avaliados nesta unidade.', M + 5, yy + 6); } });
     grupos.forEach((x, gi) => {
       if(u.grupos.length > 1) itens.push({ h: 8.4, keep: true, draw: (yy) => {
         doc.setFillColor(C.red); doc.roundedRect(M + 5, yy + 5.1, 3.4, 0.9, 0.4, 0.4, 'F');
@@ -22761,10 +22770,10 @@ function gerarPdfContratoManut(d){
   let cabAtual = ['CONTRATO DE', 'Manutenção preventiva'];
   function cabecalho(subt, titulo){          // o mesmo cabeçalho em todas as páginas: logo grande à esquerda, título à direita, linha vermelha
     if(subt) cabAtual = [subt, titulo]; const [st, ti] = cabAtual;
-    const lh = 22, lw = lh * 1.093;
+    const lh = 25, lw = lh * 1.093;   /* Fase 29: logo maior */
     try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, INK); txt('equiper', M, y + 10); }
-    setF('sansB', 7, DIM); { const t = limparPdf(String(st).toUpperCase()); const cs = 0.6; const w = doc.getTextWidth(t) + (t.length - 1) * cs; doc.setCharSpace(cs); txt(t, PW - M - w, y + 8); doc.setCharSpace(0); }      // alinhado pela borda direita do título (o espaçamento entre letras não conta no fim)
-    setF('serifB', 20, INK); txt(ti, PW - M, y + 16.5, { align: 'right' });
+    setF('sansB', 7, DIM); { const t = limparPdf(String(st).toUpperCase()); const cs = 0.6; const w = doc.getTextWidth(t) + (t.length - 1) * cs; doc.setCharSpace(cs); txt(t, PW - M - w, y + 9.5); doc.setCharSpace(0); }      // alinhado pela borda direita do título (o espaçamento entre letras não conta no fim)
+    setF('serifB', 20, INK); txt(ti, PW - M, y + 18.5, { align: 'right' });
     y += lh + 4; doc.setFillColor(RED); doc.rect(M, y, W, 1.1, 'F'); y += 8;
   }
   function cabecalhoCurto(){ cabecalho(); }
@@ -22857,11 +22866,11 @@ function gerarPdfInstalacao(dados){
   const garantir = (h) => { if(y + h > LIM) novaPagina(); };
   function pilula(texto, estilo, xDir, yTopo, h){ const [bg, fg] = estilo; setF('sansB', 8, fg); const w = larg(limparPdf(texto)) + 5; doc.setFillColor(bg); doc.roundedRect(xDir - w, yTopo, w, h, h / 2, h / 2, 'F'); txt(texto, xDir - w / 2, yTopo + h / 2 + 1.05, { align: 'center' }); return w; }
   // ---------------- cabeçalho ----------------
-  const lh = 17, lw = lh * 1.093;
+  const lh = 22, lw = lh * 1.093;   /* Fase 29: logo maior */
   try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
-  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 3.6, { align: 'right' }); doc.setCharSpace(0);
-  setF('serifB', 21, C.ink); txt('Instalação', PW - M, y + 11.4, { align: 'right' }); setF('sans', 8, C.dim); txt('Equiper Serviços', PW - M, y + 16, { align: 'right' });
-  y += lh + 3.2; doc.setFillColor(C.red); doc.rect(M, y, W, 0.9, 'F'); y += 5.5;
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 8.2, { align: 'right' }); doc.setCharSpace(0);
+  setF('serifB', 21, C.ink); txt('Instalação', PW - M, y + 16.4, { align: 'right' }); 
+  y += lh + 3.5; doc.setFillColor(C.red); doc.rect(M, y, W, 0.7, 'F'); y += 6;
   // ---------------- cliente ----------------
   setF('sansB', 11.5, C.texto); const nomeL = doc.splitTextToSize(limparPdf(dados.cliente || '—'), W - 8); setF('sans', 9, C.dim); const endL = dados.endereco ? doc.splitTextToSize(limparPdf(dados.endereco), W - 8) : [];
   const hCli = 4.5 + nomeL.length * 5 + (endL.length ? endL.length * 4.2 + 1 : 0) + 8;
@@ -22887,7 +22896,7 @@ function gerarPdfInstalacao(dados){
       const fim = pct >= 100 ? 360 : pct * 3.6; for(let a = 0; a < fim; a += 2){ const b = Math.min(fim, a + 2), r0 = (a - 90) * Math.PI / 180, r1 = (b - 90) * Math.PI / 180; doc.line(cx + R * Math.cos(r0), cy + R * Math.sin(r0), cx + R * Math.cos(r1), cy + R * Math.sin(r1)); }
       try{ doc.setLineCap('butt'); }catch(e){} }
     setF('sansB', 13, C.texto); txt(pct + '%', cx, cy + 1.9, { align: 'center' });
-    setF('sansB', 11, C.texto); txt('Andamento geral da obra', cx + R + 6, cy - 2.2); setF('sans', 8.5, C.dim); txt(feitas + ' de ' + totEt + ' etapas concluídas', cx + R + 6, cy + 3); txt('O Teste vale 10% de cada equipamento', cx + R + 6, cy + 7.2); }
+    setF('sansB', 11, C.texto); txt('Andamento geral da obra', cx + R + 6, cy - 2.2); setF('sans', 8.5, C.dim); txt(feitas + ' de ' + totEt + ' etapas concluídas', cx + R + 6, cy + 3); }
   y += 2 * 11 + 6;
   // ---------------- pedidos → sistemas → equipamentos ----------------
   (dados.pedidos || []).forEach(p => {
@@ -22898,7 +22907,7 @@ function gerarPdfInstalacao(dados){
       garantir(16); setF('sansB', 10, C.texto); txt(s.nome, M + 1, y + 3.4); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, y + 5.2, PW - M, y + 5.2); y += 8;
       s.equipamentos.forEach(e => {
         // linha das etapas: quebra em várias linhas se necessário
-        setF('sans', 8.6, C.texto); const itens = e.etapas.map(t => { const es = t.estado || (t.feito ? 'finalizado' : 'nao_comecou'); t.es = es; const rot = limparPdf(t.nome) + ' — ' + (es === 'finalizado' ? 'finalizada' + (t.em ? ' dia ' + fmtData(String(t.em).slice(0, 10)) : '') : es === 'iniciado' ? 'iniciada' : 'não iniciada'); return { t, rot, w: larg(rot) + 8 }; });
+        setF('sans', 8.6, C.texto); const itens = e.etapas.map(t => { const es = t.estado || (t.feito ? 'finalizado' : 'nao_comecou'); t.es = es; const fem = /a$/i.test(String(t.nome || '').trim()); const g = (x) => x + (fem ? 'a' : 'o');   /* Fase 28: Elétrica/Hidráulica no feminino, Teste no masculino */ const rot = limparPdf(t.nome) + ' — ' + (es === 'finalizado' ? g('finalizad') + (t.em ? ' dia ' + fmtData(String(t.em).slice(0, 10)) : '') : es === 'iniciado' ? g('iniciad') : 'não ' + g('iniciad')); return { t, rot, w: larg(rot) + 8 }; });
         const linhas = []; let atual = [], acum = 0; itens.forEach(it => { if(acum + it.w > W - 10 && atual.length){ linhas.push(atual); atual = []; acum = 0; } atual.push(it); acum += it.w + 3; }); if(atual.length) linhas.push(atual);
         setF('sans', 8.4, C.texto); const obsL = e.obs ? doc.splitTextToSize('Obs.: ' + limparPdf(e.obs), W - 14) : []; const h = 9 + linhas.length * 5.4 + (obsL.length ? obsL.length * 4.2 + 3.5 : 0); garantir(h + 1.5);
         doc.setFillColor('#FFFFFF'); doc.setDrawColor(C.linha2); doc.setLineWidth(0.22); doc.roundedRect(M, y, W, h, 1.6, 1.6, 'FD');
@@ -24515,11 +24524,11 @@ function gerarPdfAtividade(dados){
   }
 
   // ---------------- cabeçalho ----------------
-  const lh = 17, lw = lh * 1.093;
+  const lh = 22, lw = lh * 1.093;   /* Fase 29: logo maior */
   try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
-  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 3.6, { align: 'right' }); doc.setCharSpace(0);
-  setF('serifB', 21, C.ink); txt('Atendimento técnico', PW - M, y + 11.4, { align: 'right' }); setF('sans', 8, C.dim); txt('Equiper Serviços', PW - M, y + 16, { align: 'right' });
-  y += lh + 3.2; doc.setFillColor(C.red); doc.rect(M, y, W, 0.9, 'F'); y += 5.5;
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 8.2, { align: 'right' }); doc.setCharSpace(0);
+  setF('serifB', 21, C.ink); txt('Atendimento técnico', PW - M, y + 16.4, { align: 'right' }); 
+  y += lh + 3.5; doc.setFillColor(C.red); doc.rect(M, y, W, 0.7, 'F'); y += 6;
 
   // ---------------- dados do cliente e da visita ----------------
   const colA = W * 0.555, colB = W - colA, pad = 4.2;
@@ -24610,11 +24619,11 @@ function gerarPdfEstatisticas(dados){
     fechar(); y += 4;
   }
   // cabeçalho
-  const lh = 17, lw = lh * 1.093;
+  const lh = 22, lw = lh * 1.093;   /* Fase 29: logo maior */
   try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
-  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 3.6, { align: 'right' }); doc.setCharSpace(0);
-  setF('serifB', 21, C.ink); txt('Estatísticas', PW - M, y + 11.4, { align: 'right' }); setF('sans', 8, C.dim); txt('Equiper Serviços', PW - M, y + 16, { align: 'right' });
-  y += lh + 3.2; doc.setFillColor(C.red); doc.rect(M, y, W, 0.9, 'F'); y += 5.5;
+  setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 8.2, { align: 'right' }); doc.setCharSpace(0);
+  setF('serifB', 21, C.ink); txt('Estatísticas', PW - M, y + 16.4, { align: 'right' }); 
+  y += lh + 3.5; doc.setFillColor(C.red); doc.rect(M, y, W, 0.7, 'F'); y += 6;
   // faixa do período
   doc.setFillColor(C.cinzaInfo); doc.setDrawColor(C.linha); doc.roundedRect(M, y, W, 12, 2.5, 2.5, 'FD'); doc.setFillColor(C.red); doc.roundedRect(M, y, 1.7, 12, 0.8, 0.8, 'F');
   setF('sansB', 6.4, C.dim); doc.setCharSpace(0.35); txt('PERÍODO', M + 4.2, y + 4.4); txt('GERADO EM', M + W * 0.55, y + 4.4); doc.setCharSpace(0);
