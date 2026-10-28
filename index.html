@@ -26109,7 +26109,7 @@ const EMPRESAS = [['equiper', 'Equiper'], ['eqp', 'Eqp']];
 // Abas: Equiper | Eqp | Geral (o que ainda tem a receber) · Agendados (calendário de pagamentos) · Finalizados (tudo recebido = quitado, das duas empresas)
 const ABAS_OBR = EMPRESAS.concat([['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);
 const ehFinalizado = (r) => totais(r).fin === 'quitado';          // tudo recebido: o registro vai para Finalizados (e volta sozinho se surgir um novo valor a receber)
-function registrosDaAba(k, modo){ const m = modo || ui.modo; const todos = todosRegistros().filter(r => modoDe(r) === m); if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); if(k === 'definir') return ativos.filter(r => !r.empresa); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
+function registrosDaAba(k, modo){ const m = modo || ui.modo; const todos = todosRegistros().filter(r => modoDe(r) === m); if(m === 'manut' && ABAS_PED_KEYS.has(k)) return todos.map(r => vistaManut(r, k)).filter(Boolean); /* Fase 21 */ if(k === 'finalizados') return todos.filter(ehFinalizado); const ativos = todos.filter(r => !ehFinalizado(r)); if(k === 'definir') return ativos.filter(r => !r.empresa); return k === 'geral' ? ativos : ativos.filter(r => r.empresa === k); }
 const rotAba = (k) => (ABAS_OBR.find(e => e[0] === k) || ['', k])[1];
 const FORMAS = ['PIX', 'Transferência', 'Boleto', 'Cartão', 'Cheque', 'Dinheiro', 'Misto / parcelado', 'Outro'];
 const SITUACOES = [['nao_comecou', 'Não começou'], ['em_andamento', 'Em andamento'], ['finalizada', 'Finalizada'], ['cancelada', 'Cancelada']];
@@ -26172,11 +26172,34 @@ const semObra = (r) => ehManut(r) || ehOs(r);                     // registros s
 const todosRegistros = () => store.items.filter(r => r && r.id && r.active !== false);
 const registros = () => todosRegistros().filter(r => modoDe(r) === 'obras');      // obras (o Gestor e os painéis só enxergam estas)
 const ABAS_MANUT = [['definir', 'Definir empresa']].concat(EMPRESAS, [['geral', 'Geral'], ['agendados', 'Agendados'], ['finalizados', 'Finalizados']]);   // pedido vindo de Cadastros e OS chega sem empresa: o Financeiro escolhe Equiper ou Eqp
-const abasDoModo = () => ui.modo === 'obras' ? ABAS_OBR : ABAS_MANUT;
+// Fase 21: Pedidos de manutenção com abas por situação do pedido (as Ordens de serviço continuam com ABAS_MANUT)
+const ABAS_MANUT_PED = [['geral', 'Geral'], ['aguardando', 'Aguardando aprovação'], ['aprovados', 'Aprovados'], ['agendados', 'Calendário'], ['finalizados', 'Finalizados'], ['nao_aprovados', 'Não aprovados']];
+const ABAS_PED_KEYS = new Set(['geral', 'aguardando', 'aprovados', 'finalizados', 'nao_aprovados']);
+const abasDoModo = () => ui.modo === 'obras' ? ABAS_OBR : ui.modo === 'manut' ? ABAS_MANUT_PED : ABAS_MANUT;
+// Pedido de manutenção fora da cobrança: cancelado ou não aprovado (as parcelas dele não contam, a não ser as já recebidas)
+const pedidoInativo = (r, p) => !!p && (!!p.cancelado || (ehManut(r) && aprovDe(p) === 'nao_aprovado'));
+function pedidoQuitado(r, p){ const ps = parcelasDoPedido(r, p.numero); if(!ps.length || ps.some(x => stDe(x) !== 'recebido')) return false; const rec = soma(ps.map(x => x.valor)); return !(Number(p.valor) > 0) || rec >= Number(p.valor) - 0.005; }
+function estadoPedManut(r, p){ if(p.cancelado) return 'cancelado'; const ap = aprovDe(p); if(ap === 'nao_aprovado') return 'nao_aprovados'; if(ap !== 'aprovado') return 'aguardando'; return pedidoQuitado(r, p) ? 'finalizados' : 'aprovados'; }
+const pedNaAba = (est, aba) => aba === 'geral' ? (est === 'aguardando' || est === 'aprovados') : est === aba;
+// O registro do cliente visto por uma aba: só os pedidos daquela situação (e as parcelas deles). Cópia só para a tela — nunca é gravada.
+function vistaManut(r, aba){
+  const peds = pedidosDe(r).filter(p => pedNaAba(estadoPedManut(r, p), aba)); const nums = new Set(peds.map(p => String(p.numero))); const todosNums = new Set(pedidosDe(r).map(p => String(p.numero)));
+  const avulsas = parcelasDe(r).filter(x => !x.pedido || !todosNums.has(String(x.pedido))).filter(x => stDe(x) === 'recebido' ? aba === 'finalizados' : (aba === 'geral' || aba === 'aprovados'));
+  if(!peds.length && !avulsas.length) return null;
+  const pedidos = {}; peds.forEach(p => { pedidos[p.id] = p; }); const parcelas = {}; parcelasDe(r).filter(x => (x.pedido && nums.has(String(x.pedido))) || avulsas.includes(x)).forEach(x => { parcelas[x.id] = x; });
+  return Object.assign({}, r, { pedidos, parcelas, _vista: aba });
+}
+// Pedido aprovado sem parcela: nasce a cobrança "Parcela única" em "A cobrar" (o controle de cobrança de Aprovados). Devolve true se criou.
+function garantirCobrancaPedido(r, p){
+  if(!ehManut(r) || !p || p.cancelado || aprovDe(p) !== 'aprovado' || !(Number(p.valor) > 0) || parcelasDoPedido(r, p.numero).length) return false;
+  const id = uid('c'); const ordem = 1 + Math.max(0, ...lista(r.parcelas).map(x => x.ordem || 0));
+  r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: 'Parcela única', pedido: p.numero, pct: 100, valor: arred2(Number(p.valor)), status: 'a_cobrar', liberadoEm: hojeStr(), liberadoAuto: true, forma: r.formaPagamento || null, ordem } });
+  return true;
+}
 const pedidosDe = (r) => lista(r.pedidos).sort((a, b) => String(a.numero).localeCompare(String(b.numero), 'pt-BR', { numeric: true }));
 const parcelasDe = (r) => lista(r.parcelas).sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
 function totais(r){
-  const todosPed = pedidosDe(r), ativos = todosPed.filter(p => !p.cancelado); const canc = new Set(todosPed.filter(p => p.cancelado).map(p => String(p.numero)));
+  const todosPed = pedidosDe(r), ativos = todosPed.filter(p => !pedidoInativo(r, p)); const canc = new Set(todosPed.filter(p => pedidoInativo(r, p)).map(p => String(p.numero)));   // Fase 21: não aprovado = fora, como cancelado
   const par = parcelasDe(r).filter(p => stDe(p) === 'recebido' || !(p.pedido && canc.has(String(p.pedido))));      // parcela de pedido cancelado só conta se já foi recebida
   const por = { nao_liberado: 0, a_cobrar: 0, enviado: 0, agendado: 0, recebido: 0 }, cont = { nao_liberado: 0, a_cobrar: 0, enviado: 0, agendado: 0, recebido: 0 };
   par.forEach(p => { const k = stDe(p); por[k] += Number(p.valor) || 0; cont[k]++; }); Object.keys(por).forEach(k => { por[k] = Math.round(por[k] * 100) / 100; });
@@ -26243,6 +26266,7 @@ function montar(){
     <div class="fin-filtros" id="obrBarra">
       <div class="search-clear-wrap" style="flex:2 1 260px; min-width:200px;"><input type="search" id="obrBusca" placeholder="Buscar cliente ou nº do pedido…" autocomplete="off"></div>
       <select id="obrFiltroFin"><option value="">Todas as situações financeiras</option><option value="saldo">Com saldo a receber</option><option value="acobrar">Com parcela A cobrar</option><option value="enviado">Com parcela Enviada</option><option value="agendado">Com parcela Agendada</option><option value="quitado">Quitados</option></select>
+      ${ui.modo === 'manut' ? `<select id="obrFiltroEmp" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, n]) => `<option value="${k}" ${ui.empFiltro === k ? 'selected' : ''}>${n}</option>`).join('')}<option value="sem" ${ui.empFiltro === 'sem' ? 'selected' : ''}>Sem empresa definida</option></select>` : ''}
       ${ui.modo !== 'obras' ? '' : `<select id="obrFiltroSit"><option value="">Qualquer situação da obra</option>${SITUACOES.map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select>`}
       <button type="button" class="btn-ghost" data-obr="csv">⤓ CSV</button>
       ${ui.modo === 'os' ? '<button type="button" class="btn-ghost" data-obr="rec-os" title="Confere o Cadastro de OS e traz para cá toda OS marcada como Cobrar que ainda não está nesta tela">↻ Trazer OS do Cadastro</button>' : ''}
@@ -26257,6 +26281,7 @@ function montar(){
   busca.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ busca.value = ''; ui.busca = ''; renderLista(); } });
   document.getElementById('obrFiltroFin').addEventListener('change', (e) => { ui.fin = e.target.value; renderLista(); });
   const fs = document.getElementById('obrFiltroSit'); if(fs) fs.addEventListener('change', (e) => { ui.sit = e.target.value; renderLista(); });
+  const fe = document.getElementById('obrFiltroEmp'); if(fe) fe.addEventListener('change', (e) => { ui.empFiltro = e.target.value; renderLista(); });   // Fase 21
   if(v._obrLigado) return; v._obrLigado = true;
   v.addEventListener('click', (e) => {
     if(e.target.closest('.obr-hist')) return;          // abrir/fechar o histórico da OS não abre o registro
@@ -26297,7 +26322,7 @@ function linhaPedido(r, p, parcelas){
 }
 function cartao(r){
   const t = totais(r); const todos = pedidosDe(r); const ped = todos.filter(p => !p.cancelado); const par = parcelasDe(r); const numeros = new Set(todos.map(p => String(p.numero)));
-  const chips = [(!r.empresa && semObra(r)) ? '<span class="obr-emp obr-emp-definir">⚠ Definir empresa</span>' : ((ui.empresa === 'geral' || ui.empresa === 'finalizados' || ui.empresa === 'definir') ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : ''), semObra(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
+  const chips = [(!r.empresa && semObra(r)) ? '<span class="obr-emp obr-emp-definir">⚠ Definir empresa</span>' : ((ui.empresa === 'geral' || ui.empresa === 'finalizados' || ui.empresa === 'definir' || ui.modo === 'manut') ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : ''), semObra(r) ? '' : `<span class="prv-chip ${r.situacao === 'finalizada' ? 'green' : r.situacao === 'em_andamento' ? 'amber' : 'gray'}">${esc(rotSit(r.situacao))}</span>`,
     t.fin === 'quitado' ? '<span class="prv-chip green">Quitado</span>' : ''].join('');
   const avulsas = par.filter(x => !x.pedido || !numeros.has(String(x.pedido)));
   const mostrar = ped.slice(0, 5);
@@ -26330,7 +26355,7 @@ function renderLista(){
   try{ if(secao === 'painel') renderPainelFin(); }catch(e){ console.error('painel financeiro', e); }   // Fase 13
   if(ui.modo === 'prev'){ renderPrev(); return; }   // Fase 19
   const box = document.getElementById('obrLista'); if(!box) return; renderTopoOs();
-  abasDoModo().forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : registrosDaAba(k).length) + ')'; });
+  abasDoModo().forEach(([k]) => { const el = document.getElementById('obrTabN_' + k); if(el) el.textContent = ' (' + (k === 'agendados' ? previstosTodos().length : ui.modo === 'manut' ? registrosDaAba(k).reduce((t, v) => t + pedidosDe(v).length, 0) : registrosDaAba(k).length) + ')'; });   // Fase 21: em manutenção conta pedidos
   if(ui.modo !== 'obras'){
     const nDef = registrosDaAba('definir').length; const tDef = document.querySelector('#obrTabs [data-emp="definir"]'); if(tDef){ tDef.style.display = (nDef || ui.empresa === 'definir') ? '' : 'none'; if(tDef.firstElementChild) tDef.firstElementChild.className = 'obr-tab-n' + (nDef ? ' obr-tab-alerta' : ''); }
     if(carregado && ui.empresa === 'definir' && !nDef){ ui.empresa = 'equiper'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === ui.empresa)); }
@@ -26340,10 +26365,11 @@ function renderLista(){
   const todos = registrosDaAba(ui.empresa); document.getElementById('obrKpis').innerHTML = kpis(todos);
   const q = fold(ui.busca);
   let l = todos.filter(r => !q || fold([nomeCliente(r), r.contato, r.fone, r.formaPagamento, pedidosDe(r).map(p => p.numero + ' ' + p.descricao).join(' ')].join(' ')).includes(q));
-  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'acobrar' && !t.cont.a_cobrar) return false; if(ui.fin === 'enviado' && !t.cont.enviado) return false; if(ui.fin === 'agendado' && !t.cont.agendado) return false; if(ui.sit && r.situacao !== ui.sit) return false; return true; })
+  l = l.filter(r => { const t = totais(r); if(ui.fin === 'saldo' && !(t.saldo > 0.005)) return false; if(ui.fin === 'quitado' && t.fin !== 'quitado') return false; if(ui.fin === 'acobrar' && !t.cont.a_cobrar) return false; if(ui.fin === 'enviado' && !t.cont.enviado) return false; if(ui.fin === 'agendado' && !t.cont.agendado) return false; if(ui.sit && r.situacao !== ui.sit) return false; if(ui.modo === 'manut' && ui.empFiltro && (ui.empFiltro === 'sem' ? !!r.empresa : r.empresa !== ui.empFiltro)) return false; return true; })
     .sort((a, b) => fold(nomeCliente(a)).localeCompare(fold(nomeCliente(b))));
-  document.getElementById('obrContagem').textContent = l.length + (l.length === 1 ? ' registro' : ' registros');
+  { const np = ui.modo === 'manut' ? l.reduce((t, v) => t + pedidosDe(v).length, 0) : 0; document.getElementById('obrContagem').textContent = ui.modo === 'manut' ? np + (np === 1 ? ' pedido' : ' pedidos') + ' · ' + l.length + (l.length === 1 ? ' cliente' : ' clientes') : l.length + (l.length === 1 ? ' registro' : ' registros'); }
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
+  if(ui.modo === 'manut' && !l.length && todos.length === 0){ const MSG = { geral: 'Nenhum pedido de manutenção em aberto.<br>Eles chegam de <b>Cadastros e OS</b> ("Gerar pedido de manutenção") ou você cria com <b>+ Novo pedido</b>.', aguardando: 'Nenhum pedido aguardando aprovação.', aprovados: 'Nenhum pedido aprovado com cobrança em aberto.', finalizados: 'Nenhum pedido finalizado ainda.<br>O pedido aprovado vem para cá quando está <b>pago</b>.', nao_aprovados: 'Nenhum pedido não aprovado.' }; box.innerHTML = '<div class="empty-state">' + (MSG[ui.empresa] || 'Nada aqui.') + '</div>'; return; }   // Fase 21
   box.innerHTML = l.length ? l.map(cartao).join('')
     : (todos.length === 0 ? (ui.modo === 'os' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhuma OS a receber.<br>Elas chegam de <b>Cadastros e OS</b> (quando o Gestor marca <b>Cobrar</b>) ou você cria com <b>+ Nova OS</b>.</div>' : ui.modo === 'manut' && ui.empresa !== 'finalizados' ? '<div class="empty-state">Nenhum pedido de manutenção a receber.<br>Eles chegam de <b>Cadastros e OS</b> ("Gerar pedido de manutenção") ou você cria com <b>+ Novo pedido</b>.</div>' : ui.empresa === 'finalizados' ? '<div class="empty-state">Nenhum registro finalizado ainda.<br>O registro vem para cá quando está <b>quitado</b> (tudo recebido).</div>' : `<div class="empty-state">Nenhum registro ${ui.empresa === 'geral' ? 'a receber' : 'em ' + esc(rotAba(ui.empresa))} ainda.<br><br><button type="button" class="btn-primary" data-obr="novo">+ Criar o primeiro registro</button></div>`)
       : `<div class="empty-state">Nenhum registro encontrado${q ? ' para "' + esc(ui.busca.trim()) + '"' : ''}.${q ? `<br><br><button type="button" class="btn-primary" data-obr="criar-busca" data-nome="${esc(ui.busca.trim())}">+ Criar registro para "${esc(ui.busca.trim())}"</button>` : ''}</div>`);
@@ -26418,7 +26444,9 @@ function controlesManut(r, p){      // Fase 18: o pedido de manutenção já che
 async function mudarAprovacao(pid, novo){
   const r = atual(); if(!r || !r.pedidos || !r.pedidos[pid] || !APROVACAO.some(a => a[0] === novo)) return; const p = r.pedidos[pid]; if(aprovDe(p) === novo) return;
   p.aprovacao = novo; p.aprovacaoEm = new Date().toISOString(); p.aprovacaoPor = quem() || null; r.pedidos = Object.assign({}, r.pedidos);
+  const criou = garantirCobrancaPedido(r, p);   // Fase 21
   await gravar(r); renderDetalheSecoes();
+  if(ehManut(r)) avisar('Pedido ' + p.numero + (novo === 'aprovado' ? ' aprovado: foi para Aprovados' + (criou ? ' com a cobrança de ' + brl(p.valor) + ' em A cobrar.' : '.') : novo === 'nao_aprovado' ? ' não aprovado: foi para Não aprovados e saiu da cobrança.' : ' voltou para Aguardando aprovação.'), 7000);
 }
 function renderPed(){
   const r = atual(); const el = document.getElementById('obrDetPed'); if(!r || !el) return; if(ehPrev(r)) return renderPlanoPrev(r, el); const ped = pedidosDe(r); const t = totais(r);
@@ -26481,6 +26509,7 @@ async function criarPedidoManutencao(d){
   const cl = (typeof clientePorNome === 'function' ? clientePorNome(d.cliente) : null);
   if(!r){ r = { id: uid('mn_'), tipo: 'manutencao', empresa: null, cliente: cl ? cl.name : d.cliente, clienteId: cl ? cl.id : null, contato: (cl && cl.contato) || null, fone: (cl && cl.fone) || null, formaPagamento: null, cond: null, situacao: 'nao_comecou', obs: null, active: true, pedidos: {}, parcelas: {}, criadoEm: agora, criadoPor: quem() || null }; store.items.push(r); }
   r.pedidos = Object.assign({}, r.pedidos, { [pid]: { id: pid, numero, descricao: d.descricao || null, valor, osNumero: d.osNumero || null, origem: d.origem || null, origemId: d.refId != null ? String(d.refId) : null, aprovacao: d.aprovacao || null, aprovacaoEm: d.aprovacao ? agora : null, aprovacaoPor: d.aprovacao ? (quem() || null) : null } });
+  garantirCobrancaPedido(r, r.pedidos[pid]);   // Fase 21: pedido que já chega aprovado (pendências da preventiva) entra em Aprovados com a cobrança A cobrar
   r.atualizadoEm = agora; r.atualizadoPor = quem() || null;
   renderLista(); await store.save(true);
   return r;
@@ -28220,7 +28249,7 @@ function coletarEventos(op){
   todosRegistros().filter(r => modo === 'todos' || modoDe(r) === modo).filter(r => !op.empresa || r.empresa === op.empresa).forEach(r => {
     const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
     parcelasDe(r).forEach(p => {
-      const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && ped.cancelado && st !== 'recebido') return;      // parcela de pedido cancelado não conta
+      const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && pedidoInativo(r, ped) && st !== 'recebido') return;      // parcela de pedido cancelado não conta
       const base = { rid: r.id, pid: p.id, origem: modoDe(r), cliente: nomeCliente(r), empresa: r.empresa, pedido: p.pedido || '', desc: ped ? ped.descricao || '' : '', tipo: p.tipo || 'Parcela', valor: Number(p.valor) || 0, status: st, forma: p.forma || '' };
       if(st === 'recebido'){ if(op.recebidos !== false && p.pagoEm) out.push(Object.assign({}, base, { data: p.pagoEm, ev: 'recebido' })); }
       else if(p.agendadoPara) out.push(Object.assign({}, base, { data: p.agendadoPara, ev: 'previsto' }));
@@ -28373,13 +28402,14 @@ function prevSituacao(r, hoje){
 // O que ainda falta no cadastro da cobrança (aviso de informação faltando entre Financeiro e Gestor)
 function prevFaltas(r){ const pl = planoDe(r); const f = []; if(!r.empresa) f.push('empresa'); if(!(pl.valor > 0)) f.push('valor'); if(!pl.visitas) f.push('frequência das visitas'); if(!r.formaPagamento) f.push('forma de cobrança'); if(!r.contato) f.push('pessoa de contato'); if(!r.fone) f.push('telefone'); return f; }
 const htmlFaltas = (r) => { const f = prevFaltas(r); return f.length ? `<small class="pv-dif">Faltam: ${esc(f.join(', '))}</small>` : ''; };
-// Clientes da preventiva, alinhados com o Gestor: controle de visitas (maintenanceContracts), contratos de manutenção (de obra e avulsos,
-// menos os que o cliente recusou) e os registros de cobrança daqui. O nome vem do cadastro de Clientes quando o cliente está lá.
+// Clientes da preventiva, alinhados com o Gestor: o CONTROLE DE VISITAS (maintenanceContracts) e os registros de cobrança daqui.
+// Fase 20: o contrato de manutenção (orçamento gerado/enviado pelo Gestor) NÃO põe o cliente na lista — é só informação (valor/mês)
+// para quem já está nela. O nome vem do cadastro de Clientes quando o cliente está lá.
 function prevClientes(){
   const m = new Map();
   const add = (nome, campo, v) => { const k = fold(nome); if(!k) return; const e = m.get(k) || { k, nome: String(nome).trim(), mc: null, cm: null, r: null, cli: clientePorNome(nome) }; if(campo) e[campo] = v; if(e.cli) e.nome = e.cli.name; m.set(k, e); };
   (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts) ? maintenanceContracts : []).forEach(c => { if(c && c.client) add(c.client, 'mc', c); });
-  let cms = []; try{ cms = contratosManut(); }catch(e){} cms.forEach(x => { if(!(x.c && x.c.status === 'recusou')) add(x.cliente, 'cm', x); });
+  let cms = []; try{ cms = contratosManut(); }catch(e){} cms.forEach(x => { const e = m.get(fold(x.cliente)); if(e && !(x.c && x.c.status === 'recusou')) e.cm = x; });   // Fase 20: só informa, não inclui
   prevRegs().forEach(r => add(nomeCliente(r), 'r', r));
   return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
@@ -28545,7 +28575,7 @@ function renderPrevValores(cs){
   const com = cs.filter(x => x.r), sem = cs.filter(x => !x.r); const ativos = com.filter(x => planoDe(x.r).ativo !== false);
   const mensal = soma(ativos.map(x => valorMensalDe(planoDe(x.r)))); const incompletos = com.filter(x => prevFaltas(x.r).length);
   document.getElementById('obrKpis').innerHTML = PREV_API.kpiCards([
-    { tom: 'neutro', icone: 'total', texto: String(cs.length), zero: !cs.length, rotulo: 'Clientes de preventiva', sub: 'Gestor: visitas, contratos e clientes' },
+    { tom: 'neutro', icone: 'total', texto: String(cs.length), zero: !cs.length, rotulo: 'Clientes de preventiva', sub: 'do controle de visitas do Gestor' },
     { tom: 'verde', icone: 'ok', texto: String(com.length), zero: !com.length, rotulo: 'Com cobrança definida', sub: ativos.length + (ativos.length === 1 ? ' ativa' : ' ativas') },
     { tom: sem.length ? 'amarelo' : 'neutro', icone: 'relogio', texto: String(sem.length), zero: !sem.length, rotulo: 'Sem cobrança definida', sub: sem.length ? 'defina valor e forma' : 'tudo definido' },
     { tom: 'azul', icone: 'caixa', texto: brlCurto(mensal), zero: !(mensal > 0), rotulo: 'Cobrança por mês', sub: brlCurto(arred2(mensal * 12)) + ' por ano' },
@@ -28618,7 +28648,7 @@ const uiP = { abertas: new Set((typeof window !== 'undefined' && window.innerWid
 const FP_IC = { os: '📋', obras: '🏗️', manut: '🗓️', prev: '🔁', semana: '📅' };
 function parcelasFin(){            // todas as parcelas vivas (pedido cancelado só conta se já recebida), com registro e origem
   const out = []; todosRegistros().forEach(r => { const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
-    parcelasDe(r).forEach(p => { const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && ped.cancelado && st !== 'recebido') return;
+    parcelasDe(r).forEach(p => { const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(ped && pedidoInativo(r, ped) && st !== 'recebido') return;
       out.push({ r, p, st, origem: modoDe(r), cliente: nomeCliente(r), valor: Number(p.valor) || 0, data: p.agendadoPara || '', pagoEm: p.pagoEm ? String(p.pagoEm).slice(0, 10) : '', enviadoEm: p.enviadoEm ? String(p.enviadoEm).slice(0, 10) : '', liberadoEm: p.liberadoEm ? String(p.liberadoEm).slice(0, 10) : '' }); }); });
   return out;
 }
@@ -28646,7 +28676,7 @@ function renderPainelFin(){
   add(aEnviarPrev.length, 'amber', 'Cobranças de manutenção preventiva para enviar (vencem em até 7 dias)', brl(soma_(aEnviarPrev)) + ' · ' + nomes(aEnviarPrev, 3), 'Enviar', 'data-fp-go="prev"');   // Fase 19
   add(deHoje.length, 'amber', 'Pagamentos previstos para hoje', brl(soma_(deHoje)) + ' · ' + nomes(deHoje, 3), 'Ver', `data-fp-go="${goDe(deHoje)}" data-fp-aba="agendados"`);
   add(definirOS.length, 'amber', 'Ordens de serviço sem empresa definida', nomes(definirOS.map(r => ({ cliente: nomeCliente(r) })), 3), 'Definir', 'data-fp-go="os" data-fp-aba="definir"');
-  add(definirMan.length, 'amber', 'Pedidos de manutenção sem empresa definida', nomes(definirMan.map(r => ({ cliente: nomeCliente(r) })), 3), 'Definir', 'data-fp-go="manut" data-fp-aba="definir"');
+  add(definirMan.length, 'amber', 'Pedidos de manutenção sem empresa definida', nomes(definirMan.map(r => ({ cliente: nomeCliente(r) })), 3), 'Definir', 'data-fp-go="manut" data-fp-aba="geral"');
   add(semValorPrev.length, 'amber', 'Clientes de manutenção preventiva sem cobrança definida (vieram do Gestor)', nomes(semValorPrev.map(x => ({ cliente: x.nome })), 3), 'Definir', 'data-fp-go="prev" data-fp-aba="valores"');   // Fase 19
   add(incompletosPrev.length, 'gray', 'Cobranças de preventiva com dados faltando (contato, telefone, forma…)', nomes(incompletosPrev.map(r => ({ cliente: nomeCliente(r) })), 3), 'Completar', 'data-fp-go="prev" data-fp-aba="valores"');   // Fase 19
   add(obrasFinSaldo.length, 'amber', 'Obras finalizadas com saldo a receber', brl(soma_(obrasFinSaldo.map(r => ({ valor: totais(r).saldo })))) + ' · ' + nomes(obrasFinSaldo.map(r => ({ cliente: nomeCliente(r) })), 3), 'Ver', 'data-fp-go="obras"');
@@ -28676,9 +28706,9 @@ function renderPainelFin(){
   const porEmp = EMPRESAS.map(([e, nm]) => { const rs = regsObras.filter(r => r.empresa === e); const t = rs.map(totais); return `<div class="pn-lin"><span class="pn-lin-t">${esc(nm)}<small>${rs.length} ${rs.length === 1 ? 'cliente' : 'clientes'} em aberto</small></span><span class="pn-lin-m">contratado <b>${esc(brl(soma_(t.map(x => ({ valor: x.contratado })))))}</b> · recebido <b>${esc(brl(soma_(t.map(x => ({ valor: x.recebido })))))}</b> · saldo <b>${esc(brl(soma_(t.map(x => ({ valor: x.saldo })))))}</b></span></div>`; }).join('');
   const cObras = `<div class="pn-kpis">${k(o2.ac.length, 'Parcelas a cobrar', o2.ac.length ? 'amber' : 'gray', 'obras')}${k(o2.env.length, 'Em cobrança', 'blue', 'obras')}${k(o2.venc.length, 'Vencidas', o2.venc.length ? 'red' : 'gray', 'obras', 'agendados')}${k(obrasFinSaldo.length, 'Finalizadas com saldo', obrasFinSaldo.length ? 'amber' : 'gray', 'obras')}</div>${porEmp}${o2.venc.concat(o2.ac).slice(0, 6).map(x => lin(x, 'obras')).join('')}${abrir('obras', 'Abrir Obras e Pedidos')}`;
   const sObras = area('obras', 'Obras e Pedidos', carregado ? `${regsObras.length} clientes em aberto · ${o2.ac.length} a cobrar · ${o2.venc.length} vencidas` : 'carregando…', [o2.venc.length ? 'r' : o2.ac.length ? 'a' : 'g'], cObras);
-  const o3 = porOrig('manut');
-  const cMan = `<div class="pn-kpis">${k(definirMan.length, 'Sem empresa definida', definirMan.length ? 'amber' : 'gray', 'manut', 'definir')}${k(o3.ac.length, 'A cobrar', o3.ac.length ? 'amber' : 'gray', 'manut')}${k(o3.env.length, 'Em cobrança', 'blue', 'manut')}${k(o3.rec.length, 'Recebidas no mês', 'green', 'manut', 'finalizados')}</div>${o3.venc.concat(o3.ac).slice(0, 6).map(x => lin(x, 'manut')).join('')}${abrir('manut', 'Abrir Pedidos de manutenção')}`;
-  const sMan = area('manut', 'Pedidos de manutenção', carregado ? `${definirMan.length} sem empresa · ${o3.ac.length} a cobrar · ${o3.env.length} em cobrança` : 'carregando…', [definirMan.length || o3.ac.length ? 'a' : 'g'], cMan);
+  const o3 = porOrig('manut'); const aguardMan = carregado ? registrosDaAba('aguardando', 'manut').reduce((t, v) => t + pedidosDe(v).length, 0) : 0;   // Fase 21
+  const cMan = `<div class="pn-kpis">${k(aguardMan, 'Aguardando aprovação', aguardMan ? 'amber' : 'gray', 'manut', 'aguardando')}${k(definirMan.length, 'Sem empresa definida', definirMan.length ? 'amber' : 'gray', 'manut', 'geral')}${k(o3.ac.length, 'A cobrar', o3.ac.length ? 'amber' : 'gray', 'manut')}${k(o3.env.length, 'Em cobrança', 'blue', 'manut')}${k(o3.rec.length, 'Recebidas no mês', 'green', 'manut', 'finalizados')}</div>${o3.venc.concat(o3.ac).slice(0, 6).map(x => lin(x, 'manut')).join('')}${abrir('manut', 'Abrir Pedidos de manutenção')}`;
+  const sMan = area('manut', 'Pedidos de manutenção', carregado ? `${aguardMan} aguardando aprovação · ${o3.ac.length} a cobrar · ${o3.env.length} em cobrança` : 'carregando…', [definirMan.length || o3.ac.length || aguardMan ? 'a' : 'g'], cMan);
   const o4 = porOrig('prev'); const regsPrev = carregado ? prevRegs() : []; const prevMes = todasP.filter(x => x.origem === 'prev' && x.st !== 'recebido' && x.data && x.data.slice(0, 7) === mes);   // Fase 19
   const cPrev = `<div class="pn-kpis">${k(o4.ac.length, 'Para enviar', o4.ac.length ? 'amber' : 'gray', 'prev')}${k(o4.env.length, 'Enviadas / agendadas', 'blue', 'prev')}${k(o4.venc.length, 'Vencidas', o4.venc.length ? 'red' : 'gray', 'prev')}${k(o4.rec.length, 'Recebidas no mês', 'green', 'prev')}${k(semValorPrev.length, 'Sem cobrança definida', semValorPrev.length ? 'amber' : 'gray', 'prev', 'valores')}${k(incompletosPrev.length, 'Dados faltando', incompletosPrev.length ? 'amber' : 'gray', 'prev', 'valores')}</div>${o4.venc.concat(o4.ac).slice(0, 6).map(x => lin(x, 'prev')).join('')}${abrir('prev', 'Abrir Manutenções preventivas')}`;
   const sPrev = area('prev', 'Manutenções preventivas', carregado ? `${regsPrev.length} ${regsPrev.length === 1 ? 'cliente' : 'clientes'} · ${o4.ac.length} para enviar · ${o4.venc.length} vencidas · ${brl(soma_(prevMes))} previstos no mês` : 'carregando…', [o4.venc.length ? 'r' : (o4.ac.length || semValorPrev.length) ? 'a' : 'g'], cPrev);
@@ -28710,8 +28740,9 @@ function mostrarSecao(s){
     garantirCarregado().then(async () => { try{ await garantirAvulsos(); }catch(e){} try{ await prevGerarTodos(); }catch(e){ console.warn('preventivas: cobranças do período', e); } renderPrev(); }).catch(e => console.error('preventivas: falha ao carregar', e)); return; }
   {
     const modo = s;
-    if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo !== 'obras' ? 'definir' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
-    montar(); renderLista(); garantirCarregado().then(async () => { if(modo === 'os'){ try{ await reconciliarOs(); }catch(e){ console.error('os: reconciliar', e); } if(ui.modo === 'os' && ui.empresa !== 'agendados' && registrosDaAba('definir').length){ ui.empresa = 'definir'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === 'definir')); } } renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
+    if(ui.modo !== modo || !ui.montado){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = modo; ui.empresa = modo === 'manut' ? 'geral' : modo !== 'obras' ? 'definir' : (ui.empresaObras || 'equiper'); ui.busca = ''; ui.fin = ''; ui.sit = ''; ui.montado = false; }
+    montar(); renderLista(); garantirCarregado().then(async () => { if(modo === 'manut'){ try{ let nc = 0; const ag = new Date().toISOString(); todosRegistros().filter(ehManut).forEach(r => { let k = 0; pedidosDe(r).forEach(p => { if(garantirCobrancaPedido(r, p)) k++; }); if(k){ nc += k; r.atualizadoEm = ag; r.atualizadoPor = quem() || 'automático (pedidos aprovados)'; } }); if(nc) await store.save(true); }catch(e){ console.error('manutenção: cobrança dos aprovados', e); } }   // Fase 21
+      if(modo === 'os'){ try{ await reconciliarOs(); }catch(e){ console.error('os: reconciliar', e); } if(ui.modo === 'os' && ui.empresa !== 'agendados' && registrosDaAba('definir').length){ ui.empresa = 'definir'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === 'definir')); } } renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
 }
 function ligarNavegacao(){
   [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finNavPrev', 'prev'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut'], ['finBnPrev', 'prev']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
@@ -28719,7 +28750,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { _teste: { prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { _teste: { estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
