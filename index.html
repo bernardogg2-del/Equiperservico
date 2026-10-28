@@ -9095,7 +9095,7 @@ async function createNewClient(name, address){
 }
 
 function upsertClient(name, address){
-  name = (name || '').trim();
+  name = stripPreventivaPrefix(name || '');   // Fase 26: "Preventiva – Fulano" é o cliente Fulano (antes nascia um cadastro repetido)
   if(!name) return;
   const existing = clients.find(c => c.name.toLowerCase() === name.toLowerCase());
   if(/^oficina equiper$/i.test((address || '').trim())) return;     // "Oficina Equiper" é o local do trabalho interno, nunca o endereço do cliente
@@ -9122,7 +9122,8 @@ function upsertClient(name, address){
 function findClientAddress(name){
   name = (name || '').trim();
   if(!name) return '';
-  const existing = clients.find(c => c.name.toLowerCase() === name.toLowerCase());
+  const base = stripPreventivaPrefix(name).toLowerCase();   // Fase 26: endereço do cadastro do Fulano também para "Preventiva – Fulano"
+  const existing = clients.find(c => c.name.toLowerCase() === base) || clients.find(c => c.name.toLowerCase() === name.toLowerCase());
   return existing ? (existing.address || '') : '';
 }
 
@@ -10756,7 +10757,7 @@ function renderManutencoes(){
     listBox.innerHTML = listRows.map(r => `
       <div class="maint-row">
         <div class="maint-row-top">
-          <div class="maint-row-client">${escapeHtml(r.client)}${r.location ? ` <span class="field-hint">· ${escapeHtml(r.location)}</span>` : ''}</div>
+          <div class="maint-row-client">${escapeHtml(r.client)}${Array.isArray(clients) && clients.length && !cadastroDoCliente(r.client) ? ` <span class="prv-chip amber">não está em Clientes</span> <button type="button" class="btn-ghost oe-mini" data-cadcli="${r.id}">Cadastrar em Clientes</button>` : ''}${r.location ? ` <span class="field-hint">· ${escapeHtml(r.location)}</span>` : ''}</div>
           <div class="maint-status ${r.statusClass}">${r.statusLabel}</div>
         </div>
         <div class="maint-row-fields">
@@ -10796,7 +10797,15 @@ function renderManutencoes(){
     listBox.querySelectorAll('[data-contactname]').forEach(inp => {
       inp.addEventListener('blur', async (e) => {
         const c = findMaintenanceContractByRawId(e.target.dataset.contactname);
-        if(c){ c.contactName = e.target.value.trim(); await saveMaintenanceContracts(); }
+        if(c){ c.contactName = e.target.value.trim(); await saveMaintenanceContracts(); try{ await ligarContatoCliente(c.client, c.contactName, c.contact, 'visitas'); }catch(err){ console.error('Fase 26', err); } }
+      });
+    });
+    listBox.querySelectorAll('[data-cadcli]').forEach(btn => {   // Fase 26: cliente do controle de visitas que ainda não está em Clientes
+      btn.addEventListener('click', async (e) => {
+        const c = findMaintenanceContractByRawId(e.currentTarget.dataset.cadcli); if(!c || cadastroDoCliente(c.client)) return;
+        const ok = await createNewClient(c.client, ''); if(!ok) return;
+        const novo = cadastroDoCliente(c.client); if(novo && (c.contactName || c.contact)){ novo.contato = c.contactName || ''; novo.fone = c.contact || ''; await saveClients(true); }
+        renderManutencoes(); try{ renderClientes(); }catch(err){}
       });
     });
     listBox.querySelectorAll('[data-freq]').forEach(sel => {
@@ -10808,7 +10817,7 @@ function renderManutencoes(){
     listBox.querySelectorAll('[data-contact]').forEach(inp => {
       inp.addEventListener('blur', async (e) => {
         const c = findMaintenanceContractByRawId(e.target.dataset.contact);
-        if(c){ c.contact = e.target.value.trim(); await saveMaintenanceContracts(); }
+        if(c){ c.contact = e.target.value.trim(); await saveMaintenanceContracts(); try{ await ligarContatoCliente(c.client, c.contactName, c.contact, 'visitas'); }catch(err){ console.error('Fase 26', err); } }
       });
     });
     listBox.querySelectorAll('[data-lastdate]').forEach(inp => {
@@ -10859,7 +10868,9 @@ function renderManutencoes(){
 document.getElementById('maintContractSearchInput').addEventListener('input', renderManutencoes);
 
 document.getElementById('maintDateInput').value = todayStr();
-attachClientAutocomplete(document.getElementById('maintClientInput'), document.getElementById('clientAutocompleteMaint'));
+attachClientAutocomplete(document.getElementById('maintClientInput'), document.getElementById('clientAutocompleteMaint'), (nome) => {   // Fase 26: escolher o cliente traz contato e telefone do cadastro
+  const c = cadastroDoCliente(nome); if(!c) return; const ct = document.getElementById('maintContactNameInput'), fo = document.getElementById('maintContactInput');
+  if(ct && !ct.value.trim() && c.contato) ct.value = c.contato; if(fo && !fo.value.trim() && c.fone) fo.value = c.fone; });
 document.getElementById('addMaintenanceBtn').addEventListener('click', async () => {
   const client = document.getElementById('maintClientInput').value.trim();
   const contactName = document.getElementById('maintContactNameInput').value.trim();
@@ -10871,8 +10882,10 @@ document.getElementById('addMaintenanceBtn').addEventListener('click', async () 
     alert('Informe o cliente e a data da última manutenção.');
     return;
   }
-  maintenanceContracts.push({ id: Date.now(), client, contactName, contact, location, intervalMonths, lastDate, scheduledFor: null });
+  const cadLig = cadastroDoCliente(client);   // Fase 26: contato em branco vem do cadastro de Clientes
+  maintenanceContracts.push({ id: Date.now(), client, contactName: contactName || (cadLig && cadLig.contato) || '', contact: contact || (cadLig && cadLig.fone) || '', location, intervalMonths, lastDate, scheduledFor: null });
   await saveMaintenanceContracts();
+  try{ await ligarContatoCliente(client, contactName, contact, 'visitas'); }catch(err){ console.error('Fase 26', err); }
   document.getElementById('maintClientInput').value = '';
   document.getElementById('maintContactNameInput').value = '';
   document.getElementById('maintContactInput').value = '';
@@ -14035,6 +14048,47 @@ async function updateClientRecord(id, newNameRaw, newAddressRaw){
   return true;
 }
 
+// ===== Fase 26 (28/10): Clientes ↔ controle de visitas ↔ preventivas do Financeiro — a mesma pessoa de contato e o mesmo telefone =====
+// Chave do cliente: nome sem acento, sem diferença de maiúsculas e de espaços. Um campo em branco nunca apaga o que está preenchido no outro lugar.
+function chaveClienteLigada(n){ return stripPreventivaPrefix(String(n || '')).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+// Cadastro "Preventiva – Fulano" (criado pelas atividades de preventiva até a Fase 25) é o mesmo cliente: o cadastro sem o prefixo tem a preferência.
+const cadastroPrefixado = (n) => /^preventiva\s*[–-]\s/i.test(String(n || '').trim());
+function cadastroDoCliente(nome){ const k = chaveClienteLigada(nome); if(!k || !Array.isArray(clients)) return null; const l = clients.filter(c => c && chaveClienteLigada(c.name) === k); return l.find(c => !cadastroPrefixado(c.name)) || l[0] || null; }
+function podeGravarNoLigado(no){ if(currentRole !== 'manager') return false; try{ return !(typeof gestorContaPodeAlgumaAba === 'function' && typeof ABAS_POR_NO !== 'undefined' && ABAS_POR_NO[no]) || gestorContaPodeAlgumaAba(ABAS_POR_NO[no]); }catch(e){ return false; } }
+// Mudou o contato num lugar → vai para os outros dois (origem: 'clientes', 'visitas', 'financeiro' ou 'contrato'). Devolve quantos lugares mudaram.
+async function ligarContatoCliente(nome, contato, fone, origem){
+  const k = chaveClienteLigada(nome); contato = String(contato || '').trim(); fone = String(fone || '').trim(); if(!k || (!contato && !fone)) return 0;
+  let n = 0;
+  if(origem !== 'clientes' && Array.isArray(clients) && podeGravarNoLigado('clients')){ let m = false;
+    clients.forEach(c => { if(!c || chaveClienteLigada(c.name) !== k) return; if(contato && c.contato !== contato){ c.contato = contato; m = true; } if(fone && c.fone !== fone){ c.fone = fone; m = true; } });
+    if(m){ n++; try{ await saveClients(true); }catch(e){ console.error('Fase 26: contato em Clientes', e); } } }
+  if(origem !== 'visitas' && Array.isArray(maintenanceContracts) && podeGravarNoLigado('maintenanceContracts')){ let m = false;
+    maintenanceContracts.forEach(c => { if(!c || chaveClienteLigada(c.client) !== k) return; if(contato && c.contactName !== contato){ c.contactName = contato; m = true; } if(fone && c.contact !== fone){ c.contact = fone; m = true; } });
+    if(m){ n++; try{ await saveMaintenanceContracts(true); }catch(e){ console.error('Fase 26: contato no controle de visitas', e); } try{ renderManutencoes(); }catch(e){} } }
+  if(origem !== 'financeiro' && window.OBR_API && OBR_API.prevLigarContato && podeGravarNoLigado('obras')){ try{ n += await OBR_API.prevLigarContato(nome, contato, fone); }catch(e){ console.error('Fase 26: contato no Financeiro', e); } }
+  return n;
+}
+// Ao abrir o Gestor: o que está em branco num lugar é preenchido com o que já existe no outro (nunca troca o que já está preenchido).
+let reconciliandoContatos = false;
+async function reconciliarContatosClientes(){
+  if(reconciliandoContatos || currentRole !== 'manager' || !Array.isArray(maintenanceContracts) || !maintenanceContracts.length) return 0;
+  reconciliandoContatos = true;
+  try{
+    const podeCli = podeGravarNoLigado('clients') && Array.isArray(clients) && clients.length > 0, podeMc = podeGravarNoLigado('maintenanceContracts');
+    const porChave = new Map(); (Array.isArray(clients) ? clients : []).forEach(c => { if(c && c.name){ const k = chaveClienteLigada(c.name); const ja = porChave.get(k); if(!ja || (cadastroPrefixado(ja.name) && !cadastroPrefixado(c.name))) porChave.set(k, c); } });
+    let nCli = 0, nMc = 0;
+    maintenanceContracts.forEach(m => { if(!m || !m.client) return; const c = porChave.get(chaveClienteLigada(m.client)); if(!c) return;
+      if(podeCli){ if(!c.contato && m.contactName){ c.contato = m.contactName; nCli++; } if(!c.fone && m.contact){ c.fone = m.contact; nCli++; } }
+      if(podeMc){ if(!m.contactName && c.contato){ m.contactName = c.contato; nMc++; } if(!m.contact && c.fone){ m.contact = c.fone; nMc++; } } });
+    if(nCli) await saveClients(true);
+    if(nMc) await saveMaintenanceContracts(true);
+    let nFin = 0; if(window.OBR_API && OBR_API.prevLigarTodos && podeGravarNoLigado('obras')) nFin = await OBR_API.prevLigarTodos();
+    if(nCli || nMc){ try{ renderManutencoes(); }catch(e){} try{ renderClientes(); }catch(e){} }
+    return nCli + nMc + nFin;
+  }catch(e){ console.error('Fase 26: ligar contatos dos clientes', e); return 0; }
+  finally{ reconciliandoContatos = false; }
+}
+
 function renderClientes(){
   const box = document.getElementById('clientesList');
   if(!box) return;
@@ -14076,6 +14130,7 @@ function renderClientes(){
       const cRec = clients.find(x => String(x.id) === String(id));
       if(cRec){ cRec.contato = row.querySelector('[data-clientecontato]').value.trim(); cRec.fone = row.querySelector('[data-clientefone]').value.trim(); }   // salvos pelo mesmo saveClients de updateClientRecord
       const ok = await updateClientRecord(id, newName, newAddress);
+      if(ok && cRec){ try{ await ligarContatoCliente(cRec.name, cRec.contato, cRec.fone, 'clientes'); }catch(err){ console.error('Fase 26', err); } }   // Fase 26
       if(ok){
         renderClientes();
       }
@@ -14090,7 +14145,7 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
   if(ok){
     const novoCli = clients.find(c => c.name.toLowerCase() === nameInput.value.trim().toLowerCase());
     const ct = document.getElementById('newClienteContatoInput').value.trim(), fo = document.getElementById('newClienteFoneInput').value.trim();
-    if(novoCli && (ct || fo)){ novoCli.contato = ct; novoCli.fone = fo; await saveClients(true); }
+    if(novoCli && (ct || fo)){ novoCli.contato = ct; novoCli.fone = fo; await saveClients(true); try{ await ligarContatoCliente(novoCli.name, ct, fo, 'clientes'); }catch(err){ console.error('Fase 26', err); } }
     document.getElementById('newClienteContatoInput').value = ''; document.getElementById('newClienteFoneInput').value = '';
     nameInput.value = '';
     addrInput.value = '';
@@ -14100,7 +14155,8 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
 
 function renderAll(){
   if(currentRole === 'manager') setTimeout(varrerRetornosPendentes, 0);
-  if(currentRole === 'manager') setTimeout(reconciliarVisitasConcluidas, 0);   // Fase 23: atividade de preventiva concluída sempre chega ao controle de visitas
+  if(currentRole === 'manager') setTimeout(reconciliarVisitasConcluidas, 0);
+  if(currentRole === 'manager') setTimeout(reconciliarContatosClientes, 0);   // Fase 26: contato e telefone iguais em Clientes, controle de visitas e Financeiro   // Fase 23: atividade de preventiva concluída sempre chega ao controle de visitas
   renderTechList();
   renderDayBoxes();
   renderTodayIncompleteSection();
@@ -26588,7 +26644,7 @@ function renderRodape(){
 }
 async function salvarCampo(campo, valor){
   const r = atual(); if(!r) return; const v = String(valor || '').trim(); if((r[campo] || '') === v) return;
-  r[campo] = v || null; if(ehPrev(r) && campo === 'formaPagamento') prevAtualizarParcelas(r); await gravar(r); renderCab(); if(ehPrev(r)){ renderPed(); renderPag(); }   // Fase 19: a forma vale para as cobranças ainda não recebidas
+  r[campo] = v || null; if(ehPrev(r) && campo === 'formaPagamento') prevAtualizarParcelas(r); await gravar(r); if(ehPrev(r) && (campo === 'contato' || campo === 'fone') && typeof ligarContatoCliente === 'function') ligarContatoCliente(nomeCliente(r), r.contato, r.fone, 'financeiro').catch(e => console.error('Fase 26', e)); renderCab(); if(ehPrev(r)){ renderPed(); renderPag(); }   // Fase 19: a forma vale para as cobranças ainda não recebidas
 }
 // Chamado por Cadastros e OS quando o card marca "Gerar pedido de manutenção": entra no registro de manutenção do cliente (ou cria um) como um pedido novo.
 async function criarPedidoManutencao(d){
@@ -27831,7 +27887,7 @@ function cmEquipamentos(regs){
   return out;
 }
 const cmEstado = (regs) => regs.map(r => r.contratoManut).filter(Boolean).sort((a, b) => String(b.atualizadoEm || '').localeCompare(String(a.atualizadoEm || '')))[0] || null;
-const CM_RESOLVIDO = { enviado: 'Contrato enviado', ja_tem: 'Já tem contrato', recusou: 'Não quis contrato' };
+const CM_RESOLVIDO = { enviado: 'Contrato enviado', ja_tem: 'Já tem contrato', recusou: 'Não quis contrato', aprovado: 'Contrato aprovado' };   // Fase 26: aprovado
 const cmEnviado = (regs) => { const c = cmEstado(regs); return !!c && !!CM_RESOLVIDO[c.status]; };      // pendência resolvida: enviado, já tinha contrato ou o cliente não quis
 // Clientes com a obra finalizada (todos os pedidos entregues e finalizados) — base da pendência
 function cmClientesFinalizados(){
@@ -27991,7 +28047,7 @@ function contratosManut(){
 }
 function renderContratosManut(){
   const box = cmBox; if(!box || box.style.display === 'none') return;
-  const ROT = { gerado: ['PDF gerado', 'amber'], enviado: ['Enviado', 'green'], ja_tem: ['Já tem contrato', 'gray'], recusou: ['Não quis', 'gray'] };
+  const ROT = { gerado: ['PDF gerado', 'amber'], enviado: ['Enviado', 'green'], aprovado: ['Aprovado', 'green'], ja_tem: ['Já tem contrato', 'gray'], recusou: ['Não quis', 'gray'] };
   const q = fold(cmBusca); const lista = contratosManut().filter(x => !q || fold(x.cliente).includes(q));
   const pend = cmPendentes();
   box.innerHTML = `<div class="tech-day-panel"><div class="tech-day-head"><div class="tech-day-title">Contratos de manutenção</div><div class="tech-day-date mono">${lista.length} ${lista.length === 1 ? 'contrato' : 'contratos'}</div></div>
@@ -28001,7 +28057,7 @@ function renderContratosManut(){
       { tom: 'verde', icone: 'ok', texto: String(lista.filter(x => x.c && x.c.status === 'enviado').length), zero: !lista.some(x => x.c && x.c.status === 'enviado'), rotulo: 'Enviados', sub: '' },
       { tom: 'neutro', icone: 'total', texto: brlCurto(lista.filter(x => x.c && x.c.status === 'enviado').reduce((n, x) => n + (Number(x.c.valor) || 0), 0)), zero: false, rotulo: 'Mensalidades enviadas', sub: 'soma por mês' } ])}</div>
     <div class="fin-filtros"><div class="search-clear-wrap" style="flex:1 1 240px; min-width:200px;"><input type="search" id="cmBuscaInput" placeholder="Buscar cliente…" value="${esc(cmBusca)}" autocomplete="off"></div><button type="button" class="btn-primary" data-cml="novo">+ Novo contrato</button></div>
-    <div style="padding:0 20px 30px;">${lista.length ? `<table class="obr-tab"><thead><tr><th>Cliente</th><th>Origem</th><th class="obr-d">Valor/mês</th><th>Situação</th><th>Data</th><th></th></tr></thead><tbody>${lista.map(x => { const st = x.c ? (ROT[x.c.status] || [x.c.status, 'gray']) : ['Rascunho', 'gray']; const dt = x.c ? (x.c.enviadoEm || x.c.atualizadoEm) : ''; return `<tr><td><b>${esc(x.cliente)}</b></td><td>${esc(x.origem)}</td><td class="obr-d mono">${esc(x.c && x.c.valor != null ? brl(x.c.valor) : '—')}</td><td><span class="prv-chip ${st[1]}">${esc(st[0])}</span></td><td class="mono">${esc(dt ? fmtData(String(dt).slice(0, 10)) : '—')}</td><td class="obr-acoes"><button type="button" class="btn-ghost oe-mini" data-cml="abrir" data-ids="${esc(x.regs.map(r => r.id).join(','))}">Abrir</button>${x.origem === 'Avulso' ? `<button type="button" class="obr-ic" data-cml="apagar" data-ids="${esc(x.regs[0].id)}" title="Apagar contrato avulso">✕</button>` : ''}</td></tr>`; }).join('')}</tbody></table>` : '<div class="empty-state">Nenhum contrato ainda. Eles aparecem aqui quando você gera o contrato de uma obra finalizada ou cria um novo.</div>'}</div></div>`;
+    <div style="padding:0 20px 30px;">${lista.length ? `<table class="obr-tab"><thead><tr><th>Cliente</th><th>Origem</th><th class="obr-d">Valor/mês</th><th>Situação</th><th>Data</th><th></th></tr></thead><tbody>${lista.map(x => { const st = x.c ? (ROT[x.c.status] || [x.c.status, 'gray']) : ['Rascunho', 'gray']; const dt = x.c ? (x.c.enviadoEm || x.c.atualizadoEm) : ''; return `<tr><td><b>${esc(x.cliente)}</b></td><td>${esc(x.origem)}</td><td class="obr-d mono">${esc(x.c && x.c.valor != null ? brl(x.c.valor) : '—')}</td><td><span class="prv-chip ${st[1]}">${esc(st[0])}</span></td><td class="mono">${esc(dt ? fmtData(String(dt).slice(0, 10)) : '—')}</td><td class="obr-acoes">${x.c && (x.c.status === 'enviado' || x.c.status === 'gerado') ? `<button type="button" class="btn-primary oe-mini" data-cml="aprovar" data-ids="${esc(x.regs.map(r => r.id).join(','))}" title="O cliente aprovou: entra em Clientes, no controle de visitas e no Financeiro">✓ Aprovado</button>` : ''}<button type="button" class="btn-ghost oe-mini" data-cml="abrir" data-ids="${esc(x.regs.map(r => r.id).join(','))}">Abrir</button>${x.origem === 'Avulso' ? `<button type="button" class="obr-ic" data-cml="apagar" data-ids="${esc(x.regs[0].id)}" title="Apagar contrato avulso">✕</button>` : ''}</td></tr>`; }).join('')}</tbody></table>` : '<div class="empty-state">Nenhum contrato ainda. Eles aparecem aqui quando você gera o contrato de uma obra finalizada ou cria um novo.</div>'}</div></div>`;
   const inp = document.getElementById('cmBuscaInput'); if(inp && window.SUG_API) SUG_API.ligar(inp, 'clientes');
 }
 function novoContratoAvulso(){
@@ -28014,7 +28070,7 @@ function novoContratoAvulso(){
 async function abrirContratosManut(container){
   cmBox = container; if(!container._cmlLigado){ container._cmlLigado = true;
     container.addEventListener('click', (e) => { const b = e.target.closest('[data-cml]'); if(!b) return; const a = b.dataset.cml;
-      if(a === 'novo') novoContratoAvulso(); else if(a === 'abrir') abrirContratoManut(b.dataset.ids.split(','));
+      if(a === 'novo') novoContratoAvulso(); else if(a === 'abrir') abrirContratoManut(b.dataset.ids.split(',')); else if(a === 'aprovar') abrirContratoManut(b.dataset.ids.split(','), { aprovar: true });
       else if(a === 'apagar'){ const r = storeCm.items.find(x => x.id === b.dataset.ids); if(!r) return; customConfirm('Apagar o contrato avulso de ' + nomeCliente(r) + '?', () => customConfirm('Confirma? Não dá para desfazer.', async () => { r.active = false; await storeCm.save(true); renderContratosManut(); }, 'Apagar'), 'Continuar'); } });
     container.addEventListener('input', (e) => { if(e.target.id === 'cmBuscaInput'){ cmBusca = e.target.value; const sel = e.target.selectionStart; renderContratosManut(); const i = document.getElementById('cmBuscaInput'); if(i){ i.focus(); try{ i.setSelectionRange(sel, sel); }catch(_){} } } }); }
   container.innerHTML = '<div class="empty-state">Carregando…</div>';
@@ -28236,7 +28292,7 @@ let cmAvulsoCarregado = false, cmAvulsoCarregando = null;
 aoSairDoPerfil(() => { cmAvulsoCarregado = false; cmAvulsoCarregando = null; }); // M1
 async function garantirAvulsos(){ if(cmAvulsoCarregado) return; const g = geracaoDados; /* M1b */ if(!cmAvulsoCarregando) cmAvulsoCarregando = storeCm.load().then(() => { if(sessaoMudou(g, 'contratosManutencao')) return; storeCm.attach(() => { try{ renderContratosManut(); }catch(e){} }); cmAvulsoCarregado = true; }); await cmAvulsoCarregando; }
 const avulsos = () => storeCm.items.filter(r => r && r.id && r.active !== false);
-async function abrirContratoManut(rids){
+async function abrirContratoManut(rids, opts){
   await carregarInstTodos(); await cmCarregarCfg(); await garantirAvulsos();
   const regs = rids.map(id => porId(id) || storeCm.items.find(r => r.id === id)).filter(Boolean); if(!regs.length) return;
   const avulso = !!regs[0].avulso; const storeDe = avulso ? storeCm : store;
@@ -28269,7 +28325,7 @@ async function abrirContratoManut(rids){
       <div class="obr-tot" style="flex-wrap:wrap;"><span>Equipamentos <b>${esc(brl(t.equip))}/ano</b></span><span>Deslocamento <b>${esc(brl(t.desloc))}/ano</b> <small>(${esc(String(d.visitas || 0))} visitas × ${esc(String(d.km || 0))} km × ${esc(brl(cmCfg.km))}/km)</small></span><span>Total <b>${esc(brl(t.anual))}/ano</b></span><span>Mensal calculado <b class="obr-verde">${esc(brl(t.mensal))}</b></span></div>
       <div class="obr-grid2" style="margin-top:8px;"><div class="field obr-meio"><label>Valor mensal manual (opcional)</label><input type="text" inputmode="decimal" data-cm="valorManual" value="${esc(d.valorManual || '')}" placeholder="deixe vazio para usar o calculado"></div><div class="field obr-meio"><label>Valor adotado no contrato</label><div style="font-size:20px; font-weight:700; padding:6px 0;">${esc(brl(t.adotado))}<small style="font-weight:500; color:var(--text-secondary);"> /mês</small></div></div></div>
       <div class="field-error" id="obrCmErr"></div>
-      <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;"><span style="display:flex; gap:8px; flex-wrap:wrap;">${salvo && CM_RESOLVIDO[salvo.status] ? '<button type="button" class="btn-ghost" data-cm-act="reabrir">↩ Reabrir pendência</button>' : '<button type="button" class="btn-ghost" data-cm-act="ja_tem" title="O cliente já tem contrato de manutenção: a pendência sai do painel">Cliente já tem contrato</button><button type="button" class="btn-ghost" data-cm-act="recusou" title="O cliente não quer o contrato: a pendência sai do painel">Cliente não quer</button>'}</span><span style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost" data-cm-act="fechar">Fechar</button><button type="button" class="btn-ghost" data-cm-act="pdf">⤓ Baixar contrato (PDF)</button><button type="button" class="btn-primary" data-cm-act="enviado" ${salvo && salvo.status === 'enviado' ? 'disabled' : ''}>✓ Marcar como enviado</button></span></div></div>`;
+      <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;"><span style="display:flex; gap:8px; flex-wrap:wrap;">${salvo && CM_RESOLVIDO[salvo.status] ? '<button type="button" class="btn-ghost" data-cm-act="reabrir">↩ Reabrir pendência</button>' : '<button type="button" class="btn-ghost" data-cm-act="ja_tem" title="O cliente já tem contrato de manutenção: a pendência sai do painel">Cliente já tem contrato</button><button type="button" class="btn-ghost" data-cm-act="recusou" title="O cliente não quer o contrato: a pendência sai do painel">Cliente não quer</button>'}</span><span style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost" data-cm-act="fechar">Fechar</button><button type="button" class="btn-ghost" data-cm-act="pdf">⤓ Baixar contrato (PDF)</button><button type="button" class="btn-primary" data-cm-act="enviado" ${salvo && (salvo.status === 'enviado' || salvo.status === 'aprovado') ? 'disabled' : ''}>✓ Marcar como enviado</button>${salvo && salvo.status === 'aprovado' ? '' : '<button type="button" class="btn-primary" data-cm-act="aprovado" title="O cliente aprovou: entra em Clientes, no controle de visitas e no Financeiro">✓ Cliente aprovou</button>'}</span></div></div>`;
   };
   const ler = () => { const n = (v) => { const x = parseValor(v); return x == null || Number.isNaN(x) ? '' : x; };
     ov.querySelectorAll('[data-cm]').forEach(i => { const k = i.dataset.cm; d[k] = (k === 'valorManual') ? n(i.value) : i.value; });
@@ -28300,9 +28356,56 @@ async function abrirContratoManut(rids){
       catch(ex){ console.error('contrato manutenção: pdf', ex); err('Não foi possível gerar o PDF: ' + (ex && ex.message || ex)); }
       return;
     }
+    if(a === 'aprovado'){ aprovarContratoManut(d, regs, cli, salvar, () => ov.remove()); return; }   // Fase 26
     if(a === 'enviado'){ customConfirm('Marcar o contrato de manutenção de ' + d.cliente + ' (' + brl(cmCalcular(d).adotado) + '/mês) como ENVIADO ao cliente? A pendência some do painel.', async () => { await salvar('enviado'); ov.remove(); avisar('Contrato de manutenção marcado como enviado.', 5000); }, 'Marcar enviado'); }
   });
   render(); document.body.appendChild(ov);
+  if(opts && opts.aprovar) setTimeout(() => { const b = ov.querySelector('[data-cm-act="aprovado"]'); if(b) b.click(); }, 30);   // Fase 26: botão "✓ Aprovado" da lista
+}
+// Fase 26: orçamento de contrato APROVADO pelo cliente → o cliente entra de uma vez em Clientes (cadastro com endereço, contato e telefone),
+// no controle de visitas (Manutenções) e em Financeiro › Manutenções preventivas (cobrança mensal com as previsões).
+// O que já existe não é duplicado nem trocado (só contato e telefone acompanham o contrato). Os equipamentos do relatório
+// continuam em Manutenções › Configuração por cliente (o aviso aparece lá).
+const visitasDoAno = (n) => { n = Number(n) || 0; if(!n) return 3; const alvo = 12 / n; return VISITAS_FREQ.map(x => Number(x[0])).reduce((b, x) => Math.abs(x - alvo) < Math.abs(b - alvo) ? x : b, 3); };
+function aprovarContratoManut(d, regs, cli, salvar, fechar){
+  const t = cmCalcular(d); const nome = String(d.cliente || '').trim(); const k = fold(nome); if(!k) return;
+  const mcs = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+  const mcEx = mcs.find(c => c && fold(c.client) === k) || null; const regEx = (carregado ? prevRegs() : []).find(r => fold(nomeCliente(r)) === k) || null; const cliEx = cli || clientePorNome(nome) || null;
+  const venc0 = d.vigenciaEm || hojeStr(); const campos = [];
+  if(!regEx) campos.push(
+    { id: 'empresa', rotulo: 'Empresa', tipo: 'select', opcoes: [['', '— Definir —']].concat(EMPRESAS), valor: (regs.find(r => r.empresa) || {}).empresa || '', meio: true },
+    { id: 'valor', rotulo: 'Mensalidade (R$)', tipo: 'valor', valor: campoValor(t.adotado), obrig: true, meio: true },
+    { id: 'forma', rotulo: 'Forma de cobrança', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: 'Boleto', meio: true },
+    { id: 'diaVenc', rotulo: 'Dia do vencimento', valor: String(Number(venc0.slice(8, 10)) || 10), meio: true, dica: '1 a 31' },
+    { id: 'inicio', rotulo: 'Primeiro vencimento', tipo: 'data', valor: venc0, obrig: true, meio: true });
+  if(!mcEx) campos.push(
+    { id: 'visitas', rotulo: 'Frequência das visitas', tipo: 'select', opcoes: VISITAS_FREQ.map(x => [String(x[0]), x[1]]), valor: String(visitasDoAno(d.visitas)), meio: true },
+    { id: 'base', rotulo: 'Contar as visitas a partir de', tipo: 'data', valor: venc0, obrig: true, meio: true },
+    { id: 'local', rotulo: 'Bairro / cidade (controle de visitas)', valor: '', meio: true });
+  const ja = [cliEx ? 'Clientes' : null, mcEx ? 'controle de visitas' : null, regEx ? 'cobrança no Financeiro' : null].filter(Boolean);
+  const vai = [cliEx ? null : 'Clientes (cadastro com endereço, contato e telefone)', mcEx ? null : 'controle de visitas', regEx ? null : 'Financeiro › Manutenções preventivas (cobrança e previsões)'].filter(Boolean);
+  formRapido({ titulo: 'Contrato aprovado — ' + nome, ok: 'Aprovar e cadastrar',
+    aviso: (vai.length ? 'Entra em: <b>' + esc(vai.join(' · ')) + '</b>. ' : '') + (ja.length ? 'Já estava em: ' + esc(ja.join(', ')) + ' (não muda nada lá, só contato e telefone acompanham o contrato). ' : '') + 'Contato: <b>' + esc(d.contato || '—') + '</b> · ' + esc(d.fone || 'sem telefone') + '. Os equipamentos do relatório da preventiva continuam em Manutenções › Configuração por cliente (o aviso aparece lá).',
+    campos,
+    aoSalvar: async (v) => {
+      let dia = null;
+      if(!regEx){ if(!v.empresa) return 'Escolha a empresa (Equiper ou Eqp).'; if(!(v.valor > 0)) return 'Informe a mensalidade.'; dia = parseInt(v.diaVenc, 10); if(!(dia >= 1 && dia <= 31)) return 'Dia do vencimento: de 1 a 31.'; if(!v.inicio) return 'Informe o primeiro vencimento.'; }
+      if(!mcEx && !v.base) return 'Informe a data de partida das visitas.';
+      const feito = [], falhou = []; const agora = new Date().toISOString(); let cl = cliEx;
+      try{ if(!cl){ clients.push({ id: Date.now() + Math.floor(Math.random() * 1000000), name: nome, address: d.endereco || '', contato: d.contato || '', fone: d.fone || '' }); await saveClients(true); cl = clientePorNome(nome); feito.push('cadastrado em Clientes'); }
+        else if(d.endereco && !cl.address){ cl.address = d.endereco; await saveClients(true); } }catch(e){ console.error('contrato aprovado: Clientes', e); falhou.push('Clientes'); }
+      const nomeCad = cl ? cl.name : nome;
+      try{ if(!mcEx){ maintenanceContracts.push({ id: Date.now(), client: nomeCad, contactName: d.contato || '', contact: d.fone || '', location: v.local || '', intervalMonths: Number(v.visitas) || 3, lastDate: v.base, scheduledFor: null }); await saveMaintenanceContracts(true); feito.push('colocado no controle de visitas'); } }catch(e){ console.error('contrato aprovado: controle de visitas', e); falhou.push('controle de visitas'); }
+      try{ if(!regEx){ await garantirCarregado(); const dup = prevRegs().find(r => fold(nomeCliente(r)) === k);
+          if(!dup){ const plano = { periodicidade: 'mensal', visitas: Number(v.visitas) || (mcEx && Number(mcEx.intervalMonths)) || visitasDoAno(d.visitas), valor: v.valor, diaVenc: dia, inicio: v.inicio, fim: null, ativo: true, obs: 'Contrato de manutenção aprovado em ' + fmtData(hojeStr()) };
+            const reg = { id: uid('pv_'), tipo: 'preventiva', empresa: v.empresa, cliente: nomeCad, clienteId: cl ? cl.id : null, contato: d.contato || null, fone: d.fone || null, formaPagamento: v.forma || null, obs: null, active: true, pedidos: {}, parcelas: {}, prev: plano, criadoNo: 'gestor', origemContrato: regs.map(r => r.id).join(','), criadoEm: agora, criadoPor: quem() || null };
+            store.items.push(reg); const nasc = prevGerar(reg); prevLiberar(reg); await store.save(true); feito.push('cobrança criada no Financeiro (' + nasc + (nasc === 1 ? ' prevista' : ' previstas') + ')'); } } }catch(e){ console.error('contrato aprovado: Financeiro', e); falhou.push('Financeiro'); }
+      try{ if(typeof ligarContatoCliente === 'function') await ligarContatoCliente(nomeCad, d.contato, d.fone, 'contrato'); }catch(e){ console.error('contrato aprovado: contatos', e); }
+      try{ await salvar('aprovado'); }catch(e){ console.error('contrato aprovado: status', e); falhou.push('situação do contrato'); }
+      fechar(); try{ renderManutencoes(); }catch(e){} try{ renderClientes(); }catch(e){} try{ renderPrev(); }catch(e){}
+      avisar('Contrato de ' + nomeCad + ' aprovado' + (feito.length ? ': ' + feito.join(', ') : '') + '.' + (falhou.length ? ' ⚠ Não foi possível gravar em: ' + falhou.join(', ') + ' (confira a internet e a permissão da conta).' : '') + ' Falta cadastrar os equipamentos em Manutenções › Configuração por cliente.', 12000);
+      return null; } });
+  const fo = document.getElementById('obrFormOverlay'); if(fo) fo.style.zIndex = 100001;
 }
 function dadosRelatorio(r, d, pidSo){
   const cli = (typeof clients !== 'undefined' ? clients : []).find(c => String(c.id) === String(r.clienteId)) || clientePorNome(r.cliente);
@@ -28467,7 +28570,7 @@ function prevLiberar(r, hoje){
 }
 async function prevGerarTodos(){      // ao abrir o Financeiro: cria as cobranças que faltam e libera as que vencem em até 7 dias; grava só se algo mudou
   if(!carregado) return 0; let n = 0; const agora = new Date().toISOString();
-  prevRegs().forEach(r => { const k = prevGerar(r) + prevLiberar(r); if(k){ n += k; r.atualizadoEm = agora; r.atualizadoPor = quem() || 'automático (preventivas)'; } });
+  prevRegs().forEach(r => { const k = prevGerar(r) + prevLiberar(r) + prevPreencherLigados(r);   /* Fase 26 */ if(k){ n += k; r.atualizadoEm = agora; r.atualizadoPor = quem() || 'automático (preventivas)'; } });
   if(n) await store.save(true);
   return n;
 }
@@ -28495,7 +28598,26 @@ function prevSituacao(r, hoje){
   return { k, rot, venc, prox, rec, emAberto: ab };
 }
 // O que ainda falta no cadastro da cobrança (aviso de informação faltando entre Financeiro e Gestor)
-function prevFaltas(r){ const pl = planoDe(r); const f = []; if(!r.empresa) f.push('empresa'); if(!(pl.valor > 0)) f.push('valor'); if(!pl.visitas) f.push('frequência das visitas'); if(!r.formaPagamento) f.push('forma de cobrança'); if(!r.contato) f.push('pessoa de contato'); if(!r.fone) f.push('telefone'); return f; }
+// Fase 26: o cliente da cobrança ligado ao controle de visitas e ao cadastro de Clientes
+function ligadosPrev(r){ const k = fold(nomeCliente(r)); const mcs = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+  const cls = (typeof clients !== 'undefined' && Array.isArray(clients)) ? clients : [];
+  return { mc: mcs.find(c => c && fold(c.client) === k) || null, cli: (r.clienteId != null ? cls.find(c => c && String(c.id) === String(r.clienteId)) : null) || clientePorNome(nomeCliente(r)) || null }; }
+const contatoPrev = (r) => { const l = ligadosPrev(r); return { contato: r.contato || (l.mc && l.mc.contactName) || (l.cli && l.cli.contato) || '', fone: r.fone || (l.mc && l.mc.contact) || (l.cli && l.cli.fone) || '', visitas: planoDe(r).visitas || (l.mc && Number(l.mc.intervalMonths)) || null }; };
+// Preenche na cobrança o que está em branco e já existe no Gestor (nunca troca o que está preenchido). Devolve quantos campos mudaram.
+function prevPreencherLigados(r){ const l = ligadosPrev(r); let n = 0; const pega = (k, v) => { if(v && !r[k]){ r[k] = v; n++; } };
+  pega('contato', (l.mc && l.mc.contactName) || (l.cli && l.cli.contato)); pega('fone', (l.mc && l.mc.contact) || (l.cli && l.cli.fone));
+  if(l.cli && (r.clienteId == null || r.clienteId === '')){ r.clienteId = l.cli.id; n++; }
+  if(r.prev && !r.prev.visitas && l.mc && Number(l.mc.intervalMonths)){ r.prev = Object.assign({}, r.prev, { visitas: Number(l.mc.intervalMonths) }); n++; }
+  return n; }
+async function prevLigarTodos(){ if(!carregado) return 0; let n = 0; const agora = new Date().toISOString();
+  prevRegs().forEach(r => { const k = prevPreencherLigados(r); if(k){ n += k; r.atualizadoEm = agora; r.atualizadoPor = quem() || 'automático (clientes ligados)'; } });
+  if(n) await store.save(true); return n; }
+// Mudou no Gestor (Clientes ou controle de visitas): a cobrança do mesmo cliente acompanha
+async function prevLigarContato(nome, contato, fone){ await garantirCarregado(); const k = fold(nome); let n = 0; const agora = new Date().toISOString();
+  prevRegs().filter(r => fold(nomeCliente(r)) === k).forEach(r => { let m = false; if(contato && r.contato !== contato){ r.contato = contato; m = true; } if(fone && r.fone !== fone){ r.fone = fone; m = true; } if(m){ n++; r.atualizadoEm = agora; r.atualizadoPor = quem() || null; } });
+  if(n){ await store.save(true); try{ renderPrev(); }catch(e){} } return n; }
+function prevFaltas(r){ const lg = contatoPrev(r); const pl = Object.assign({}, planoDe(r), { visitas: lg.visitas }); const f = []; if(!r.empresa) f.push('empresa'); if(!(pl.valor > 0)) f.push('valor'); if(!pl.visitas) f.push('frequência das visitas'); if(!r.formaPagamento) f.push('forma de cobrança'); if(!lg.contato) f.push('pessoa de contato'); if(!lg.fone) f.push('telefone'); return f; }
+function prevFaltasAntigo(r){ const pl = planoDe(r); const f = []; if(!r.empresa) f.push('empresa'); if(!(pl.valor > 0)) f.push('valor'); if(!pl.visitas) f.push('frequência das visitas'); if(!r.formaPagamento) f.push('forma de cobrança'); if(!r.contato) f.push('pessoa de contato'); if(!r.fone) f.push('telefone'); return f; }
 const htmlFaltas = (r) => { const f = prevFaltas(r); return f.length ? `<small class="pv-dif">Faltam: ${esc(f.join(', '))}</small>` : ''; };
 // Clientes da preventiva, alinhados com o Gestor: o CONTROLE DE VISITAS (maintenanceContracts) e os registros de cobrança daqui.
 // Fase 20: o contrato de manutenção (orçamento gerado/enviado pelo Gestor) NÃO põe o cliente na lista — é só informação (valor/mês)
@@ -28508,13 +28630,13 @@ function prevClientes(){
   prevRegs().forEach(r => add(nomeCliente(r), 'r', r));
   return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
-const ROT_CM = { gerado: ['PDF gerado', 'amber'], enviado: ['Enviado', 'green'], ja_tem: ['Já tem contrato', 'gray'], recusou: ['Não quis', 'gray'] };
+const ROT_CM = { gerado: ['PDF gerado', 'amber'], enviado: ['Enviado', 'green'], aprovado: ['Aprovado', 'green'], ja_tem: ['Já tem contrato', 'gray'], recusou: ['Não quis', 'gray'] };
 const chipCm = (x) => { if(!x) return '—'; const st = x.c ? (ROT_CM[x.c.status] || [x.c.status, 'gray']) : ['Rascunho', 'gray']; return (x.c && x.c.valor > 0 ? '<b>' + esc(brl(x.c.valor)) + '</b>/mês ' : '') + `<span class="prv-chip ${st[1]}">${esc(st[0])}</span>`; };
 const txtVisitas = (mc) => { if(!mc) return '—'; const n = Number(mc.intervalMonths) || 3; return 'a cada ' + n + (n === 1 ? ' mês' : ' meses') + (mc.lastDate ? ' · última ' + fmtData(mc.lastDate) : '') + (mc.scheduledFor ? ' · <b>agendada ' + fmtData(mc.scheduledFor) + '</b>' : ''); };
 const txtPlano = (r) => { const pl = planoDe(r); if(!(pl.valor > 0)) return '<span class="prv-chip amber">Sem valor</span>'; return '<b>' + esc(brl(pl.valor)) + '</b> · ' + esc(perDe(pl.periodicidade)[1]) + (pl.periodicidade !== 'mensal' ? ' <small>(' + esc(brl(valorMensalDe(pl))) + '/mês)</small>' : '') + (r.formaPagamento ? ' · ' + esc(r.formaPagamento) : '') + ' · dia ' + diaVencDe(pl) + (pl.visitas ? ' · visitas ' + esc(rotVisitas(pl.visitas)) : '') + (pl.ativo === false ? ' <span class="prv-chip gray">Pausada</span>' : ''); };
 // Definir ou alterar a cobrança de um cliente. e = item de prevClientes() (com ou sem registro).
 function formPlano(e){
-  const r = e.r || null; const pl = planoDe(r); const cm = e.cm && e.cm.c; const sugMensal = cm && cm.valor > 0 ? Number(cm.valor) : null; const h = hojeStr();
+  const r = e.r || null; const pl = planoDe(r); const cm = e.cm && e.cm.c && (e.cm.c.status === 'aprovado' || e.cm.c.status === 'enviado') ? e.cm.c : null; const sugMensal = cm && cm.valor > 0 ? Number(cm.valor) : null; const h = hojeStr();
   const ini0 = pl.inicio || ((cm && cm.dados && cm.dados.vigenciaEm && cm.dados.vigenciaEm > h) ? cm.dados.vigenciaEm : vencDe(compSomar(h.slice(0, 7), 1), 10));
   formRapido({ titulo: (r ? 'Alterar cobrança — ' : 'Definir cobrança — ') + e.nome, ok: r ? 'Salvar' : 'Criar cobrança',
     aviso: (sugMensal ? 'Contrato de manutenção no Gestor: <b>' + esc(brl(sugMensal)) + '/mês</b>' + (cm.status === 'enviado' ? ' (enviado)' : '') + '. ' : '') + 'Cada mês (ou trimestre/ano) é uma cobrança própria: entra no calendário como previsão, <b>' + PREV_AVISO_DIAS + ' dias antes do vencimento</b> passa a <b>A cobrar</b> (aviso para enviar), você marca <b>Enviada</b> (boleto fica <b>Agendado</b> com o vencimento) e depois <b>Recebido</b>. Uma cobrança atrasada continua aparecendo mesmo quando chega a do mês seguinte.' + (r ? ' Mudar valor, forma ou dia atualiza as cobranças ainda não recebidas; mudar periodicidade, início, fim ou pausar refaz as que estão em aberto. As recebidas não mudam.' : ''),
@@ -28622,7 +28744,7 @@ function renderPrevPagamentos(regs, semValor){
   const q = fold(uiV.busca);
   if(uiV.sit === 'sem'){
     const l = semValor.filter(x => !q || fold(x.nome).includes(q)); txt_(l.length + (l.length === 1 ? ' cliente' : ' clientes') + ' sem cobrança');
-    lst.innerHTML = l.length ? `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Contrato (Gestor)</th><th>Visitas (Gestor)</th><th></th></tr></thead><tbody>${l.map(x => `<tr><td><b>${esc(x.nome)}</b></td><td>${chipCm(x.cm)}</td><td>${txtVisitas(x.mc)}</td><td class="obr-acoes"><button type="button" class="btn-primary oe-mini" data-pv="plano" data-k="${esc(x.k)}">+ Definir cobrança</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state">Todos os clientes do Gestor já têm cobrança definida.</div>'; return; }
+    lst.innerHTML = l.length ? `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Visitas (Gestor)</th><th></th></tr></thead><tbody>${l.map(x => `<tr><td><b>${esc(x.nome)}</b></td><td>${txtVisitas(x.mc)}</td><td class="obr-acoes"><button type="button" class="btn-primary oe-mini" data-pv="plano" data-k="${esc(x.k)}">+ Definir cobrança</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state">Todos os clientes do Gestor já têm cobrança definida.</div>'; return; }
   if(uiV.visao === 'mes') return renderPrevMes(regs, semValor);
   let l = regs.map(r => ({ r, s: prevSituacao(r, hoje), pl: planoDe(r) }));
   l = l.filter(x => (!q || fold([nomeCliente(x.r), x.r.contato, x.r.fone, x.r.formaPagamento, x.pl.obs].join(' ')).includes(q)) && (!uiV.empresa || x.r.empresa === uiV.empresa) && (!uiV.sit || x.s.k === uiV.sit))
@@ -28679,7 +28801,7 @@ function renderPrevValores(cs){
   txt_(l.length + (l.length === 1 ? ' cliente' : ' clientes'));
   const emp = (r) => !r ? '—' : r.empresa ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc((EMPRESAS.find(e => e[0] === r.empresa) || [0, r.empresa])[1])}</span>` : '<span class="obr-emp obr-emp-definir">⚠ Definir</span>';
   const dif = (x) => { if(!x.r || !x.cm || !x.cm.c || !(x.cm.c.valor > 0)) return ''; const d = arred2(valorMensalDe(planoDe(x.r)) - Number(x.cm.c.valor)); return Math.abs(d) > 0.01 ? `<small class="pv-dif">${d > 0 ? '+' : '−'}${esc(brl(Math.abs(d)))}/mês em relação ao contrato</small>` : ''; };
-  lst.innerHTML = l.length ? `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Empresa</th><th>Contrato (Gestor)</th><th>Visitas (Gestor)</th><th>Cobrança (Financeiro)</th><th></th></tr></thead><tbody>${l.map(x => `<tr class="${x.r ? 'pv-row' : ''}" ${x.r ? `data-pv="abrir" data-id="${esc(x.r.id)}" role="button" tabindex="0"` : ''}><td><b>${esc(x.nome)}</b>${x.cli && x.cli.address ? `<small>${esc(x.cli.address)}</small>` : ''}</td><td>${emp(x.r)}</td><td>${chipCm(x.cm)}</td><td>${txtVisitas(x.mc)}</td><td>${x.r ? txtPlano(x.r) + dif(x) + htmlFaltas(x.r) + (x.mc && planoDe(x.r).visitas && Number(x.mc.intervalMonths) !== Number(planoDe(x.r).visitas) ? `<small class="pv-dif">Gestor: visitas ${esc(rotVisitas(x.mc.intervalMonths))}</small>` : '') : '<span class="prv-chip amber">Sem cobrança</span><small>criado no Gestor: defina valor, frequência e forma</small>'}</td><td class="obr-acoes">${x.r ? `<button type="button" class="btn-ghost oe-mini" data-pv="plano" data-k="${esc(x.k)}">✎ Alterar</button>` : `<button type="button" class="btn-primary oe-mini" data-pv="plano" data-k="${esc(x.k)}">+ Definir cobrança</button>`}</td></tr>`).join('')}</tbody></table></div>`
+  lst.innerHTML = l.length ? `<div class="obr-tab-rolar"><table class="obr-tab pv-tab"><thead><tr><th>Cliente</th><th>Empresa</th><th>Visitas (Gestor)</th><th>Cobrança (Financeiro)</th><th></th></tr></thead><tbody>${l.map(x => `<tr class="${x.r ? 'pv-row' : ''}" ${x.r ? `data-pv="abrir" data-id="${esc(x.r.id)}" role="button" tabindex="0"` : ''}><td><b>${esc(x.nome)}</b>${x.cli && x.cli.address ? `<small>${esc(x.cli.address)}</small>` : ''}</td><td>${emp(x.r)}</td><td>${txtVisitas(x.mc)}</td><td>${x.r ? txtPlano(x.r) + htmlFaltas(x.r) + (x.mc && planoDe(x.r).visitas && Number(x.mc.intervalMonths) !== Number(planoDe(x.r).visitas) ? `<small class="pv-dif">Gestor: visitas ${esc(rotVisitas(x.mc.intervalMonths))}</small>` : '') : '<span class="prv-chip amber">Sem cobrança</span><small>criado no Gestor: defina valor, frequência e forma</small>'}</td><td class="obr-acoes">${x.r ? `<button type="button" class="btn-ghost oe-mini" data-pv="plano" data-k="${esc(x.k)}">✎ Alterar</button>` : `<button type="button" class="btn-primary oe-mini" data-pv="plano" data-k="${esc(x.k)}">+ Definir cobrança</button>`}</td></tr>`).join('')}</tbody></table></div>`
     : `<div class="empty-state">${cs.length ? 'Nenhum cliente encontrado' + (q ? ' para "' + esc(uiV.busca.trim()) + '"' : '') + '.' : 'Nenhum cliente de manutenção preventiva no Gestor ainda (Manutenções › Controle de visitas e Contratos de manutenção).'}</div>`;
 }
 // ---------- detalhe do registro de preventiva (mesma janela das obras; as parcelas usam os mesmos botões e a mesma troca de situação) ----------
@@ -28704,7 +28826,7 @@ function renderPlanoPrev(r, el){
   el.innerHTML = `<div class="obr-sec"><div class="obr-sec-t">Plano de cobrança<span style="margin-left:auto;"><button type="button" class="btn-ghost oe-mini" data-obr-d="pv-plano">${pl.valor > 0 ? '✎ Alterar plano' : 'Definir plano'}</button></span></div>
     ${pl.valor > 0 ? `<div class="obr-resumo"><div><label>Periodicidade</label><b>${esc(perDe(pl.periodicidade)[1])}</b></div><div><label>Valor de cada cobrança</label><b>${esc(brl(pl.valor))}</b></div><div><label>Equivale por mês</label><b>${esc(brl(valorMensalDe(pl)))}</b></div><div><label>Vencimento</label><b>dia ${diaVencDe(pl)}</b></div><div><label>Visitas</label><b>${esc(pl.visitas ? rotVisitas(pl.visitas) : '—')}</b></div></div>${prevFaltas(r).length ? `<div class="prv-hint" style="margin:6px 0 0;"><span class="pv-dif">Falta informar: ${esc(prevFaltas(r).join(', '))}</span></div>` : ''}
     <div class="prv-hint" style="margin:6px 0 0;">${pl.ativo === false ? '<b>Pausada</b>: não nascem cobranças novas. ' : 'Ativa: previsões até ' + PREV_HORIZONTE_MESES + ' meses à frente; ' + PREV_AVISO_DIAS + ' dias antes do vencimento a cobrança passa a A cobrar. '}Primeiro vencimento ${esc(fmtData(pl.inicio))}${pl.fim ? ' · último ' + esc(fmtData(pl.fim)) : ''}${r.formaPagamento ? ' · ' + esc(r.formaPagamento) : ''}${pl.obs ? '<br>' + esc(pl.obs) : ''}</div>` : '<div class="prv-hint">Sem valor definido: defina o plano para as cobranças nascerem.</div>'}
-    <div class="obr-sec-t" style="margin-top:12px;">No Gestor</div><div class="prv-hint" style="margin:0;">Contrato de manutenção: ${chipCm(cm)}${cm && cm.c && cm.c.enviadoEm ? ' · ' + esc(fmtData(String(cm.c.enviadoEm).slice(0, 10))) : ''}<br>Visitas: ${txtVisitas(mc)}${mc && mc.contactName ? ' · contato ' + esc(mc.contactName) : ''}</div></div>`;
+    <div class="obr-sec-t" style="margin-top:12px;">No Gestor</div><div class="prv-hint" style="margin:0;">Visitas: ${txtVisitas(mc)}${mc && mc.contactName ? ' · contato ' + esc(mc.contactName) : ''}${mc && mc.contact ? ' · ' + esc(mc.contact) : ''}</div></div>`;
 }
 function renderPagPrev(r, el){
   const hoje = hojeStr(), ano = hoje.slice(0, 4); const par = parcelasDe(r).slice().sort((a, b) => String(a.agendadoPara || a.pagoEm || '').localeCompare(String(b.agendadoPara || b.pagoEm || '')) || (a.ordem || 0) - (b.ordem || 0)); const s = prevSituacao(r, hoje);
@@ -28845,7 +28967,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
@@ -29080,7 +29202,7 @@ function eventosDoDia(dia){
       peds.forEach(p => { const e = (r.statusPedidos || {})[p.id]; if(e && e.em && diaLocal(e.em) === dia){ const i = A.internoDe(r, p.id), o = A.obraDe(r, p.id); push('obras', horaLocal(e.em), nome + ' · pedido ' + p.numero + ': ' + A.rotObra(o && o !== 'aguardando_inicio' ? o : i) + (e.auto ? ' (automático)' : ''), e.por, 'obras'); } });
       const d = inst[r.id]; if(d && d.pedidos){ Object.keys(d.pedidos).forEach(pid => { const ped = peds.find(p => p.id === pid); const sis = d.pedidos[pid].sistemas || {}; Object.values(sis).forEach(s => Object.values(s.subitens || {}).forEach(sub => { const pr = (d.prog || {})[sub.id] || {}; Object.keys(pr).forEach(et => { const f = pr[et]; if(f && f.em && diaLocal(f.em) === dia){ const etNome = ((sub.etapas || {})[et] || {}).nome || et; push('obras', horaLocal(f.em), nome + ' · ' + sub.nome + ' — ' + etNome + ' ' + (f.s === 'iniciado' ? 'iniciada' : 'finalizada') + (ped ? ' (pedido ' + ped.numero + ')' : ''), f.por, 'obras'); } }); })); }); }
       Object.values(r.parcelas || {}).forEach(pc => { if(!pc) return; if(pc.pagoEm === dia) push('obras', '', nome + ' · recebido ' + brlJ(pc.valor) + (pc.pedido ? ' (pedido ' + pc.pedido + ', ' + (pc.tipo || 'parcela') + ')' : ''), '', 'obras'); else if(pc.enviadoEm === dia) push('obras', '', nome + ' · cobrança enviada: ' + brlJ(pc.valor) + (pc.pedido ? ' (pedido ' + pc.pedido + ')' : ''), '', 'obras'); });
-      [['contratoManut', 'Contrato de manutenção'], ['manualOperacao', 'Manual de operação']].forEach(([k, rot]) => { const c = r[k]; if(c && c.enviadoEm && diaLocal(c.enviadoEm) === dia) push('docs', horaLocal(c.enviadoEm), rot + ' de ' + nome + ': ' + (c.status === 'enviado' ? 'enviado' : c.status === 'ja_tem' ? 'cliente já tinha' : c.status === 'recusou' ? 'cliente não quis' : c.status === 'nao_precisa' ? 'não precisa' : c.status), c.enviadoPor, 'obras', 'obrgSubFin'); else if(c && c.geradoEm && diaLocal(c.geradoEm) === dia && c.status === 'gerado') push('docs', horaLocal(c.geradoEm), rot + ' de ' + nome + ': PDF gerado', c.atualizadoPor, 'obras', 'obrgSubFin'); });
+      [['contratoManut', 'Contrato de manutenção'], ['manualOperacao', 'Manual de operação']].forEach(([k, rot]) => { const c = r[k]; if(c && c.enviadoEm && diaLocal(c.enviadoEm) === dia) push('docs', horaLocal(c.enviadoEm), rot + ' de ' + nome + ': ' + (c.status === 'enviado' ? 'enviado' : c.status === 'aprovado' ? 'aprovado pelo cliente' : c.status === 'ja_tem' ? 'cliente já tinha' : c.status === 'recusou' ? 'cliente não quis' : c.status === 'nao_precisa' ? 'não precisa' : c.status), c.enviadoPor, 'obras', 'obrgSubFin'); else if(c && c.geradoEm && diaLocal(c.geradoEm) === dia && c.status === 'gerado') push('docs', horaLocal(c.geradoEm), rot + ' de ' + nome + ': PDF gerado', c.atualizadoPor, 'obras', 'obrgSubFin'); });
     });
   }
   // Atividades concluídas / lembretes anotados
