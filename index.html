@@ -26142,7 +26142,7 @@ const APROVACAO = [['aguardando', 'Aguardando aprovação'], ['aprovado', 'Aprov
 const aprovDe = (p) => (p && p.aprovacao) || 'aguardando';
 const rotAprov = (k) => (APROVACAO.find(x => x[0] === k) || APROVACAO[0])[1];
 const chipAprov = (p) => `<span class="obr-aprov obr-aprov-${aprovDe(p)}">${esc(rotAprov(aprovDe(p)))}</span>`;
-const chipObra = (r, p) => { if(ehOs(r)) return ''; if(ehManut(r)){ const ap = aprovDe(p); return chipAprov(p) + (ap === 'aprovado' ? chipEtapas(r, p) : ''); } return chipEtapas(r, p); };
+const chipObra = (r, p) => { if(ehOs(r)) return ''; if(ehManut(r)) return chipAprov(p); return chipEtapas(r, p); };   // Fase 18: pedido de manutenção já chega executado — só a situação (aprovação), sem etapas
 const chipEtapas = (r, p) => { const i = internoDe(r, p.id), o = obraDe(r, p.id); return `<span class="obr-lg"><span class="obr-leg">Interno</span><span class="obr-sp obr-sp-${i}" title="Etapa interna (definida pelo Gestor)">${esc(rotObra(i))}</span></span>${o ? `<span class="obr-lg"><span class="obr-leg">Obra</span><span class="obr-sp obr-sp-${o}" title="Etapa obra (definida pelo Gestor)">${esc(rotObra(o))}</span></span>` : ''}`; };
 const rotSit = (k) => (SITUACOES.find(s => s[0] === k) || SITUACOES[0])[1];
 const rotuloParcela = (i, n) => n === 1 ? 'Parcela única' : i === 0 ? 'Sinal' : i === n - 1 ? 'Saldo' : (i + 1) + 'ª parcela';
@@ -26188,6 +26188,20 @@ function alvoSaldo(r, numero, excetoId){      // a parcela "Saldo" ainda não re
   const ps = parcelasDoPedido(r, numero).filter(x => stDe(x) !== 'recebido' && x.id !== excetoId); if(!ps.length) return null;
   return ps.slice().reverse().find(x => x.tipo === 'Saldo') || ps[ps.length - 1];
 }
+// ----- Fase 18: obra 100% finalizada → parcelas "Não liberado" do cliente passam a "A cobrar" -----
+// Quando o Gestor marca o último pedido do cliente como Finalizado (todos entregues e finalizados: o cliente sai de "Em andamento"),
+// as parcelas que ainda estavam "Não liberado" nos registros de OBRA desse cliente (Equiper e Eqp) ficam "A cobrar" para o Financeiro.
+// Só a passagem conta (antes incompleto → agora completo). Agendado, Enviado e Recebido nunca mudam; parcela de pedido cancelado também não.
+const regsObraDoCliente = (r) => { const k = fold(nomeCliente(r)); return registros().filter(x => fold(nomeCliente(x)) === k); };
+function obraCompletaDe(regs){ const todos = regs.flatMap(x => pedidosDe(x).filter(p => !p.cancelado).map(p => ({ r: x, p }))); return todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado'); }
+function liberarParcelasObraCompleta(regs, por){      // devolve [{ r, p }] com as parcelas liberadas
+  const out = []; const agora = new Date().toISOString();
+  regs.forEach(r => { const canc = new Set(pedidosDe(r).filter(p => p.cancelado).map(p => String(p.numero))); let mudou = false;
+    parcelasDe(r).forEach(p => { if(stDe(p) !== 'nao_liberado' || (p.pedido && canc.has(String(p.pedido)))) return; p.status = 'a_cobrar'; p.liberadoEm = hojeStr(); p.liberadoAuto = true; mudou = true; out.push({ r, p }); });
+    if(mudou){ r.parcelas = Object.assign({}, r.parcelas); r.atualizadoEm = agora; r.atualizadoPor = por || quem() || null; } });
+  return out;
+}
+const avisoLiberacao = (nome, lib) => 'Obra de ' + nome + ' 100% finalizada: ' + (lib.length === 1 ? '1 parcela' : lib.length + ' parcelas') + ' (' + brl(soma(lib.map(x => Number(x.p.valor) || 0))) + ') ' + (lib.length === 1 ? 'liberada' : 'liberadas') + ' para cobrança no Financeiro.';
 const parteDoPedido = (valor, ped) => Number(ped.valor) > 0 ? Math.round(Number(valor) / Number(ped.valor) * 10000) / 100 : null;
 function recalcularPedido(r, ped){            // o valor do pedido mudou: reajusta as parcelas ainda não recebidas
   const doPedido = lista(r.parcelas).filter(x => String(x.pedido) === String(ped.numero)); if(doPedido.some(x => x.valorPrevisto != null || x.restanteDe)) return;    // houve pagamento parcial: a divisão deixou de ser proporcional e fica a cargo do Financeiro
@@ -26387,14 +26401,9 @@ function renderDados(){
     <div class="field obr-largo"><label>Anotação sobre o pagamento (opcional)</label><input type="text" data-obr-campo="condicoes" value="${esc(r.condicoes || '')}" placeholder="Ex.: cliente pediu boletos; combinado por e-mail em 12/08"></div>
     <div class="field obr-largo"><label>Observações</label><textarea data-obr-campo="obs" rows="2" placeholder="Anotações internas do financeiro">${esc(r.obs || '')}</textarea></div></div></div>`;
 }
-function controlesManut(r, p){
-  const ap = aprovDe(p); const i = internoDe(r, p.id), o = obraDe(r, p.id);
-  const sel = (attr, opts, atual) => `<select class="obr-st" ${attr}>${opts}</select>`;
-  const optsI = FASE_INTERNA.map(k => `<option value="${k}" ${k === i ? 'selected' : ''}>${esc(rotObra(k))}</option>`).join('');
-  const optsO = OBRA_ST.map(k => `<option value="${k}" ${k === o ? 'selected' : ''}>${esc(rotObra(k))}</option>`).join('');
-  return `<div class="obr-manut-ctl"><label>Situação do pedido</label><select class="obr-st obr-aprov-sel obr-aprov-${ap}" data-obr-aprov="${esc(p.id)}">${APROVACAO.map(([k, n]) => `<option value="${k}" ${k === ap ? 'selected' : ''}>${n}</option>`).join('')}</select>
-    ${ap === 'aprovado' ? `<div class="obr-manut-et"><div><label>Etapa interna</label><select class="obr-st" data-obr-etapa="i" data-id="${esc(p.id)}">${optsI}</select></div>
-      <div><label>Etapa obra</label>${o ? `<select class="obr-st" data-obr-etapa="o" data-id="${esc(p.id)}">${optsO}</select>` : '<div class="obr-sub-i">abre quando o equipamento for entregue</div>'}</div></div>` : ''}</div>`;
+function controlesManut(r, p){      // Fase 18: o pedido de manutenção já chega executado — só a situação do pedido (aprovação), sem etapas interna/obra
+  const ap = aprovDe(p);
+  return `<div class="obr-manut-ctl"><label>Situação do pedido</label><select class="obr-st obr-aprov-sel obr-aprov-${ap}" data-obr-aprov="${esc(p.id)}">${APROVACAO.map(([k, n]) => `<option value="${k}" ${k === ap ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`;
 }
 async function mudarAprovacao(pid, novo){
   const r = atual(); if(!r || !r.pedidos || !r.pedidos[pid] || !APROVACAO.some(a => a[0] === novo)) return; const p = r.pedidos[pid]; if(aprovDe(p) === novo) return;
@@ -27041,9 +27050,13 @@ function gravarEntradaSt(r, pid, i, o, extra){          // grava as duas trilhas
 async function mudarAndamento(rid, pid, trilha, novo){
   const r = porId(rid); if(!r) return; const valida = trilha === 'i' ? FASE_INTERNA : OBRA_ST; if(!valida.includes(novo)) return;
   const i0 = internoDe(r, pid), o0 = obraDe(r, pid); if((trilha === 'i' ? i0 : o0) === novo) return;
+  const regsCli = regsObraDoCliente(r), completaAntes = obraCompletaDe(regsCli);          // Fase 18: para saber se ESTA mudança completou a obra do cliente
   gravarEntradaSt(r, pid, trilha === 'i' ? novo : i0, trilha === 'o' ? novo : (entradaSt(r, pid).o || (entradaSt(r, pid).s && OBRA_ST.includes(entradaSt(r, pid).s) ? entradaSt(r, pid).s : null)));
   const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit;          // o Financeiro vê a situação da obra acompanhar os pedidos
-  r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem(); renderGestor(); renderLista(); await store.save(true);
+  r.atualizadoEm = new Date().toISOString(); r.atualizadoPor = quem();
+  const lib = (!completaAntes && obraCompletaDe(regsCli)) ? liberarParcelasObraCompleta(regsCli) : [];   // Fase 18: obra 100% → parcelas "Não liberado" do cliente viram "A cobrar"
+  renderGestor(); renderLista(); await store.save(true);
+  if(lib.length) avisar(avisoLiberacao(nomeCliente(r), lib), 9000);
   if(trilha === 'i' && i0 === 'aguardando_sinal' && window.QUADROS_API && QUADROS_API.liberarSinal){ try{ const n = await QUADROS_API.liberarSinal(rid, pid); if(n) avisar(n === 1 ? 'Quadro reservado liberado para a Oficina.' : n + ' quadros reservados liberados para a Oficina.', 5000); }catch(e){} }   // revisão 7
 }
 function abrirAgendamentoObra(r, descricao, vinculo){
@@ -27609,6 +27622,8 @@ async function reconciliar(){
   if(reconciliando || typeof currentRole === 'undefined' || currentRole !== 'manager' || !carregado || !instTodosOk) return; reconciliando = true;
   try{
     let mudou = false; const agora = new Date().toISOString(); const avisos = []; const rank = (k) => STATUS_OBRA.findIndex(x => x[0] === k);
+    const completosAntes = new Set(), tocados = new Map();   // Fase 18: clientes já 100% antes desta rodada; registros que mudaram agora
+    registros().forEach(r => { const k = fold(nomeCliente(r)); if(!completosAntes.has(k) && obraCompletaDe(regsObraDoCliente(r))) completosAntes.add(k); });
     registros().forEach(r => { const d = inst[r.id]; if(!d || !d.pedidos) return;
       pedidosDe(r).filter(p => !p.cancelado).forEach(p => {
         const subs = subsDoPedido(d, p.id); if(!subs.length) return; const est = subs.map(x => estadoSub(d, x)); const testados = est.every(e => e === 'testado'); const instalados = est.every(instalado); const algum = subs.some(x => comProgresso(d, x) > 0);
@@ -27621,8 +27636,9 @@ async function reconciliar(){
         if(alvo === 'finalizado'){ const sd = alvoSaldo(r, p.numero, null);
           if(sd && (sd.tipo === 'Saldo' || sd.tipo === 'Parcela única') && stDe(sd) === 'nao_liberado'){ sd.status = 'a_cobrar'; sd.liberadoEm = hojeStr(); sd.liberadoAuto = true; r.parcelas = Object.assign({}, r.parcelas); avisos.push('Pedido ' + p.numero + ' (' + nomeCliente(r) + ') finalizado: o Saldo de ' + brl(sd.valor) + ' foi liberado para cobrança.'); }
           else avisos.push('Pedido ' + p.numero + ' (' + nomeCliente(r) + ') finalizado.'); }
-        const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit; r.atualizadoEm = agora; r.atualizadoPor = 'automático (instalação)'; mudou = true;
+        const sit = situacaoDerivada(r); if(sit && r.situacao !== 'cancelada') r.situacao = sit; r.atualizadoEm = agora; r.atualizadoPor = 'automático (instalação)'; mudou = true; tocados.set(fold(nomeCliente(r)), r);
       }); });
+    tocados.forEach((r, k) => { if(completosAntes.has(k)) return; const regsCli = regsObraDoCliente(r); if(!obraCompletaDe(regsCli)) return; const lib = liberarParcelasObraCompleta(regsCli, 'automático (instalação)'); if(lib.length) avisos.push(avisoLiberacao(nomeCliente(r), lib)); });   // Fase 18
     if(mudou){ renderGestor(); renderLista(); await store.save(true); avisos.forEach(t => avisar(t, 9000)); }
   } finally { reconciliando = false; }
 }
@@ -28370,7 +28386,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { _teste: { pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { _teste: { obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
