@@ -8183,6 +8183,27 @@ function renderTodayIncompleteSection(){
 // - dupla nova (technicians[]): é um registro só, então muda uma vez e vale pros dois;
 // - visita de manutenção: atualiza scheduledFor do contrato pra acompanhar a nova data;
 // - técnico(s), cliente, status, isRetorno e maintenanceContractId permanecem intocados.
+// Fase 31: atividade com dia e técnico não pode ficar "Aguardando técnico". O retorno nasce com o técnico da origem e status 'aguardando'
+// (sem dia); ao ganhar dia, vira 'atribuido'. Sem dia continua 'aguardando' (é assim que a lista de retornos sem dia o encontra).
+function acertarAtribuidoAoAgendar(t){
+  if(!t || t.status !== 'aguardando' || !t.date) return false;
+  if(!getServiceTechnicians(t).length) return false;
+  t.status = 'atribuido'; return true;
+}
+let reconciliandoAtribuidos = false;
+async function reconciliarStatusAtribuidos(){
+  if(reconciliandoAtribuidos || currentRole !== 'manager' || !Array.isArray(services)) return 0;
+  reconciliandoAtribuidos = true;
+  try{
+    const acertados = services.filter(acertarAtribuidoAoAgendar);
+    if(!acertados.length) return 0;
+    if(!(await saveServices(true))){ acertados.forEach(t => { t.status = 'aguardando'; }); return 0; }
+    try{ renderAll(); }catch(e){}
+    return acertados.length;
+  }catch(e){ console.error('conferência de atividades atribuídas', e); return 0; }
+  finally{ reconciliandoAtribuidos = false; }
+}
+
 async function rescheduleService(id, newDate){
   const svc = services.find(x => x.id === id);
   if(!svc || !newDate) return false;
@@ -8190,7 +8211,8 @@ async function rescheduleService(id, newDate){
   // um único registro em services, então já é tratada como uma atividade só, sem código extra.
   const targets = svc.pairId ? services.filter(x => x.pairId === svc.pairId) : [svc];
   const prevDates = targets.map(t => t.date); // pra desfazer se a gravação falhar
-  targets.forEach(t => { t.date = newDate; });
+  const prevStatus = targets.map(t => t.status);   // Fase 31
+  targets.forEach(t => { t.date = newDate; acertarAtribuidoAoAgendar(t); });
 
   let prevScheduledFor, contract;
   if(svc.maintenanceContractId){
@@ -8202,7 +8224,7 @@ async function rescheduleService(id, newDate){
   if(!ok){
     // saveServices() já avisa o usuário do erro; aqui só desfazemos a mudança local pra não
     // deixar a interface mostrando uma data que não foi realmente salva.
-    targets.forEach((t, i) => { t.date = prevDates[i]; });
+    targets.forEach((t, i) => { t.date = prevDates[i]; t.status = prevStatus[i]; });
     if(contract) contract.scheduledFor = prevScheduledFor;
     return false;
   }
@@ -14262,6 +14284,7 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
 function renderAll(){
   if(currentRole === 'manager') setTimeout(varrerRetornosPendentes, 0);
   if(currentRole === 'manager') setTimeout(reconciliarVisitasConcluidas, 0);
+  if(currentRole === 'manager') setTimeout(reconciliarStatusAtribuidos, 0);   // Fase 31: com dia e técnico não fica "Aguardando técnico"
   if(currentRole === 'manager') setTimeout(reconciliarContatosClientes, 0);   // Fase 26: contato e telefone iguais em Clientes, controle de visitas e Financeiro   // Fase 23: atividade de preventiva concluída sempre chega ao controle de visitas
   renderTechList();
   renderDayBoxes();
@@ -24540,9 +24563,9 @@ function alertaUrgentes(){
         const rid = br.dataset.pvAgret; const inp = box.querySelector('input[data-pv-dia="ret' + rid.replace(/"/g, '') + '"]');
         const dia = inp && inp.value; if(!dia){ aviso('Escolha o dia do retorno.', 3500); return; }
         const ret = services.find(x => String(x.id) === rid); if(!ret) return;
-        br.disabled = true; ret.date = dia;
-        if(!(await saveServices())){ ret.date = ''; br.disabled = false; aviso('Não foi possível agendar agora. Tente de novo.', 5000); return; }
-        aviso('Retorno agendado para ' + dBR(dia) + '. Falta só atribuir o técnico.', 6000);
+        br.disabled = true; ret.date = dia; const atribuiu = (typeof acertarAtribuidoAoAgendar === 'function') && acertarAtribuidoAoAgendar(ret);   // Fase 31
+        if(!(await saveServices())){ ret.date = ''; if(atribuiu) ret.status = 'aguardando'; br.disabled = false; aviso('Não foi possível agendar agora. Tente de novo.', 5000); return; }
+        aviso('Retorno agendado para ' + dBR(dia) + (atribuiu ? ' com ' + getServiceTechnicians(ret).join(' e ') + '.' : '. Falta só atribuir o técnico.'), 6000);
         try{ renderAll(); }catch(err){} alertaUrgentes(); return;
       }
       const b = e.target.closest('[data-pv-agendar]'); if(!b) return;
