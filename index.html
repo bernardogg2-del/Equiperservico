@@ -652,6 +652,9 @@
   .selo-manut{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; letter-spacing:.02em; padding:3px 9px; border-radius:999px; white-space:nowrap; background:rgba(111,66,193,0.10); color:#5B3AA8; border:1px solid rgba(111,66,193,0.35); }
   .mini-card .selo-manut{ font-size:9.5px; padding:2px 7px; }
   :root[data-theme="dark"] .selo-manut{ background:rgba(167,139,250,0.16); color:#C4B5FD; border-color:rgba(167,139,250,0.45); }
+  .selo-manut-valor{ display:inline-block; margin-left:6px; font-size:11px; font-weight:600; color:#5B3AA8; white-space:nowrap; }   /* Fase 32 */
+  .selo-manut-valor b{ font-weight:800; }
+  :root[data-theme="dark"] .selo-manut-valor{ color:#C4B5FD; }
   .service-desc{ font-size: 13px; color: var(--text-dim); margin-top:4px; line-height:1.5; }
   .service-addr{ font-size: 12px; color: var(--text-dim); margin-top:6px; font-family: var(--mono); }
 
@@ -2414,7 +2417,7 @@
     { --c:#F2B705; --c-num:#9A7400; --c-bg:rgba(242,183,5,.20); --c-line:rgba(201,154,18,.50); --c-tx:#7A5B00; }
   .obr-sp-entregue, .obrg-k-entregue, .obrg-dot-entregue
     { --c:#2E7D4F; --c-num:#2E7D4F; --c-bg:rgba(46,125,79,.12); --c-line:rgba(46,125,79,.35); --c-tx:#1F5A38; }
-  .obr-sp-iniciado, .obi-st-iniciado, .obrg-k-iniciado, .obrg-dot-iniciado, .obr-sp-parcial
+  .obr-sp-iniciado, .obi-st-iniciado, .obrg-k-iniciado, .obrg-dot-iniciado, .obr-sp-parcial, .obr-sp-iniciado_parcial
     { --c:#3D84B0; --c-num:#2B6A92; --c-bg:rgba(61,132,176,.12); --c-line:rgba(61,132,176,.34); --c-tx:#24607F; }
   .obr-sp-aguardando_testes, .obi-st-finalizado, .obrg-k-aguardando_testes, .obrg-dot-aguardando_testes
     { --c:#5FBF85; --c-num:#3D9A63; --c-bg:rgba(95,191,133,.18); --c-line:rgba(95,191,133,.50); --c-tx:#2E7D4F; }
@@ -13862,7 +13865,7 @@ function renderOS(){
         <div class="os-row">
           <div class="os-row-top">
             <div>
-              ${seloManutHtml(s)}<div class="os-client">${escapeHtml(s.client)}</div>
+              ${seloManutHtml(s, true)}<div class="os-client">${escapeHtml(s.client)}</div>
               <div class="os-meta">${shortLabel(s.date)} · Técnico: ${techLabelDisplay}</div>
             </div>
             ${s.isRetorno ? `<span class="os-retorno-tag">↩ RETORNO${original ? ' de ' + shortLabel(original.date) : ''}</span>` : ''}
@@ -14195,7 +14198,20 @@ async function ligarContatoCliente(nome, contato, fone, origem){
 // Fase 27: selo "Cliente de manutenção" — cliente no controle de visitas, ou atividade ligada a um contrato de manutenção
 function ehClienteManutencao(s){ if(!s) return false; if(s.maintenanceContractId != null && s.maintenanceContractId !== '') return true;
   const k = chaveClienteLigada(s.client); return !!k && Array.isArray(maintenanceContracts) && maintenanceContracts.some(c => c && c.client && chaveClienteLigada(c.client) === k); }
-function seloManutHtml(s){ return ehClienteManutencao(s) ? '<div class="selo-manut-linha"><span class="selo-manut" title="Cliente com contrato de manutenção preventiva (está no controle de visitas)">🔧 Cliente de manutenção</span></div>' : ''; }
+function seloManutHtml(s, comValor){ return ehClienteManutencao(s) ? '<div class="selo-manut-linha"><span class="selo-manut" title="Cliente com contrato de manutenção preventiva (está no controle de visitas)">🔧 Cliente de manutenção</span>' + (comValor ? valorManutHtml(s) : '') + '</div>' : ''; }
+// Fase 32: valor da preventiva (plano do Financeiro) ao lado do selo, no Cadastros e OS. Meses = intervalo entre visitas do controle de visitas (padrão 3).
+function valorManutHtml(s){
+  try{
+    const api = window.OBR_API; const pl = (api && typeof api.prevPlanoDoCliente === 'function') ? api.prevPlanoDoCliente(s.client) : null;
+    if(!pl || !(pl.valor > 0) || pl.ativo === false) return '';
+    const brl = (v) => Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if(pl.periodicidade !== 'mensal') return '<span class="selo-manut-valor"><b>' + brl(pl.valor) + '</b>/' + (pl.periodicidade === 'anual' ? 'ano' : escapeHtml(String(pl.periodicidade || ''))) + '</span>';
+    const k = chaveClienteLigada(s.client); const mcs = Array.isArray(maintenanceContracts) ? maintenanceContracts : [];
+    const c = (s.maintenanceContractId != null && s.maintenanceContractId !== '' && mcs.find(x => String(x.id) === String(s.maintenanceContractId))) || mcs.find(x => chaveClienteLigada(x.client) === k);
+    const meses = Math.max(1, Math.round(Number(c && c.intervalMonths) || 3));
+    return '<span class="selo-manut-valor"><b>' + brl(pl.valor) + '</b>/mês' + (meses > 1 ? ' · ' + meses + ' meses: <b>' + brl(Math.round(pl.valor * meses * 100) / 100) + '</b>' : '') + '</span>';
+  }catch(e){ return ''; }
+}
 // Ao abrir o Gestor: o que está em branco num lugar é preenchido com o que já existe no outro (nunca troca o que já está preenchido).
 let reconciliandoContatos = false;
 async function reconciliarContatosClientes(){
@@ -26346,7 +26362,7 @@ const FASE_INTERNA = ['aguardando_sinal', 'aguardando_compra', 'comprado', 'libe
 const FASES_OBRA = [['interna', 'Etapa interna · compras'], ['obra', 'Etapa obra']];
 const faseDe = (k) => FASE_INTERNA.includes(k) ? 'interna' : 'obra';
 const opcoesAndamento = (atual) => FASES_OBRA.map(([f, n]) => `<optgroup label="${esc(n)}">${STATUS_OBRA.filter(([k]) => faseDe(k) === f).map(([k, nome]) => `<option value="${k}" ${k === atual ? 'selected' : ''}>${esc(nome)}</option>`).join('')}</optgroup>`).join('');
-const rotObra = (k) => k === 'parcial' ? 'Iniciado · entregue parcialmente' : (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];   // 'parcial' = andamento derivado do CLIENTE (revisão 7), nunca de um pedido
+const rotObra = (k) => k === 'parcial' ? 'Iniciado · entregue parcialmente' : k === 'iniciado_parcial' ? 'Iniciado parcialmente' : (STATUS_OBRA.find(x => x[0] === k) || STATUS_OBRA[0])[1];   // Fase 33: 'iniciado_parcial' também é só do cliente   // 'parcial' = andamento derivado do CLIENTE (revisão 7), nunca de um pedido
 // O pedido tem DUAS trilhas que andam juntas: a INTERNA (compras → comprado → liberado para entrega → entregue) e a da OBRA (aguardando liberação → liberado para iniciar → iniciado → aguardando testes → finalizado).
 // `statusPedidos[pid] = { i: interna, o: obra, s: a mais avançada (compatível), em, por, auto }`. Registro antigo (só com `s`) é lido assim: s interna → interna = s; s da obra → interna = entregue e obra = s.
 const OBRA_ST = ['aguardando_inicio', 'liberado_inicio', 'iniciado', 'aguardando_testes', 'finalizado'];
@@ -27262,6 +27278,8 @@ function andamentoPrincipal(pares){
   const porEntregar = pares.some(x => !x.p.cancelado && internoDe(x.r, x.p.id) !== 'entregue');
   if(comecou && porEntregar && pares.length > 1) return 'parcial';
   if(emObra.length) return emObra.sort((a, b) => ordem(a) - ordem(b))[0];
+  // Fase 33: tudo entregue, parte já feita (finalizado) e nada em curso, mas ainda há pedido que não começou na obra → "Iniciado parcialmente"
+  if(comecou && pares.length > 1 && pares.some(x => !x.p.cancelado && ['aguardando_inicio', 'liberado_inicio'].includes(obraDe(x.r, x.p.id)))) return 'iniciado_parcial';
   const ks = pares.map(x => statusObraDe(x.r, x.p.id)); const abertos = ks.filter(k => k !== 'finalizado');
   return (abertos.length ? abertos : ks).sort((a, b) => ordem(a) - ordem(b))[0];
 }
@@ -27308,7 +27326,7 @@ function renderGestor(){
     const todos = g.itens.flatMap(({ r }) => pedidosDe(r).filter(p => !p.cancelado).map(p => ({ r, p })));
     const completo = todos.length > 0 && todos.every(x => internoDe(x.r, x.p.id) === 'entregue' && obraDe(x.r, x.p.id) === 'finalizado');
     const prinG = todos.length ? andamentoPrincipal(todos) : null;          // o MESMO andamento principal mostrado no cartão (o que segura a obra)
-    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes' || prinG === 'parcial') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_inicio' ? 3 : prinG === 'liberado_entrega' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;   // Fase 15: liberados para iniciar antes dos liberados para entrega
+    g.grp = completo ? 'f' : (prinG === 'iniciado' || prinG === 'aguardando_testes' || prinG === 'parcial' || prinG === 'iniciado_parcial') ? 1 : prinG === 'aguardando_inicio' ? 2 : prinG === 'liberado_inicio' ? 3 : prinG === 'liberado_entrega' ? 4 : prinG === 'aguardando_sinal' ? 6 : 5;   // Fase 15: liberados para iniciar antes dos liberados para entrega
     g.rankPrin = g.grp === 5 && todos.length ? -ordemSt(andamentoPrincipal(todos)) : 0;
     g.docsPend = g.grp === 'f' && (!cmEnviado(g.itens.map(x => x.r)) || !manEnviado(g.itens.map(x => x.r)));   // revisão 8: finalizada, mas falta contrato de manutenção ou manual de operação
   });
@@ -27325,7 +27343,7 @@ function renderGestor(){
   const box = document.getElementById('obrgLista');
   if(!carregado){ box.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
   const rotEmp = (r) => (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
-  const TIT_GRP = { 1: 'Obra em andamento · iniciado / entregue parcialmente / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para iniciar', 4: 'Liberados para entrega', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
+  const TIT_GRP = { 1: 'Obra em andamento · iniciado / iniciado parcialmente / entregue parcialmente / aguardando testes', 2: 'Entregues · aguardando liberação de início', 3: 'Liberados para iniciar', 4: 'Liberados para entrega', 5: 'Ainda na etapa interna · compras', 6: 'Aguardando pagamento do sinal' };
   let grpAnt = null;
   const cabGrp = (g) => { if(uiG.sub !== 'andamento' || g.grp === grpAnt) return ''; grpAnt = g.grp; const n = lista_.filter(x => x.grp === g.grp).length; return `<div class="obrg-sec-h g${g.grp}"><span>${esc(TIT_GRP[g.grp])}</span><span>${n} ${n === 1 ? 'cliente' : 'clientes'}</span></div>`; };
   const htmlCli = (g_, aberto) => { const { chave, nome, itens } = g_; const cab = aberto ? '' : cabGrp(g_);
@@ -27961,7 +27979,7 @@ async function reconciliar(){
   } finally { reconciliando = false; }
 }
 async function completarCabecalhos(){ const up = {}; registros().forEach(r => { const d = inst[r.id]; if(d && d.pedidos){ if(!d.empresa) up['obraInstalacao/' + r.id + '/empresa'] = r.empresa; if(!d.cliente) up['obraInstalacao/' + r.id + '/cliente'] = nomeCliente(r); } }); if(Object.keys(up).length) await escreverInst(up); }
-async function iniciarGestor(){ try{ await garantirCarregado(); await carregarInstTodos(); await completarCabecalhos(); reconciliar(); }catch(e){ console.error('obras: falha ao iniciar o acompanhamento', e); } }
+async function iniciarGestor(){ try{ await garantirCarregado(); try{ if(typeof renderOS === 'function') renderOS(); }catch(e){}   /* Fase 32: valor da preventiva no Cadastros e OS */ await carregarInstTodos(); await completarCabecalhos(); reconciliar(); }catch(e){ console.error('obras: falha ao iniciar o acompanhamento', e); } }
 // ---- Relatório em PDF (para enviar ao responsável da obra; sem valores) ----
 // =====================================================================================
 // CONTRATO DE MANUTENÇÃO (20/10) — obra finalizada gera a pendência "enviar contrato de manutenção". Os equipamentos vêm dos
@@ -28674,6 +28692,12 @@ const perDe = (k) => PERIODICIDADES.find(p => p[0] === k) || PERIODICIDADES[0];
 const mesesDe = (k) => perDe(k)[2];
 const planoDe = (r) => (r && r.prev) || {};
 const prevRegs = () => todosRegistros().filter(ehPrev);
+// Fase 32: plano da cobrança de preventiva do cliente (para o valor no Cadastros e OS). Mesma chave de nome da Fase 26 (sem "Preventiva –", sem acento).
+function prevPlanoDoCliente(nome){
+  const ch = (typeof chaveClienteLigada === 'function') ? chaveClienteLigada : fold; const k = ch(nome); if(!k) return null;
+  const r = prevRegs().find(x => ch(nomeCliente(x)) === k); if(!r) return null;
+  const pl = planoDe(r); return { valor: Number(pl.valor) || 0, periodicidade: pl.periodicidade || 'mensal', ativo: pl.ativo };
+}
 const vencDe = (comp, dia) => { const [y, m] = comp.split('-').map(Number); const ult = new Date(y, m, 0).getDate(); return comp + '-' + pad2(Math.min(Math.max(1, Number(dia) || 1), ult)); };   // dia do vencimento sem passar do fim do mês
 const compSomar = (comp, k) => { const [y, m] = comp.split('-').map(Number); const d = new Date(y, m - 1 + k, 1); return d.getFullYear() + '-' + pad2(d.getMonth() + 1); };
 const rotComp = (per, comp) => (ROT_COMP[per] || 'Cobrança') + ' ' + comp.slice(5, 7) + '/' + comp.slice(0, 4);
@@ -29096,7 +29120,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
