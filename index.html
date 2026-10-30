@@ -3440,6 +3440,7 @@
         <div class="search-input-wrap" style="flex:1; min-width:200px;"><input type="text" id="estoqueRetiradaSearch" placeholder="Buscar material ou código..."></div>
         <select id="estoqueRetiradaCatFiltro"><option value="">Todas as categorias</option></select>
       </div>
+      <div style="padding:0 20px 12px;"><div class="field" style="margin:0; max-width:360px;"><label for="estoqueRetiradaQuem">Quem está retirando</label><select id="estoqueRetiradaQuem"></select></div></div>   <!-- Fase 34 -->
       <!-- Envio único: as quantidades ficam locais até confirmar no modal (mesmo botão/fluxo de
            sempre — "Revisar retirada" virou "Enviar retirada" e subiu pro topo) -->
       <div style="padding:0 20px 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
@@ -10156,7 +10157,7 @@ async function applyEstoqueAjuste(itemId, expectedPrevious, newQuantity, observa
 // retirada é gerado UMA vez ao abrir a confirmação (chave de idempotência) e a execução é travada
 // por um flag in-flight; nunca há duas baixas para a mesma retirada.
 let retiradaExecucaoInFlight = false;
-async function executarRetirada(retiradaId, itensPedido, technicianName, observation){
+async function executarRetirada(retiradaId, itensPedido, technicianName, observation, registradoPor){
   if(retiradaExecucaoInFlight) return { ok: false, reason: 'em andamento' };
   if(estoqueRetiradasStore.items.some(r => r.id === retiradaId)) return { ok: false, reason: 'já registrada' };
   if(!itensPedido || !itensPedido.length) return { ok: false, reason: 'Informe pelo menos um material.' };
@@ -10188,6 +10189,7 @@ async function executarRetirada(retiradaId, itensPedido, technicianName, observa
       return { ok: false, reason: falha.reason, compensados: baixados.length - naoRevertidos.length, naoRevertidos };
     }
     const retirada = { id: retiradaId, technician: technicianName, technicianName, createdAt: new Date().toISOString(), items: registrados, observation: (observation || '').trim() };
+    if(registradoPor && registradoPor !== technicianName) retirada.registradoPor = registradoPor;   // Fase 34: retirada lançada por outra pessoa conectada
     estoqueRetiradasStore.items.push(retirada);
     const saved = await estoqueRetiradasStore.save();
     return { ok: true, retirada, historicoSaved: saved };
@@ -12962,6 +12964,7 @@ function abrirCriarEquipamentoOficina(){
   const dataRet = document.getElementById('oficinaCriarEquipDataRetirada');
   dataRet.max = todayStr(); dataRet.value = todayStr();
   document.getElementById('oficinaCriarEquipClientes').innerHTML = clients.map(cl => `<option value="${escapeHtml(cl.name)}"></option>`).join('');
+  if(!clients.length && typeof ensureClientsLoaded === 'function') ensureClientsLoaded().then(() => { document.getElementById('oficinaCriarEquipClientes').innerHTML = clients.map(cl => `<option value="${escapeHtml(cl.name)}"></option>`).join(''); }).catch(() => {});   // Fase 34
   popularEquipNomesDatalist();
   document.getElementById('oficinaCriarEquipOverlay').classList.add('open');
   setTimeout(() => document.getElementById('oficinaCriarEquipCliente').focus(), 50);
@@ -19492,8 +19495,20 @@ function abrirRetiradaScreen(){
   document.getElementById('estoqueRetiradaObs').value = '';
   document.getElementById('estoqueRetiradaErr').textContent = '';
   popularSelectCategorias(document.getElementById('estoqueRetiradaCatFiltro'), true);
+  popularQuemRetira();   // Fase 34
   renderEstoqueRetiradaList();
 }
+// Fase 34: no computador da Oficina (conectado com a conta de uma pessoa) os técnicos registram as próprias retiradas: escolhem o nome aqui.
+// Lista = quem está conectado + todos os técnicos + o pessoal da Oficina; começa em quem está conectado.
+function popularQuemRetira(){
+  const sel = document.getElementById('estoqueRetiradaQuem'); if(!sel) return;
+  const eu = currentActingName() || '';
+  const oficina = USERS.filter(u => u.profiles && u.profiles.oficina).map(u => nomeHistoricoDoUsuario(u, 'oficina'));
+  const nomes = [...new Set([eu, ...tecnicosAtuaisOrdenados(), ...oficina].filter(Boolean))];
+  sel.innerHTML = nomes.map(nm => `<option value="${escapeHtml(nm)}">${escapeHtml(nm)}${nm === eu ? ' (conectado)' : ''}</option>`).join('');
+  sel.value = eu;
+}
+function quemRetira(){ const sel = document.getElementById('estoqueRetiradaQuem'); return (sel && sel.value) || currentActingName(); }
 document.getElementById('estoqueRetiradaVoltarBtn').addEventListener('click', () => estoqueSwitchTab('materiais'));
 function renderEstoqueRetiradaList(){
   const box = document.getElementById('estoqueRetiradaList'); if(!box) return;
@@ -19570,7 +19585,7 @@ document.getElementById('estoqueRetiradaRevisarBtn').addEventListener('click', (
   estoqueRetiradaIdAtual = estoqueRetiradaIdAtual || (Date.now() + Math.floor(Math.random() * 1000000));
   // Responsável = quem está agindo (currentActingName: Oficina/Gestor/Técnico), não só o Técnico —
   // antes usava currentTechName e ficava vazio para Gestor/Oficina.
-  document.getElementById('estoqueRetiradaConfirmTecnico').textContent = 'Responsável: ' + (currentActingName() || '—');
+  document.getElementById('estoqueRetiradaConfirmTecnico').textContent = 'Responsável: ' + (quemRetira() || '—') + (quemRetira() !== currentActingName() ? ' · registrado por ' + (currentActingName() || '—') : '');   // Fase 34
   document.getElementById('estoqueRetiradaConfirmResumo').innerHTML = pedido.map(p => {
     const it = estoqueItens.find(x => x.id === p.estoqueItemId); const atual = it ? (Number(it.quantity) || 0) : 0;
     return `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${p.quantity} un.</div><div class="apos">Após: ${atual - p.quantity}</div></div>`;
@@ -19592,7 +19607,7 @@ document.getElementById('estoqueRetiradaConfirmBtn').addEventListener('click', (
     if(estoqueRetiradaConfirmInFlight) return;
     estoqueRetiradaConfirmInFlight = true;
     const btn = document.getElementById('estoqueRetiradaConfirmBtn'); const lbl = btn.textContent; btn.disabled = true; btn.textContent = 'Enviando...';
-    const r = await executarRetirada(estoqueRetiradaIdAtual, pedido, currentActingName(), document.getElementById('estoqueRetiradaObs').value);
+    const r = await executarRetirada(estoqueRetiradaIdAtual, pedido, quemRetira(), document.getElementById('estoqueRetiradaObs').value, currentActingName());   // Fase 34
     btn.disabled = false; btn.textContent = lbl; estoqueRetiradaConfirmInFlight = false;
     if(!r.ok){
       let msg = r.reason;
@@ -19895,6 +19910,8 @@ async function ensureRoleDataLoaded(role){
     ]);
     if(sessaoMudou(g, 'perfil gestor')) return;
     if(pode('oficinaEquipamentos')) await garantirImportarEquipNomesExistentes(); // só depois do Promise.all: precisa de oficinaEquipamentos E do catálogo já carregados
+    // Fase 34: Gestor só com a aba Oficina (ex.: Pedro) também precisa dos clientes no cadastro de equipamento; as regras deixam quem tem perfil Técnico/Oficina ler
+    { const uc = usuarioDaConta(); if(!pode('clients') && pode('oficinaEquipamentos') && (!authAtivo() || (uc && uc.profiles && (uc.profiles.tech || uc.profiles.oficina)))) ensureClientsLoaded().catch(e => console.warn('clientes para a Oficina', e)); }
     if(sessaoMudou(g, 'perfil gestor')) return;
     if(window.PREV_API && pode('preventivo')) PREV_API.iniciarGestor(); // relatório preventivo: em segundo plano, não atrasa o login
     if(window.QUADROS_API && pode('quadros')) QUADROS_API.iniciar();  // quadros de comando: em segundo plano (alimenta o contador de Cadastros e OS)
@@ -19912,6 +19929,7 @@ async function ensureRoleDataLoaded(role){
     await ensureMaintenanceContractsLoaded();
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
+    try{ await ensureClientsLoaded(); }catch(e){ console.warn('clientes (técnico)', e); }   // Fase 34: cadastro de equipamento e Galeria
     if(sessaoMudou(g, 'perfil técnico')) return;
     await garantirImportarEquipNomesExistentes();
     if(window.PREV_API) { try{ await PREV_API.carregarUnidades(); }catch(e){ console.error('prev: unidades', e); } } // relatório preventivo (usa cache se estiver sem sinal)
@@ -19925,6 +19943,7 @@ async function ensureRoleDataLoaded(role){
     await ensureServicesLoaded();
     await ensureOficinaEquipamentosLoaded();
     await ensureEstoqueLoaded();
+    try{ await ensureClientsLoaded(); }catch(e){ console.warn('clientes (oficina)', e); }   // Fase 34: cliente no cadastro de equipamento
     if(sessaoMudou(g, 'perfil oficina')) return;
     await garantirImportarEquipNomesExistentes();
     if(window.REINST_API) REINST_API.agendar();        // confere equipamentos x atividades (reinstalação)
