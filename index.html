@@ -2980,7 +2980,14 @@
     #oficinaView #galeriaClientList .painel-stat-row{ break-inside:avoid; }
   }
   /* Fase 37: categoria ao lado do nome do material */
-  .estoque-cat{ display:inline-block; margin-left:8px; font-size:11px; font-weight:600; color:var(--text-dim); border:1px solid var(--line); border-radius:999px; padding:1px 8px; vertical-align:2px; white-space:nowrap; }
+  .estoque-cat{ display:inline-block; margin-left:8px; font-size:11.5px; font-weight:700; color:#1F4E7A; background:rgba(47,111,176,.12); border:1px solid rgba(47,111,176,.35); border-radius:999px; padding:1px 9px; vertical-align:2px; white-space:nowrap; }   /* Fase 39: mais destacada */
+  :root[data-theme="dark"] .estoque-cat{ color:#A9CBEF; background:rgba(110,160,220,.16); border-color:rgba(110,160,220,.40); }
+  .estoque-op-row.compacta .linha1 .estoque-cat{ margin-left:0; }
+  /* Fase 39: título de cada categoria nas listas do estoque */
+  .estoque-grupo-t{ display:flex; align-items:center; gap:8px; margin:18px 0 8px; padding:0 2px 5px; border-bottom:2px solid rgba(47,111,176,.35); font-size:12.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:#1F4E7A; }
+  .estoque-grupo-t:first-child{ margin-top:2px; }
+  .estoque-grupo-t .n{ font-size:11px; font-weight:800; letter-spacing:0; color:#1F4E7A; background:rgba(47,111,176,.12); border-radius:999px; padding:1px 8px; }
+  :root[data-theme="dark"] .estoque-grupo-t, :root[data-theme="dark"] .estoque-grupo-t .n{ color:#A9CBEF; }
   .estoque-row-qtd .val small{ font-size:11px; font-weight:600; color:var(--text-dim); margin-left:1px; }
 </style>
 </head>
@@ -19019,10 +19026,10 @@ function renderEstoqueDevolucaoTab(){
   if(cat) items = items.filter(it => it.category === cat);
   if(q) items = items.filter(it => (it.name || '').toLowerCase().includes(q) || (it.sku || '').toLowerCase().includes(q) || (it.category || '').toLowerCase().includes(q));
   items = items.slice().sort((a, b) => ((a.category || '') + a.name + a.unit).localeCompare((b.category || '') + b.name + b.unit, 'pt-BR'));
-  box.innerHTML = items.length ? items.map(it => {
+  box.innerHTML = items.length ? estoqueHtmlPorCategoria(items, it => {   // Fase 39
     const val = estoqueDevolucaoRowState[it.id] != null ? estoqueDevolucaoRowState[it.id] : '0';
     return `<div class="estoque-op-row compacta" data-devolucaorow="${it.id}">
-      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Atual: ${qtdComMedida(it, it.quantity)}</span></div>
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span class="estoque-cat">${escapeHtml(it.category || '—')}</span><span>Atual: ${qtdComMedida(it, it.quantity)}</span></div>
       <div class="linha2">
         <div class="estoque-qty-stepper">
           <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
@@ -19032,7 +19039,7 @@ function renderEstoqueDevolucaoTab(){
         <span class="apos" data-devolucaonovolabel="${it.id}"></span>
       </div>
     </div>`;
-  }).join('') : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
+  }) : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
   box.querySelectorAll('[data-devolucaorow]').forEach(row => {
     const id = Number(row.dataset.devolucaorow);
     wireEstoqueQtyStepper(row, () => estoqueDevolucaoAtualizarLinha(id));
@@ -19144,6 +19151,16 @@ function showEstoqueListScreen(){
 }
 document.getElementById('estoqueBackToListBtn').addEventListener('click', showEstoqueListScreen);
 
+// Fase 39: listas do estoque agrupadas por categoria (os itens já chegam ordenados por categoria + nome)
+function estoqueHtmlPorCategoria(items, linha){
+  const rot = (it) => (it.category || '').trim() || 'Sem categoria';
+  const sem = (it) => !(it.category || '').trim();
+  items = items.slice().sort((a, b) => (sem(a) - sem(b)) || rot(a).localeCompare(rot(b), 'pt-BR'));   // grupo inteiro junto; "Sem categoria" no fim (ordem dentro do grupo mantida)
+  const qtd = {}; items.forEach(it => { qtd[rot(it)] = (qtd[rot(it)] || 0) + 1; });
+  let html = '', atual = null;
+  items.forEach(it => { const c = rot(it); if(c !== atual){ atual = c; html += `<div class="estoque-grupo-t"><span>${escapeHtml(c)}</span><span class="n">${qtd[c]}</span></div>`; } html += linha(it); });
+  return html;
+}
 function renderEstoqueList(){
   const box = document.getElementById('estoqueList');
   if(!box) return;
@@ -19179,7 +19196,7 @@ function renderEstoqueList(){
       alertaBox.style.display = 'none';
     }
   }
-  box.innerHTML = items.length ? items.map(it => {
+  box.innerHTML = items.length ? estoqueHtmlPorCategoria(items, it => {   // Fase 39
     const st = estoqueStatusDoMaterial(it);
     const tag = st === 'REPOSIÇÃO' ? '<span class="oe-badge oe-red">Reposição necessária</span>' : st === 'ATENÇÃO' ? '<span class="oe-badge oe-yellow">Atenção</span>' : '<span class="oe-badge oe-green">Estoque normal</span>';
     return `<div class="estoque-row-v2" data-estoqueitem="${it.id}" style="${canEdit ? 'cursor:pointer;' : ''}">
@@ -19200,7 +19217,7 @@ function renderEstoqueList(){
         </div>
       </div>
     </div>`;
-  }).join('') : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
+  }) : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
   if(canEdit){
     box.querySelectorAll('[data-estoqueitem]').forEach(row => row.addEventListener('click', () => openEstoqueForm(Number(row.dataset.estoqueitem))));
     box.querySelectorAll('[data-estoqueeditar]').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); openEstoqueForm(Number(btn.dataset.estoqueeditar)); }));
@@ -19569,10 +19586,10 @@ function renderEstoqueRetiradaList(){
   if(cat) items = items.filter(it => it.category === cat);
   if(q) items = items.filter(it => (it.name || '').toLowerCase().includes(q) || (it.unit || '').toLowerCase().includes(q) || (it.sku || '').toLowerCase().includes(q));
   items = items.slice().sort((a, b) => ((a.category || '') + a.name + a.unit).localeCompare((b.category || '') + b.name + b.unit, 'pt-BR'));
-  box.innerHTML = items.length ? items.map(it => {
+  box.innerHTML = items.length ? estoqueHtmlPorCategoria(items, it => {   // Fase 39
     const val = estoqueRetiradaQtds[it.id] != null ? estoqueRetiradaQtds[it.id] : '0';
     return `<div class="estoque-op-row compacta" data-retiradarow="${it.id}">
-      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Disponível: ${qtdComMedida(it, it.quantity)}</span></div>
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span class="estoque-cat">${escapeHtml(it.category || '—')}</span><span>Disponível: ${qtdComMedida(it, it.quantity)}</span></div>
       <div class="linha2">
         <div class="estoque-qty-stepper">
           <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
@@ -19582,7 +19599,7 @@ function renderEstoqueRetiradaList(){
         <span class="apos" data-retiradasaldoapos="${it.id}"></span>
       </div>
     </div>`;
-  }).join('') : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
+  }) : '<div class="painel-block-empty">Nenhum material encontrado.</div>';
   box.querySelectorAll('[data-retiradarow]').forEach(row => {
     const id = Number(row.dataset.retiradarow);
     wireEstoqueQtyStepper(row, () => estoqueRetiradaOnQtyChange(id));
