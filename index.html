@@ -2947,6 +2947,41 @@
   .painel-f10-lista li{ margin:2px 0; }
   .painel-block .painel-stat-value{ text-align:right; max-width:60%; }
   :root[data-theme="dark"] .painel-f10-barra .t em{ background:rgba(255,255,255,0.18); }
+  /* ===== Fase 36 — Oficina: equipamentos parados como contador + tela no PC ===== */
+  #oficinaStaleBlock .painel-block-desc{ display:none; }
+  #oficinaStaleBlock .painel-block-title-row{ margin-bottom:6px; }
+  #oficinaStaleConfigRow{ margin-bottom:8px !important; }
+  .oe-stale-cont{ display:flex; width:100%; align-items:center; gap:10px; padding:9px 14px; border:1px solid rgba(200,40,40,.30); background:var(--danger-soft); color:var(--danger); border-radius:10px; font:inherit; font-size:13.5px; font-weight:600; cursor:pointer; text-align:left; }
+  .oe-stale-cont b{ font-size:20px; font-weight:800; line-height:1; }
+  .oe-stale-cont span{ margin-left:auto; font-size:12px; }
+  .oe-stale-tab{ margin-top:8px; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .oe-stale-l{ display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1.3fr) minmax(0,1fr) auto auto; gap:12px; align-items:center; padding:7px 14px; font-size:13px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .oe-stale-l:last-child{ border-bottom:0; }
+  .oe-stale-l:hover{ background:rgba(0,0,0,.035); }
+  .oe-stale-l .c{ font-weight:700; } .oe-stale-l .s, .oe-stale-l .d{ color:var(--text-dim); font-size:12px; } .oe-stale-l .a{ color:var(--danger); font-weight:800; font-size:12px; white-space:nowrap; }
+  @media (max-width:760px){ .oe-stale-l{ display:flex; flex-wrap:wrap; gap:2px 10px; } .oe-stale-l .a{ margin-left:auto; } }
+  .oe-stale-tag{ margin-left:8px; font-family:var(--font, inherit); font-size:11.5px; font-weight:700; color:var(--danger); }
+  :root[data-theme="dark"] .oe-stale-l:hover{ background:rgba(255,255,255,.05); }
+  @media (min-width:1100px){
+    #oficinaView .tech-day-panel{ max-width:none; margin:0; padding-left:28px; padding-right:28px; }
+    #oficinaView .tech-day-panel .tech-day-panel{ padding-left:0; padding-right:0; }
+    #oficinaView .portal-tabs{ max-width:720px; }
+    #oficinaView #oficinaStaleBlock, #oficinaView #oficinaEquipamentosPlaceholder{ margin-left:0 !important; margin-right:0 !important; }
+    #oficinaEquipList{ display:grid; grid-template-columns:repeat(auto-fit, minmax(290px, 1fr)); gap:14px; align-items:start; }
+    #oficinaEquipList > .painel-block-empty{ grid-column:1 / -1; }
+    #oficinaEquipList .oe-secao{ margin:0; }
+    #oficinaView .qd-secoes{ display:grid; grid-template-columns:repeat(auto-fill, minmax(430px, 1fr)); gap:10px; align-items:start; }
+    #oficinaView .qd-secoes > .qd-secao, #oficinaView .qd-secoes > .qd-montados, #oficinaView .qd-secoes > .empty-state{ grid-column:1 / -1; }
+    #oficinaView .qd-secoes .qd-card{ margin:0; }
+    #oficinaView #estoqueList{ display:grid; grid-template-columns:repeat(auto-fill, minmax(520px, 1fr)); gap:8px; align-items:start; }
+    #oficinaView #estoqueList > .estoque-row-v2{ margin:0; }
+    #oficinaView #estoqueList > :not(.estoque-row-v2){ grid-column:1 / -1; }
+    #oficinaView #galeriaClientList{ columns:4 230px; column-gap:28px; }
+    #oficinaView #galeriaClientList .painel-stat-row{ break-inside:avoid; }
+  }
+  /* Fase 37: categoria ao lado do nome do material */
+  .estoque-cat{ display:inline-block; margin-left:8px; font-size:11px; font-weight:600; color:var(--text-dim); border:1px solid var(--line); border-radius:999px; padding:1px 8px; vertical-align:2px; white-space:nowrap; }
+  .estoque-row-qtd .val small{ font-size:11px; font-weight:600; color:var(--text-dim); margin-left:1px; }
 </style>
 </head>
 <body>
@@ -3302,6 +3337,7 @@
         <div class="field"><label>Nome do material *</label><input type="text" id="estoqueFormName" placeholder="Ex: Registro Esfera"></div>
         <div class="field"><label>Categoria *</label><select id="estoqueFormCategory"></select></div>
         <div class="field"><label>Medida/Unidade *</label><input type="text" id="estoqueFormUnit" placeholder="Ex: 3/4, 28, 50 x 1.1/2&quot;"></div>
+        <div class="field"><label for="estoqueFormContagem">Contagem</label><select id="estoqueFormContagem"><option value="un">Unidade</option><option value="m">Metro</option></select></div>   <!-- Fase 37 -->
         <div class="field"><label>Código/SKU</label><input type="text" id="estoqueFormSku" placeholder="Opcional"></div>
         <div class="field" id="estoqueFormQuantityField"><label>Quantidade inicial</label><input type="number" id="estoqueFormQuantity" value="0" min="0" step="any"></div>
         <div class="field"><label>Quantidade mínima</label><input type="number" id="estoqueFormMinimum" value="0" min="0" step="any"></div>
@@ -3989,6 +4025,9 @@
       </div>
       <div class="field">
         <label style="display:flex; align-items:center; gap:8px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosMasterInput" style="width:auto;" disabled> Gestor Master</label>
+      </div>
+      <div class="field">   <!-- Fase 35 -->
+        <label style="display:flex; align-items:flex-start; gap:8px; font-weight:400; cursor:pointer;"><input type="checkbox" id="acessosContaOficinaInput" style="width:auto; margin-top:3px;"> <span><b>Conta do computador da Oficina</b><br><small style="color:var(--text-secondary);">Entra como qualquer pessoa com perfil Técnico ou Oficina, cada uma com o próprio PIN. Não tem perfil nem PIN próprios.</small></span></label>
       </div>
       <div class="field" id="acessosAbasSection" style="display:none;">
         <label>Abas que este gestor poderá acessar <small style="font-weight:400; color:var(--text-secondary);">(vale também para Gestor Master; Acessos fica sempre liberada para o Master)</small></label>
@@ -4983,6 +5022,9 @@ function mensagemErroAuth(e){
   return 'Não foi possível entrar agora' + (c ? ' (' + c + ')' : '') + '.';
 }
 function usuarioDaConta(){ return contaAtual ? USERS.find(x => x.id === contaAtual.userId) || null : null; }
+// Fase 35: conta compartilhada do computador da Oficina — entra como qualquer pessoa com perfil Técnico ou Oficina (cada uma com o próprio PIN)
+function ehContaOficina(){ if(!authAtivo()) return false; const u = usuarioDaConta(); return !!(u && u.contaOficina === true); }
+const PERFIS_CONTA_OFICINA = ['tech', 'oficina'];
 // ===== Fase 3 — técnico lê só os próprios serviços =====
 // Conta "restrita a técnico" = conta vinculada cujo usuário NÃO é Master e NÃO tem perfil Gestor nem Financeiro (hoje: Adão, Aldir,
 // Ricardo, Paulo — Técnico+Oficina). Para ela, services é lido por DUAS consultas (technician == nome e technician2 == nome) em vez
@@ -4991,6 +5033,7 @@ function usuarioDaConta(){ return contaAtual ? USERS.find(x => x.id === contaAtu
 function nomeTecnicoRestrito(){
   if(!authAtivo()) return null;
   const u = usuarioDaConta(); if(!u) return null;
+  if(u.contaOficina === true) return null;   // Fase 35: a conta da Oficina lê todas as atividades (a pessoa escolhida vê a própria agenda)
   if(u.isMaster === true || (u.profiles && (u.profiles.manager === true || u.profiles.financeiro === true))) return null;
   return (u.legacyNames && u.legacyNames.tech) || '';
 }
@@ -5046,7 +5089,7 @@ const CARDS_PERFIL = { manager: 'roleCardManager', tech: 'roleCardTech', finance
 function restringirPerfisAoUsuario(){
   if(!authAtivo() || !contaAtual) return;
   const u = usuarioDaConta();
-  const perfis = u ? Object.keys(CARDS_PERFIL).filter(p => u.profiles && u.profiles[p]) : [];
+  const perfis = u ? (u.contaOficina === true ? PERFIS_CONTA_OFICINA.slice() : Object.keys(CARDS_PERFIL).filter(p => u.profiles && u.profiles[p])) : [];   // Fase 35
   contaAtual.perfis = perfis;
   Object.keys(CARDS_PERFIL).forEach(p => { document.getElementById(CARDS_PERFIL[p]).style.display = perfis.includes(p) ? '' : 'none'; });
   document.getElementById('loginContaInfo').style.display = '';
@@ -10057,10 +10100,14 @@ function validarMaterial(d){
   if(d.quantity !== undefined && (!Number.isFinite(q) || q < 0)) return 'Quantidade atual deve ser um número maior ou igual a zero.';
   return null;
 }
+// Fase 37: contagem do material — 'm' (metro) ou unidade (padrão; material sem o campo = unidade)
+function contagemDe(it){ return it && it.contagem === 'm' ? 'm' : 'un'; }
+function qtdComMedida(it, n){ return n + (contagemDe(it) === 'm' ? ' m' : ' un.'); }
+function itemDoPedido(p){ return (p && estoqueItens.find(x => x.id === p.estoqueItemId)) || p; }
 async function criarMaterial(d){
   const err = validarMaterial(d); if(err) return { ok: false, reason: err };
   const now = new Date().toISOString(), who = currentActingName();
-  const it = { id: Date.now() + Math.floor(Math.random() * 1000000), name: d.name.trim(), sku: (d.sku || '').trim(), category: d.category.trim(), unit: d.unit.trim(),
+  const it = { id: Date.now() + Math.floor(Math.random() * 1000000), name: d.name.trim(), sku: (d.sku || '').trim(), category: d.category.trim(), unit: d.unit.trim(), contagem: d.contagem === 'm' ? 'm' : 'un',
     quantity: Number(d.quantity) || 0, minimumQuantity: Number(d.minimumQuantity) || 0, maximumQuantity: Number(d.maximumQuantity) || 0,
     observation: (d.observation || '').trim(), active: true, createdAt: now, updatedAt: now, createdBy: who, updatedBy: who };
   estoqueItens.push(it);
@@ -10075,6 +10122,7 @@ async function editarMaterial(id, d){
   const err = validarMaterial(Object.assign({}, d, { quantity: undefined })); if(err) return { ok: false, reason: err };
   const prev = Object.assign({}, it);
   it.name = d.name.trim(); it.sku = (d.sku || '').trim(); it.category = d.category.trim(); it.unit = d.unit.trim();
+  if(d.contagem !== undefined) it.contagem = d.contagem === 'm' ? 'm' : 'un';   // Fase 37
   it.minimumQuantity = Number(d.minimumQuantity) || 0; it.maximumQuantity = Number(d.maximumQuantity) || 0; it.observation = (d.observation || '').trim();
   it.updatedAt = new Date().toISOString(); it.updatedBy = currentActingName();
   const ok = await saveEstoqueItens();
@@ -12452,6 +12500,7 @@ document.getElementById('oficinaAgendarReinstalacaoConfirmBtn').addEventListener
 // mexe em services/maintenanceContracts/oficinaEquipamentos além da leitura já existente.
 const OFICINA_STALE_DEFAULT_DAYS = 10; // usado só até existir um valor salvo
 let oficinaStaleThresholdDays = OFICINA_STALE_DEFAULT_DAYS;
+let oficinaStaleAberto = false;   // Fase 36: lista dos parados começa fechada (só o contador)
 
 async function loadOficinaStaleThreshold(){
   try{
@@ -13091,19 +13140,15 @@ function renderOficinaStaleSection(){
     .sort((a, b) => b.info.daysOverdue - a.info.daysOverdue); // maior atraso primeiro
 
   countEl.textContent = `(${stale.length})`;
-  listBox.innerHTML = stale.length ? stale.map(({ eq, info }) => {
-    const dataRetirada = new Date(info.referenceDate).toLocaleDateString('pt-BR');
-    const statusLabel = OFICINA_STATUS_LABELS[eq.status] || eq.status;
-    return `<div class="painel-stat-row" style="align-items:flex-start; flex-direction:column; gap:2px; border-left:4px solid var(--red); padding-left:10px;">
-      <div class="painel-stat-label">⚠ Equipamento parado há ${info.daysStopped} dias</div>
-      <div style="font-size:13px;">Cliente: ${escapeHtml(eq.client)}</div>
-      <div style="font-size:13px;">Equipamento: ${escapeHtml(eq.equipment)}</div>
-      <div style="font-size:13px;">Status: ${escapeHtml(statusLabel)}</div>
-      <div style="font-size:13px;">Retirado em: ${dataRetirada}</div>
-      <div style="font-size:13px;">Limite: ${info.limit} dias</div>
-      <div style="font-size:13px;">Atraso: ${info.daysOverdue} dias</div>
-    </div>`;
-  }).join('') : '<div class="painel-block-empty">Nenhum equipamento parado além do limite.</div>';
+  // Fase 36: só o contador; tocando, abre uma linha por equipamento (que abre o equipamento)
+  if(!stale.length){ listBox.innerHTML = '<div class="painel-block-empty">Nenhum equipamento parado além do limite.</div>'; return; }
+  const linhas = oficinaStaleAberto ? `<div class="oe-stale-tab">${stale.map(({ eq, info }) => {
+    const desde = new Date(info.referenceDate).toLocaleDateString('pt-BR');
+    return `<div class="oe-stale-l" data-oestaleopen="${eq.id}" role="button" tabindex="0" title="Abrir o equipamento"><span class="c">${escapeHtml(eq.client)}</span><span class="e">${escapeHtml(eq.equipment)}</span><span class="s">${escapeHtml(OFICINA_STATUS_LABELS[eq.status] || eq.status)}</span><span class="d">${info.daysStopped} dias · desde ${desde}</span><span class="a">+${info.daysOverdue} d</span></div>`;
+  }).join('')}</div>` : '';
+  listBox.innerHTML = `<button type="button" class="oe-stale-cont" data-oestaletoggle aria-expanded="${oficinaStaleAberto}"><b>${stale.length}</b> ${stale.length === 1 ? 'equipamento parado' : 'equipamentos parados'} além de ${oficinaStaleThresholdDays} dias<span>${oficinaStaleAberto ? 'esconder ▴' : 'ver ▾'}</span></button>` + linhas;
+  const tg = listBox.querySelector('[data-oestaletoggle]'); if(tg) tg.addEventListener('click', () => { oficinaStaleAberto = !oficinaStaleAberto; renderOficinaStaleSection(); });
+  listBox.querySelectorAll('[data-oestaleopen]').forEach(l => { const abrir = () => openOficinaEquipDetalhe(Number(l.dataset.oestaleopen)); l.addEventListener('click', abrir); l.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); abrir(); } }); });
 }
 
 document.getElementById('vistoriaCompleteCancelBtn').addEventListener('click', closeVistoriaCompleteModal);
@@ -15838,7 +15883,7 @@ function renderOficinaEquipListOnly(){
         </div>
         ${oficinaBadgeHtml(eq.status)}
       </div>
-      <div class="mono" style="font-size:12px; color:var(--text-dim); margin-top:6px;">${fmt(eq.withdrawnAt)}</div>
+      <div class="mono" style="font-size:12px; color:var(--text-dim); margin-top:6px;">${fmt(eq.withdrawnAt)}${(() => { const si = getEquipmentStaleInfo(eq); return si.stale ? `<span class="oe-stale-tag">⚠ ${si.daysStopped} dias parado</span>` : ''; })()}</div>
       ${window.REINST_API ? REINST_API.linhaAgenda(eq) : ''}
     </div>`;
   el.innerHTML = filtrados.length
@@ -18627,7 +18672,7 @@ function renderEstoqueAjusteMateriais(){
     return `<div class="estoque-op-row" data-ajusterow="${it.id}">
       <div class="estoque-row-main">
         <div class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</div>
-        <div class="sub">${it.sku ? 'Código: ' + escapeHtml(it.sku) + '  ·  ' : ''}Categoria: ${escapeHtml(it.category || '—')}  ·  Estoque atual: <b>${it.quantity}</b></div>
+        <div class="sub">${it.sku ? 'Código: ' + escapeHtml(it.sku) + '  ·  ' : ''}Categoria: ${escapeHtml(it.category || '—')}  ·  Estoque atual: <b>${qtdComMedida(it, it.quantity)}</b></div>
       </div>
       <div class="estoque-op-block">
         <div class="estoque-qty-stepper">
@@ -18799,7 +18844,7 @@ function renderUltimaCompraLista(){
     const ainda = !!atual;
     const val = estoqueUltimaCompraRowState[it.estoqueItemId] != null ? estoqueUltimaCompraRowState[it.estoqueItemId] : String(it.comprar);
     return `<div class="estoque-op-row compacta" data-ultimacompra="${it.estoqueItemId}">
-      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${ainda ? 'Atual: ' + atual.quantity : 'Material não encontrado (pode ter sido excluído)'}</span></div>
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${ainda ? 'Atual: ' + qtdComMedida(atual, atual.quantity) : 'Material não encontrado (pode ter sido excluído)'}</span></div>
       ${ainda ? `<div class="linha2">
         <div class="estoque-qty-stepper">
           <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
@@ -18884,7 +18929,7 @@ function abrirConfirmacaoUltimaCompra(categoria){
   document.getElementById('estoqueUltimaCompraConfirmQuem').textContent =
     (categoria ? `Lista: ${categoria} · ` : 'Todas as categorias · ') + 'Responsável: ' + (currentActingName() || '—');
   document.getElementById('estoqueUltimaCompraConfirmResumo').innerHTML = pedido.map(p =>
-    `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${p.quantity} un.</div><div class="apos">Novo saldo: ${p.atual + p.quantity}</div></div>`
+    `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${qtdComMedida(itemDoPedido(p), p.quantity)}</div><div class="apos">Novo saldo: ${p.atual + p.quantity}</div></div>`
   ).join('');
   document.getElementById('estoqueUltimaCompraConfirmErr').textContent = '';
   document.getElementById('estoqueUltimaCompraConfirmOverlay').classList.add('open');
@@ -18973,7 +19018,7 @@ function renderEstoqueDevolucaoTab(){
   box.innerHTML = items.length ? items.map(it => {
     const val = estoqueDevolucaoRowState[it.id] != null ? estoqueDevolucaoRowState[it.id] : '0';
     return `<div class="estoque-op-row compacta" data-devolucaorow="${it.id}">
-      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Atual: ${it.quantity}</span></div>
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Atual: ${qtdComMedida(it, it.quantity)}</span></div>
       <div class="linha2">
         <div class="estoque-qty-stepper">
           <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
@@ -19040,7 +19085,7 @@ document.getElementById('estoqueDevolucaoEnviarBtn').addEventListener('click', (
   if(!pedido.length){ errBox.textContent = 'Selecione pelo menos um material (quantidade maior que zero).'; return; }
   document.getElementById('estoqueDevolucaoConfirmQuem').textContent = 'Responsável: ' + (currentActingName() || '—');
   document.getElementById('estoqueDevolucaoConfirmResumo').innerHTML = pedido.map(p =>
-    `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${p.quantity} un.</div><div class="apos">Novo saldo: ${p.atual + p.quantity}</div></div>`
+    `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${qtdComMedida(itemDoPedido(p), p.quantity)}</div><div class="apos">Novo saldo: ${p.atual + p.quantity}</div></div>`
   ).join('');
   document.getElementById('estoqueDevolucaoConfirmErr').textContent = '';
   document.getElementById('estoqueDevolucaoConfirmOverlay').classList.add('open');
@@ -19135,13 +19180,13 @@ function renderEstoqueList(){
     const tag = st === 'REPOSIÇÃO' ? '<span class="oe-badge oe-red">Reposição necessária</span>' : st === 'ATENÇÃO' ? '<span class="oe-badge oe-yellow">Atenção</span>' : '<span class="oe-badge oe-green">Estoque normal</span>';
     return `<div class="estoque-row-v2" data-estoqueitem="${it.id}" style="${canEdit ? 'cursor:pointer;' : ''}">
       <div class="estoque-row-main">
-        <div class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</div>
-        <div class="sub">${it.sku ? 'Código: ' + escapeHtml(it.sku) + '  ·  ' : ''}Categoria: ${escapeHtml(it.category || '—')}</div>
+        <div class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}${it.category ? `<span class="estoque-cat">${escapeHtml(it.category)}</span>` : ''}</div>
+        ${it.sku || contagemDe(it) === 'm' ? `<div class="sub">${it.sku ? 'Código: ' + escapeHtml(it.sku) : ''}${it.sku && contagemDe(it) === 'm' ? '  ·  ' : ''}${contagemDe(it) === 'm' ? 'Contagem em metros' : ''}</div>` : ''}
       </div>
       <div class="estoque-row-qtd">
-        <div><div class="lbl">Atual</div><div class="val">${it.quantity}</div></div>
-        <div><div class="lbl">Mín</div><div class="val">${it.minimumQuantity}</div></div>
-        <div><div class="lbl">Máx</div><div class="val">${it.maximumQuantity != null ? it.maximumQuantity : '—'}</div></div>
+        <div><div class="lbl">Atual</div><div class="val">${it.quantity}${contagemDe(it) === 'm' ? '<small>m</small>' : ''}</div></div>
+        <div><div class="lbl">Mín</div><div class="val">${it.minimumQuantity}${contagemDe(it) === 'm' ? '<small>m</small>' : ''}</div></div>
+        <div><div class="lbl">Máx</div><div class="val">${it.maximumQuantity != null ? it.maximumQuantity + (contagemDe(it) === 'm' ? '<small>m</small>' : '') : '—'}</div></div>
       </div>
       <div class="estoque-row-status">
         ${tag}
@@ -19195,6 +19240,7 @@ function openEstoqueForm(idOrNew){
     document.getElementById('estoqueFormQuantity').value = '0';
     document.getElementById('estoqueFormMinimum').value = '0';
     document.getElementById('estoqueFormMaximum').value = '0';
+    document.getElementById('estoqueFormContagem').value = 'un';   // Fase 37
   } else {
     const it = estoqueItens.find(x => x.id === idOrNew);
     if(!it){ showEstoqueListScreen(); return; }
@@ -19202,6 +19248,7 @@ function openEstoqueForm(idOrNew){
     document.getElementById('estoqueFormName').value = it.name || '';
     document.getElementById('estoqueFormCategory').value = it.category || '';
     document.getElementById('estoqueFormUnit').value = it.unit || '';
+    document.getElementById('estoqueFormContagem').value = contagemDe(it);   // Fase 37
     document.getElementById('estoqueFormSku').value = it.sku || '';
     document.getElementById('estoqueFormMinimum').value = String(it.minimumQuantity != null ? it.minimumQuantity : 0);
     document.getElementById('estoqueFormMaximum').value = String(it.maximumQuantity != null ? it.maximumQuantity : 0);
@@ -19233,7 +19280,7 @@ function renderEstoqueHistorico(itemId){
 document.getElementById('estoqueFormSaveBtn').addEventListener('click', async () => {
   if(!canEditEstoque() || estoqueEditingId === null) return;
   if(estoqueSaveItemInFlight) return;
-  const d = { name: document.getElementById('estoqueFormName').value, category: document.getElementById('estoqueFormCategory').value, unit: document.getElementById('estoqueFormUnit').value,
+  const d = { name: document.getElementById('estoqueFormName').value, category: document.getElementById('estoqueFormCategory').value, unit: document.getElementById('estoqueFormUnit').value, contagem: document.getElementById('estoqueFormContagem').value,
     sku: document.getElementById('estoqueFormSku').value, minimumQuantity: document.getElementById('estoqueFormMinimum').value, maximumQuantity: document.getElementById('estoqueFormMaximum').value,
     observation: document.getElementById('estoqueFormObservation').value };
   const errBox = document.getElementById('estoqueFormErr'); errBox.textContent = '';
@@ -19521,7 +19568,7 @@ function renderEstoqueRetiradaList(){
   box.innerHTML = items.length ? items.map(it => {
     const val = estoqueRetiradaQtds[it.id] != null ? estoqueRetiradaQtds[it.id] : '0';
     return `<div class="estoque-op-row compacta" data-retiradarow="${it.id}">
-      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Disponível: ${it.quantity}</span></div>
+      <div class="linha1"><span class="nome">${escapeHtml(it.name)}${it.unit ? ' — ' + escapeHtml(it.unit) : ''}</span><span>${escapeHtml(it.category || '—')}</span><span>Disponível: ${qtdComMedida(it, it.quantity)}</span></div>
       <div class="linha2">
         <div class="estoque-qty-stepper">
           <button type="button" class="estoque-qty-btn" data-qtystep="-1">−</button>
@@ -19588,7 +19635,7 @@ document.getElementById('estoqueRetiradaRevisarBtn').addEventListener('click', (
   document.getElementById('estoqueRetiradaConfirmTecnico').textContent = 'Responsável: ' + (quemRetira() || '—') + (quemRetira() !== currentActingName() ? ' · registrado por ' + (currentActingName() || '—') : '');   // Fase 34
   document.getElementById('estoqueRetiradaConfirmResumo').innerHTML = pedido.map(p => {
     const it = estoqueItens.find(x => x.id === p.estoqueItemId); const atual = it ? (Number(it.quantity) || 0) : 0;
-    return `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${p.quantity} un.</div><div class="apos">Após: ${atual - p.quantity}</div></div>`;
+    return `<div class="estoque-confirm-item"><div>${escapeHtml(p.name)}${p.unit ? ' — ' + escapeHtml(p.unit) : ''}</div><div class="qtd">${qtdComMedida(itemDoPedido(p), p.quantity)}</div><div class="apos">Após: ${atual - p.quantity}</div></div>`;
   }).join('');
   document.getElementById('estoqueRetiradaConfirmErr').textContent = '';
   document.getElementById('estoqueRetiradaConfirmOverlay').classList.add('open');
@@ -20137,6 +20184,14 @@ function privadoDe(u){ return (u && USERS_PRIVADO[u.id]) || null; }
 function emailDoUsuario(u){ const p = privadoDe(u); return (p && p.email) || (u && u.email) || ''; }
 function souMasterDaConta(){ const u = (typeof usuarioDaConta === 'function') ? usuarioDaConta() : null; return !!(u && u.isMaster === true); }
 async function carregarPrivado(id){ if(!rtdb || !id) return; try{ const s = await rtdb.ref('usersPrivado/' + id).get(); USERS_PRIVADO[id] = s.exists() ? s.val() || {} : {}; }catch(e){ console.warn('usersPrivado/' + id + ' indisponível:', e && e.code || e); } }
+async function carregarPinsContaOficina(){   // Fase 35
+  if(!rtdb) return;
+  const pedidos = [];
+  USERS.forEach(u => PERFIS_CONTA_OFICINA.forEach(p => { if(u.profiles && u.profiles[p]) pedidos.push(rtdb.ref('usersPrivado/' + u.id + '/pinByProfile/' + p).get().then(sn => {
+    const pv = USERS_PRIVADO[u.id] = USERS_PRIVADO[u.id] || {}; pv.pinByProfile = pv.pinByProfile || {}; if(sn.exists()) pv.pinByProfile[p] = sn.val();
+  }).catch(e => console.warn('PIN de ' + u.name + ' (' + p + ') indisponível:', e && e.code || e))); }));
+  await Promise.all(pedidos);
+}
 async function carregarPrivadoTodos(){ if(!rtdb) return; try{ const s = await rtdb.ref('usersPrivado').get(); USERS_PRIVADO = s.exists() ? s.val() || {} : {}; }catch(e){ console.warn('usersPrivado (todos) indisponível:', e && e.code || e); } }
 let currentUserId = null; // novo (Etapa 3) — usado em etapas futuras; não substitui current*Name
 let usersLoadedPromise = null;
@@ -20150,7 +20205,7 @@ function ensureUsersLoaded(){
       const snap = await rtdb.ref('users').get();
       const raw = snap.exists() ? snap.val() : {};
       USERS = Object.keys(raw).map(id => Object.assign({ id }, raw[id]));
-      if(authAtivo() && contaAtual){ if(souMasterDaConta()) await carregarPrivadoTodos(); else await carregarPrivado(contaAtual.userId); }   // Fase 1c
+      if(authAtivo() && contaAtual){ if(souMasterDaConta()) await carregarPrivadoTodos(); else { await carregarPrivado(contaAtual.userId); if(ehContaOficina()) await carregarPinsContaOficina(); }   /* Fase 35 */ }   // Fase 1c
       else if(!authAtivo()) await carregarPrivadoTodos();   // flag desligada (regras abertas): sem isso, pessoa já migrada ficaria sem PIN e cairia no padrão '0000'
     }catch(e){ console.error('Falha ao carregar users (login não funcionará sem esta leitura — Etapa 7 removeu o fallback legado):', e); USERS = []; }
   })();
@@ -20160,7 +20215,8 @@ function ensureUsersLoaded(){
 // Etapa 7: quem pode entrar por um perfil vem exclusivamente de users.profiles — sem mais unir
 // manager/tech pra "oficina" (isso agora é responsabilidade só de profiles.oficina===true).
 function usersComPerfil(perfil){
-  return USERS.filter(u => u.profiles && u.profiles[perfil] && (!authAtivo() || !contaAtual || u.id === contaAtual.userId));   // Fase 1: só a pessoa da conta conectada
+  const todos = ehContaOficina() && PERFIS_CONTA_OFICINA.includes(perfil);   // Fase 35: na conta da Oficina, todas as pessoas habilitadas
+  return USERS.filter(u => u.profiles && u.profiles[perfil] && (todos || !authAtivo() || !contaAtual || u.id === contaAtual.userId));   // Fase 1: só a pessoa da conta conectada
 }
 // PIN a validar pro perfil pedido — direto de pinByProfile[perfil], sem precedência especial.
 function pinDoUsuarioParaPerfil(user, perfil){
@@ -20185,6 +20241,7 @@ function autenticarPerfil(perfil, nome, pin){
   const user = candidatos.find(u => (u.legacyNames && u.legacyNames[perfil] === nome) || u.name === nome);
   if(!user) return { ok: false, fonte: 'users' };
   const pinEsperado = pinDoUsuarioParaPerfil(user, perfil);
+  if(pinEsperado == null && ehContaOficina() && user.id !== contaAtual.userId) return { ok: false, fonte: 'users', semPin: true };   // Fase 35
   if(pin === (pinEsperado || '0000')){
     return { ok: true, fonte: 'users', userId: user.id, nome: nomeHistoricoDoUsuario(user, perfil) };
   }
@@ -20340,7 +20397,7 @@ function renderAcessosUsuariosList(){
     const perfisTxt = Object.keys(u.profiles || {}).filter(p => u.profiles[p]).map(p => ACESSOS_PERFIL_LABEL[p] || p).join(' · ');
     return `<div class="tech-pin-row" data-acessosuser="${u.id}">
       <div class="tech-pin-name">${escapeHtml(u.name)}</div>
-      <div class="sub" style="flex:1; color:var(--text-dim); font-size:12.5px;">${escapeHtml(perfisTxt)}${u.isMaster ? ' · <b>Master</b>' : ''}${AUTH_FIREBASE ? `<br>${emailDoUsuario(u) ? '✉ ' + escapeHtml(emailDoUsuario(u)) + (acessosVinculos[u.id] ? ' · <span style="color:#1D5E39;">vinculado</span>' : ' · <span style="color:#8a6d00;">aguardando 1º acesso</span>') : '<span style="color:var(--danger-dark);">sem e-mail de acesso</span>'}` : ''}</div>
+      <div class="sub" style="flex:1; color:var(--text-dim); font-size:12.5px;">${u.contaOficina ? '<b>Conta do computador da Oficina</b> (entra como Técnico/Oficina)' : ''}${escapeHtml(perfisTxt)}${u.isMaster ? ' · <b>Master</b>' : ''}${AUTH_FIREBASE ? `<br>${emailDoUsuario(u) ? '✉ ' + escapeHtml(emailDoUsuario(u)) + (acessosVinculos[u.id] ? ' · <span style="color:#1D5E39;">vinculado</span>' : ' · <span style="color:#8a6d00;">aguardando 1º acesso</span>') : '<span style="color:var(--danger-dark);">sem e-mail de acesso</span>'}` : ''}</div>
       <div class="acessos-acoes">
         <button type="button" class="btn-ghost" data-acessoseditar="${u.id}">Editar</button>
         ${u.id === currentUserId
@@ -20355,6 +20412,8 @@ function renderAcessosUsuariosList(){
 
 function acessosAtualizarCamposPin(){
   const cont = document.getElementById('acessosPinsContainer');
+  { const co = document.getElementById('acessosContaOficinaInput') && document.getElementById('acessosContaOficinaInput').checked;   // Fase 35: conta da Oficina não tem perfil próprio
+    ['Manager', 'Tech', 'Oficina', 'Financeiro'].forEach(p => { const cb = document.getElementById('acessosPerfil' + p); if(co) cb.checked = false; cb.disabled = !!co; }); }
   const perfisSelecionados = ['manager', 'tech', 'oficina', 'financeiro'].filter(p => document.getElementById('acessosPerfil' + p[0].toUpperCase() + p.slice(1)).checked);
   const existentes = {}; cont.querySelectorAll('[data-acessospinperfil]').forEach(inp => { existentes[inp.dataset.acessospinperfil] = inp.value; });
   cont.innerHTML = perfisSelecionados.map(p => `<div class="field"><label>PIN do ${ACESSOS_PERFIL_LABEL[p]}</label><input type="text" maxlength="6" data-acessospinperfil="${p}" value="${escapeHtml(existentes[p] || '')}"></div>`).join('');
@@ -20383,6 +20442,7 @@ function acessosPreencherAbas(u){
 }
 function acessosMarcarTodasAbas(valor){ document.querySelectorAll('#acessosAbasList [data-acessosaba]').forEach(cb => { cb.checked = valor; }); }
 document.getElementById('acessosMasterInput').addEventListener('change', acessosAtualizarSecaoAbas);
+document.getElementById('acessosContaOficinaInput').addEventListener('change', acessosAtualizarCamposPin);   // Fase 35
 document.getElementById('acessosAbasMarcarTodas').addEventListener('click', () => acessosMarcarTodasAbas(true));
 document.getElementById('acessosAbasDesmarcarTodas').addEventListener('click', () => acessosMarcarTodasAbas(false));
 ['acessosPerfilManager', 'acessosPerfilTech', 'acessosPerfilOficina', 'acessosPerfilFinanceiro'].forEach(id => {
@@ -20403,6 +20463,7 @@ function abrirAcessosUsuarioModal(userId){
   document.getElementById('acessosPerfilOficina').checked = !!(u && u.profiles && u.profiles.oficina);
   document.getElementById('acessosPerfilFinanceiro').checked = !!(u && u.profiles && u.profiles.financeiro);
   document.getElementById('acessosMasterInput').checked = !!(u && u.isMaster);
+  document.getElementById('acessosContaOficinaInput').checked = !!(u && u.contaOficina);   // Fase 35
   acessosPreencherAbas(u);
   acessosAtualizarCamposPin();
   if(u){
@@ -20797,8 +20858,10 @@ async function salvarUsuarioAcessos(dados){
   }
   const nome = (dados.name || '').trim();
   if(!nome) return { ok: false, reason: 'Informe o nome.' };
+  if(dados.contaOficina){ Object.keys(dados.profiles).forEach(p => { dados.profiles[p] = false; }); dados.isMaster = false; dados.pinByProfile = {}; delete dados.tabPermissions; }   // Fase 35
   const perfisSelecionados = Object.keys(dados.profiles).filter(p => dados.profiles[p]);
-  if(!perfisSelecionados.length) return { ok: false, reason: 'Selecione ao menos um perfil.' };
+  if(!perfisSelecionados.length && !dados.contaOficina) return { ok: false, reason: 'Selecione ao menos um perfil.' };
+  if(dados.contaOficina && !dados.id && !(dados.email || '').trim() && AUTH_FIREBASE) return { ok: false, reason: 'Informe o e-mail da conta do computador da Oficina.' };
   if(dados.isMaster && !dados.profiles.manager) return { ok: false, reason: 'Master só é permitido com o perfil Gestor selecionado.' };
   const emailNovo = dados.email === undefined ? undefined : emailNormal(dados.email);   // undefined = chamada antiga, não mexe no e-mail
   if(emailNovo){ if(!emailValido(emailNovo)) return { ok: false, reason: 'E-mail de acesso inválido.' }; const dono = USERS.find(u => u.id !== dados.id && emailNormal(emailDoUsuario(u)) === emailNovo); if(dono) return { ok: false, reason: 'Este e-mail já é o acesso de "' + dono.name + '".' }; }
@@ -20828,6 +20891,7 @@ async function salvarUsuarioAcessos(dados){
     }
     perfisSelecionados.forEach(p => { profiles[p] = true; pinByProfile[p] = (dados.pinByProfile[p] || '').trim() || '0000'; legacyNames[p] = chave; });
     const registro = { name: nome, profiles, legacyNames, isMaster: !!dados.isMaster, createdAt: now, updatedAt: now };   // Fase 1c: sem PIN e sem e-mail aqui
+    if(dados.contaOficina) registro.contaOficina = true;   // Fase 35
     if(permissoesNorm && !ABAS_GESTOR_IDS.every(id => permissoesNorm[id])) registro.tabPermissions = permissoesNorm; // todas marcadas = sem restrição, nada a gravar
     const privado = { pinByProfile }; if(emailNovo) privado.email = emailNovo;
     try{
@@ -20911,6 +20975,7 @@ async function salvarUsuarioAcessos(dados){
     }
   }
   if(!!existente.isMaster !== !!dados.isMaster) updates[`users/${existente.id}/isMaster`] = !!dados.isMaster;
+  if(dados.contaOficina !== undefined && !!existente.contaOficina !== !!dados.contaOficina) updates[`users/${existente.id}/contaOficina`] = dados.contaOficina ? true : null;   // Fase 35
   const emailAtual = emailNormal(emailDoUsuario(existente));
   if(emailNovo !== undefined && emailAtual !== emailNovo){      // Fase 1c: e-mail de acesso no privado + índice (a chave antiga sai, a nova entra)
     updates[`usersPrivado/${existente.id}/email`] = emailNovo || null;
@@ -21116,7 +21181,8 @@ document.getElementById('acessosUsuarioModalSalvarBtn').addEventListener('click'
     },
     pinByProfile: {},
     isMaster: document.getElementById('acessosMasterInput').checked,
-    email: document.getElementById('acessosEmailInput').value
+    email: document.getElementById('acessosEmailInput').value,
+    contaOficina: document.getElementById('acessosContaOficinaInput').checked   // Fase 35
   };
   document.querySelectorAll('#acessosPinsContainer [data-acessospinperfil]').forEach(inp => { dados.pinByProfile[inp.dataset.acessospinperfil] = inp.value; });
   if(dados.profiles.manager){
