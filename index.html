@@ -2989,6 +2989,42 @@
   .estoque-grupo-t .n{ font-size:11px; font-weight:800; letter-spacing:0; color:#1F4E7A; background:rgba(47,111,176,.12); border-radius:999px; padding:1px 8px; }
   :root[data-theme="dark"] .estoque-grupo-t, :root[data-theme="dark"] .estoque-grupo-t .n{ color:#A9CBEF; }
   .estoque-row-qtd .val small{ font-size:11px; font-weight:600; color:var(--text-dim); margin-left:1px; }
+  /* ===== Fase 40 — Financeiro: Previsões de pagamento ===== */
+  #finPrevPagView{ padding:4px 0 40px; }
+  .pp{ max-width:1180px; }
+  .pp-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin:0 0 12px; }
+  .pp-tit{ font-size:22px; margin:0; }
+  .pp-barra{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+  .pp-per, .pp-filtros{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .pp-chip{ font:inherit; font-size:13px; font-weight:600; padding:6px 13px; border-radius:999px; border:1px solid var(--line); background:var(--panel); color:var(--text); cursor:pointer; }
+  .pp-chip.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
+  :root[data-theme="dark"] .pp-chip.on{ color:#111; }
+  .pp-nav{ display:flex; align-items:center; gap:8px; } .pp-nav b{ min-width:170px; text-align:center; font-size:15px; }
+  .pp-filtros{ margin-bottom:12px; } .pp-lbl{ font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-right:2px; }
+  .pp-filtros select{ width:auto; padding:6px 10px; font-size:13px; margin-left:6px; }
+  .pp-chk{ display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:400; margin:0 0 0 6px; cursor:pointer; } .pp-chk input{ width:auto; margin:0; }
+  .pp-tot{ display:grid; grid-template-columns:repeat(auto-fill, minmax(170px, 1fr)); gap:8px; margin-bottom:14px; }
+  .pp-t{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; } .pp-t b{ display:block; font-size:17px; font-variant-numeric:tabular-nums; } .pp-t span{ font-size:12px; color:var(--text-dim); }
+  .pp-t-main{ border-left:4px solid var(--ink); } .pp-t-main b{ font-size:20px; } .pp-t-red{ border-left:4px solid var(--danger); } .pp-t-red b{ color:var(--danger); }
+  .pp-sec{ font-size:12.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:16px 0 6px; } .pp-sec-red{ color:var(--danger); } .pp-sec-cinza{ color:var(--text-dim); } .pp-tab td.d i{ color:var(--text-dim); font-style:normal; }
+  .pp-tw{ overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+  .pp-tab{ width:100%; border-collapse:collapse; font-size:13px; }
+  .pp-tab th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); padding:8px 10px; border-bottom:1px solid var(--line); background:rgba(0,0,0,.025); white-space:nowrap; }
+  .pp-tab td{ padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  .pp-tab tbody tr[data-pp-reg]{ cursor:pointer; } .pp-tab tbody tr[data-pp-reg]:hover{ background:rgba(0,0,0,.035); }
+  .pp-tab .v{ text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; font-weight:700; } .pp-tab .d{ white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .pp-tab .c small{ display:block; color:var(--text-dim); font-size:11.5px; font-weight:400; }
+  .pp-tab tr.pp-passou .d{ color:var(--danger); font-weight:700; }
+  .pp-tab tr.pp-grp td{ background:rgba(0,0,0,.045); font-weight:800; }
+  .pp-tab tfoot td{ font-weight:800; padding:9px 10px; border-bottom:0; }
+  .pp-or{ font-size:11.5px; font-weight:700; padding:1px 8px; border-radius:999px; border:1px solid var(--line); white-space:nowrap; }
+  .pp-or-obras{ color:#1F4E7A; background:rgba(47,111,176,.12); border-color:rgba(47,111,176,.35); }
+  .pp-or-manut{ color:#8A5A00; background:rgba(214,150,30,.14); border-color:rgba(214,150,30,.40); }
+  .pp-or-os{ color:#5B3AA8; background:rgba(111,66,193,.10); border-color:rgba(111,66,193,.35); }
+  .pp-or-prev{ color:#1F6B45; background:rgba(46,125,79,.12); border-color:rgba(46,125,79,.35); }
+  :root[data-theme="dark"] .pp-or-obras{ color:#A9CBEF; } :root[data-theme="dark"] .pp-or-manut{ color:#F2C46B; } :root[data-theme="dark"] .pp-or-os{ color:#C4B5FD; } :root[data-theme="dark"] .pp-or-prev{ color:#8FD3AE; }
+  :root[data-theme="dark"] .pp-tab th, :root[data-theme="dark"] .pp-tab tr.pp-grp td{ background:rgba(255,255,255,.05); } :root[data-theme="dark"] .pp-tab tbody tr[data-pp-reg]:hover{ background:rgba(255,255,255,.05); }
+  @media (max-width:640px){ .pp-tab th:nth-child(4), .pp-tab td:nth-child(4), .pp-tab th:nth-child(5), .pp-tab td:nth-child(5){ display:none; } .pp-tab tfoot td[colspan]{ } .pp-nav b{ min-width:0; } }
 </style>
 </head>
 <body>
@@ -3151,6 +3187,7 @@
       <button type="button" class="sidebar-nav-btn" id="finNavObras"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Obras e Pedidos</button>
       <button type="button" class="sidebar-nav-btn" id="finNavManut"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg>Pedidos de manutenção</button>
       <button type="button" class="sidebar-nav-btn" id="finNavPrev"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Manutenções preventivas</button>
+      <button type="button" class="sidebar-nav-btn" id="finNavPrevPag"><svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M7.5 14.5h3M13.5 14.5h3M7.5 18h3"/></svg>Previsões de pagamento</button>   <!-- Fase 40 -->
     </nav>
     <div class="sidebar-footer"><div class="sidebar-user" id="finSidebarUser"></div><button type="button" class="sidebar-logout-btn" id="finSidebarLogout">Sair</button></div>
   </aside>
@@ -3165,6 +3202,7 @@
     <button class="btn-ghost" id="financeiroLogoutBtn">Sair</button>
   </div>
   <div id="finPainelView" class="pn-tab" style="display:none;"></div>
+  <div id="finPrevPagView" style="display:none;"></div>   <!-- Fase 40: Previsões de pagamento -->
   <div id="finPaneOS">
   <div class="tech-day-panel" id="finOldPanel">
     <div class="tech-day-head">
@@ -3208,6 +3246,7 @@
     <button type="button" class="bottom-nav-btn" id="finBnObras"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Obras e Pedidos</span></button>
     <button type="button" class="bottom-nav-btn" id="finBnManut"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/><path d="M9 11h.01M15 11h.01"/></svg><span>Manutenção</span></button>
     <button type="button" class="bottom-nav-btn" id="finBnPrev"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>Preventivas</button>
+    <button type="button" class="bottom-nav-btn" id="finBnPrevPag"><svg class="bottom-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="M7.5 14.5h3M13.5 14.5h3M7.5 18h3"/></svg><span>Previsões</span></button>   <!-- Fase 40 -->
   </nav>
 </div>
 
@@ -24847,7 +24886,7 @@ function gerarPdfEstatisticas(dados){
   const PW = 210, PH = 297, M = 12, W = PW - 2 * M, LIM = PH - 17; const C = PDF_COR; let y = 12;
   const setF = (f, tam, cor) => { doc.setFont(f === 'serifB' ? 'LibSerif' : 'LibSans', f === 'sans' ? 'normal' : 'bold'); doc.setFontSize(tam); doc.setTextColor(cor || C.texto); };
   const txt = (t, x, yy, op) => doc.text(limparPdf(String(t == null ? '' : t)), x, yy, op);
-  function novaPagina(){ doc.addPage(); setF('sans', 7.5, C.dim); txt('Equiper · Estatísticas — ' + (dados.periodo || ''), M, 10.5); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, 12.3, PW - M, 12.3); y = 17.5; }
+  function novaPagina(){ doc.addPage(); setF('sans', 7.5, C.dim); txt('Equiper · ' + (dados.cabecalho || 'Estatísticas') + ' — ' + (dados.periodo || ''), M, 10.5); doc.setDrawColor(C.linha); doc.setLineWidth(0.2); doc.line(M, 12.3, PW - M, 12.3); y = 17.5; }
   function cartao(itens, est){
     let seg = [], topo = y, jaColocou = false;
     const fechar = () => { if(!seg.length) return; const ult = seg[seg.length - 1]; const base = ult.y + ult.h + (est.padB || 0);
@@ -24864,7 +24903,7 @@ function gerarPdfEstatisticas(dados){
   const lh = 22, lw = lh * 1.093;   /* Fase 29: logo maior */
   try{ doc.addImage(LOGO_EQUIPER, 'JPEG', M, y, lw, lh); }catch(e){ setF('serifB', 16, C.ink); txt('equiper', M, y + 10); }
   setF('sansB', 7, C.dim); doc.setCharSpace(0.45); txt('RELATÓRIO DE', PW - M, y + 8.2, { align: 'right' }); doc.setCharSpace(0);
-  setF('serifB', 21, C.ink); txt('Estatísticas', PW - M, y + 16.4, { align: 'right' }); 
+  setF('serifB', 21, C.ink); txt(dados.titulo || 'Estatísticas', PW - M, y + 16.4, { align: 'right' });   /* Fase 40: Previsões de pagamento usa o mesmo gerador */ 
   y += lh + 3.5; doc.setFillColor(C.red); doc.rect(M, y, W, 0.7, 'F'); y += 6;
   // faixa do período
   doc.setFillColor(C.cinzaInfo); doc.setDrawColor(C.linha); doc.roundedRect(M, y, W, 12, 2.5, 2.5, 'FD'); doc.setFillColor(C.red); doc.roundedRect(M, y, 1.7, 12, 0.8, 0.8, 'F');
@@ -29207,8 +29246,10 @@ ligarPainelFin();
 function mostrarSecao(s){
   secao = s; const os = document.getElementById('finPaneOS'), ob = document.getElementById('finObrasView'); if(!os || !ob) return;
   os.style.display = 'none'; ob.style.display = '';          // as três seções usam a mesma tela (abas Equiper/Eqp/Geral/Agendados/Finalizados)
-  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finNavPrev', 'prev'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut'], ['finBnPrev', 'prev']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
+  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finNavPrev', 'prev'], ['finNavPrevPag', 'prevpag'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut'], ['finBnPrev', 'prev'], ['finBnPrevPag', 'prevpag']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.classList.toggle('active', k === s); });
   const pv = document.getElementById('finPainelView'); if(pv) pv.style.display = s === 'painel' ? '' : 'none';
+  const ppv = document.getElementById('finPrevPagView'); if(ppv) ppv.style.display = s === 'prevpag' ? '' : 'none';   // Fase 40
+  if(s === 'prevpag'){ ob.style.display = 'none'; renderPrevPag(); garantirCarregado().then(async () => { renderPrevPag(); try{ await garantirAvulsos(); if(await prevGerarTodos()) renderPrevPag(); }catch(e){ console.warn('previsões: cobranças das preventivas', e); } }).catch(e => console.error('previsões: falha ao carregar', e)); return; }
   if(s === 'painel'){ ob.style.display = 'none'; renderPainelFin(); garantirCarregado().then(async () => { renderPainelFin(); try{ await garantirAvulsos(); if(await prevGerarTodos()) renderPainelFin(); }catch(e){ console.warn('preventivas: cobranças do período', e); } }).catch(e => console.error('painel financeiro: falha ao carregar', e)); return; }   // Fase 13 (+ Fase 19: cobranças das preventivas até o horizonte)
   if(s === 'prev'){   // Fase 19: Manutenções preventivas (tela própria, no mesmo lugar das outras seções)
     if(ui.modo !== 'prev'){ if(ui.modo === 'obras') ui.empresaObras = ui.empresa; ui.modo = 'prev'; ui.busca = ''; ui.fin = ''; ui.sit = ''; }
@@ -29220,13 +29261,101 @@ function mostrarSecao(s){
     montar(); renderLista(); garantirCarregado().then(async () => { if(modo === 'manut'){ try{ let nc = 0; const ag = new Date().toISOString(); todosRegistros().filter(ehManut).forEach(r => { let k = 0; pedidosDe(r).forEach(p => { if(garantirCobrancaPedido(r, p)) k++; }); if(k){ nc += k; r.atualizadoEm = ag; r.atualizadoPor = quem() || 'automático (pedidos aprovados)'; } }); if(nc) await store.save(true); }catch(e){ console.error('manutenção: cobrança dos aprovados', e); } }   // Fase 21
       if(modo === 'os'){ try{ await reconciliarOs(); }catch(e){ console.error('os: reconciliar', e); } if(ui.modo === 'os' && ui.empresa !== 'agendados' && registrosDaAba('definir').length){ ui.empresa = 'definir'; document.querySelectorAll('#obrTabs .portal-tab').forEach(t => t.classList.toggle('active', t.dataset.emp === 'definir')); } } renderLista(); }).catch(e => console.error('obras: falha ao carregar', e)); }
 }
+// ---------- Fase 40: Previsões de pagamento ----------
+// Mesma fonte do calendário (coletarEventos): parcelas NÃO recebidas com data programada (agendadoPara); parcela de pedido cancelado/não aprovado não conta.
+const PP_ORIGENS = [['obras', 'Obras'], ['manut', 'Pedidos de manutenção'], ['os', 'OS'], ['prev', 'Preventivas']];
+const uiPP = { per: 'mes', ref: null, origens: new Set(PP_ORIGENS.map(x => x[0])), empresa: '', antes: true, semDataVer: false, montado: false };
+const rotStP = (k) => (STATUS_PARC.find(x => x[0] === k) || [0, k])[1];
+function ppIntervalo(){
+  const ref = uiPP.ref || hojeStr(); const [y, m] = partesD(ref);
+  if(uiPP.per === 'semana'){ const a = segundaDe(ref), b = somarDias(a, 6); return { ini: a, fim: b, titulo: 'Semana de ' + fmtData(a).slice(0, 5) + ' a ' + fmtData(b) }; }
+  if(uiPP.per === 'ano') return { ini: y + '-01-01', fim: y + '-12-31', titulo: 'Ano de ' + y };
+  return { ini: y + '-' + pad2(m) + '-01', fim: isoD(new Date(y, m, 0)), titulo: MESES[m - 1].charAt(0).toUpperCase() + MESES[m - 1].slice(1) + ' de ' + y };
+}
+function ppAndar(dir){ const ref = uiPP.ref || hojeStr(); const [y, m] = partesD(ref); uiPP.ref = uiPP.per === 'semana' ? somarDias(ref, 7 * dir) : uiPP.per === 'ano' ? (y + dir) + '-01-01' : isoD(new Date(y, m - 1 + dir, 1)); }
+function ppDados(){
+  const { ini, fim, titulo } = ppIntervalo(); const hoje = hojeStr();
+  const evs = coletarEventos({ recebidos: false, modo: 'todos', empresa: uiPP.empresa }).filter(e => e.ev === 'previsto' && uiPP.origens.has(e.origem));
+  const noPeriodo = evs.filter(e => e.data >= ini && e.data <= fim);
+  const antes = uiPP.antes ? evs.filter(e => e.data < ini && e.data < hoje) : [];
+  const semDataL = [];   // parcelas em aberto SEM data programada: não entram na previsão; a tela diz quantas são e pode listá-las à parte
+  todosRegistros().filter(r => uiPP.origens.has(modoDe(r)) && (!uiPP.empresa || r.empresa === uiPP.empresa)).forEach(r => {
+    const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p]));
+    parcelasDe(r).forEach(p => { const st = stDe(p); const ped = p.pedido ? peds.get(String(p.pedido)) : null; if(st === 'recebido' || (ped && pedidoInativo(r, ped)) || p.agendadoPara) return;
+      semDataL.push({ rid: r.id, pid: p.id, origem: modoDe(r), cliente: nomeCliente(r), empresa: r.empresa, pedido: p.pedido || '', desc: ped ? ped.descricao || '' : '', tipo: p.tipo || 'Parcela', valor: Number(p.valor) || 0, status: st, data: '' }); });
+  });
+  semDataL.sort((x, y) => x.cliente.localeCompare(y.cliente, 'pt-BR'));
+  const soma = (l) => Math.round(l.reduce((t, e) => t + (Number(e.valor) || 0), 0) * 100) / 100;
+  return { ini, fim, titulo, noPeriodo, antes, semData: semDataL.length, semDataL, totalSemData: soma(semDataL), total: soma(noPeriodo), totalAntes: soma(antes),
+    porOrigem: PP_ORIGENS.map(([k, nm]) => { const l = noPeriodo.filter(e => e.origem === k); return { k, n: nm, v: soma(l), q: l.length }; }) };
+}
+function ppPorMes(l){ const m = new Map(); l.forEach(e => { const k = e.data.slice(0, 7); if(!m.has(k)) m.set(k, []); m.get(k).push(e); }); return [...m]; }
+const ppRotMes = (k) => { const nm = MESES[+k.slice(5, 7) - 1]; return nm.charAt(0).toUpperCase() + nm.slice(1) + ' de ' + k.slice(0, 4); };
+function renderPrevPag(){
+  const v = document.getElementById('finPrevPagView'); if(!v) return;
+  if(!uiPP.montado){ uiPP.montado = true;
+    v.addEventListener('click', (e) => {
+      const per = e.target.closest('[data-pp-per]'); if(per){ uiPP.per = per.dataset.ppPer; renderPrevPag(); return; }
+      const or = e.target.closest('[data-pp-or]'); if(or){ const k = or.dataset.ppOr; if(k === 'todos') uiPP.origens = new Set(PP_ORIGENS.map(x => x[0])); else if(uiPP.origens.has(k)) uiPP.origens.delete(k); else uiPP.origens.add(k); renderPrevPag(); return; }
+      const a = e.target.closest('[data-pp]'); if(a){ const k = a.dataset.pp;
+        if(k === 'ant' || k === 'prox'){ ppAndar(k === 'ant' ? -1 : 1); renderPrevPag(); }
+        else if(k === 'hoje'){ uiPP.ref = null; renderPrevPag(); }
+        else if(k === 'pdf') ppPdf(a);
+        return; }
+      const reg = e.target.closest('[data-pp-reg]'); if(reg && porId(reg.dataset.ppReg)) abrirDetalhe(reg.dataset.ppReg);
+    });
+    v.addEventListener('change', (e) => { const k = e.target.dataset && e.target.dataset.pp; if(k === 'empresa'){ uiPP.empresa = e.target.value; renderPrevPag(); } else if(k === 'antes'){ uiPP.antes = e.target.checked; renderPrevPag(); } else if(k === 'semdata'){ uiPP.semDataVer = e.target.checked; renderPrevPag(); } });
+  }
+  if(!carregado){ v.innerHTML = '<div class="empty-state">Carregando…</div>'; return; }
+  const D = ppDados(); const hoje = hojeStr();
+  const chip = (k, nm, on) => `<button type="button" class="pp-chip ${on ? 'on' : ''}" data-pp-or="${k}" aria-pressed="${on}">${esc(nm)}</button>`;
+  const todas = PP_ORIGENS.every(([k]) => uiPP.origens.has(k));
+  const linha = (e) => `<tr data-pp-reg="${esc(e.rid)}" class="${e.data && e.data < hoje ? 'pp-passou' : ''}" title="Abrir o registro"><td class="d">${e.data ? fmtData(e.data) : '<i>sem data</i>'}</td><td class="c"><b>${esc(e.cliente)}</b>${e.desc ? `<small>${esc(e.desc)}</small>` : ''}</td><td><span class="pp-or pp-or-${esc(e.origem)}">${esc(rotOrigem(e.origem))}</span></td><td>${esc(e.tipo)}${e.pedido ? ' · Ped. ' + esc(e.pedido) : ''}</td><td>${esc(rotStP(e.status))}</td><td class="v">${brl(e.valor)}</td></tr>`;
+  const corpo = (l) => uiPP.per !== 'ano' ? l.map(linha).join('') : ppPorMes(l).map(([k, ls]) => `<tr class="pp-grp"><td colspan="5">${esc(ppRotMes(k))} · ${ls.length}</td><td class="v">${brl(ls.reduce((t, e) => t + e.valor, 0))}</td></tr>` + ls.map(linha).join('')).join('');
+  const cab = '<thead><tr><th>Data programada</th><th>Cliente</th><th>Origem</th><th>Parcela</th><th>Situação</th><th class="v">Saldo</th></tr></thead>';
+  v.innerHTML = `<div class="pp">
+    <div class="pp-topo"><h2 class="pp-tit">Previsões de pagamento</h2><button type="button" class="btn-primary" data-pp="pdf">🖨 Relatório (PDF)</button></div>
+    <div class="pp-barra"><div class="pp-per">${[['semana', 'Semana'], ['mes', 'Mês'], ['ano', 'Ano']].map(([k, nm]) => `<button type="button" class="pp-chip ${uiPP.per === k ? 'on' : ''}" data-pp-per="${k}">${nm}</button>`).join('')}</div>
+      <div class="pp-nav"><button type="button" class="nav-btn" data-pp="ant" title="Anterior">‹</button><b>${esc(D.titulo)}</b><button type="button" class="nav-btn" data-pp="prox" title="Próximo">›</button><button type="button" class="btn-ghost oe-mini" data-pp="hoje">Hoje</button></div></div>
+    <div class="pp-filtros"><span class="pp-lbl">Origem</span>${chip('todos', 'Todas', todas)}${PP_ORIGENS.map(([k, nm]) => chip(k, nm, uiPP.origens.has(k))).join('')}
+      <select data-pp="empresa" aria-label="Empresa"><option value="">Equiper e Eqp</option>${EMPRESAS.map(([k, nm]) => `<option value="${k}" ${uiPP.empresa === k ? 'selected' : ''}>Só ${esc(nm)}</option>`).join('')}</select>
+      <label class="pp-chk"><input type="checkbox" data-pp="antes" ${uiPP.antes ? 'checked' : ''}> Mostrar em aberto de antes</label>
+      <label class="pp-chk"><input type="checkbox" data-pp="semdata" ${uiPP.semDataVer ? 'checked' : ''}> Mostrar em aberto sem data</label></div>
+    <div class="pp-tot"><div class="pp-t pp-t-main"><b>${brl(D.total)}</b><span>${D.noPeriodo.length} ${D.noPeriodo.length === 1 ? 'parcela prevista' : 'parcelas previstas'}</span></div>${D.porOrigem.filter(o => uiPP.origens.has(o.k)).map(o => `<div class="pp-t"><b>${brl(o.v)}</b><span>${esc(o.n)} · ${o.q}</span></div>`).join('')}${D.antes.length ? `<div class="pp-t pp-t-red"><b>${brl(D.totalAntes)}</b><span>Em aberto de antes · ${D.antes.length}</span></div>` : ''}</div>
+    ${!uiPP.origens.size ? '<div class="painel-block-empty">Escolha pelo menos uma origem.</div>' : `${D.antes.length ? `<div class="pp-sec pp-sec-red">Em aberto de antes do período</div><div class="pp-tw"><table class="pp-tab">${cab}<tbody>${D.antes.map(linha).join('')}</tbody><tfoot><tr><td colspan="5">Total em aberto de antes</td><td class="v">${brl(D.totalAntes)}</td></tr></tfoot></table></div>` : ''}
+    <div class="pp-sec">${esc(D.titulo)}</div>
+    ${D.noPeriodo.length ? `<div class="pp-tw"><table class="pp-tab">${cab}<tbody>${corpo(D.noPeriodo)}</tbody><tfoot><tr><td colspan="5">Total previsto</td><td class="v">${brl(D.total)}</td></tr></tfoot></table></div>` : '<div class="painel-block-empty">Nenhum pagamento previsto neste período.</div>'}`}
+    ${uiPP.origens.size && uiPP.semDataVer && D.semData ? `<div class="pp-sec pp-sec-cinza">Em aberto sem data programada (fora da previsão)</div><div class="pp-tw"><table class="pp-tab">${cab}<tbody>${D.semDataL.map(linha).join('')}</tbody><tfoot><tr><td colspan="5">Total em aberto sem data</td><td class="v">${brl(D.totalSemData)}</td></tr></tfoot></table></div>` : ''}
+    ${D.semData && !uiPP.semDataVer ? `<p class="prv-hint">${D.semData} ${D.semData === 1 ? 'parcela em aberto está' : 'parcelas em aberto estão'} sem data programada (${brl(D.totalSemData)}) e não ${D.semData === 1 ? 'entra' : 'entram'} na previsão. Marque "Mostrar em aberto sem data" para ver.</p>` : ''}
+  </div>`;
+}
+async function ppPdf(btn){
+  if(!window.PREV_API || !PREV_API.gerarPdfEstatisticas){ avisar('O gerador de PDF não está disponível agora.'); return; }
+  const rot = btn ? btn.textContent : ''; if(btn){ btn.disabled = true; btn.textContent = 'Gerando PDF…'; }
+  try{
+    const D = ppDados(); const ords = PP_ORIGENS.filter(([k]) => uiPP.origens.has(k)).map(x => x[1]).join(', ');
+    const tab = (l) => ({ cab: ['Cliente', 'Data prog.', 'Origem', 'Parcela', 'Situação', 'Saldo'], num: [5], linhas: l.map(e => [e.cliente, e.data ? fmtData(e.data) : 'sem data', rotOrigem(e.origem), e.tipo + (e.pedido ? ' · Ped. ' + e.pedido : ''), rotStP(e.status), brl(e.valor)]) });
+    const resumo = [['Período', D.titulo + ' (' + fmtData(D.ini) + ' a ' + fmtData(D.fim) + ')'], ['Origens', ords || '—'], ['Empresa', uiPP.empresa ? ((EMPRESAS.find(x => x[0] === uiPP.empresa) || [0, uiPP.empresa])[1]) : 'Equiper e Eqp'],
+      ['Total previsto no período', brl(D.total) + ' · ' + D.noPeriodo.length + (D.noPeriodo.length === 1 ? ' parcela' : ' parcelas')]].concat(D.porOrigem.filter(o => uiPP.origens.has(o.k)).map(o => [o.n, brl(o.v) + ' · ' + o.q]));
+    if(D.antes.length) resumo.push(['Em aberto de antes do período', brl(D.totalAntes) + ' · ' + D.antes.length]);
+    if(D.semData) resumo.push(['Em aberto sem data programada (fora da previsão)', brl(D.totalSemData) + ' · ' + D.semData + (D.semData === 1 ? ' parcela' : ' parcelas')]);
+    const secoes = [{ titulo: 'Resumo', linhas: resumo }];
+    if(D.antes.length) secoes.push({ titulo: 'Em aberto de antes do período — ' + brl(D.totalAntes), tabela: tab(D.antes) });
+    if(uiPP.per === 'ano') ppPorMes(D.noPeriodo).forEach(([k, ls]) => secoes.push({ titulo: ppRotMes(k) + ' — ' + brl(ls.reduce((t, e) => t + e.valor, 0)), tabela: tab(ls) }));
+    else secoes.push({ titulo: D.titulo + ' — ' + brl(D.total), tabela: tab(D.noPeriodo) });
+    if(uiPP.semDataVer && D.semData) secoes.push({ titulo: 'Em aberto sem data programada (fora da previsão) — ' + brl(D.totalSemData), tabela: tab(D.semDataL) });
+    const blob = await PREV_API.gerarPdfEstatisticas({ titulo: 'Previsões de pagamento', cabecalho: 'Previsões de pagamento', periodo: D.titulo, geradoEm: new Date().toLocaleString('pt-BR'), secoes });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Previsoes-de-pagamento-' + D.ini + '.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+  }catch(e){ console.error(e); avisar('Não foi possível gerar o PDF: ' + (e && e.message ? e.message : e)); }
+  finally{ if(btn){ btn.disabled = false; btn.textContent = rot; } }
+}
 function ligarNavegacao(){
-  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finNavPrev', 'prev'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut'], ['finBnPrev', 'prev']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
+  [['finNavPainel', 'painel'], ['finNavOS', 'os'], ['finNavObras', 'obras'], ['finNavManut', 'manut'], ['finNavPrev', 'prev'], ['finNavPrevPag', 'prevpag'], ['finBnPainel', 'painel'], ['finBnOS', 'os'], ['finBnObras', 'obras'], ['finBnManut', 'manut'], ['finBnPrev', 'prev'], ['finBnPrevPag', 'prevpag']].forEach(([id, k]) => { const b = document.getElementById(id); if(b) b.addEventListener('click', () => mostrarSecao(k)); });
   const sair = document.getElementById('finSidebarLogout'); if(sair) sair.addEventListener('click', () => document.getElementById('financeiroLogoutBtn').click());
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
