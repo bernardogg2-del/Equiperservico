@@ -3129,7 +3129,7 @@
     </div>
     <!-- Cadastro de equipamento direto na Oficina (melhoria 1): fora da fileira de abas pra não
          desequilibrar as 3 abas já padronizadas — o Técnico não tem tela própria de Oficina, só a ação. -->
-    <div style="padding:0 20px 10px;"><button type="button" class="btn-ghost" id="oficinaCriarEquipBtnTech">+ Equipamento (Oficina)</button></div>
+    <div style="padding:0 20px 10px;"><button type="button" class="btn-ghost" id="oficinaCriarEquipBtnTech">+ Equipamento (Oficina)</button> <button type="button" class="btn-ghost" id="techLembreteBtn" title="Anotar um pedido do cliente para o Gestor marcar o dia" style="margin-left:6px;">📝 Lembrete de Serviço</button></div>   <!-- Fase 38 -->
     <div id="techTaskList"></div>
   </div>
 </div>
@@ -14375,6 +14375,8 @@ function openModal(prefillDate, opts){
   document.getElementById('addModalTitle').textContent = modalLembrete ? 'Lembrete de serviço' : 'Agendar serviço';
   document.getElementById('addModalSub').textContent = modalLembrete ? 'Anote o cliente e o que precisa ser feito, sem data. O lembrete fica em "Atividades não concluídas" até você agendar o dia.' : 'Só o dia, cliente e o que precisa ser feito. O técnico é definido depois, no fim do dia.';
   document.getElementById('submitAddBtn').textContent = modalLembrete ? 'Anotar lembrete' : 'Agendar';
+  if(currentRole === 'tech'){ document.getElementById('addModalSub').textContent = 'Anote o cliente e o que precisa ser feito. O lembrete vai para o Gestor marcar o dia.'; document.getElementById('submitAddBtn').textContent = 'Enviar lembrete'; }   // Fase 38
+  document.getElementById('instrEditorNew').style.display = currentRole === 'tech' ? 'none' : '';
   document.getElementById('f-client').value = '';
   document.getElementById('f-desc').value = '';
   document.getElementById('f-addr').value = '';
@@ -14387,6 +14389,7 @@ function closeModal(){ overlay.classList.remove('open'); window.__obraAtiv = nul
 
 document.getElementById('openAddBtn').addEventListener('click', () => openModal());
 document.getElementById('openLembreteBtn').addEventListener('click', () => openModal(null, { lembrete: true }));
+document.getElementById('techLembreteBtn').addEventListener('click', () => openModal(null, { lembrete: true }));   // Fase 38: o técnico manda o pedido para o Gestor agendar
 document.getElementById('addFromPanelBtn').addEventListener('click', () => openModal(selectedDate));
 document.getElementById('addTodayBtn').addEventListener('click', () => openModal(todayStr()));
 document.getElementById('addTomorrowBtn').addEventListener('click', () => openModal(getNextWorkDay().date));
@@ -14438,6 +14441,7 @@ document.getElementById('submitAddBtn').addEventListener('click', (e) => {
       status: 'aguardando'
     };
     if(modalLembrete){ newService.lembrete = true; newService.lembreteEm = new Date().toISOString(); newService.lembretePor = (typeof currentActingName === 'function' && currentActingName()) || null; }
+    if(currentRole === 'tech'){ if(!modalLembrete || !currentTechName) return; newService.technician = currentTechName; }   // Fase 38: lembrete do técnico nasce com o nome dele (regras: técnico só cria atividade dele)
     if(window.OBR_API) OBR_API.vincularAtividade(newService);     // atividade criada a partir de Obras e Pedidos leva o vínculo com a obra
     const taNew = document.querySelector('[data-instrtext="new"]');
     if(taNew) newInstr.text = taNew.value; // garante o texto mesmo sem o evento change ter disparado
@@ -14453,12 +14457,12 @@ document.getElementById('submitAddBtn').addEventListener('click', (e) => {
       }
     }
     services.push(newService);
-    upsertClient(client, address);
+    if(currentRole !== 'tech') upsertClient(client, address);   // Fase 38: técnico não grava no cadastro de clientes
 
     closeModal();
     if(date){ selectedDate = date; const [y,m] = date.split('-').map(Number); currentYear = y; currentMonth = m - 1; }
     renderAll();
-    if(!date){ try{ avisoNaoBloqueante('Lembrete anotado em "Atividades não concluídas". Use Reagendar para marcar o dia.', 6000); }catch(e){} const ps = document.getElementById('pendingSection'); if(ps && ps.scrollIntoView) setTimeout(() => ps.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
+    if(!date){ try{ avisoNaoBloqueante(currentRole === 'tech' ? 'Lembrete enviado. O Gestor vai marcar o dia.' : 'Lembrete anotado em "Atividades não concluídas". Use Reagendar para marcar o dia.', 6000); }catch(e){} const ps = document.getElementById('pendingSection'); if(ps && ps.scrollIntoView) setTimeout(() => ps.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100); }
 
     // Mídia da orientação (registro novo → servicesMedia) primeiro, depois o registro; em segundo plano.
     flushServiceMediaPending().then(() => saveServices()); // salva em segundo plano, sem travar a tela
