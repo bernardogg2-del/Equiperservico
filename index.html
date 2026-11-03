@@ -3031,6 +3031,9 @@
   .cm-eq-tab tr.cm-eq-on td{ background:rgba(46,125,79,.08); } .cm-eq-tab tr.cm-eq-on td:first-child{ font-weight:700; }
   .cm-eq-rep{ color:var(--text-dim); margin-left:6px; }
   :root[data-theme="dark"] .cm-eq-tab tr.cm-eq-on td{ background:rgba(110,200,150,.10); }
+  /* Fase 42: agendar pelo cartão do contrato */
+  .maint-row-actions{ flex-wrap:wrap; align-items:center; }
+  .maint-row-actions input[data-datepickall]{ width:auto; min-width:150px; margin:0; }
 </style>
 </head>
 <body>
@@ -11017,6 +11020,9 @@ function renderManutencoes(){
         </div>
         <div class="maint-row-next">Próxima manutenção: <b>${shortLabel(r.nextDue)}</b> · ${freqLabel(r.intervalMonths || 3)}${r.scheduledFor ? ` · já agendada para ${shortLabel(r.scheduledFor)}` : ''}</div>
         <div class="maint-row-actions">
+          ${r.scheduledFor
+            ? `<span class="maint-scheduled-tag">Agendada para ${shortLabel(r.scheduledFor)}</span>`
+            : `<input type="date" data-datepickall="${r.id}" title="Data combinada com o cliente" style="width:auto;"><button class="btn-ghost" data-scheduleall="${r.id}">Agendar manutenção</button>`}   <!-- Fase 42 -->
           <button class="btn-ghost" data-donetoday="${r.id}">Manutenção feita hoje</button>
           <button class="btn-text-danger" data-delcontract="${r.id}">excluir manutenção</button>
         </div>
@@ -11053,6 +11059,15 @@ function renderManutencoes(){
       inp.addEventListener('change', async (e) => {
         const c = findMaintenanceContractByRawId(e.target.dataset.lastdate);
         if(c){ c.lastDate = e.target.value; await saveMaintenanceContracts(); renderManutencoes(); }
+      });
+    });
+    // Fase 42: agendar pelo cartão (cliente em dia também) — mesma função do "Agendar visita" da lista Vencendo
+    listBox.querySelectorAll('[data-scheduleall]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.scheduleall;
+        const dateInput = btn.closest('.maint-row-actions').querySelector('[data-datepickall]');
+        if(!dateInput || !dateInput.value){ alert('Escolha a data combinada com o cliente antes de agendar.'); return; }
+        confirmMaintenanceDate(id, dateInput.value);
       });
     });
     listBox.querySelectorAll('[data-donetoday]').forEach(btn => {
