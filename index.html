@@ -14441,6 +14441,7 @@ function renderAll(){
 const overlay = document.getElementById('overlay');
 let modalLembrete = false;      // modo "Lembrete": sem data; a atividade entra em Atividades não concluídas para ser agendada depois
 function openModal(prefillDate, opts){
+  if(overlay.parentNode !== document.body) document.body.appendChild(overlay);   // Fase 45: a janela mora dentro do #managerView, escondido no perfil Técnico
   window.__obraAtiv = null; modalLembrete = !!(opts && opts.lembrete);
   pendingDate = prefillDate || selectedDate || todayStr();
   document.getElementById('f-date').value = modalLembrete ? '' : pendingDate;
