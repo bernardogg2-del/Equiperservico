@@ -1016,6 +1016,9 @@
   .sidebar-gear svg{ width:17px; height:17px; }
   .sidebar-gear:hover{ background:var(--surface-2); color:var(--ink); transform:rotate(30deg); }
   .menu-ordem-modal{ max-width:420px; }
+  .pasta-pdf-box{ margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }   /* Fase 44 */
+  .pasta-pdf-t{ font-size:13.5px; font-weight:700; }
+  .pasta-pdf-a{ display:flex; gap:8px; flex-wrap:wrap; }
   .menu-ordem-lista{ display:flex; flex-direction:column; gap:6px; max-height:60vh; overflow-y:auto; padding:2px; }
   .menu-ordem-i{ display:flex; align-items:center; gap:8px; padding:8px 8px 8px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
   .menu-ordem-i .n{ font-size:11.5px; font-weight:700; color:var(--text-dim); min-width:18px; font-variant-numeric:tabular-nums; }
@@ -3638,6 +3641,7 @@
     <h3 id="menuOrdemTitulo">Ordem do menu</h3>
     <p class="sub">Use as setas para subir ou descer cada item. A ordem fica guardada neste navegador, para a sua conta.</p>
     <div id="menuOrdemLista" class="menu-ordem-lista"></div>
+    <div id="pastaPdfConfig" class="pasta-pdf-box" style="display:none;"></div>
     <div class="modal-actions"><button type="button" class="btn-ghost" id="menuOrdemPadraoBtn">Restaurar padrão</button><span style="flex:1"></span><button type="button" class="btn-ghost" id="menuOrdemCancelarBtn">Cancelar</button><button type="button" class="btn-primary" id="menuOrdemSalvarBtn">Salvar</button></div>
   </div>
 </div>
@@ -6538,10 +6542,11 @@ async function gerarPdfDaAtividade(id, btn){
       numeroOS: s.numeroOS, status: statusLabelOf(s.status), pessoas });
     const base = String(s.client || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const nome = 'Relatorio-Atividade-' + (base || 'cliente') + (s.date ? '-' + s.date : '') + '.pdf';
-    const url = URL.createObjectURL(blob);
+    if(window.PASTA_PDF && PASTA_PDF.ok === true) PASTA_PDF.salvar(blob, nome, { tipo: 'Atividades', cliente: s.client });   // Fase 44
+    else { const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none';
     document.body.appendChild(a); a.click();
-    setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 5000);
+    setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 5000); }
   }catch(e){
     console.error('pdf da atividade', e);
     alert('Não foi possível gerar o PDF: ' + (e && e.message || e));
@@ -8193,7 +8198,8 @@ async function gerarPdfEstatisticasTela(btn){
     ];
     const secoes = basicos.concat(F10_ULTIMO.length ? F10_ULTIMO : F10.calcular());
     const blob = await PREV_API.gerarPdfEstatisticas({ periodo: painelPeriodLabel(), geradoEm: new Date().toLocaleString('pt-BR'), secoes });
-    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Estatisticas-Equiper-' + todayStr() + '.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    if(window.PASTA_PDF && PASTA_PDF.ok === true) PASTA_PDF.salvar(blob, 'Estatisticas-Equiper-' + todayStr() + '.pdf', { tipo: 'Estatísticas' });   // Fase 44
+    else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Estatisticas-Equiper-' + todayStr() + '.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); }
   }catch(e){ console.error(e); alert('Não foi possível gerar o PDF: ' + (e && e.message ? e.message : e)); }
   finally{ if(btn){ btn.disabled = false; btn.textContent = rot; } }
 }
@@ -18539,6 +18545,84 @@ document.getElementById('oficinaTabEquip').addEventListener('click', () => porta
 document.getElementById('techTabAgenda').addEventListener('click', () => portalMostrarAba('tech', 'agenda'));
 document.getElementById('sidebarBtnGaleria').addEventListener('click', () => openGaleria('managerView'));
 // ===== Fase 12: ordem do menu lateral do Gestor (guardada no navegador, por conta) =====
+// Fase 44: PDFs gravados direto numa pasta do computador — <pasta escolhida> › <tipo> › <cliente> › arquivo.pdf.
+// Só no Chrome/Edge do PC (File System Access); no celular, Safari e Firefox continua o download normal. A pasta fica guardada neste navegador
+// (IndexedDB); o navegador pede licença para gravar nela (com "Permitir sempre", não pergunta mais). Qualquer falha → download normal.
+window.PASTA_PDF = (function(){
+  const DB = 'equiper-pastas', ST = 'h', K = 'relatorios', OFF = 'equiperPastaPdf:off';
+  const suporta = () => typeof window.showDirectoryPicker === 'function' && typeof indexedDB !== 'undefined' && !/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || '');
+  const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const aviso = (t, ms) => { try{ avisoNaoBloqueante(t, ms || 6000); }catch(e){} };
+  function db(){ return new Promise((ok, falha) => { const r = indexedDB.open(DB, 1); r.onupgradeneeded = () => r.result.createObjectStore(ST); r.onsuccess = () => ok(r.result); r.onerror = () => falha(r.error); }); }
+  async function ler(){ try{ const d = await db(); return await new Promise((ok) => { const q = d.transaction(ST).objectStore(ST).get(K); q.onsuccess = () => ok(q.result || null); q.onerror = () => ok(null); }); }catch(e){ return null; } }
+  async function guardar(h){ const d = await db(); await new Promise((ok, falha) => { const t = d.transaction(ST, 'readwrite'); if(h) t.objectStore(ST).put(h, K); else t.objectStore(ST).delete(K); t.oncomplete = () => ok(); t.onerror = () => falha(t.error); }); }
+  const desligado = () => { try{ return localStorage.getItem(OFF) === '1'; }catch(e){ return false; } };
+  const desligar = (v) => { try{ if(v) localStorage.setItem(OFF, '1'); else localStorage.removeItem(OFF); }catch(e){} };
+  let recusouAgora = false;                 // "Baixar normal" com a pasta já escolhida: não pergunta de novo até recarregar o app
+  const limpa = (t) => String(t == null ? '' : t).replace(/[<>:"\/\\|?*\u0000-\u001f]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/[. ]+$/, '').slice(0, 80);
+  function baixarNormal(blob, nome){ const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 5000); }
+  async function gravarArquivo(raiz, blob, nome, o){
+    const partes = [limpa(o.tipo), limpa(o.cliente)].filter(Boolean); let dir = raiz;
+    for(const p of partes) dir = await dir.getDirectoryHandle(p, { create: true });
+    const nm = limpa(nome) || 'relatorio.pdf'; const m = nm.match(/^(.*?)(\.[A-Za-z0-9]{1,5})?$/); let final = nm;
+    for(let i = 2; ; i++){   // nome repetido ganha " (2)", " (3)"… — nunca sobrescreve
+      let existe = true; try{ await dir.getFileHandle(final); }catch(e){ if(e && e.name === 'NotFoundError') existe = false; else if(!(e && e.name === 'TypeMismatchError')) throw e; }
+      if(!existe) break; if(i > 200) throw new Error('nome de arquivo repetido demais'); final = m[1] + ' (' + i + ')' + (m[2] || '');
+    }
+    const fh = await dir.getFileHandle(final, { create: true }); const w = await fh.createWritable(); await w.write(blob); await w.close();
+    return [raiz.name].concat(partes, [final]).join(' › ');
+  }
+  const escolherPasta = () => window.showDirectoryPicker({ id: 'equiper-relatorios', mode: 'readwrite', startIn: 'documents' }).then(async (h) => { await guardar(h); desligar(false); recusouAgora = false; return h; });
+  // Precisa de um clique da pessoa: escolher a pasta (1ª vez) ou deixar o navegador gravar nela de novo. Devolve a pasta, ou null = baixar normal.
+  function perguntar(h){
+    return new Promise((fim) => {
+      let ov = document.getElementById('pastaPdfOverlay'); if(ov) ov.remove();
+      ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'pastaPdfOverlay';
+      ov.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="pastaPdfTitulo" style="max-width:540px;"><h3 id="pastaPdfTitulo">${h ? 'Salvar na pasta dos relatórios' : 'Onde salvar os relatórios?'}</h3>
+        <p style="margin:0 0 8px; font-size:13.5px;">${h ? `O PDF vai para a pasta <b>${esc(h.name)}</b>, separado por tipo e cliente. O navegador vai pedir licença para o app gravar nela: escolha <b>Permitir sempre</b> (quando aparecer) para não perguntar de novo.` : 'Escolha uma pasta deste computador (pode ser do OneDrive ou do Google Drive). O app guarda cada PDF dentro dela, separado por <b>tipo</b> e <b>cliente</b>.'}</p>
+        <p style="margin:0 0 10px; font-size:12.5px; color:var(--text-dim);">Exemplo: ${esc(h ? h.name : 'Relatórios Equiper')} › Manutenções preventivas › Nome do cliente › arquivo.pdf</p>
+        ${h ? '' : '<label style="display:flex; gap:8px; align-items:center; font-size:12.5px; margin:0 0 10px; color:var(--text-dim);"><input type="checkbox" id="pastaPdfNaoPerguntar" style="width:auto; margin:0;"> Não perguntar de novo neste computador (dá para mudar na engrenagem do menu)</label>'}
+        <div class="field-error" id="pastaPdfErro"></div>
+        <div class="modal-actions" style="flex-wrap:wrap;">${h ? '<button type="button" class="btn-ghost" id="pastaPdfOutra">Escolher outra pasta</button>' : ''}<span style="flex:1"></span><button type="button" class="btn-ghost" id="pastaPdfNormal">Baixar normal</button><button type="button" class="btn-primary" id="pastaPdfOk">${h ? 'Permitir e salvar' : 'Escolher pasta'}</button></div></div>`;
+      document.body.appendChild(ov);
+      const sair = (v) => { ov.remove(); fim(v); };
+      const tratar = (p) => p.then((x) => sair(x || null)).catch((e) => { if(e && e.name === 'AbortError') return; ov.querySelector('#pastaPdfErro').textContent = 'Não deu para usar essa pasta (' + (e && e.message || e) + '). Escolha outra ou baixe normal.'; });
+      ov.querySelector('#pastaPdfOk').onclick = () => tratar(h ? h.requestPermission({ mode: 'readwrite' }).then(st => st === 'granted' ? h : Promise.reject(new Error('o navegador não deu licença para gravar'))) : escolherPasta());
+      const outra = ov.querySelector('#pastaPdfOutra'); if(outra) outra.onclick = () => tratar(escolherPasta());
+      ov.querySelector('#pastaPdfNormal').onclick = () => { const cb = ov.querySelector('#pastaPdfNaoPerguntar'); if(cb && cb.checked) desligar(true); if(h) recusouAgora = true; sair(null); };
+      ov.addEventListener('click', (e) => { if(e.target === ov){ if(h) recusouAgora = true; sair(null); } });
+    });
+  }
+  async function salvarAgora(blob, nome, o){
+    if(!o || !o.tipo || !suporta()){ baixarNormal(blob, nome); return 'baixado'; }
+    try{
+      let h = await ler(); let ok = false; try{ ok = !!h && (await h.queryPermission({ mode: 'readwrite' })) === 'granted'; }catch(e){}
+      if(!ok){
+        if((!h && desligado()) || (h && recusouAgora)){ baixarNormal(blob, nome); return 'baixado'; }
+        h = await perguntar(h); if(!h){ baixarNormal(blob, nome); return 'baixado'; }
+      }
+      const onde = await gravarArquivo(h, blob, nome, o); aviso('PDF salvo em ' + onde, 7000); return 'pasta';
+    }catch(e){ console.error('pasta dos relatórios: não gravou', e); baixarNormal(blob, nome); aviso('Não deu para gravar na pasta dos relatórios; o PDF foi baixado normalmente.', 7000); return 'baixado'; }
+  }
+  let fila = Promise.resolve();              // um PDF de cada vez (nunca duas janelas abertas)
+  function salvar(blob, nome, o){ const vez = fila.then(() => salvarAgora(blob, nome, o)); fila = vez.catch(() => {}); return vez; }
+  // Engrenagem do menu: "Pasta dos relatórios (este computador)"
+  async function desenharConfig(){
+    const box = document.getElementById('pastaPdfConfig'); if(!box) return;
+    if(!suporta()){ box.style.display = 'none'; return; } box.style.display = '';
+    const h = await ler(); const off = desligado();
+    box.innerHTML = `<div class="pasta-pdf-t">Pasta dos relatórios (este computador)</div><p class="sub" style="margin:2px 0 8px;">${h ? `Os PDFs vão para <b>${esc(h.name)}</b> › tipo › cliente.` : off ? 'Desligado: os PDFs são baixados normalmente.' : 'Ainda não escolhida: o app pergunta no próximo PDF.'}</p>
+      <div class="pasta-pdf-a"><button type="button" class="btn-ghost" data-pastapdf="trocar">${h ? 'Trocar pasta' : 'Escolher pasta'}</button>${h ? '<button type="button" class="btn-ghost" data-pastapdf="parar">Parar de usar (baixar normal)</button>' : off ? '<button type="button" class="btn-ghost" data-pastapdf="ligar">Voltar a perguntar</button>' : ''}</div>`;
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target && e.target.closest ? e.target.closest('[data-pastapdf]') : null; if(!b) return; const k = b.dataset.pastapdf;
+    if(k === 'trocar') escolherPasta().then((h) => { desenharConfig(); aviso('Pasta dos relatórios: ' + h.name, 5000); }).catch((err) => { if(!(err && err.name === 'AbortError')) aviso('Não deu para usar essa pasta: ' + (err && err.message || err), 7000); });
+    else if(k === 'parar') guardar(null).then(() => { desligar(true); desenharConfig(); aviso('Os PDFs voltam a ser baixados normalmente.', 5000); });
+    else if(k === 'ligar'){ desligar(false); desenharConfig(); }
+  });
+  return { ok: true, salvar, suporta, desenharConfig, _teste: { limpa, gravarArquivo } };
+})();
+
 window.MENU_ORDEM = (function(){
   const nav = document.getElementById('sidebarNav'); if(!nav) return { aplicar(){} };
   const PADRAO = [...nav.querySelectorAll('.sidebar-nav-btn')].map(b => b.id);          // ordem original do HTML
@@ -18560,7 +18644,8 @@ window.MENU_ORDEM = (function(){
   }
   function abrir(){
     atual = ordemCompleta(ler()).filter(id => { const b = document.getElementById(id); return b && b.style.display !== 'none'; });   // só os itens que este usuário vê
-    desenhar(); document.getElementById('menuOrdemOverlay').classList.add('open');
+    desenhar(); try{ if(window.PASTA_PDF) PASTA_PDF.desenharConfig(); }catch(e){}   // Fase 44
+    document.getElementById('menuOrdemOverlay').classList.add('open');
   }
   function fechar(){ document.getElementById('menuOrdemOverlay').classList.remove('open'); }
   function salvar(){
@@ -23499,7 +23584,8 @@ async function prepararPdf(rel){
   const blob = gerarPdfRelatorio(rel, fotos);
   return { blob, nome: nomeArquivoPdf(rel) };
 }
-function baixarBlob(blob, nome){
+function baixarBlob(blob, nome, o){
+  if(o && window.PASTA_PDF && PASTA_PDF.ok === true) return PASTA_PDF.salvar(blob, nome, o);   // Fase 44: pasta dos relatórios (PC)
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none';
   document.body.appendChild(a); a.click();
@@ -23513,7 +23599,7 @@ async function baixarPdf(id){
   try{ p = await prepararPdf(rel); }
   catch(e){ console.error('prev: falha ao gerar o PDF — usando a impressão do navegador', e); return baixarPdfImpressao(id); }
   if(!p) return;
-  baixarBlob(p.blob, p.nome);
+  baixarBlob(p.blob, p.nome, { tipo: 'Manutenções preventivas', cliente: rel.cliente });
   setRelCampo(id, 'baixadoEm', new Date().toISOString());
   atualizarTelasRelatorios();
   aviso('PDF baixado (' + p.nome + '). Marcado como baixado.', 6000);
@@ -23605,7 +23691,7 @@ async function enviarWhatsapp(id){
     });
   }
   botao(podeCompartilhar ? '⬇ Baixar o PDF e abrir o WhatsApp só com a mensagem' : '⬇ Baixar o PDF e abrir o WhatsApp', podeCompartilhar ? 'btn-ghost' : 'btn-primary', () => {
-    erro(''); baixarBlob(p.blob, p.nome); registrarBaixado(); openWhatsapp(fone, msg); oferecerMarcar();
+    erro(''); baixarBlob(p.blob, p.nome, { tipo: 'Manutenções preventivas', cliente: rel.cliente }); registrarBaixado(); openWhatsapp(fone, msg); oferecerMarcar();
     document.getElementById('prvEnvioDica').innerHTML = 'O PDF foi baixado (<b>' + esc(p.nome) + '</b>). Na conversa do WhatsApp que abriu, <b>arraste o PDF</b> para dentro (ou use o clipe 📎) e envie. Depois toque em <b>Já enviei — marcar como enviado</b>.';
   });
   botao('Fechar', 'btn-ghost', () => ov.classList.remove('open'));
@@ -27955,8 +28041,8 @@ async function verRelatorioObra(ids){
   const regs = ids.split(',').map(porId).filter(Boolean); if(!regs.length) return;
   const w = window.open('', '_blank');                  // abre já, no toque (senão o navegador bloqueia), e põe o PDF quando ficar pronto
   const p = await pdfDoCliente(regs); if(p.erro){ try{ if(w) w.close(); }catch(e){} avisar(p.erro, 6000); return; }
-  if(!w){ baixarBlob(p.blob, p.nome); avisar('O navegador bloqueou a abertura; o PDF foi baixado.', 6000); return; }
-  const url = URL.createObjectURL(p.blob); try{ w.location.href = url; }catch(e){ baixarBlob(p.blob, p.nome); } setTimeout(() => { try{ URL.revokeObjectURL(url); }catch(e){} }, 120000);
+  if(!w){ baixarBlob(p.blob, p.nome, { tipo: 'Andamento de obra', cliente: nomeCliente(regs[0]) }); avisar('O navegador bloqueou a abertura; o PDF foi baixado.', 6000); return; }
+  const url = URL.createObjectURL(p.blob); try{ w.location.href = url; }catch(e){ baixarBlob(p.blob, p.nome, { tipo: 'Andamento de obra', cliente: nomeCliente(regs[0]) }); } setTimeout(() => { try{ URL.revokeObjectURL(url); }catch(e){} }, 120000);
 }
 // Envio igual ao do relatório de manutenção: mensagem curta + o PDF anexado (folha de compartilhar do aparelho) ou, no computador, baixa o PDF e abre a conversa.
 async function enviarRelatorioObra(ids){
@@ -27980,7 +28066,7 @@ async function enviarRelatorioObra(ids){
   if(podeCompartilhar) botao('📲 Compartilhar o PDF', 'btn-primary', async () => { erro('');
     try{ await navigator.share({ files: [file], text: msg, title: 'Relatório de andamento da obra' }); registrar(); ov.remove(); avisar('Relatório enviado e registrado.'); }
     catch(e){ if(e && e.name === 'AbortError') return; erro('O aparelho não conseguiu compartilhar o arquivo. Use o botão de baixar abaixo.'); } });
-  botao(podeCompartilhar ? '⬇ Baixar o PDF e abrir o WhatsApp só com a mensagem' : '⬇ Baixar o PDF e abrir o WhatsApp', podeCompartilhar ? 'btn-ghost' : 'btn-primary', () => { erro(''); baixarBlob(p.blob, p.nome); registrar(); openWhatsapp(toWhatsappNumber(c.fone), msg);
+  botao(podeCompartilhar ? '⬇ Baixar o PDF e abrir o WhatsApp só com a mensagem' : '⬇ Baixar o PDF e abrir o WhatsApp', podeCompartilhar ? 'btn-ghost' : 'btn-primary', () => { erro(''); baixarBlob(p.blob, p.nome, { tipo: 'Andamento de obra', cliente: nomeCliente(regs[0]) }); registrar(); openWhatsapp(toWhatsappNumber(c.fone), msg);
     ov.querySelector('#obrEnvioDica').innerHTML = 'O PDF foi baixado (<b>' + esc(p.nome) + '</b>). Na conversa do WhatsApp que abriu, <b>arraste o PDF</b> para dentro (ou use o clipe 📎) e envie.'; });
   botao('Fechar', 'btn-ghost', () => ov.remove());
 }
@@ -28499,7 +28585,7 @@ async function abrirManualOperacao(rids){
     if(a === 'pdf'){
       const escolhidos = ordemSelecionados(); if(!escolhidos.length) return err('Marque pelo menos uma ficha.');
       b.disabled = true; const prog = (t) => { const el = ov.querySelector('#obrManProg'); if(el) el.textContent = t; };
-      try{ const blob = await gerarManual(d, escolhidos, prog); baixarBlob(blob, 'Manual-Operacao-' + (fold(d.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + d.emitidoEm + '.pdf'); if(!(salvo && MAN_RESOLVIDO[salvo.status])) await salvar('gerado'); prog(''); avisar('Manual gerado. Depois de enviar ao cliente, marque como enviado.', 6000); }
+      try{ const blob = await gerarManual(d, escolhidos, prog); baixarBlob(blob, 'Manual-Operacao-' + (fold(d.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + d.emitidoEm + '.pdf', { tipo: 'Manuais de operação', cliente: d.cliente }); if(!(salvo && MAN_RESOLVIDO[salvo.status])) await salvar('gerado'); prog(''); avisar('Manual gerado. Depois de enviar ao cliente, marque como enviado.', 6000); }
       catch(ex){ console.error('manual: gerar', ex); err('Não foi possível gerar o manual: ' + (ex && ex.message || ex)); }
       b.disabled = false; return;
     }
@@ -28718,7 +28804,7 @@ async function abrirContratoManut(rids, opts){
     if(a === 'pdf'){
       if(!window.PREV_API || !PREV_API.gerarPdfContratoManut) return err('O gerador de PDF não está disponível agora.');
       const ok = await cmConfirmarDados(d, cli); if(!ok) return; render();
-      try{ const blob = PREV_API.gerarPdfContratoManut(dadosPdf()); baixarBlob(blob, 'Contrato-Manutencao-' + (fold(d.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + d.emitidoEm + '.pdf'); if(!(salvo && salvo.status === 'enviado')) await salvar('gerado'); avisar('Contrato gerado. Depois de enviar ao cliente, marque como enviado.', 6000); }
+      try{ const blob = PREV_API.gerarPdfContratoManut(dadosPdf()); baixarBlob(blob, 'Contrato-Manutencao-' + (fold(d.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + d.emitidoEm + '.pdf', { tipo: 'Contratos de manutenção', cliente: d.cliente }); if(!(salvo && salvo.status === 'enviado')) await salvar('gerado'); avisar('Contrato gerado. Depois de enviar ao cliente, marque como enviado.', 6000); }
       catch(ex){ console.error('contrato manutenção: pdf', ex); err('Não foi possível gerar o PDF: ' + (ex && ex.message || ex)); }
       return;
     }
@@ -28780,16 +28866,16 @@ function dadosRelatorio(r, d, pidSo){
     return { numero: p.numero, descricao: p.descricao || '', sistemas }; }).filter(p => p.sistemas.length);
   return { cliente: nomeCliente(r), endereco: cli ? cli.address || '' : '', emitidoEm: new Date().toISOString(), pedidos };
 }
-function baixarBlob(blob, nome){ const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 4000); }
+function baixarBlob(blob, nome, o){ if(o && window.PASTA_PDF && PASTA_PDF.ok === true) return PASTA_PDF.salvar(blob, nome, o);   /* Fase 44 */ const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = nome; a.style.display = 'none'; document.body.appendChild(a); a.click(); setTimeout(() => { try{ a.remove(); URL.revokeObjectURL(url); }catch(e){} }, 4000); }
 async function baixarRelatorioCliente(rids){          // cliente com registros nas duas empresas: um PDF só, com os pedidos de todos
   const p = await pdfDoCliente(rids.map(porId)); if(p.erro){ avisar(p.erro, 6000); return; }
-  baixarBlob(p.blob, p.nome); avisar('Relatório gerado.');
+  baixarBlob(p.blob, p.nome, { tipo: 'Andamento de obra', cliente: nomeCliente(porId(rids[0]) || {}) }); avisar('Relatório gerado.');
 }
 async function baixarRelatorioObra(rid, pid){
   await carregarInstTodos(); const r = porId(rid); const d = inst[rid]; if(!r) return;
   const dados = dadosRelatorio(r, d || {}, pid); if(!dados.pedidos.length){ avisar('Ainda não há equipamentos cadastrados' + (pid ? ' neste pedido' : ' nesta obra') + ' para gerar o relatório.', 6000); return; }
   if(!window.PREV_API || !PREV_API.gerarPdfInstalacao){ avisar('O gerador de PDF não está disponível agora.'); return; }
-  try{ const blob = PREV_API.gerarPdfInstalacao(dados); const dia = hojeStr(); const nome = 'Relatorio-Instalacao-' + (fold(dados.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + (pid ? '-pedido-' + String((r.pedidos[pid] || {}).numero || '').replace(/[^A-Za-z0-9]+/g, '') : '') + '-' + dia + '.pdf'; baixarBlob(blob, nome); avisar('Relatório gerado.'); }
+  try{ const blob = PREV_API.gerarPdfInstalacao(dados); const dia = hojeStr(); const nome = 'Relatorio-Instalacao-' + (fold(dados.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + (pid ? '-pedido-' + String((r.pedidos[pid] || {}).numero || '').replace(/[^A-Za-z0-9]+/g, '') : '') + '-' + dia + '.pdf'; baixarBlob(blob, nome, { tipo: 'Andamento de obra', cliente: dados.cliente }); avisar('Relatório gerado.'); }
   catch(e){ console.error('obras: falha ao gerar o PDF', e); avisar('Não foi possível gerar o PDF agora. Tente de novo.', 6000); }
 }
 async function abrirGestor(){ montarGestor(); mostrarAbaGestor(uiG.aba); try{ await garantirCarregado(); }catch(e){ console.error('obras: falha ao carregar', e); } if(uiG.aba === 'pedidos') renderGestor(); }
@@ -29419,7 +29505,8 @@ async function ppPdf(btn){
     else secoes.push({ titulo: D.titulo + ' — ' + brl(D.total), tabela: tab(D.noPeriodo) });
     if(uiPP.semDataVer && D.semData) secoes.push({ titulo: 'Em aberto sem data programada (fora da previsão) — ' + brl(D.totalSemData), tabela: tab(D.semDataL) });
     const blob = await PREV_API.gerarPdfEstatisticas({ titulo: 'Previsões de pagamento', cabecalho: 'Previsões de pagamento', periodo: D.titulo, geradoEm: new Date().toLocaleString('pt-BR'), secoes });
-    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Previsoes-de-pagamento-' + D.ini + '.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000);
+    if(window.PASTA_PDF && PASTA_PDF.ok === true) PASTA_PDF.salvar(blob, 'Previsoes-de-pagamento-' + D.ini + '.pdf', { tipo: 'Previsões de pagamento' });   // Fase 44
+    else { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'Previsoes-de-pagamento-' + D.ini + '.pdf'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 30000); }
   }catch(e){ console.error(e); avisar('Não foi possível gerar o PDF: ' + (e && e.message ? e.message : e)); }
   finally{ if(btn){ btn.disabled = false; btn.textContent = rot; } }
 }
