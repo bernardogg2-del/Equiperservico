@@ -27304,15 +27304,17 @@ function acaoDetalhe(a, ds){
     const nExist = numPed ? parcelasDoPedido(r, numPed).filter(x => x.tipo !== 'Saldo' && x.tipo !== 'Restante').length : 0;
     const tipo0 = p ? p.tipo : (numPed ? (nExist === 0 ? 'Sinal' : (nExist + 1) + 'ª parcela') : 'Parcela única');
     const alvoNovo = !p && numPed ? alvoSaldo(r, numPed, null) : null;
+    const pvR = ehPrev(r), pvAuto = !!(pvR && p && p.auto && p.comp), pvOp = pvR && !pvAuto ? prevOpcoesTipo(r, p) : null;   // Fase 49
     return formRapido({ titulo: p ? 'Editar parcela' : 'Nova parcela', ok: 'Salvar',
       aviso: ehSaldo ? 'O Saldo é o que sobra do pedido: o valor dele se ajusta sozinho quando você cria, edita ou exclui as outras parcelas.' : (!p && numPed ? (alvoNovo ? 'A nova parcela entra <b>antes do Saldo</b> e o valor sai dele (Saldo atual: <b>' + esc(brl(alvoNovo.valor)) + '</b>). O total do pedido não muda.' : 'Parcela ligada a um pedido sai do Saldo dele, e o total do pedido não muda.') : 'Parcelas ligadas a um pedido saem do Saldo dele, e o total do pedido não muda.'), campos: [
-      { id: 'tipo', rotulo: 'Parcela', tipo: 'select', opcoes: TIPOS_PARCELA, valor: tipo0, meio: true, bloqueado: ehSaldo }, { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true, bloqueado: ehSaldo },
+      pvAuto ? { id: 'tipo', rotulo: 'Cobrança', tipo: 'select', opcoes: [p.tipo], valor: p.tipo, meio: true, bloqueado: true } : pvOp ? { id: 'tipo', rotulo: 'Cobrança', tipo: 'select', opcoes: pvOp.ops, valor: pvOp.padrao, meio: true } : { id: 'tipo', rotulo: 'Parcela', tipo: 'select', opcoes: TIPOS_PARCELA, valor: tipo0, meio: true, bloqueado: ehSaldo },   /* Fase 49: preventiva não usa Sinal/2ª parcela */ { id: 'valor', rotulo: 'Valor (R$)', tipo: 'valor', valor: p ? campoValor(p.valor) : '', obrig: true, meio: true, bloqueado: ehSaldo },
       { id: 'status', rotulo: 'Situação', tipo: 'select', opcoes: STATUS_PARC, valor: st0, meio: true }, { id: 'agendadoPara', rotulo: 'Data prevista de pagamento', tipo: 'data', valor: p ? p.agendadoPara || '' : '', meio: true, dica: 'Combinada com o cliente ou data do boleto' },
       { id: 'pagoEm', rotulo: 'Data do recebimento', tipo: 'data', valor: p && p.pagoEm ? p.pagoEm : (st0 === 'recebido' ? hojeStr() : ''), meio: true },
       { id: 'forma', rotulo: 'Forma', tipo: 'select', opcoes: [['', '—']].concat(FORMAS.map(f => [f, f])), valor: p ? p.forma || '' : (r.formaPagamento || ''), meio: true }, { id: 'pedido', rotulo: 'Refere-se a', tipo: 'select', opcoes: nomeCampoPedidos(r), valor: numPed, bloqueado: !!p },
       { id: 'obs', rotulo: 'Observação', valor: p ? p.obs || '' : '', dica: 'Ex.: comprovante…' } ],
       aoSalvar: async (v) => {
         if(!(v.valor > 0)) return 'Informe o valor da parcela.';
+        const pvX = pvR ? prevCamposParcela(r, p, v) : null; if(pvX && pvX.erro) return pvX.erro;   // Fase 49
         if(v.status === 'agendado' && !v.agendadoPara) return 'Informe a data combinada para o pagamento (situação "Agendado").';
         const rec = v.status === 'recebido'; if(rec && !v.pagoEm) return 'Informe a data do recebimento.'; if(rec && v.pagoEm > hojeStr()) return 'A data do recebimento não pode ser futura.';
         const numero = p ? (p.pedido || null) : (v.pedido || null); const ped = numero ? pedidosDe(r).find(x => String(x.numero) === String(numero)) : null;
@@ -27346,6 +27348,7 @@ function acaoDetalhe(a, ds){
         mapa[id] = { id, tipo: v.tipo, pedido: numero, pct, valor: v.valor, status: v.status, pago: null, pagoEm: rec ? v.pagoEm : null,
           agendadoPara: v.agendadoPara || null, enviadoEm: (v.status === 'enviado' || v.status === 'agendado') ? ((p && p.enviadoEm) || h) : null, liberadoEm: v.status === 'a_cobrar' ? ((p && p.liberadoEm) || h) : (p && v.status !== 'nao_liberado' ? p.liberadoEm || null : null), forma: v.forma || null, obs: v.obs || null,
           valorPrevisto: p && p.valorPrevisto != null ? p.valorPrevisto : null, restanteDe: p && p.restanteDe ? p.restanteDe : null, ordem };
+        if(pvX){ Object.assign(mapa[id], pvX.extra); if(pvX.despular) prevDespular(r, pvX.despular); }   // Fase 49: mantém/dá o mês da cobrança do plano
         r.parcelas = mapa; await gravar(r); renderDetalheSecoes(); if(aviso) avisar(aviso, 6000); return null; } });
   }
   if(a === 'par-rm'){
@@ -27354,9 +27357,10 @@ function acaoDetalhe(a, ds){
     const alvo = p.pedido ? alvoSaldo(r, p.pedido, null) : null;
     if(alvo && alvo.id === p.id) return avisar('Esta parcela é o Saldo, a parte que sobra do pedido, e não pode ser excluída. Para redistribuir o valor, edite ou exclua as outras parcelas: o valor volta para o Saldo.', 9000);
     const ped = p.pedido ? pedidosDe(r).find(x => String(x.numero) === String(p.pedido)) : null;
-    const texto = 'Excluir a parcela "' + (p.tipo || 'Parcela') + '" de ' + brl(p.valor) + '?' + (alvo ? ' O valor volta para o Saldo do pedido (de ' + brl(alvo.valor) + ' para ' + brl(arred2(alvo.valor + Number(p.valor))) + '), e o total do pedido não muda.' : '');
+    const pvMes = ehPrev(r) && p.auto && p.comp ? p.comp : null;   // Fase 49
+    const texto = pvMes ? 'Excluir a cobrança "' + p.tipo + '" de ' + brl(p.valor) + '? Ela não volta sozinha. Para lançar este mês de novo: "+ Nova parcela" e escolha o mês.' : 'Excluir a parcela "' + (p.tipo || 'Parcela') + '" de ' + brl(p.valor) + '?' + (alvo ? ' O valor volta para o Saldo do pedido (de ' + brl(alvo.valor) + ' para ' + brl(arred2(alvo.valor + Number(p.valor))) + '), e o total do pedido não muda.' : '');
     return customConfirm(texto, async () => {
-      const m = Object.assign({}, r.parcelas); delete m[ds.id];
+      const m = Object.assign({}, r.parcelas); delete m[ds.id]; if(pvMes) prevPular(r, pvMes);   // Fase 49
       if(alvo){ const a2 = m[alvo.id] || alvo; a2.valor = arred2(Number(a2.valor) + Number(p.valor)); if(ped) a2.pct = parteDoPedido(a2.valor, ped); m[a2.id] = a2; }
       r.parcelas = m; await gravar(r); renderDetalheSecoes(); if(alvo) avisar('Saldo do pedido ajustado para ' + brl(m[alvo.id].valor) + '.', 5000);
     }, 'Excluir');
@@ -28597,8 +28601,37 @@ function instalacoesTexto(g, dd){
   return listaPt([...new Set(it.filter(i => i && i.nome && Number(i.qtd) !== 0).map(i => String(i.nome).trim() + (i.obs ? ' (' + String(i.obs).trim() + ')' : '')))]);
 }
 // Obras finalizadas que ainda não estão no controle de visitas (nem em cortesia), sem "Já tem contrato" / aprovado
+const poFora = (g) => g.regs.some(r => r && r.posObraFora);   // Fase 49: obra tirada da lista "sem cortesia"
+function posObraRemovidas(){ return cmClientesFinalizados().filter(g => !mcDoCliente(fold(g.nome)) && poFora(g)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')); }
+async function marcarForaPO(g, fora){
+  const agora = new Date().toISOString(); g.regs.forEach(r => { r.posObraFora = fora ? { em: agora, por: quem() || null } : null; r.atualizadoEm = agora; });
+  try{ await store.save(true); }catch(e){ console.error('pós-obra: tirar da lista', e); avisar('Não foi possível gravar (confira a internet).', 6000); }
+}
+// Fase 49: cliente incluído à mão (obra fora do app, cliente antigo...)
+async function iniciarCortesiaManual(v){
+  const nome = String(v.cliente || '').trim(); if(!nome) return 'Informe o cliente.';
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(v.inicio || ''))) return 'Informe a data de início.';
+  if(typeof maintenanceContracts === 'undefined' || !Array.isArray(maintenanceContracts) || typeof saveMaintenanceContracts !== 'function') return 'O controle de visitas não está carregado nesta conta.';
+  const cli = clientePorNome(nome); const nomeCad = cli ? cli.name : nome;
+  if(mcDoCliente(fold(nomeCad))) return 'Este cliente já está no controle de visitas (ou já tem cortesia).';
+  const cfg = cortesiaCfg();
+  const reg = { id: Date.now(), client: nomeCad, contactName: String(v.contato || '').trim() || (cli && cli.contato) || '', contact: String(v.fone || '').trim() || (cli && cli.fone) || '', location: '', intervalMonths: cfg.intervalo, lastDate: v.inicio, scheduledFor: null,
+    cortesia: ordenarChaves({ inicio: v.inicio, meses: cfg.meses, visitas: cfg.visitas, instalacoes: String(v.instalacoes || '').trim() || undefined, origem: 'manual', iniciadaEm: new Date().toISOString(), iniciadaPor: quem() || undefined }) };
+  maintenanceContracts.push(reg); let ok = false; try{ ok = await saveMaintenanceContracts(); }catch(e){ console.error('pós-obra: incluir à mão', e); }
+  if(!ok){ const i = maintenanceContracts.indexOf(reg); if(i >= 0) maintenanceContracts.splice(i, 1); return 'Não foi possível gravar no controle de visitas (confira a internet).'; }
+  try{ renderManutencoes(); }catch(e){} return null;
+}
+function abrirIncluirManual(){
+  const cfg = cortesiaCfg();
+  formRapido({ titulo: 'Incluir cliente na cortesia pós-obra', ok: 'Incluir',
+    aviso: 'Para obra que não está no app ou cliente fora da lista abaixo. Começa a cortesia de <b>' + cfg.meses + ' meses</b> com <b>' + cfg.visitas + (cfg.visitas === 1 ? ' visita' : ' visitas') + '</b>. Contato e WhatsApp em branco vêm do cadastro de Clientes (nome igual).',
+    campos: [ { id: 'cliente', rotulo: 'Cliente', obrig: true }, { id: 'inicio', rotulo: 'Início da cortesia', tipo: 'data', valor: hojeStr(), obrig: true, meio: true }, { id: 'contato', rotulo: 'Pessoa de contato', meio: true },
+      { id: 'fone', rotulo: 'WhatsApp', meio: true, dica: '(21) 90000-0000' }, { id: 'instalacoes', rotulo: 'Instalações feitas', tipo: 'area', dica: 'vai na mensagem da 1ª visita' } ],
+    aoSalvar: async (v) => { const erro = await iniciarCortesiaManual(v); if(erro) return erro; avisar('Cortesia pós-obra de ' + String(v.cliente).trim() + ' iniciada em ' + fmtData(v.inicio) + '. A 1ª visita vence em ' + fmtData(addMonths(v.inicio, cfg.intervalo)) + '.', 8000); renderPosObra(); return null; } });
+  const fo = document.getElementById('obrFormOverlay'); if(fo) fo.style.zIndex = 100002;
+}
 function posObraSemCortesia(){
-  return cmClientesFinalizados().filter(g => !mcDoCliente(fold(g.nome))).map(g => ({ g, st: cmEstado(g.regs) })).filter(x => !(x.st && (x.st.status === 'ja_tem' || x.st.status === 'aprovado')))
+  return cmClientesFinalizados().filter(g => !mcDoCliente(fold(g.nome)) && !poFora(g)).map(g => ({ g, st: cmEstado(g.regs) })).filter(x => !(x.st && (x.st.status === 'ja_tem' || x.st.status === 'aprovado')))
     .sort((a, b) => String((b.st && b.st.geradoEm) || '').localeCompare(String((a.st && a.st.geradoEm) || '')) || a.g.nome.localeCompare(b.g.nome, 'pt-BR'));
 }
 async function iniciarCortesia(g, inicio){
@@ -28719,11 +28752,13 @@ function renderPosObra(){
       { tom: fimC.some(x => x.e.alertaResposta) ? 'vermelho' : fimC.length ? 'amarelo' : 'neutro', icone: 'ok', numero: fimC.length, rotulo: 'Cortesia concluída', sub: fimC.length ? [[fimC.filter(x => x.e.etapa === 'reenviar').length, ' a reenviar'], [fimC.filter(x => x.e.etapa === 'resposta').length, ' aguardando resposta'], [fimC.filter(x => x.e.alertaResposta).length, ' sem resposta há 15 dias']].filter(p => p[0]).map(p => p[0] + p[1]).join(' · ') : 'reenviar o contrato' },   /* Fase 48 */
       { tom: 'neutro', icone: 'alerta', numero: sem.length, rotulo: 'Obras finalizadas sem cortesia', sub: 'inicie uma a uma' } ])}</div>
     <div style="padding:0 20px 24px;">
+      <div class="po-acoes" style="margin:0 0 12px;"><button type="button" class="btn-ghost" data-po="incluir">+ Incluir cliente manualmente</button></div>   <!-- Fase 49 -->
       ${ativos.length ? ativos.map(x => cardPO(x.c, x.e)).join('') : '<div class="empty-state">Nenhum cliente em cortesia. A cortesia começa ao gerar o contrato de uma obra finalizada, ou pelo botão "Iniciar cortesia" abaixo.</div>'}
       <details class="po-det"${ativos.length ? '' : ' open'}><summary>Obras finalizadas sem cortesia (${sem.length})</summary>
-        ${!carregado ? '<div class="empty-state">Carregando obras…</div>' : sem.length ? sem.map(x => `<div class="po-sem"><div><b>${esc(x.g.nome)}</b><div class="prv-hint" style="margin:0;">${[x.st && x.st.status === 'recusou' ? 'marcado "Não quis contrato"' : '', x.st && x.st.geradoEm ? 'contrato gerado em ' + esc(fmtData(x.st.geradoEm.slice(0, 10))) + (x.st.status === 'enviado' ? ' · enviado' : '') : x.st && x.st.status === 'recusou' ? '' : 'contrato ainda não gerado'].filter(Boolean).join(' · ')}</div></div><button type="button" class="btn-ghost oe-mini" data-po="iniciar" data-chave="${esc(x.g.chave)}">Iniciar cortesia</button></div>`).join('') : '<div class="empty-state">Nenhuma obra finalizada fora do controle de visitas.</div>'}
+        ${!carregado ? '<div class="empty-state">Carregando obras…</div>' : sem.length ? sem.map(x => `<div class="po-sem"><div><b>${esc(x.g.nome)}</b><div class="prv-hint" style="margin:0;">${[x.st && x.st.status === 'recusou' ? 'marcado "Não quis contrato"' : '', x.st && x.st.geradoEm ? 'contrato gerado em ' + esc(fmtData(x.st.geradoEm.slice(0, 10))) + (x.st.status === 'enviado' ? ' · enviado' : '') : x.st && x.st.status === 'recusou' ? '' : 'contrato ainda não gerado'].filter(Boolean).join(' · ')}</div></div><span style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button type="button" class="btn-ghost oe-mini" data-po="iniciar" data-chave="${esc(x.g.chave)}">Iniciar cortesia</button><button type="button" class="btn-ghost oe-mini" data-po="fora" data-chave="${esc(x.g.chave)}" title="Tira esta obra da lista (dá para voltar em &quot;Tiradas da lista&quot;)">Tirar da lista</button></span></div>`).join('') : '<div class="empty-state">Nenhuma obra finalizada fora do controle de visitas.</div>'}
       </details>
-      ${hist.length ? `<details class="po-det"><summary>Histórico (${hist.length})</summary>${hist.map(x => { const r = ROT_FIM[x.c.cortesia.decisao] || [x.c.cortesia.decisao, 'gray']; return `<div class="po-sem"><div><b>${esc(x.c.client)}</b><div class="prv-hint" style="margin:0;">cortesia desde ${esc(fmtData(x.c.cortesia.inicio))} · ${x.e.feitas.length} ${x.e.feitas.length === 1 ? 'visita feita' : 'visitas feitas'}${x.c.cortesia.decididoEm ? ' · ' + esc(fmtData(x.c.cortesia.decididoEm)) : ''}</div></div><span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;"><span class="prv-chip ${r[1]}">${esc(r[0])}</span>${x.c.cortesia.decisao === 'aprovado' ? '' : `<button type="button" class="btn-ghost oe-mini" data-po="reabrir" data-id="${esc(x.c.id)}" title="Volta para a lista, na etapa em que estava">↩ Reabrir</button>`}</span></div>`; }).join('')}</details>` : ''}
+      ${(() => { const rem = carregado ? posObraRemovidas() : []; return rem.length ? `<details class="po-det"><summary>Tiradas da lista (${rem.length})</summary>${rem.map(g => `<div class="po-sem"><div><b>${esc(g.nome)}</b></div><button type="button" class="btn-ghost oe-mini" data-po="volta" data-chave="${esc(g.chave)}">↩ Voltar para a lista</button></div>`).join('')}</details>` : ''; })()}
+      ${hist.length ? `<details class="po-det"><summary>Histórico (${hist.length})</summary>${hist.map(x => { const r = ROT_FIM[x.c.cortesia.decisao] || [x.c.cortesia.decisao, 'gray']; return `<div class="po-sem"><div><b>${esc(x.c.client)}</b><div class="prv-hint" style="margin:0;">cortesia desde ${esc(fmtData(x.c.cortesia.inicio))} · ${x.e.feitas.length} ${x.e.feitas.length === 1 ? 'visita feita' : 'visitas feitas'}${x.c.cortesia.decididoEm ? ' · ' + esc(fmtData(x.c.cortesia.decididoEm)) : ''}</div></div><span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;"><span class="prv-chip ${r[1]}">${esc(r[0])}</span>${x.c.cortesia.decisao === 'aprovado' ? '' : `<button type="button" class="btn-ghost oe-mini" data-po="reabrir" data-id="${esc(x.c.id)}" title="Volta para a lista, na etapa em que estava">↩ Reabrir</button>`}<button type="button" class="btn-ghost oe-mini" data-po="excluir" data-id="${esc(x.c.id)}" title="Apaga de vez do controle de visitas">🗑 Excluir</button></span></div>`; }).join('')}</details>` : ''}
     </div></div>`;
 }
 async function abrirPosObra(container){
@@ -28731,6 +28766,10 @@ async function abrirPosObra(container){
   if(!container._poLigado){ container._poLigado = true;
     container.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-po]'); if(!b) return; const a = b.dataset.po; const c = b.dataset.id != null ? mcsTodos().find(x => String(x.id) === String(b.dataset.id)) : null;
+      if(a === 'incluir'){ abrirIncluirManual(); return; }   // Fase 49
+      if(a === 'fora' || a === 'volta'){ const g = (a === 'fora' ? posObraSemCortesia().map(y => y.g) : posObraRemovidas()).find(y => y.chave === b.dataset.chave); if(!g) return;
+        if(a === 'volta'){ await marcarForaPO(g, false); renderPosObra(); return; }
+        customConfirm('Tirar ' + g.nome + ' da lista "Obras finalizadas sem cortesia"? Dá para voltar em "Tiradas da lista".', async () => { await marcarForaPO(g, true); renderPosObra(); }, 'Tirar da lista'); return; }
       if(a === 'iniciar'){ const x = posObraSemCortesia().find(y => y.g.chave === b.dataset.chave); if(x) abrirIniciarCortesia(x.g, (x.st && x.st.geradoEm) ? x.st.geradoEm.slice(0, 10) : hojeStr()); return; }
       if(a === 'contrato'){ abrirContratoManut(b.dataset.ids.split(',')); return; }
       if(a === 'aprovou'){ abrirContratoManut(b.dataset.ids.split(','), { aprovar: true }); return; }   // Fase 48: a aprovação encerra a cortesia (Fase 47)
@@ -28740,6 +28779,9 @@ async function abrirPosObra(container){
       if(a === 'lembrete'){ abrirMensagemPO(c, 'lembrete'); return; }
       if(a === 'reenviado'){ customConfirm('Marcar que o contrato de manutenção foi reenviado a ' + c.client + ' hoje? O cartão passa a aguardar a resposta do cliente.', async () => { const ok = await marcarCortesia(c.id, { reenviadoEm: hojeStr(), reenviadoPor: quem() || undefined }); if(ok) avisar('Contrato marcado como reenviado.', 4000); renderPosObra(); }, 'Marcar reenviado'); return; }
       if(a === 'naoaprovou'){ customConfirm('Registrar que ' + c.client + ' NÃO aprovou o contrato de manutenção? A cortesia termina: o cliente vai para o histórico e não entra no controle de visitas nem no Financeiro.', async () => { const ok = await marcarCortesia(c.id, { decisao: 'nao_aprovado', decididoEm: hojeStr(), decididoPor: quem() || undefined }); if(ok){ await contratoRecusadoPO(c); avisar('Registrado: ' + c.client + ' não aprovou o contrato.', 5000); } renderPosObra(); }, 'Registrar'); return; }
+      if(a === 'excluir'){ customConfirm('Excluir de vez a cortesia de ' + c.client + '? Sai do controle de visitas e do histórico (as atividades já feitas continuam na Agenda). Não tem como desfazer.', async () => {   // Fase 49
+          const i = maintenanceContracts.findIndex(x => String(x.id) === String(c.id)); if(i < 0) return; const tirado = maintenanceContracts.splice(i, 1)[0]; let ok = false; try{ ok = await saveMaintenanceContracts(true); }catch(err){ console.error('pós-obra: excluir', err); }
+          if(!ok){ maintenanceContracts.splice(i, 0, tirado); avisar('Não foi possível excluir (confira a internet).', 6000); } else { avisar('Cortesia excluída.', 4000); try{ renderManutencoes(); }catch(err){} } renderPosObra(); }, 'Excluir'); return; }
       if(a === 'reabrir'){ customConfirm('Reabrir a cortesia pós-obra de ' + c.client + '? Ele volta para a lista, na etapa em que estava.', async () => { const ok = await marcarCortesia(c.id, { decisao: '', decididoEm: '', decididoPor: '', reabertaEm: hojeStr() }); if(ok) avisar('Cortesia reaberta.', 4000); renderPosObra(); }, 'Reabrir'); return; }
       if(a === 'agendar'){ const inp = container.querySelector(`[data-po-data="${String(c.id).replace(/"/g, '')}"]`); if(!inp || !inp.value){ avisar('Escolha a data combinada com o cliente antes de agendar.', 5000); return; } b.disabled = true; try{ await confirmMaintenanceDate(String(c.id), inp.value); }catch(err){ console.error('pós-obra: agendar', err); } renderPosObra(); return; }
       if(a === 'cancelar'){ customConfirm('Cancelar a cortesia pós-obra de ' + c.client + '? Ele sai desta lista (fica no histórico) e não entra no controle de visitas.', async () => { const ok = await marcarCortesia(c.id, { decisao: 'cancelada', decididoEm: hojeStr(), decididoPor: quem() || undefined }); if(ok) avisar('Cortesia cancelada.', 4000); renderPosObra(); }, 'Cancelar cortesia'); }
@@ -29278,7 +29320,7 @@ function prevGerar(r, hoje){
   hoje = hoje || hojeStr(); const limite = compSomar(hoje.slice(0, 7), PREV_HORIZONTE_MESES) + '-31'; const passo = mesesDe(pl.periodicidade); const dia = diaVencDe(pl);
   const temComp = new Set(prevAuto(r).map(p => p.comp)); let comp = pl.inicio.slice(0, 7), n = 0;
   for(let i = 0; i < 600; i++){ const venc = vencDe(comp, dia); if(venc > limite || (pl.fim && venc > pl.fim)) break;
-    if(!temComp.has(comp)){ const id = uid('v'); r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: rotComp(pl.periodicidade, comp), comp, auto: true, valor: arred2(Number(pl.valor)), status: 'nao_liberado', agendadoPara: venc, forma: r.formaPagamento || null, ordem: Number(comp.replace('-', '')) } }); n++; }
+    if(!temComp.has(comp) && !(pl.pulados && pl.pulados[comp]) && venc >= pl.inicio){ const id = uid('v');   /* Fase 49: mês excluído não volta; nada antes do início */ r.parcelas = Object.assign({}, r.parcelas, { [id]: { id, tipo: rotComp(pl.periodicidade, comp), comp, auto: true, valor: arred2(Number(pl.valor)), status: 'nao_liberado', agendadoPara: venc, forma: r.formaPagamento || null, ordem: Number(comp.replace('-', '')) } }); n++; }
     comp = compSomar(comp, passo); }
   return n;
 }
@@ -29297,12 +29339,35 @@ async function prevGerarTodos(){      // ao abrir o Financeiro: cria as cobranç
 // O plano mudou (valor, forma, dia): as cobranças ainda não recebidas acompanham; as recebidas ficam como estão.
 function prevAtualizarParcelas(r){
   const pl = planoDe(r); const dia = diaVencDe(pl);
-  prevAuto(r).forEach(p => { if(stDe(p) === 'recebido') return; p.valor = arred2(Number(pl.valor) || 0); p.forma = r.formaPagamento || null; p.agendadoPara = vencDe(p.comp, dia); p.tipo = rotComp(pl.periodicidade, p.comp); });
+  prevAuto(r).forEach(p => { if(stDe(p) === 'recebido') return; p.forma = r.formaPagamento || null; p.tipo = rotComp(pl.periodicidade, p.comp);
+    if(p.manual || (stDe(p) !== 'nao_liberado' && stDe(p) !== 'a_cobrar')) return;   /* Fase 49: enviada/agendada e ajustada à mão mantêm data e valor */
+    p.valor = arred2(Number(pl.valor) || 0); p.agendadoPara = vencDe(p.comp, dia); });
   r.parcelas = Object.assign({}, r.parcelas);
 }
 // Periodicidade, início ou fim mudaram, ou o plano foi pausado: as cobranças em aberto saem (as recebidas ficam) e, se o plano está ativo, nascem de novo.
-function prevRefazer(r){ const m = Object.assign({}, r.parcelas); prevAuto(r).forEach(p => { if(stDe(p) !== 'recebido') delete m[p.id]; }); r.parcelas = m; const n = prevGerar(r); prevLiberar(r); return n; }
+function prevRefazer(r){ const m = Object.assign({}, r.parcelas); prevAuto(r).forEach(p => { if((stDe(p) === 'nao_liberado' || stDe(p) === 'a_cobrar') && !p.manual) delete m[p.id]; });   /* Fase 49: enviada, agendada e ajustada à mão ficam */ r.parcelas = m; const n = prevGerar(r); prevLiberar(r); return n; }
 const CHIP_PV = { vencido: 'red', enviar: 'amber', enviada: 'blue', em_dia: 'green', pausado: 'gray', sem_cobranca: 'gray', sem_valor: 'amber' };
+// Fase 49: cobranças do plano no formulário ✎ / + Nova parcela. Cobrança do plano (auto + comp) mantém o mês e o nome; data ou valor mexidos
+// à mão viram "manual" (o plano não mexe mais nelas). Nova cobrança pode ser de um mês (vira cobrança do plano daquele mês) ou avulsa.
+const PREV_AVULSAS = ['Cobrança avulsa', 'Visita extra', 'Outro'];
+function prevOpcoesTipo(r, p){
+  const pl = planoDe(r); const usados = new Set(prevAuto(r).filter(x => !p || x.id !== p.id).map(x => x.comp)); const h = hojeStr().slice(0, 7);
+  const meses = []; for(let k = -12; k <= PREV_HORIZONTE_MESES; k++){ const c = compSomar(h, k); if(!usados.has(c)) meses.push(['comp:' + c, rotComp(pl.periodicidade, c) + (pl.pulados && pl.pulados[c] ? ' (excluída antes)' : '')]); }
+  const ops = (p && p.tipo && !PREV_AVULSAS.includes(p.tipo) ? [[p.tipo, p.tipo]] : []).concat(PREV_AVULSAS.map(t => [t, t]), meses);
+  const prox = meses.find(m => m[0].slice(5) >= h);
+  return { ops, padrao: p ? p.tipo : (prox ? prox[0] : PREV_AVULSAS[0]) };
+}
+function prevCamposParcela(r, p, v){
+  const pl = planoDe(r); const mC = /^comp:(\d{4}-\d{2})$/.exec(String(v.tipo || ''));
+  if(p && p.auto && p.comp){ const mexeu = !!p.manual || (v.agendadoPara || '') !== (p.agendadoPara || '') || Math.abs(Number(v.valor) - Number(p.valor)) > 0.004;
+    return { extra: Object.assign({ tipo: p.tipo, comp: p.comp, auto: true }, p.liberadoAuto ? { liberadoAuto: true } : {}, mexeu ? { manual: true } : {}) }; }
+  if(mC){ const comp = mC[1]; if(prevAuto(r).some(x => x.comp === comp && (!p || x.id !== p.id))) return { erro: 'Já existe a cobrança ' + rotComp(pl.periodicidade, comp) + ' neste cliente.' };
+    return { extra: Object.assign({ tipo: rotComp(pl.periodicidade, comp), comp, auto: true, manual: true, ordem: Number(comp.replace('-', '')) }, v.agendadoPara ? {} : { agendadoPara: vencDe(comp, diaVencDe(pl)) }), despular: comp }; }
+  return { extra: {} };
+}
+// mês excluído fica anotado no plano (prev.pulados) para o gerador não recriar; lançar o mês de novo à mão tira a anotação
+function prevPular(r, comp){ r.prev = Object.assign({}, r.prev, { pulados: Object.assign({}, (r.prev || {}).pulados, { [comp]: hojeStr() }) }); }
+function prevDespular(r, comp){ if(r.prev && r.prev.pulados && r.prev.pulados[comp]) r.prev = Object.assign({}, r.prev, { pulados: Object.assign({}, r.prev.pulados, { [comp]: false }) }); }
 function prevSituacao(r, hoje){
   hoje = hoje || hojeStr(); const todas = parcelasDe(r);
   const ab = todas.filter(p => stDe(p) !== 'recebido' && p.agendadoPara).sort((a, b) => a.agendadoPara.localeCompare(b.agendadoPara));
@@ -29778,7 +29843,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ abrirPosObra, posObraAtualizar, posObraBadge, _po: { iniciarCortesia, oferecerCortesia, posObraSemCortesia, textoMensagemPO, renderPosObra, cardPO, mcConv, cortesiaCfg, aprovarContratoManut, regsContratoPO, contratoRecusadoPO, chipCortesia, marcarCortesia }, /* Fase 47 */ cmTextosContrato, cmClausulasHtml, CM_CLAUSULAS, /* Fase 46 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ _pv49: { prevGerar, prevRefazer, prevAtualizarParcelas, prevOpcoesTipo, prevCamposParcela, prevPular, prevDespular }, /* Fase 49 */ abrirPosObra, posObraAtualizar, posObraBadge, _po: { iniciarCortesiaManual, posObraRemovidas, marcarForaPO, iniciarCortesia, oferecerCortesia, posObraSemCortesia, textoMensagemPO, renderPosObra, cardPO, mcConv, cortesiaCfg, aprovarContratoManut, regsContratoPO, contratoRecusadoPO, chipCortesia, marcarCortesia }, /* Fase 47 */ cmTextosContrato, cmClausulasHtml, CM_CLAUSULAS, /* Fase 46 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
