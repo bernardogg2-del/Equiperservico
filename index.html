@@ -1019,6 +1019,8 @@
   .pasta-pdf-box{ margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }   /* Fase 44 */
   .pasta-pdf-t{ font-size:13.5px; font-weight:700; }
   .pasta-pdf-a{ display:flex; gap:8px; flex-wrap:wrap; }
+  .cm-cl-prev{ margin-top:6px; padding:8px 10px; border-radius:8px; background:var(--surface-2); color:var(--text-dim); font-size:12.5px; line-height:1.45; white-space:pre-line; }   /* Fase 46 */
+  .cm-cl textarea{ width:100%; margin-top:6px; font-family:inherit; font-size:13px; }
   .menu-ordem-lista{ display:flex; flex-direction:column; gap:6px; max-height:60vh; overflow-y:auto; padding:2px; }
   .menu-ordem-i{ display:flex; align-items:center; gap:8px; padding:8px 8px 8px 12px; border:1px solid var(--border); border-radius:10px; background:var(--surface); }
   .menu-ordem-i .n{ font-size:11.5px; font-weight:700; color:var(--text-dim); min-width:18px; font-variant-numeric:tabular-nums; }
@@ -1593,6 +1595,17 @@
   }
   .maint-row-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
   .maint-row-client{ font-size: 14px; font-weight:600; }
+  .po-etapas{ display:flex; flex-wrap:wrap; gap:6px; margin:6px 0 8px; }   /* Fase 47: pós-obra */
+  .po-et{ font-size:12px; padding:4px 10px; border-radius:999px; border:1px solid var(--border); color:var(--text-dim); background:var(--surface); white-space:nowrap; }
+  .po-et.feita{ background:var(--success-soft); color:var(--success); border-color:var(--success-line); }
+  .po-et.atual{ background:var(--warning-soft); color:var(--warning); border-color:var(--warning-line); font-weight:700; }
+  .po-et.atual.atrasada{ background:var(--danger-soft); color:var(--danger); border-color:var(--danger-line); }
+  .po-inst{ font-size:12.5px; color:var(--text-dim); margin:2px 0 4px; }
+  .po-acoes{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .po-acoes input[type=date]{ width:auto; }
+  .po-acoes .btn-whatsapp{ width:auto; flex:0 0 auto; padding-left:14px; padding-right:14px; }
+  .po-sem{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin:0 0 8px; background:var(--surface); }
+  .po-det > summary{ cursor:pointer; font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin:22px 0 10px; }
   .maint-row-fields{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 10px; }
   .maint-row-fields .field{ margin-bottom:0; flex:1; min-width:140px; }
   .maint-row-next{ font-size: 11.5px; color: var(--text-dim); margin-bottom: 10px; }
@@ -3877,6 +3890,7 @@
     <div id="prvFinNovos"></div>   <!-- Fase 19: clientes de preventiva vindos do Financeiro que faltam aqui -->
     <div class="portal-tabs estoque-subnav-v2" id="prvManutTabs" style="padding:0 0 14px;">
       <button type="button" class="portal-tab active" data-prvmanut="visitas">Controle de visitas</button>
+      <button type="button" class="portal-tab" data-prvmanut="posobra" id="prvManutTabPosObra">Pós-obra (cortesia)<span class="obr-tab-n" id="prvPosObraN"></span></button>   <!-- Fase 47 -->
       <button type="button" class="portal-tab" data-prvmanut="config">Configuração por cliente</button>
       <button type="button" class="portal-tab" data-prvmanut="catalogo">Catálogo de equipamentos</button>
       <button type="button" class="portal-tab" data-prvmanut="historico">Histórico de relatórios</button>
@@ -3945,6 +3959,7 @@
     <div id="prvManutPrecos" style="display:none;"></div>
     <div id="prvManutContratos" style="display:none;"></div>
     <div id="prvManutManuais" style="display:none;"></div>
+    <div id="prvManutPosObra" style="display:none;"></div>   <!-- Fase 47 -->
   </div>
 
   <div id="tabOS" style="display:none;">
@@ -7878,8 +7893,8 @@ function renderPainelBlockRetornos(){
 // visitas ao longo do tempo, então "quantidade de contratos" nunca é a mesma coisa que
 // "quantidade de visitas no período".
 function computeManutencoesSummary(startDate, endDate){
-  const totalContratos = maintenanceContracts.length;
-  const comAgendamento = maintenanceContracts.filter(c => !!c.scheduledFor).length;
+  const totalContratos = manutConvencionais().length;   // Fase 47: sem a cortesia pós-obra
+  const comAgendamento = manutConvencionais().filter(c => !!c.scheduledFor).length;
   const semAgendamento = totalContratos - comAgendamento;
 
   // Visita preventiva = atividade distinta (dupla deduplicada) com maintenanceContractId, cuja
@@ -8119,7 +8134,7 @@ const F10 = (() => {
       tabela: motivos.size ? { cab: ['Motivo de não cobrar', 'OS'], num: [1], linhas: [...motivos.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6) } : null };
   }
   function carteira(){
-    const p = per(); const cs = (typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []).map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, d: daysUntil(prox) }; });
+    const p = per(); const cs = (typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []).filter(c => typeof ehManutConvencional !== 'function' || ehManutConvencional(c)).map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, d: daysUntil(prox) }; });
     const atr = cs.filter(x => x.d < 0), prox = cs.filter(x => x.d >= 0 && x.d <= 15), ok = cs.length - atr.length - prox.length;
     const vis = svcs().filter(s => s.maintenanceContractId && s.status === 'concluido'); const porTec = new Map(); vis.forEach(s => getGroupedServiceTechnicians(s).forEach(t => { if(t) porTec.set(t, (porTec.get(t) || 0) + 1); }));
     const semAg = atr.filter(x => !x.c.scheduledFor).length;
@@ -10822,7 +10837,7 @@ async function confirmMaintenanceDate(contractId, date){
     id: Date.now(),
     date: date,
     client: `Preventiva – ${c.client}`,
-    description: `Manutenção preventiva ${freqLabel(c.intervalMonths)}`,
+    description: emCortesia(c) ? 'Manutenção preventiva de cortesia (pós-obra) – ' + (cortesiaVisitasFeitas(c).length + 1) + 'ª visita' : `Manutenção preventiva ${freqLabel(c.intervalMonths)}`,   // Fase 47
     address: findClientAddress(c.client),
     technician: null,
     status: 'aguardando',
@@ -10924,6 +10939,26 @@ async function completeOficinaReinstallationIfLinked(svc){
   await saveOficinaEquipamentos(true);
 }
 
+// Fase 47: cortesia pós-obra. O cliente fica no controle de visitas com c.cortesia = { inicio, meses, visitas, instalacoes, origem, ... }.
+// Em cortesia (sem decisão, ou cancelada / não aprovado) fica FORA do controle convencional: lista, alertas, painéis, estatísticas e Financeiro.
+// Aprovado (decisao 'aprovado') vira cliente convencional e leva o histórico. As visitas da cortesia são as atividades concluídas ligadas a ele.
+function emCortesia(c){ return !!(c && c.cortesia && typeof c.cortesia === 'object' && c.cortesia.decisao !== 'aprovado'); }
+function ehManutConvencional(c){ return !!c && !emCortesia(c); }
+function manutConvencionais(){ return (Array.isArray(maintenanceContracts) ? maintenanceContracts : []).filter(ehManutConvencional); }
+function cortesiaVisitasFeitas(c){
+  if(!c || !c.cortesia) return []; const ini = c.cortesia.inicio || ''; const id = String(c.id);
+  const ds = [...new Set((Array.isArray(services) ? services : []).filter(sv => sv && sv.status === 'concluido' && sv.maintenanceContractId != null && String(sv.maintenanceContractId) === id && sv.date && sv.date >= ini).map(sv => sv.date))].sort();
+  if(!ds.length && c.lastDate && ini && c.lastDate > ini) ds.push(c.lastDate);   // visita baixada no controle sem a atividade carregada aqui
+  return ds;
+}
+function cortesiaEtapa(c){
+  const co = c && c.cortesia; if(!co || typeof co !== 'object') return null;
+  const feitas = cortesiaVisitasFeitas(c); const total = Math.max(1, Number(co.visitas) || 2); const fim = addMonths(co.inicio, Number(co.meses) || 6);
+  if(co.decisao) return { etapa: co.decisao, feitas, total, fim };
+  if(feitas.length < total){ const prox = addMonths(c.lastDate || co.inicio, c.intervalMonths || 3); return { etapa: 'visita', n: feitas.length + 1, feitas, total, fim, prox, dias: daysUntil(prox), agendada: c.scheduledFor || null }; }
+  return { etapa: co.reenviadoEm ? 'resposta' : 'reenviar', feitas, total, fim };
+}
+
 function freqLabel(months){
   if(months === 1) return 'mensal';
   if(months === 2) return 'bimestral';
@@ -10933,7 +10968,7 @@ function freqLabel(months){
 }
 
 function renderManutencoes(){
-  const rows = maintenanceContracts.map(c => {
+  const rows = maintenanceContracts.filter(ehManutConvencional).map(c => {   // Fase 47: cortesia pós-obra fica na aba própria
     const nextDue = addMonths(c.lastDate, c.intervalMonths || 3);
     const days = daysUntil(nextDue);
     let statusClass, statusLabel;
@@ -10944,6 +10979,7 @@ function renderManutencoes(){
   }).sort((a,b) => a.nextDue.localeCompare(b.nextDue));
 
   if(window.PREV_API) PREV_API.resumoManutencoes(rows); // quadro de resumo no topo de Manutenções (mesmos números das listas abaixo)
+  try{ if(window.OBR_API && OBR_API.posObraAtualizar) OBR_API.posObraAtualizar(); }catch(e){}   // Fase 47: contador e aba Pós-obra
 
   const alertRows = rows.filter(r => r.days <= 15);
   const alertBox = document.getElementById('maintenanceAlerts');
@@ -24119,6 +24155,8 @@ function ligarAbas(){
       if(tab === 'contratos' && window.OBR_API && OBR_API.abrirContratosManut) OBR_API.abrirContratosManut(pc);
       const pm = document.getElementById('prvManutManuais'); if(pm) pm.style.display = tab === 'manuais' ? '' : 'none';
       if(tab === 'manuais' && window.OBR_API && OBR_API.abrirManuais) OBR_API.abrirManuais(pm);
+      const po = document.getElementById('prvManutPosObra'); if(po) po.style.display = tab === 'posobra' ? '' : 'none';   // Fase 47
+      if(tab === 'posobra' && window.OBR_API && OBR_API.abrirPosObra) OBR_API.abrirPosObra(po);
       if(tab === 'config') renderConfig();
       if(tab === 'catalogo') renderCatalogo();
       if(tab === 'historico'){ renderHistorico(); garantirRelatorios(); }
@@ -28263,11 +28301,11 @@ const CM_KM = 2.8;
 // Configuração editável (Firebase: contratoManutConfig) — preços por categoria, fração do material, R$/km, visitas padrão e os vínculos
 // "nome do equipamento → categoria" aprendidos quando o Gestor escolhe a categoria no contrato.
 const CM_NO = 'contratoManutConfig';
-const cmCfg = { categorias: {}, fracMaterial: 0.5, km: CM_KM, visitas: 6, kmPadrao: 70, vinculos: {}, carregado: false };   // Fase 41: padrões 6 visitas e 70 km
+const cmCfg = { categorias: {}, fracMaterial: 0.5, km: CM_KM, visitas: 6, kmPadrao: 70, cortesiaMeses: 6, cortesiaVisitas: 2, vinculos: {}, carregado: false };   // Fase 47: cortesia 6 meses / 2 visitas   // Fase 41: padrões 6 visitas e 70 km
 try{ Object.assign(cmCfg, JSON.parse(localStorage.getItem('cm_cfg') || '{}'), { carregado: false }); }catch(e){}
-function cmAplicarCfg(v){ if(!v || typeof v !== 'object') return; cmCfg.categorias = v.categorias || {}; cmCfg.textos = v.textos || null; cmCfg.capaManual = v.capaManual || null; if(v.fracMaterial != null) cmCfg.fracMaterial = Number(v.fracMaterial); if(v.km != null) cmCfg.km = Number(v.km); if(v.visitas != null) cmCfg.visitas = Number(v.visitas); if(v.kmPadrao != null) cmCfg.kmPadrao = Number(v.kmPadrao); cmCfg.vinculos = v.vinculos || {}; try{ localStorage.setItem('cm_cfg', JSON.stringify({ categorias: cmCfg.categorias, fracMaterial: cmCfg.fracMaterial, km: cmCfg.km, visitas: cmCfg.visitas, kmPadrao: cmCfg.kmPadrao, vinculos: cmCfg.vinculos, textos: cmCfg.textos, capaManual: cmCfg.capaManual || null })); }catch(e){} }
+function cmAplicarCfg(v){ if(!v || typeof v !== 'object') return; cmCfg.categorias = v.categorias || {}; cmCfg.textos = v.textos || null; cmCfg.capaManual = v.capaManual || null; if(v.fracMaterial != null) cmCfg.fracMaterial = Number(v.fracMaterial); if(v.km != null) cmCfg.km = Number(v.km); if(v.visitas != null) cmCfg.visitas = Number(v.visitas); if(v.kmPadrao != null) cmCfg.kmPadrao = Number(v.kmPadrao); if(v.cortesiaMeses != null) cmCfg.cortesiaMeses = Number(v.cortesiaMeses); if(v.cortesiaVisitas != null) cmCfg.cortesiaVisitas = Number(v.cortesiaVisitas); cmCfg.vinculos = v.vinculos || {}; try{ localStorage.setItem('cm_cfg', JSON.stringify({ categorias: cmCfg.categorias, fracMaterial: cmCfg.fracMaterial, km: cmCfg.km, visitas: cmCfg.visitas, kmPadrao: cmCfg.kmPadrao, vinculos: cmCfg.vinculos, textos: cmCfg.textos, capaManual: cmCfg.capaManual || null })); }catch(e){} }
 async function cmCarregarCfg(){ if(cmCfg.carregado || !rtdb) return; try{ const sn = await comTempo(rtdb.ref(CM_NO).get(), 8000); if(sn.exists()) cmAplicarCfg(sn.val()); cmCfg.carregado = true; }catch(e){ console.warn('contrato manutenção: config não carregada (usando a cópia local)', e); } }
-async function cmSalvarCfg(){ const v = { categorias: cmCfg.categorias, fracMaterial: cmCfg.fracMaterial, km: cmCfg.km, visitas: cmCfg.visitas, kmPadrao: cmCfg.kmPadrao != null ? cmCfg.kmPadrao : 70, vinculos: cmCfg.vinculos, textos: cmCfg.textos || null, capaManual: cmCfg.capaManual || null, atualizadoEm: new Date().toISOString(), atualizadoPor: quem() || null }; cmAplicarCfg(v); if(!rtdb) return false; try{ await rtdb.ref(CM_NO).set(v); return true; }catch(e){ console.error('contrato manutenção: salvar config', e); alert('⚠️ Não foi possível gravar a tabela de preços no servidor (' + (e && (e.code || e.message)) + '). Se aparecer PERMISSION_DENIED, libere o nó "' + CM_NO + '" nas regras do Firebase.'); return false; } }
+async function cmSalvarCfg(){ const v = { categorias: cmCfg.categorias, fracMaterial: cmCfg.fracMaterial, km: cmCfg.km, visitas: cmCfg.visitas, kmPadrao: cmCfg.kmPadrao != null ? cmCfg.kmPadrao : 70, vinculos: cmCfg.vinculos, cortesiaMeses: cmCfg.cortesiaMeses || 6, cortesiaVisitas: cmCfg.cortesiaVisitas || 2, textos: cmCfg.textos || null, capaManual: cmCfg.capaManual || null, atualizadoEm: new Date().toISOString(), atualizadoPor: quem() || null }; cmAplicarCfg(v); if(!rtdb) return false; try{ await rtdb.ref(CM_NO).set(v); return true; }catch(e){ console.error('contrato manutenção: salvar config', e); alert('⚠️ Não foi possível gravar a tabela de preços no servidor (' + (e && (e.code || e.message)) + '). Se aparecer PERMISSION_DENIED, libere o nó "' + CM_NO + '" nas regras do Firebase.'); return false; } }
 // categorias = padrão da planilha + ajustes/novas da configuração: [chave, nome, mãoDeObra, material, multiplicador]
 function cmCats(){ const base = CM_CATS.map(c => c.slice()); const extra = cmCfg.categorias || {}; const out = base.map(c => { const o = extra[c[0]]; return o ? [c[0], o.nome || c[1], Number(o.mo != null ? o.mo : c[2]), Number(o.mat != null ? o.mat : c[3]), Number(o.mult || c[4]), !!o.oculta] : c; }).filter(c => !c[5]); Object.keys(extra).filter(k => !base.some(c => c[0] === k) && !extra[k].oculta).forEach(k => out.push([k, extra[k].nome || k, Number(extra[k].mo) || 0, Number(extra[k].mat) || 0, Number(extra[k].mult) || 1])); return out; }
 const cmCat = (k) => cmCats().find(c => c[0] === k) || cmCats().find(c => c[0] === 'outro') || CM_CATS[CM_CATS.length - 1];
@@ -28341,6 +28379,37 @@ const CM_TEXTOS = {
     { t: '8 – Prazo para atendimento', b: '- I. O prazo máximo para atender uma chamada eventual é de 48 h.\n- II. As visitas de rotina serão agendadas com antecedência de 2 dias, comunicadas por e-mail ou WhatsApp para a pessoa indicada pelo cliente ({contato}, {fone}).' } ],
   deAcordo: 'De acordo:' };
 function cmTextos(){ const t = Object.assign({}, cmCfg.textos || {}); if(t.carta && /^A\n\* \{cliente\}/.test(t.carta)) t.carta = t.carta.replace(/^A\n[\s\S]*?\n\nPrezado/, 'Prezado'); if(t.contratoCabecalho) t.contratoCabecalho = t.contratoCabecalho.replace(/\nCliente: \{cliente\}\n\{endereco\}$/, ''); delete t.cartaAssinatura; const out = Object.assign({}, CM_TEXTOS, t); out.secoes = (Array.isArray(t.secoes) ? t.secoes : (t.secoes ? Object.values(t.secoes) : null)) || CM_TEXTOS.secoes.map(x => Object.assign({}, x)); return out; }
+// Fase 46: cláusulas escolhidas em cada contrato. b = corpo da seção no PDF (null = deixa o texto do contrato como está).
+const CM_CLAUSULAS = {
+  clReajuste: { titulo: 'Reajuste', re: /reajuste/i, op: [
+    ['igpm', 'IGP-M (padrão)', null],
+    ['ipca', 'IPCA/IBGE', '- I. Será aplicado o índice do IPCA/IBGE, anualmente.'],
+    ['livre', 'Escrever outro texto', null] ] },
+  clVigencia: { titulo: 'Vigência do contrato', re: /vig[eê]ncia/i, op: [
+    ['renova', 'Renovação automática (padrão)', null],
+    ['rescisao30', 'Sem renovação: após 1 ano, aviso de 30 dias', '- I. Este contrato entra em vigência em {vigencia}.\n- II. O período inicial do contrato é de 1 (um) ano.\n- III. Após o período inicial, o contrato poderá ser rescindido por qualquer das partes mediante comunicação prévia por escrito com antecedência mínima de 30 (trinta) dias.'],
+    ['livre', 'Escrever outro texto', null] ] } };
+const cmClVal = (d, k) => { const v = d && d[k]; return CM_CLAUSULAS[k].op.some(o => o[0] === v) ? v : CM_CLAUSULAS[k].op[0][0]; };
+function cmTextosContrato(d){
+  const T = cmTextos(); T.secoes = T.secoes.map(x => Object.assign({}, x));
+  Object.keys(CM_CLAUSULAS).forEach(k => {
+    const C = CM_CLAUSULAS[k], v = cmClVal(d, k); const o = C.op.find(x => x[0] === v);
+    const b = v === 'livre' ? (String((d && d[k + 'Txt']) || '').trim() || null) : o[2]; if(b == null) return;
+    const sec = T.secoes.find(x => C.re.test(x.t || '')); if(sec) sec.b = b;
+  });
+  return T;
+}
+function cmClausulasHtml(d){
+  const base = cmTextos(); const T = cmTextosContrato(d);
+  const prev = (b) => String(b || '').replace(/\{vigencia\}/g, d.vigenciaEm ? fmtData(d.vigenciaEm) : '(início da vigência)').replace(/\*\*/g, '').replace(/^[-*!] /gm, '');
+  const bloco = (k) => {
+    const C = CM_CLAUSULAS[k], v = cmClVal(d, k); const sec = T.secoes.find(x => C.re.test(x.t || '')); const sec0 = base.secoes.find(x => C.re.test(x.t || ''));
+    const sel = `<select data-cm="${k}">${C.op.map(o => `<option value="${o[0]}" ${o[0] === v ? 'selected' : ''}>${esc(o[1])}</option>`).join('')}</select>`;
+    const corpo = v === 'livre' ? `<textarea data-cm-cl="${k}Txt" rows="4" placeholder="Comece cada item com - (traço e espaço); {vigencia} vira a data de início.">${esc(d[k + 'Txt'] != null ? d[k + 'Txt'] : (sec0 ? sec0.b : ''))}</textarea>` : `<div class="cm-cl-prev">${esc(prev(sec ? sec.b : ''))}</div>`;
+    return `<div class="field obr-meio cm-cl"><label>${esc(sec ? sec.t : C.titulo)}</label>${sel}${corpo}</div>`;
+  };
+  return `<div class="obr-sec-t" style="margin-top:12px;">Cláusulas deste contrato</div><div class="obr-grid2">${bloco('clReajuste')}${bloco('clVigencia')}</div>`;
+}
 function abrirCmTextos(aoFechar){
   let ov = document.getElementById('obrCmTxtOverlay'); if(ov) ov.remove();
   ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'obrCmTxtOverlay'; ov.style.zIndex = 100001;
@@ -28413,7 +28482,7 @@ function abrirCmConfig(aoFechar, container){      // container: renderiza dentro
     const cats = cmCats(); const vinc = Object.entries(cmCfg.vinculos || {}).sort((a, b) => a[0].localeCompare(b[0]));
     ov.innerHTML = `<div class="${container ? 'tech-day-panel' : 'modal obr-modal'}" style="${container ? 'padding:18px 20px;' : 'max-width:860px; max-height:92vh; overflow-y:auto;'}"><h3 style="margin:0 0 4px;">Tabela de preços do contrato de manutenção</h3>
       <p class="prv-hint" style="margin:0 0 10px;">Valores por equipamento e por ano. O que entra no contrato é <b>mão de obra + fração do material</b> × multiplicador (a planilha usa metade do material). Mudanças valem para os próximos contratos.</p>
-      <div class="obr-grid2"><div class="field obr-meio"><label>Fração do material cobrada (%)</label><input type="number" min="0" max="100" step="5" data-cfg="frac" value="${esc(Math.round((cmCfg.fracMaterial != null ? cmCfg.fracMaterial : 0.5) * 100))}"></div><div class="field obr-meio"><label>Deslocamento (R$ por km)</label><input type="text" inputmode="decimal" data-cfg="km" value="${esc(campoValor(cmCfg.km))}"></div><div class="field obr-meio"><label>Visitas por ano (padrão)</label><input type="number" min="0" step="1" data-cfg="visitas" value="${esc(cmCfg.visitas)}"></div><div class="field obr-meio"><label>Distância padrão (km, ida)</label><input type="number" min="0" step="1" data-cfg="kmPadrao" value="${esc(cmCfg.kmPadrao != null ? cmCfg.kmPadrao : 70)}"></div></div>
+      <div class="obr-grid2"><div class="field obr-meio"><label>Fração do material cobrada (%)</label><input type="number" min="0" max="100" step="5" data-cfg="frac" value="${esc(Math.round((cmCfg.fracMaterial != null ? cmCfg.fracMaterial : 0.5) * 100))}"></div><div class="field obr-meio"><label>Deslocamento (R$ por km)</label><input type="text" inputmode="decimal" data-cfg="km" value="${esc(campoValor(cmCfg.km))}"></div><div class="field obr-meio"><label>Visitas por ano (padrão)</label><input type="number" min="0" step="1" data-cfg="visitas" value="${esc(cmCfg.visitas)}"></div><div class="field obr-meio"><label>Distância padrão (km, ida)</label><input type="number" min="0" step="1" data-cfg="kmPadrao" value="${esc(cmCfg.kmPadrao != null ? cmCfg.kmPadrao : 70)}"></div><div class="field obr-meio"><label>Cortesia pós-obra (meses)</label><input type="number" min="1" max="24" step="1" data-cfg="cortMeses" value="${esc(cmCfg.cortesiaMeses || 6)}"></div><div class="field obr-meio"><label>Visitas na cortesia</label><input type="number" min="1" max="12" step="1" data-cfg="cortVisitas" value="${esc(cmCfg.cortesiaVisitas || 2)}"></div></div>
       <table class="obr-tab"><thead><tr><th>Categoria</th><th class="obr-d">Mão de obra</th><th class="obr-d">Material</th><th class="obr-d">×</th><th class="obr-d">No contrato</th><th></th></tr></thead><tbody>
       ${cats.map(c => `<tr><td><input type="text" data-cfg-nome="${esc(c[0])}" value="${esc(c[1])}" style="min-width:200px;"></td><td class="obr-d"><input type="text" inputmode="decimal" data-cfg-mo="${esc(c[0])}" value="${esc(campoValor(c[2]))}" style="width:90px; text-align:right;"></td><td class="obr-d"><input type="text" inputmode="decimal" data-cfg-mat="${esc(c[0])}" value="${esc(campoValor(c[3]))}" style="width:90px; text-align:right;"></td><td class="obr-d"><input type="number" min="1" step="1" data-cfg-mult="${esc(c[0])}" value="${esc(c[4])}" style="width:56px; text-align:right;"></td><td class="obr-d mono">${esc(brl(cmValorUnit(c[0])))}/ano</td><td class="obr-acoes">${CM_CATS.some(x => x[0] === c[0]) ? '' : `<button type="button" class="obr-ic" data-cfg-rm="${esc(c[0])}" title="Remover categoria">✕</button>`}</td></tr>`).join('')}
       </tbody></table>
@@ -28427,7 +28496,7 @@ function abrirCmConfig(aoFechar, container){      // container: renderiza dentro
   ov._cmRender = render;
   const ler = () => {
     const f = Number(ov.querySelector('[data-cfg="frac"]').value); if(!Number.isNaN(f)) cmCfg.fracMaterial = Math.max(0, Math.min(100, f)) / 100;
-    const km = parseValor(ov.querySelector('[data-cfg="km"]').value); if(km != null && !Number.isNaN(km)) cmCfg.km = km; const vs = Number(ov.querySelector('[data-cfg="visitas"]').value); if(!Number.isNaN(vs)) cmCfg.visitas = vs; { const kp = ov.querySelector('[data-cfg="kmPadrao"]'); const kv = kp ? Number(kp.value) : NaN; if(kp && kp.value !== '' && !Number.isNaN(kv)) cmCfg.kmPadrao = kv; }   /* Fase 41 */
+    const km = parseValor(ov.querySelector('[data-cfg="km"]').value); if(km != null && !Number.isNaN(km)) cmCfg.km = km; const vs = Number(ov.querySelector('[data-cfg="visitas"]').value); if(!Number.isNaN(vs)) cmCfg.visitas = vs; { const kp = ov.querySelector('[data-cfg="kmPadrao"]'); const kv = kp ? Number(kp.value) : NaN; if(kp && kp.value !== '' && !Number.isNaN(kv)) cmCfg.kmPadrao = kv; }   /* Fase 41 */ { const cmM = ov.querySelector('[data-cfg="cortMeses"]'), cmV = ov.querySelector('[data-cfg="cortVisitas"]'); const mv = cmM ? Math.round(Number(cmM.value)) : NaN, vv = cmV ? Math.round(Number(cmV.value)) : NaN; if(mv >= 1 && mv <= 24) cmCfg.cortesiaMeses = mv; if(vv >= 1 && vv <= 12) cmCfg.cortesiaVisitas = vv; }   /* Fase 47 */
     const cats = Object.assign({}, cmCfg.categorias);
     ov.querySelectorAll('[data-cfg-nome]').forEach(i => { const k = i.dataset.cfgNome; const mo = parseValor(ov.querySelector(`[data-cfg-mo="${k}"]`).value), mat = parseValor(ov.querySelector(`[data-cfg-mat="${k}"]`).value), mult = Number(ov.querySelector(`[data-cfg-mult="${k}"]`).value) || 1;
       cats[k] = Object.assign({}, cats[k] || {}, { nome: i.value.trim() || k, mo: mo == null || Number.isNaN(mo) ? 0 : mo, mat: mat == null || Number.isNaN(mat) ? 0 : mat, mult }); });
@@ -28490,6 +28559,147 @@ async function abrirContratosManut(container){
   container.innerHTML = '<div class="empty-state">Carregando…</div>';
   try{ await garantirCarregado(); await carregarInstTodos(); await garantirAvulsos(); }catch(e){ console.error('contratos: carregar', e); }
   renderContratosManut();
+}
+// =====================================================================================
+// Fase 47: MANUTENÇÕES PREVENTIVAS PÓS-OBRA (cortesia). Cliente da obra finalizada entra no controle de visitas com c.cortesia; as visitas são as do
+// próprio controle (agendar → atividade do técnico → concluir baixa a visita). Fica fora do controle convencional e do Financeiro até ser aprovado.
+const mcConv = (c) => !!c && !(c.cortesia && typeof c.cortesia === 'object' && c.cortesia.decisao !== 'aprovado');
+const ordenarChaves = (o) => Object.keys(o).sort().reduce((a, k) => { if(o[k] !== undefined && o[k] !== null) a[k] = o[k]; return a; }, {});   // mesma ordem que o Firebase devolve
+const listaPt = (l) => l.length <= 1 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' e ' + l[l.length - 1];
+function cortesiaCfg(){ const meses = Math.max(1, Number(cmCfg.cortesiaMeses) || 6), visitas = Math.max(1, Number(cmCfg.cortesiaVisitas) || 2); return { meses, visitas, intervalo: Math.max(1, Math.round(meses / visitas)) }; }
+const mcsTodos = () => (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+const mcDoCliente = (k) => mcsTodos().find(c => c && fold(c.client) === k) || null;
+const posObraLista = () => mcsTodos().filter(c => c && c.cortesia && typeof c.cortesia === 'object');
+const etapaPO = (c) => (typeof cortesiaEtapa === 'function' ? cortesiaEtapa(c) : null) || { etapa: '?', feitas: [], total: 0 };
+function instalacoesTexto(g, dd){
+  let it = Array.isArray(dd && dd.itens) && dd.itens.length ? dd.itens : []; if(!it.length){ try{ it = cmEquipamentos(g.regs); }catch(e){ it = []; } }
+  return listaPt([...new Set(it.filter(i => i && i.nome && Number(i.qtd) !== 0).map(i => String(i.nome).trim() + (i.obs ? ' (' + String(i.obs).trim() + ')' : '')))]);
+}
+// Obras finalizadas que ainda não estão no controle de visitas (nem em cortesia), sem "Já tem contrato" / aprovado
+function posObraSemCortesia(){
+  return cmClientesFinalizados().filter(g => !mcDoCliente(fold(g.nome))).map(g => ({ g, st: cmEstado(g.regs) })).filter(x => !(x.st && (x.st.status === 'ja_tem' || x.st.status === 'aprovado')))
+    .sort((a, b) => String((b.st && b.st.geradoEm) || '').localeCompare(String((a.st && a.st.geradoEm) || '')) || a.g.nome.localeCompare(b.g.nome, 'pt-BR'));
+}
+async function iniciarCortesia(g, inicio){
+  if(typeof maintenanceContracts === 'undefined' || !Array.isArray(maintenanceContracts) || typeof saveMaintenanceContracts !== 'function') return 'O controle de visitas não está carregado nesta conta.';
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(inicio || ''))) return 'Informe a data de início.';
+  if(mcDoCliente(fold(g.nome))) return 'Este cliente já está no controle de visitas.';
+  const cfg = cortesiaCfg(); const st = cmEstado(g.regs); const dd = (st && st.dados) || {}; const cli = clientePorNome(g.nome);
+  const reg = { id: Date.now(), client: cli ? cli.name : g.nome, contactName: dd.contato || (cli && cli.contato) || '', contact: dd.fone || (cli && cli.fone) || '', location: '', intervalMonths: cfg.intervalo, lastDate: inicio, scheduledFor: null,
+    cortesia: ordenarChaves({ inicio, meses: cfg.meses, visitas: cfg.visitas, instalacoes: instalacoesTexto(g, dd) || undefined, origem: g.chave, iniciadaEm: new Date().toISOString(), iniciadaPor: quem() || undefined }) };
+  maintenanceContracts.push(reg); let ok = false; try{ ok = await saveMaintenanceContracts(); }catch(e){ console.error('pós-obra: iniciar cortesia', e); }
+  if(!ok){ const i = maintenanceContracts.indexOf(reg); if(i >= 0) maintenanceContracts.splice(i, 1); return 'Não foi possível gravar no controle de visitas (confira a internet).'; }
+  try{ renderManutencoes(); }catch(e){} return null;
+}
+function abrirIniciarCortesia(g, dataPadrao, prefixo){
+  const cfg = cortesiaCfg();
+  formRapido({ titulo: 'Cortesia pós-obra — ' + g.nome, ok: 'Iniciar cortesia',
+    aviso: esc(prefixo || '') + 'Começa a cortesia de <b>' + cfg.meses + ' meses</b> de manutenção preventiva: <b>' + cfg.visitas + (cfg.visitas === 1 ? ' visita' : ' visitas') + '</b>, uma a cada ' + cfg.intervalo + (cfg.intervalo === 1 ? ' mês' : ' meses') + '. O cliente aparece em Manutenções › Pós-obra, com aviso 15 dias antes de cada visita. Não entra no Financeiro (só se aprovar o contrato no fim).',
+    campos: [ { id: 'inicio', rotulo: 'Início da cortesia', tipo: 'data', valor: dataPadrao || hojeStr(), obrig: true, meio: true } ],
+    aoSalvar: async (v) => { const erro = await iniciarCortesia(g, v.inicio); if(erro) return erro; avisar('Cortesia pós-obra de ' + g.nome + ' iniciada em ' + fmtData(v.inicio) + '. A 1ª visita vence em ' + fmtData(addMonths(v.inicio, cfg.intervalo)) + '.', 8000); renderPosObra(); return null; } });
+  const fo = document.getElementById('obrFormOverlay'); if(fo) fo.style.zIndex = 100002;
+}
+// Ao gerar o contrato de uma obra finalizada que ainda não está no controle de visitas: oferece a cortesia (data de hoje, editável)
+function oferecerCortesia(regs){
+  try{
+    const ids = new Set((regs || []).map(r => r && r.id)); const g = cmClientesFinalizados().find(x => x.regs.some(r => ids.has(r.id))); if(!g) return;
+    if(mcDoCliente(fold(g.nome))) return; const st = cmEstado(g.regs); if(st && (st.status === 'ja_tem' || st.status === 'aprovado')) return;
+    abrirIniciarCortesia(g, hojeStr(), 'Contrato gerado. ');
+  }catch(e){ console.error('pós-obra: oferecer cortesia', e); }
+}
+function textoMensagemPO(c, n){
+  const co = c.cortesia || {}; const h = new Date().getHours(); const saud = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  const nome = String(c.contactName || '').trim() || c.client; const eu = quem() || 'a equipe da Equiper'; const meses = Number(co.meses) || 6;
+  const cab = saud + ', ' + nome + '! Sou ' + eu + ', da equipe de engenharia da Equiper.';
+  if(n <= 1) return cab + '\n\n' + (co.instalacoes ? 'Fizemos na sua casa as seguintes instalações: ' + co.instalacoes + '.\n\n' : '') + 'No nosso serviço oferecemos, como cortesia, ' + meses + ' meses de contrato de manutenção preventiva inclusos. Gostaria de agendar a primeira visita. Qual o melhor dia para você?';
+  return cab + '\n\nEstá chegando a ' + n + 'ª visita de manutenção preventiva da cortesia de ' + meses + ' meses. Gostaria de agendar. Qual o melhor dia para você?';
+}
+async function marcarCortesia(id, campos){
+  const atual = mcsTodos().find(x => String(x.id) === String(id)); if(!atual || !atual.cortesia) return false;
+  atual.cortesia = ordenarChaves(Object.assign({}, atual.cortesia, campos)); let ok = false; try{ ok = await saveMaintenanceContracts(true); }catch(e){ console.error('pós-obra: gravar', e); } return ok;
+}
+function abrirMensagemPO(c, n){
+  let ov = document.getElementById('poMsgOverlay'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'poMsgOverlay'; ov.style.zIndex = 100001;
+  ov.innerHTML = `<div class="modal" style="max-width:560px;"><h3>Mensagem da ${n}ª visita — ${esc(c.client)}</h3><p class="prv-hint" style="margin:2px 0 10px;">Confira e mude o que quiser antes de enviar.</p>
+    <div class="field"><label for="poMsgFone">WhatsApp</label><input type="text" id="poMsgFone" value="${esc(c.contact || '')}" placeholder="(21) 90000-0000"></div>
+    <div class="field"><label for="poMsgTxt">Mensagem</label><textarea id="poMsgTxt" rows="9" style="width:100%; font-family:inherit; font-size:13.5px;">${esc(textoMensagemPO(c, n))}</textarea></div>
+    <div class="field-error" id="poMsgErr"></div>
+    <div class="modal-actions" style="justify-content:flex-end; flex-wrap:wrap;"><button type="button" class="btn-ghost" data-pom="fechar">Fechar</button><button type="button" class="btn-ghost" data-pom="copiar">Copiar texto</button><button type="button" class="btn-primary" data-pom="whats">Abrir WhatsApp</button></div></div>`;
+  document.body.appendChild(ov);
+  const marcar = () => marcarCortesia(c.id, { ['msg' + n]: hojeStr() }).then(() => renderPosObra());
+  ov.addEventListener('click', async (e) => {
+    if(e.target === ov){ ov.remove(); return; } const b = e.target.closest('[data-pom]'); if(!b) return; const a = b.dataset.pom; const txt = ov.querySelector('#poMsgTxt').value;
+    if(a === 'fechar'){ ov.remove(); return; }
+    if(a === 'copiar'){ try{ await navigator.clipboard.writeText(txt); avisar('Mensagem copiada.', 3000); }catch(err){ ov.querySelector('#poMsgErr').textContent = 'Não deu para copiar; selecione o texto e copie.'; return; } ov.remove(); marcar(); return; }
+    if(a === 'whats'){ const fone = ov.querySelector('#poMsgFone').value; if(String(fone || '').replace(/\D/g, '').length < 10){ ov.querySelector('#poMsgErr').textContent = 'Informe um WhatsApp com DDD.'; return; } openWhatsapp(toWhatsappNumber(fone), txt); ov.remove(); marcar(); }
+  });
+}
+let poBox = null;
+function posObraBadge(){ const el = document.getElementById('prvPosObraN'); if(!el) return; const n = posObraLista().filter(c => !c.cortesia.decisao).map(etapaPO).filter(e => (e.etapa === 'visita' && !e.agendada && e.dias <= 15) || e.etapa === 'reenviar').length; el.textContent = n ? ' ' + n : ''; }
+function posObraAtualizar(){ posObraBadge(); if(poBox && poBox.style.display !== 'none' && !(document.activeElement && poBox.contains(document.activeElement))) renderPosObra(); }
+function cardPO(c, e){
+  const co = c.cortesia; const passos = [];
+  for(let i = 1; i <= e.total; i++){
+    if(i <= e.feitas.length) passos.push(`<span class="po-et feita">✓ ${i}ª visita · ${esc(fmtData(e.feitas[i - 1]))}</span>`);
+    else if(e.etapa === 'visita' && i === e.n) passos.push(`<span class="po-et atual${!e.agendada && e.dias < 0 ? ' atrasada' : ''}">● ${i}ª visita · ${e.agendada ? 'agendada ' + esc(fmtData(e.agendada)) : e.dias < 0 ? 'atrasada há ' + (-e.dias) + (e.dias === -1 ? ' dia' : ' dias') : e.dias === 0 ? 'vence hoje' : 'vence ' + esc(fmtData(e.prox)) + ' (em ' + e.dias + (e.dias === 1 ? ' dia)' : ' dias)')}</span>`);
+    else passos.push(`<span class="po-et">○ ${i}ª visita</span>`);
+  }
+  passos.push(`<span class="po-et${e.etapa === 'reenviar' ? ' atual' : e.etapa === 'resposta' ? ' feita' : ''}">${e.etapa === 'resposta' ? '✓' : e.etapa === 'reenviar' ? '●' : '○'} Reenviar contrato</span>`, `<span class="po-et${e.etapa === 'resposta' ? ' atual' : ''}">${e.etapa === 'resposta' ? '●' : '○'} Resposta do cliente</span>`);
+  let semEquip = false; try{ semEquip = !!(window.PREV_API && PREV_API.unidadesDoCliente) && !PREV_API.unidadesDoCliente(c.client).length; }catch(_){}
+  const regs = registros().filter(r => fold(nomeCliente(r)) === fold(c.client) && r.contratoManut);
+  let acoes = '';
+  if(e.etapa === 'visita' && !e.agendada){ const m = co['msg' + e.n]; acoes = `<button type="button" class="btn-whatsapp" style="margin-top:0;" data-po="msg" data-id="${esc(c.id)}">💬 Mensagem da ${e.n}ª visita</button>${m ? `<span class="prv-hint" style="margin:0;">enviada ${esc(fmtData(m))}</span>` : ''}<input type="date" data-po-data="${esc(c.id)}" title="Data combinada com o cliente"><button type="button" class="btn-ghost" data-po="agendar" data-id="${esc(c.id)}">Agendar visita</button>`; }
+  else if(e.etapa === 'visita') acoes = `<span class="maint-scheduled-tag">${e.n}ª visita agendada para ${esc(fmtData(e.agendada))}</span>`;
+  else if(e.etapa === 'reenviar') acoes = `<span class="prv-hint" style="margin:0;">Cortesia concluída: envie o relatório da última visita e o contrato de novo.</span>${regs.length ? `<button type="button" class="btn-ghost" data-po="contrato" data-ids="${esc(regs.map(r => r.id).join(','))}">Abrir contrato</button>` : ''}`;
+  return `<div class="maint-row"><div class="maint-row-top"><div class="maint-row-client">${esc(c.client)} <span class="prv-chip gray">cortesia ${esc(fmtData(co.inicio))} → ${esc(fmtData(e.fim))}</span>${semEquip ? ' <span class="prv-chip amber" title="O técnico precisa dos equipamentos para o relatório da visita">sem equipamentos em Configuração por cliente</span>' : ''}</div>
+    <button type="button" class="btn-ghost oe-mini" data-po="cancelar" data-id="${esc(c.id)}" title="Tirar da cortesia (fica no histórico)">Cancelar cortesia</button></div>
+    ${co.instalacoes ? `<div class="po-inst">Instalações: ${esc(co.instalacoes)}</div>` : ''}${c.contactName || c.contact ? `<div class="po-inst">Contato: ${esc([c.contactName, c.contact].filter(Boolean).join(' · '))}</div>` : ''}
+    <div class="po-etapas">${passos.join('')}</div><div class="po-acoes">${acoes}</div></div>`;
+}
+function renderPosObra(){
+  const box = poBox; if(!box || box.style.display === 'none') return; posObraBadge();
+  const ROT_FIM = { aprovado: ['Contrato aprovado', 'green'], nao_aprovado: ['Não aprovou o contrato', 'gray'], cancelada: ['Cortesia cancelada', 'gray'] };
+  const todos = posObraLista().map(c => ({ c, e: etapaPO(c) }));
+  const chave = (x) => x.e.etapa === 'reenviar' ? '0' : x.e.etapa === 'resposta' ? '1' + (x.c.cortesia.reenviadoEm || '') : '2' + (x.e.agendada ? '9' + x.e.agendada : (x.e.prox || ''));
+  const ativos = todos.filter(x => !x.c.cortesia.decisao).sort((a, b) => chave(a).localeCompare(chave(b)));
+  const hist = todos.filter(x => x.c.cortesia.decisao).sort((a, b) => String(b.c.cortesia.decididoEm || '').localeCompare(String(a.c.cortesia.decididoEm || '')));
+  const sem = carregado ? posObraSemCortesia() : [];
+  const aAg = ativos.filter(x => x.e.etapa === 'visita' && !x.e.agendada && x.e.dias <= 15), atr = aAg.filter(x => x.e.dias < 0);
+  const agend = ativos.filter(x => x.e.etapa === 'visita' && x.e.agendada), fimC = ativos.filter(x => x.e.etapa === 'reenviar' || x.e.etapa === 'resposta');
+  const cfg = cortesiaCfg();
+  box.innerHTML = `<div class="tech-day-panel"><div class="tech-day-head"><div class="tech-day-title">Manutenções preventivas pós-obra (cortesia)</div><div class="tech-day-date mono">${ativos.length} em cortesia</div></div>
+    <p class="prv-hint" style="margin:0 20px 10px;">Obra finalizada → contrato e manual → <b>${cfg.meses} meses de cortesia</b> com <b>${cfg.visitas} visitas</b> (uma a cada ${cfg.intervalo} ${cfg.intervalo === 1 ? 'mês' : 'meses'}, aviso 15 dias antes) → reenviar o contrato → aprovado vai para o controle de visitas e o Financeiro. Meses e visitas: Manutenções › Preços do contrato.</p>
+    <div class="prv-kpi-grid" style="margin:0 20px 12px;">${PREV_API.kpiCards([
+      { tom: 'azul', icone: 'total', numero: ativos.length, rotulo: 'Em cortesia', sub: '' },
+      { tom: atr.length ? 'vermelho' : aAg.length ? 'amarelo' : 'neutro', icone: aAg.length ? 'alerta' : 'ok', numero: aAg.length, rotulo: 'Visitas a agendar', sub: atr.length ? atr.length + (atr.length === 1 ? ' atrasada' : ' atrasadas') : 'vencem em até 15 dias' },
+      { tom: 'verde', icone: 'relogio', numero: agend.length, rotulo: 'Visitas agendadas', sub: '' },
+      { tom: fimC.length ? 'amarelo' : 'neutro', icone: 'ok', numero: fimC.length, rotulo: 'Cortesia concluída', sub: 'reenviar o contrato' },
+      { tom: 'neutro', icone: 'alerta', numero: sem.length, rotulo: 'Obras finalizadas sem cortesia', sub: 'inicie uma a uma' } ])}</div>
+    <div style="padding:0 20px 24px;">
+      ${ativos.length ? ativos.map(x => cardPO(x.c, x.e)).join('') : '<div class="empty-state">Nenhum cliente em cortesia. A cortesia começa ao gerar o contrato de uma obra finalizada, ou pelo botão "Iniciar cortesia" abaixo.</div>'}
+      <details class="po-det"${ativos.length ? '' : ' open'}><summary>Obras finalizadas sem cortesia (${sem.length})</summary>
+        ${!carregado ? '<div class="empty-state">Carregando obras…</div>' : sem.length ? sem.map(x => `<div class="po-sem"><div><b>${esc(x.g.nome)}</b><div class="prv-hint" style="margin:0;">${[x.st && x.st.status === 'recusou' ? 'marcado "Não quis contrato"' : '', x.st && x.st.geradoEm ? 'contrato gerado em ' + esc(fmtData(x.st.geradoEm.slice(0, 10))) + (x.st.status === 'enviado' ? ' · enviado' : '') : x.st && x.st.status === 'recusou' ? '' : 'contrato ainda não gerado'].filter(Boolean).join(' · ')}</div></div><button type="button" class="btn-ghost oe-mini" data-po="iniciar" data-chave="${esc(x.g.chave)}">Iniciar cortesia</button></div>`).join('') : '<div class="empty-state">Nenhuma obra finalizada fora do controle de visitas.</div>'}
+      </details>
+      ${hist.length ? `<details class="po-det"><summary>Histórico (${hist.length})</summary>${hist.map(x => { const r = ROT_FIM[x.c.cortesia.decisao] || [x.c.cortesia.decisao, 'gray']; return `<div class="po-sem"><div><b>${esc(x.c.client)}</b><div class="prv-hint" style="margin:0;">cortesia desde ${esc(fmtData(x.c.cortesia.inicio))} · ${x.e.feitas.length} ${x.e.feitas.length === 1 ? 'visita feita' : 'visitas feitas'}${x.c.cortesia.decididoEm ? ' · ' + esc(fmtData(x.c.cortesia.decididoEm)) : ''}</div></div><span class="prv-chip ${r[1]}">${esc(r[0])}</span></div>`; }).join('')}</details>` : ''}
+    </div></div>`;
+}
+async function abrirPosObra(container){
+  poBox = container;
+  if(!container._poLigado){ container._poLigado = true;
+    container.addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-po]'); if(!b) return; const a = b.dataset.po; const c = b.dataset.id != null ? mcsTodos().find(x => String(x.id) === String(b.dataset.id)) : null;
+      if(a === 'iniciar'){ const x = posObraSemCortesia().find(y => y.g.chave === b.dataset.chave); if(x) abrirIniciarCortesia(x.g, (x.st && x.st.geradoEm) ? x.st.geradoEm.slice(0, 10) : hojeStr()); return; }
+      if(a === 'contrato'){ abrirContratoManut(b.dataset.ids.split(',')); return; }
+      if(!c) return; const e2 = etapaPO(c);
+      if(a === 'msg'){ abrirMensagemPO(c, e2.n || 1); return; }
+      if(a === 'agendar'){ const inp = container.querySelector(`[data-po-data="${String(c.id).replace(/"/g, '')}"]`); if(!inp || !inp.value){ avisar('Escolha a data combinada com o cliente antes de agendar.', 5000); return; } b.disabled = true; try{ await confirmMaintenanceDate(String(c.id), inp.value); }catch(err){ console.error('pós-obra: agendar', err); } renderPosObra(); return; }
+      if(a === 'cancelar'){ customConfirm('Cancelar a cortesia pós-obra de ' + c.client + '? Ele sai desta lista (fica no histórico) e não entra no controle de visitas.', async () => { const ok = await marcarCortesia(c.id, { decisao: 'cancelada', decididoEm: hojeStr(), decididoPor: quem() || undefined }); if(ok) avisar('Cortesia cancelada.', 4000); renderPosObra(); }, 'Cancelar cortesia'); }
+    });
+  }
+  renderPosObra();
+  try{ await garantirCarregado(); await carregarInstTodos(); }catch(e){ console.error('pós-obra: carregar obras', e); }
+  renderPosObra();
 }
 // =====================================================================================
 // MANUAL DE OPERAÇÃO (20/10) — fichas em PDF (modelos) guardadas no Firebase: meta em manuaisOperacao, arquivo (base64) em
@@ -28777,13 +28987,14 @@ async function abrirContratoManut(rids, opts){
       <div class="prv-linha" style="margin:6px 0 10px;"><button type="button" class="btn-ghost oe-mini" data-cm-add>+ Adicionar equipamento</button></div>
       <div class="obr-tot" style="flex-wrap:wrap;"><span>Equipamentos <b>${esc(brl(t.equip))}/ano</b></span><span>Deslocamento <b>${esc(brl(t.desloc))}/ano</b> <small>(${esc(String(d.visitas || 0))} visitas × ${esc(String(d.km || 0))} km × ${esc(brl(cmCfg.km))}/km)</small></span><span>Total <b>${esc(brl(t.anual))}/ano</b></span><span>Mensal calculado <b class="obr-verde">${esc(brl(t.mensal))}</b></span></div>
       <div class="obr-grid2" style="margin-top:8px;"><div class="field obr-meio"><label>Valor mensal manual (opcional)</label><input type="text" inputmode="decimal" data-cm="valorManual" value="${esc(d.valorManual || '')}" placeholder="deixe vazio para usar o calculado"></div><div class="field obr-meio"><label>Valor adotado no contrato</label><div style="font-size:20px; font-weight:700; padding:6px 0;">${esc(brl(t.adotado))}<small style="font-weight:500; color:var(--text-secondary);"> /mês</small></div></div></div>
+      ${cmClausulasHtml(d)}
       <div class="field-error" id="obrCmErr"></div>
       <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap; gap:8px;"><span style="display:flex; gap:8px; flex-wrap:wrap;">${salvo && CM_RESOLVIDO[salvo.status] ? '<button type="button" class="btn-ghost" data-cm-act="reabrir">↩ Reabrir pendência</button>' : '<button type="button" class="btn-ghost" data-cm-act="ja_tem" title="O cliente já tem contrato de manutenção: a pendência sai do painel">Cliente já tem contrato</button><button type="button" class="btn-ghost" data-cm-act="recusou" title="O cliente não quer o contrato: a pendência sai do painel">Cliente não quer</button>'}</span><span style="display:flex; gap:8px; flex-wrap:wrap;"><button type="button" class="btn-ghost" data-cm-act="fechar">Fechar</button><button type="button" class="btn-ghost" data-cm-act="pdf">⤓ Baixar contrato (PDF)</button><button type="button" class="btn-primary" data-cm-act="enviado" ${salvo && (salvo.status === 'enviado' || salvo.status === 'aprovado') ? 'disabled' : ''}>✓ Marcar como enviado</button>${salvo && salvo.status === 'aprovado' ? '' : '<button type="button" class="btn-primary" data-cm-act="aprovado" title="O cliente aprovou: entra em Clientes, no controle de visitas e no Financeiro">✓ Cliente aprovou</button>'}</span></div></div>`;
   };
   const ler = () => { const n = (v) => { const x = parseValor(v); return x == null || Number.isNaN(x) ? '' : x; };
-    ov.querySelectorAll('[data-cm]').forEach(i => { const k = i.dataset.cm; d[k] = (k === 'valorManual') ? n(i.value) : i.value; });
+    ov.querySelectorAll('[data-cm]').forEach(i => { const k = i.dataset.cm; d[k] = (k === 'valorManual') ? n(i.value) : i.value; }); ov.querySelectorAll('[data-cm-cl]').forEach(i => { d[i.dataset.cmCl] = i.value; });   /* Fase 46 */
     ov.querySelectorAll('[data-cm-cat]').forEach(sl => { const it = d.itens[+sl.dataset.cmCat]; if(it.cat !== sl.value){ it.cat = sl.value; const k = fold(it.nome); if(k){ cmCfg.vinculos = Object.assign({}, cmCfg.vinculos, { [k]: sl.value }); cmSalvarCfg(); } } }); ov.querySelectorAll('[data-cm-qtd]').forEach(i => { d.itens[+i.dataset.cmQtd].qtd = Number(i.value) || 0; }); ov.querySelectorAll('[data-cm-obs]').forEach(i => { const it = d.itens[+i.dataset.cmObs]; const v = i.value.trim(); if(v) it.obs = v; else delete it.obs; }); };   /* Fase 41 */
-  const dadosPdf = () => Object.assign({}, d, { textos: cmTextos(), calc: cmCalcular(d), sistemas: (() => { const m = new Map(); d.itens.filter(i => Number(i.qtd) > 0).forEach(i => { const k = fold(i.nome) + '|' + i.cat + '|' + fold(i.obs || ''); const e = m.get(k) || { nome: i.nome, cat: cmCat(i.cat)[1].replace(/ \(incluso\)$/, ''), sistema: [i.sistema, i.obs].filter(Boolean).join(' · '), qtd: 0 };   /* Fase 41: observação */ e.qtd += Number(i.qtd); m.set(k, e); }); return [...m.values()]; })() });
+  const dadosPdf = () => Object.assign({}, d, { textos: cmTextosContrato(d), calc: cmCalcular(d), sistemas: (() => { const m = new Map(); d.itens.filter(i => Number(i.qtd) > 0).forEach(i => { const k = fold(i.nome) + '|' + i.cat + '|' + fold(i.obs || ''); const e = m.get(k) || { nome: i.nome, cat: cmCat(i.cat)[1].replace(/ \(incluso\)$/, ''), sistema: [i.sistema, i.obs].filter(Boolean).join(' · '), qtd: 0 };   /* Fase 41: observação */ e.qtd += Number(i.qtd); m.set(k, e); }); return [...m.values()]; })() });
   async function salvar(status){ const agora = new Date().toISOString(); const t = cmCalcular(d); const salvoAntes = cmEstado(regs);
     const resolve = !!CM_RESOLVIDO[status];
     const c = { status, dados: JSON.parse(JSON.stringify(d)), valor: t.adotado, atualizadoEm: agora, atualizadoPor: quem() || null, geradoEm: (salvoAntes && salvoAntes.geradoEm) || (status === 'gerado' ? agora : null), enviadoEm: resolve ? agora : null, enviadoPor: resolve ? (quem() || null) : null };
@@ -28805,7 +29016,7 @@ async function abrirContratoManut(rids, opts){
     if(a === 'pdf'){
       if(!window.PREV_API || !PREV_API.gerarPdfContratoManut) return err('O gerador de PDF não está disponível agora.');
       const ok = await cmConfirmarDados(d, cli); if(!ok) return; render();
-      try{ const blob = PREV_API.gerarPdfContratoManut(dadosPdf()); baixarBlob(blob, 'Contrato-Manutencao-' + (fold(d.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + d.emitidoEm + '.pdf', { tipo: 'Contratos de manutenção', cliente: d.cliente }); if(!(salvo && salvo.status === 'enviado')) await salvar('gerado'); avisar('Contrato gerado. Depois de enviar ao cliente, marque como enviado.', 6000); }
+      try{ const blob = PREV_API.gerarPdfContratoManut(dadosPdf()); baixarBlob(blob, 'Contrato-Manutencao-' + (fold(d.cliente).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'cliente') + '-' + d.emitidoEm + '.pdf', { tipo: 'Contratos de manutenção', cliente: d.cliente }); if(!(salvo && salvo.status === 'enviado')) await salvar('gerado'); avisar('Contrato gerado. Depois de enviar ao cliente, marque como enviado.', 6000); if(!avulso) setTimeout(() => oferecerCortesia(regs), 300); }   /* Fase 47 */
       catch(ex){ console.error('contrato manutenção: pdf', ex); err('Não foi possível gerar o PDF: ' + (ex && ex.message || ex)); }
       return;
     }
@@ -28823,8 +29034,8 @@ const visitasDoAno = (n) => { n = Number(n) || 0; if(!n) return 3; const alvo = 
 function aprovarContratoManut(d, regs, cli, salvar, fechar){
   const t = cmCalcular(d); const nome = String(d.cliente || '').trim(); const k = fold(nome); if(!k) return;
   const mcs = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
-  const mcEx = mcs.find(c => c && fold(c.client) === k) || null; const regEx = (carregado ? prevRegs() : []).find(r => fold(nomeCliente(r)) === k) || null; const cliEx = cli || clientePorNome(nome) || null;
-  const venc0 = d.vigenciaEm || hojeStr(); const campos = [];
+  const mcEx = mcs.find(c => c && fold(c.client) === k) || null; const mcCort = mcEx && mcEx.cortesia && typeof mcEx.cortesia === 'object' && !mcEx.cortesia.decisao ? mcEx : null;   /* Fase 47 */ const regEx = (carregado ? prevRegs() : []).find(r => fold(nomeCliente(r)) === k) || null; const cliEx = cli || clientePorNome(nome) || null;
+  let venc0 = d.vigenciaEm || hojeStr(); if(mcCort){ const fimC = addMonths(mcCort.cortesia.inicio || venc0, Number(mcCort.cortesia.meses) || 6); if(fimC > venc0) venc0 = fimC; }   /* Fase 47: cobrança depois do fim da cortesia */ const campos = [];
   if(!regEx) campos.push(
     { id: 'empresa', rotulo: 'Empresa', tipo: 'select', opcoes: [['', '— Definir —']].concat(EMPRESAS), valor: (regs.find(r => r.empresa) || {}).empresa || '', meio: true },
     { id: 'valor', rotulo: 'Mensalidade (R$)', tipo: 'valor', valor: campoValor(t.adotado), obrig: true, meio: true },
@@ -28835,10 +29046,11 @@ function aprovarContratoManut(d, regs, cli, salvar, fechar){
     { id: 'visitas', rotulo: 'Frequência das visitas', tipo: 'select', opcoes: VISITAS_FREQ.map(x => [String(x[0]), x[1]]), valor: String(visitasDoAno(d.visitas)), meio: true },
     { id: 'base', rotulo: 'Contar as visitas a partir de', tipo: 'data', valor: venc0, obrig: true, meio: true },
     { id: 'local', rotulo: 'Bairro / cidade (controle de visitas)', valor: '', meio: true });
+  if(mcCort) campos.push({ id: 'visitas', rotulo: 'Frequência das visitas (depois da cortesia)', tipo: 'select', opcoes: VISITAS_FREQ.map(x => [String(x[0]), x[1]]), valor: String(visitasDoAno(d.visitas)), meio: true });   // Fase 47
   const ja = [cliEx ? 'Clientes' : null, mcEx ? 'controle de visitas' : null, regEx ? 'cobrança no Financeiro' : null].filter(Boolean);
   const vai = [cliEx ? null : 'Clientes (cadastro com endereço, contato e telefone)', mcEx ? null : 'controle de visitas', regEx ? null : 'Financeiro › Manutenções preventivas (cobrança e previsões)'].filter(Boolean);
   formRapido({ titulo: 'Contrato aprovado — ' + nome, ok: 'Aprovar e cadastrar',
-    aviso: (vai.length ? 'Entra em: <b>' + esc(vai.join(' · ')) + '</b>. ' : '') + (ja.length ? 'Já estava em: ' + esc(ja.join(', ')) + ' (não muda nada lá, só contato e telefone acompanham o contrato). ' : '') + 'Contato: <b>' + esc(d.contato || '—') + '</b> · ' + esc(d.fone || 'sem telefone') + '. Os equipamentos do relatório da preventiva continuam em Manutenções › Configuração por cliente (o aviso aparece lá).',
+    aviso: (mcCort ? 'A <b>cortesia pós-obra</b> termina aqui: o cliente passa para o controle de visitas convencional, com o histórico das visitas. A cobrança sugerida começa depois do fim da cortesia. ' : '') + (vai.length ? 'Entra em: <b>' + esc(vai.join(' · ')) + '</b>. ' : '') + (ja.length ? 'Já estava em: ' + esc(ja.join(', ')) + ' (não muda nada lá, só contato e telefone acompanham o contrato). ' : '') + 'Contato: <b>' + esc(d.contato || '—') + '</b> · ' + esc(d.fone || 'sem telefone') + '. Os equipamentos do relatório da preventiva continuam em Manutenções › Configuração por cliente (o aviso aparece lá).',
     campos,
     aoSalvar: async (v) => {
       let dia = null;
@@ -28848,6 +29060,7 @@ function aprovarContratoManut(d, regs, cli, salvar, fechar){
       try{ if(!cl){ clients.push({ id: Date.now() + Math.floor(Math.random() * 1000000), name: nome, address: d.endereco || '', contato: d.contato || '', fone: d.fone || '' }); await saveClients(true); cl = clientePorNome(nome); feito.push('cadastrado em Clientes'); }
         else if(d.endereco && !cl.address){ cl.address = d.endereco; await saveClients(true); } }catch(e){ console.error('contrato aprovado: Clientes', e); falhou.push('Clientes'); }
       const nomeCad = cl ? cl.name : nome;
+      try{ if(mcCort){ const atual = maintenanceContracts.find(x => String(x.id) === String(mcCort.id)); if(atual && atual.cortesia){ atual.cortesia = ordenarChaves(Object.assign({}, atual.cortesia, { decisao: 'aprovado', decididoEm: hojeStr(), decididoPor: quem() || undefined })); if(Number(v.visitas)) atual.intervalMonths = Number(v.visitas); await saveMaintenanceContracts(true); feito.push('cortesia pós-obra encerrada (cliente no controle de visitas)'); } } }catch(e){ console.error('contrato aprovado: cortesia', e); falhou.push('controle de visitas'); }   /* Fase 47 */
       try{ if(!mcEx){ maintenanceContracts.push({ id: Date.now(), client: nomeCad, contactName: d.contato || '', contact: d.fone || '', location: v.local || '', intervalMonths: Number(v.visitas) || 3, lastDate: v.base, scheduledFor: null }); await saveMaintenanceContracts(true); feito.push('colocado no controle de visitas'); } }catch(e){ console.error('contrato aprovado: controle de visitas', e); falhou.push('controle de visitas'); }
       try{ if(!regEx){ await garantirCarregado(); const dup = prevRegs().find(r => fold(nomeCliente(r)) === k);
           if(!dup){ const plano = { periodicidade: 'mensal', visitas: Number(v.visitas) || (mcEx && Number(mcEx.intervalMonths)) || visitasDoAno(d.visitas), valor: v.valor, diaVenc: dia, inicio: v.inicio, fim: null, ativo: true, obs: 'Contrato de manutenção aprovado em ' + fmtData(hojeStr()) };
@@ -29060,7 +29273,7 @@ function prevSituacao(r, hoje){
 // Fase 26: o cliente da cobrança ligado ao controle de visitas e ao cadastro de Clientes
 function ligadosPrev(r){ const k = fold(nomeCliente(r)); const mcs = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
   const cls = (typeof clients !== 'undefined' && Array.isArray(clients)) ? clients : [];
-  return { mc: mcs.find(c => c && fold(c.client) === k) || null, cli: (r.clienteId != null ? cls.find(c => c && String(c.id) === String(r.clienteId)) : null) || clientePorNome(nomeCliente(r)) || null }; }
+  return { mc: mcs.find(c => c && mcConv(c) && fold(c.client) === k) || null, cli: (r.clienteId != null ? cls.find(c => c && String(c.id) === String(r.clienteId)) : null) || clientePorNome(nomeCliente(r)) || null }; }
 const contatoPrev = (r) => { const l = ligadosPrev(r); return { contato: r.contato || (l.mc && l.mc.contactName) || (l.cli && l.cli.contato) || '', fone: r.fone || (l.mc && l.mc.contact) || (l.cli && l.cli.fone) || '', visitas: planoDe(r).visitas || (l.mc && Number(l.mc.intervalMonths)) || null }; };
 // Preenche na cobrança o que está em branco e já existe no Gestor (nunca troca o que está preenchido). Devolve quantos campos mudaram.
 function prevPreencherLigados(r){ const l = ligadosPrev(r); let n = 0; const pega = (k, v) => { if(v && !r[k]){ r[k] = v; n++; } };
@@ -29084,7 +29297,7 @@ const htmlFaltas = (r) => { const f = prevFaltas(r); return f.length ? `<small c
 function prevClientes(){
   const m = new Map();
   const add = (nome, campo, v) => { const k = fold(nome); if(!k) return; const e = m.get(k) || { k, nome: String(nome).trim(), mc: null, cm: null, r: null, cli: clientePorNome(nome) }; if(campo) e[campo] = v; if(e.cli) e.nome = e.cli.name; m.set(k, e); };
-  (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts) ? maintenanceContracts : []).forEach(c => { if(c && c.client) add(c.client, 'mc', c); });
+  (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts) ? maintenanceContracts : []).forEach(c => { if(c && c.client && mcConv(c)) add(c.client, 'mc', c); });   // Fase 47: sem a cortesia pós-obra
   let cms = []; try{ cms = contratosManut(); }catch(e){} cms.forEach(x => { const e = m.get(fold(x.cliente)); if(e && !(x.c && x.c.status === 'recusou')) e.cm = x; });   // Fase 20: só informa, não inclui
   prevRegs().forEach(r => add(nomeCliente(r), 'r', r));
   return [...m.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
@@ -29517,7 +29730,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ abrirPosObra, posObraAtualizar, posObraBadge, _po: { iniciarCortesia, oferecerCortesia, posObraSemCortesia, textoMensagemPO, renderPosObra, cardPO, mcConv, cortesiaCfg, aprovarContratoManut }, /* Fase 47 */ cmTextosContrato, cmClausulasHtml, CM_CLAUSULAS, /* Fase 46 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
@@ -29724,8 +29937,9 @@ function blocoEstoque(){
   return bloco('Alertas de estoque', 'estoque', corpo);
 }
 // Manutenção preventiva: os MESMOS quatro números do quadro de resumo da aba Manutenções (total, em dia, próximos de vencer em até 15 dias, atrasados).
+const mcConvP = (c) => !!c && !(c.cortesia && typeof c.cortesia === 'object' && c.cortesia.decisao !== 'aprovado');   // Fase 47: cortesia pós-obra fica fora
 function blocoManutencao(){
-  const lista = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+  const lista = ((typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : []).filter(mcConvP);
   const rows = lista.map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, dias: daysUntil(prox) }; }).sort((a, b) => a.prox.localeCompare(b.prox));
   const atrasados = rows.filter(r => r.dias < 0), proximos = rows.filter(r => r.dias >= 0 && r.dias <= 15), emDia = rows.length - atrasados.length - proximos.length;
   const lin = (r) => `<div class="pn-lin pn-click" data-pn-go="manutencoes"><span class="pn-lin-t">${esc(r.c.client)}</span><span class="pn-lin-m">${r.c.scheduledFor ? 'Agendado' : 'Sem visita agendada'}</span><span class="pn-pill pn-p-${r.dias < 0 ? 'red' : 'amber'}">${r.dias < 0 ? 'Atrasada há ' + Math.abs(r.dias) + (Math.abs(r.dias) === 1 ? ' dia' : ' dias') : r.dias === 0 ? 'Vence hoje' : 'Vence em ' + r.dias + (r.dias === 1 ? ' dia' : ' dias')}</span></div>`;
@@ -29816,7 +30030,7 @@ function resumoDoDia(dia){
   const falta = ev.estoque.filter(e => /entrou em REPOSIÇÃO|chegou ao mínimo/.test(e.texto)); const movs = ev.estoque.find(e => /movimentaç/.test(e.texto));
   R.estoque = { faltas: falta.length, movs: movs ? movs.texto : '', lista: falta.map(e => ({ t: e.texto, m: e.por, tom: 'red', go: 'estoque' })) };
   // 6) Manutenção preventiva: contratos que entraram em "atrasados" (venceram no dia) ou em "próximos de vencer" (15 dias)
-  const contratos = typeof maintenanceContracts !== 'undefined' ? maintenanceContracts : []; const atr = [], prx = [];
+  const contratos = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts) ? maintenanceContracts : []).filter(mcConvP); const atr = [], prx = [];   // Fase 47
   contratos.forEach(c => { const p = addMonths(c.lastDate, c.intervalMonths || 3); if(p === dia) atr.push({ c, p }); else if(somaDia(p, -15) === dia) prx.push({ c, p }); });
   R.manut = { atrasados: atr.length, proximos: prx.length, lista: atr.map(x => ({ t: x.c.client + ' — entrou em atrasados', m: 'venceu em ' + fmtD(x.p) + (x.c.scheduledFor ? ' · visita agendada ' + fmtD(x.c.scheduledFor) : ' · sem visita agendada'), tom: 'red', go: 'manutencoes' })).concat(prx.map(x => ({ t: x.c.client + ' — entrou em próximos de vencer', m: 'vence em ' + fmtD(x.p) + (x.c.scheduledFor ? ' · visita agendada ' + fmtD(x.c.scheduledFor) : ' · sem visita agendada'), tom: 'amber', go: 'manutencoes' }))) };
   // 7) Oficina: movimentos do dia (como antes)
@@ -29912,7 +30126,9 @@ function renderGestor(){
   const eqs = typeof oficinaEquipamentos !== 'undefined' ? oficinaEquipamentos : []; const rotG = typeof OE_GRUPO_LABEL !== 'undefined' ? OE_GRUPO_LABEL : {};
   const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
   const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
-  const contratos = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : [];
+  const contratosTodos = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : []; const contratos = contratosTodos.filter(mcConvP);   // Fase 47
+  const poVis = contratosTodos.filter(c => c && c.cortesia && typeof c.cortesia === 'object' && !c.cortesia.decisao && typeof cortesiaEtapa === 'function').map(c => ({ c, e: cortesiaEtapa(c) })).filter(x => x.e && x.e.etapa === 'visita' && !x.e.agendada && x.e.dias <= 15);
+  const poAtr = poVis.filter(x => x.e.dias < 0), poProx = poVis.filter(x => x.e.dias >= 0);
   const mRows = contratos.map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, dias: daysUntil(prox) }; }).sort((a, b) => a.prox.localeCompare(b.prox));
   const mAtr = mRows.filter(r => r.dias < 0), mProx = mRows.filter(r => r.dias >= 0 && r.dias <= 15), mOk = mRows.length - mAtr.length - mProx.length;
   const { rep, aten } = resumoEstoque();
@@ -29923,6 +30139,7 @@ function renderGestor(){
   const add = (n, tom, t, sub, acao, attr) => { if(n) ex.push({ n, tom, t, sub, acao, attr }); };
   const nomes = (l, f) => l.slice(0, 3).map(f).join(' · ') + (l.length > 3 ? ' · +' + (l.length - 3) : '');
   add(mAtr.length, 'red', 'Contratos de manutenção atrasados', nomes(mAtr, r => r.c.client), 'Agendar', 'data-pn-go="manutencoes"');
+  add(poAtr.length, 'red', 'Pós-obra: visitas de cortesia atrasadas', nomes(poAtr, x => x.c.client), 'Agendar', 'data-pn-go="manutencoes" data-pn-sub="prvManutTabPosObra"');   // Fase 47
   add(cont('aguardando'), 'red', 'Atividades de hoje sem técnico', 'aguardando atribuição', 'Atribuir', 'data-pn-go="agenda"');
   add(parados, 'red', 'Equipamentos parados além do limite na Oficina', nG('vistoria') + ' aguardando vistoria', 'Ver', 'data-pn-go="oficinagestor"');
   add(orc && orc.pronto ? orc.atrasados : 0, 'red', 'Orçamentos atrasados', orc && orc.vencendo ? orc.vencendo + ' vencem em 7 dias' : 'prazo vencido', 'Fazer', 'data-pn-go="orcamentos"');
@@ -29935,6 +30152,7 @@ function renderGestor(){
   add(pendOS, 'amber', 'Registros aguardando cadastro de OS', 'atividades, quadros e equipamentos concluídos sem OS', 'Cadastrar', 'data-pn-go="os" data-pn-sub="prvOsTabAguardando"');
   add(nPrev, 'amber', 'Pendências de preventivas', 'relatórios dos técnicos com pendência', 'Abrir', 'data-pn-pag="gestor:pend"');
   add(mProx.length, 'amber', 'Contratos de manutenção vencendo em 15 dias', nomes(mProx, r => r.c.client), 'Agendar', 'data-pn-go="manutencoes"');
+  add(poProx.length, 'amber', 'Pós-obra: visitas de cortesia vencendo em 15 dias', nomes(poProx, x => x.c.client), 'Agendar', 'data-pn-go="manutencoes" data-pn-sub="prvManutTabPosObra"');   // Fase 47
   add(cmPend.length, 'amber', 'Contratos de manutenção a enviar', 'obras finalizadas sem contrato enviado', 'Enviar', 'data-pn-go="obras" data-pn-sub="obrgSubFin"');
   add(manPend.length, 'amber', 'Manuais de operação a enviar', 'obras finalizadas sem manual enviado', 'Enviar', 'data-pn-go="obras" data-pn-sub="obrgSubFin"');
   add(osPronto ? osSt('decidir') : 0, 'gray', 'OS a definir', 'cobrar ou não cobrar', 'Decidir', 'data-pn-go="os" data-pn-sub="prvOsTabDecisao"');
