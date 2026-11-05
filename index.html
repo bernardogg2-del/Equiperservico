@@ -1606,6 +1606,12 @@
   .po-acoes .btn-whatsapp{ width:auto; flex:0 0 auto; padding-left:14px; padding-right:14px; }
   .po-sem{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:10px; margin:0 0 8px; background:var(--surface); }
   .po-det > summary{ cursor:pointer; font-size:11.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin:22px 0 10px; }
+  .po-acoes .btn-primary{ width:auto; }   /* Fase 48 */
+  .maint-scheduled-tag.po-sem-resp{ color:var(--danger); font-weight:700; }
+  .po-resumo{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; padding:10px 14px; margin:12px 0 4px; border:1px solid var(--border); border-radius:10px; background:var(--surface); font-size:13px; }
+  .po-resumo.acao{ border-color:var(--warning-line); background:var(--warning-soft); }
+  .prv-chip.po-cort{ background:rgba(111,66,193,0.10); color:#5B3AA8; border:1px solid rgba(111,66,193,0.35); }
+  :root[data-theme="dark"] .prv-chip.po-cort{ background:rgba(167,139,250,0.16); color:#C4B5FD; border-color:rgba(167,139,250,0.45); }
   .maint-row-fields{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 10px; }
   .maint-row-fields .field{ margin-bottom:0; flex:1; min-width:140px; }
   .maint-row-next{ font-size: 11.5px; color: var(--text-dim); margin-bottom: 10px; }
@@ -3887,6 +3893,7 @@
 
   <div id="tabManutencoes" style="display:none;">
     <div class="prv-kpi-grid" id="maintResumoCards"></div>
+    <div id="maintResumoPO"></div>   <!-- Fase 48: cortesia pós-obra -->
     <div id="prvFinNovos"></div>   <!-- Fase 19: clientes de preventiva vindos do Financeiro que faltam aqui -->
     <div class="portal-tabs estoque-subnav-v2" id="prvManutTabs" style="padding:0 0 14px;">
       <button type="button" class="portal-tab active" data-prvmanut="visitas">Controle de visitas</button>
@@ -10956,7 +10963,9 @@ function cortesiaEtapa(c){
   const feitas = cortesiaVisitasFeitas(c); const total = Math.max(1, Number(co.visitas) || 2); const fim = addMonths(co.inicio, Number(co.meses) || 6);
   if(co.decisao) return { etapa: co.decisao, feitas, total, fim };
   if(feitas.length < total){ const prox = addMonths(c.lastDate || co.inicio, c.intervalMonths || 3); return { etapa: 'visita', n: feitas.length + 1, feitas, total, fim, prox, dias: daysUntil(prox), agendada: c.scheduledFor || null }; }
-  return { etapa: co.reenviadoEm ? 'resposta' : 'reenviar', feitas, total, fim };
+  if(!co.reenviadoEm) return { etapa: 'reenviar', feitas, total, fim };
+  const ultContato = String([co.reenviadoEm, co.lembreteEm].filter(Boolean).sort().pop()).slice(0, 10); const semResposta = Math.max(0, -daysUntil(ultContato));   // Fase 48
+  return { etapa: 'resposta', feitas, total, fim, reenviadoEm: String(co.reenviadoEm).slice(0, 10), semResposta, alertaResposta: semResposta >= 15 };   // 15 dias sem resposta → alerta
 }
 
 function freqLabel(months){
@@ -24403,6 +24412,18 @@ function resumoManutencoes(rows){
     { tom:'amarelo',  icone:'relogio', numero: c.soon,      rotulo:'Próximos de vencer',  sub:'vencem em até 15 dias' + ag(c.soonAg) },
     { tom:'vermelho', icone:'alerta',  numero: c.overdue,   rotulo:'Atrasados',           sub:'passaram da data' + ag(c.overdueAg) },
   ]);
+  resumoPosObra();   // Fase 48
+}
+// Fase 48: linha da cortesia pós-obra embaixo do resumo (a cortesia não entra nos números acima), com atalho para a aba Pós-obra
+function resumoPosObra(){
+  const el = document.getElementById('maintResumoPO'); if(!el) return;
+  const at = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts) ? maintenanceContracts : []).filter(c => c && c.cortesia && typeof c.cortesia === 'object' && !c.cortesia.decisao && typeof cortesiaEtapa === 'function').map(c => cortesiaEtapa(c)).filter(Boolean);
+  if(!at.length){ el.innerHTML = ''; return; }
+  const vis = at.filter(e => e.etapa === 'visita' && !e.agendada && e.dias <= 15), atr = vis.filter(e => e.dias < 0).length, prx = vis.length - atr;
+  const reenv = at.filter(e => e.etapa === 'reenviar').length, semR = at.filter(e => e.etapa === 'resposta' && e.alertaResposta).length;
+  const partes = [atr ? atr + (atr === 1 ? ' visita atrasada' : ' visitas atrasadas') : '', prx ? prx + (prx === 1 ? ' visita a agendar' : ' visitas a agendar') + ' (até 15 dias)' : '', reenv ? reenv + (reenv === 1 ? ' contrato a reenviar' : ' contratos a reenviar') : '', semR ? semR + (semR === 1 ? ' contrato sem resposta' : ' contratos sem resposta') : ''].filter(Boolean);
+  el.innerHTML = `<div class="po-resumo${partes.length ? ' acao' : ''}"><span><b>Pós-obra (cortesia):</b> ${at.length} ${at.length === 1 ? 'cliente' : 'clientes'} em cortesia · ${partes.length ? esc(partes.join(' · ')) : 'nada pendente'}</span><button type="button" class="btn-ghost oe-mini" data-po-abrir>Abrir Pós-obra ›</button></div>`;
+  if(!el._poLig){ el._poLig = true; el.addEventListener('click', (e) => { if(e.target.closest('[data-po-abrir]')){ const t = document.getElementById('prvManutTabPosObra'); if(t) t.click(); } }); }
 }
 
 
@@ -27664,7 +27685,7 @@ function renderGestor(){
     const acoes = (g_.grp === 'f' ? `<button type="button" class="btn-ghost oe-mini ${cmPend ? 'obrg-cm-pend' : ''}" data-obrg-cm="${esc(regs.map(r => r.id).join(','))}">📄 Contrato de manutenção${cmEst && CM_RESOLVIDO[cmEst.status] ? ' ✓' : ''}</button><button type="button" class="btn-ghost oe-mini ${manPend ? 'obrg-cm-pend' : ''}" data-obrg-man="${esc(regs.map(r => r.id).join(','))}">📘 Manual de operação${manEst && MAN_RESOLVIDO[manEst.status] ? ' ✓' : ''}</button>` : '') + `<button type="button" class="btn-ghost oe-mini" data-obrg-ativobra="${esc(regs[0].id)}">+ Atividade da obra</button>` + (varias ? `<button type="button" class="btn-ghost oe-mini" data-obrg-pdfcli="${esc(regs.map(r => r.id).join(','))}">⤓ Relatório PDF</button>` : `<button type="button" class="btn-ghost oe-mini" data-obrg-pdf="${esc(regs[0].id)}|">⤓ Relatório PDF</button>`);
     return cab + `<div class="obrg-card obrg-cliente${aberto ? ' obrg-aberto' : ''}">
       <div class="obrg-resumo" role="button" tabindex="0" aria-expanded="${aberto}" data-obrg-cli="${esc(chave)}" title="${aberto ? 'Recolher' : 'Abrir o cartão completo'}"><span class="obrg-seta">${aberto ? '▾' : '▸'}</span>
-        <span class="obrg-nome"><b>${esc(nome)}</b>${g_.anterior ? '<span class="prv-chip gray obrg-cm-chip" title="Obra já finalizada. O cliente tem pedido novo, que aparece em Em andamento.">Obra anterior</span>' : ''}${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}${nNovos ? `<span class="prv-chip obrg-novo obrg-cm-chip" title="Pedido cadastrado há menos de ${NOVO_PEDIDO_DIAS} dias">Novo${nNovos > 1 ? ' ×' + nNovos : ''}</span>` : ''}${nSemEq ? `<span class="prv-chip red obrg-cm-chip obrg-semeq-chip" title="Pedido sem equipamentos cadastrados (abra o cartão e cadastre, ou marque que não precisa)">⚠ ${nSemEq === 1 ? '1 pedido sem equipamentos' : nSemEq + ' pedidos sem equipamentos'}</span>` : ''}${cmPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o contrato de manutenção preventiva">⚠ Contrato de manutenção a enviar</span>' : cmEst && cmEst.status === 'enviado' ? `<span class="prv-chip green obrg-cm-chip" title="Contrato de manutenção enviado">Contrato enviado ${esc(fmtData(String(cmEst.enviadoEm || '').slice(0, 10)))}</span>` : cmEst && CM_RESOLVIDO[cmEst.status] ? `<span class="prv-chip gray obrg-cm-chip">${esc(CM_RESOLVIDO[cmEst.status])}</span>` : ''}${manPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o manual de operação">⚠ Manual de operação a enviar</span>' : manEst && MAN_RESOLVIDO[manEst.status] ? `<span class="prv-chip ${manEst.status === 'enviado' ? 'green' : 'gray'} obrg-cm-chip">${esc(MAN_RESOLVIDO[manEst.status])}${manEst.status === 'enviado' && manEst.enviadoEm ? ' ' + esc(fmtData(String(manEst.enviadoEm).slice(0, 10))) : ''}</span>` : ''}</span>
+        <span class="obrg-nome"><b>${esc(nome)}</b>${g_.anterior ? '<span class="prv-chip gray obrg-cm-chip" title="Obra já finalizada. O cliente tem pedido novo, que aparece em Em andamento.">Obra anterior</span>' : ''}${regs.map(r => `<span class="prv-chip gray">${esc(rotEmp(r))}</span>`).join('')}${nNovos ? `<span class="prv-chip obrg-novo obrg-cm-chip" title="Pedido cadastrado há menos de ${NOVO_PEDIDO_DIAS} dias">Novo${nNovos > 1 ? ' ×' + nNovos : ''}</span>` : ''}${nSemEq ? `<span class="prv-chip red obrg-cm-chip obrg-semeq-chip" title="Pedido sem equipamentos cadastrados (abra o cartão e cadastre, ou marque que não precisa)">⚠ ${nSemEq === 1 ? '1 pedido sem equipamentos' : nSemEq + ' pedidos sem equipamentos'}</span>` : ''}${cmPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o contrato de manutenção preventiva">⚠ Contrato de manutenção a enviar</span>' : cmEst && cmEst.status === 'enviado' ? `<span class="prv-chip green obrg-cm-chip" title="Contrato de manutenção enviado">Contrato enviado ${esc(fmtData(String(cmEst.enviadoEm || '').slice(0, 10)))}</span>` : cmEst && CM_RESOLVIDO[cmEst.status] ? `<span class="prv-chip gray obrg-cm-chip">${esc(CM_RESOLVIDO[cmEst.status])}</span>` : ''}${manPend ? '<span class="prv-chip red obrg-cm-chip" title="A obra terminou: gere e envie o manual de operação">⚠ Manual de operação a enviar</span>' : manEst && MAN_RESOLVIDO[manEst.status] ? `<span class="prv-chip ${manEst.status === 'enviado' ? 'green' : 'gray'} obrg-cm-chip">${esc(MAN_RESOLVIDO[manEst.status])}${manEst.status === 'enviado' && manEst.enviadoEm ? ' ' + esc(fmtData(String(manEst.enviadoEm).slice(0, 10))) : ''}</span>` : ''}${g_.grp === 'f' ? chipCortesia(nome) : ''}</span>
         <span class="obrg-princ"><span class="obr-sp obr-sp-${prin}" title="Andamento principal: o menos avançado entre os pedidos em aberto (o que segura a obra)">${esc(rotObra(prin))}</span>${outros.slice(0, 2).map(k => `<span class="obrg-outros obrg-outros-${k}" title="Outros pedidos deste cliente: ${esc(rotOutros)}">${esc(rotObra(k))}</span>`).join('')}${outros.length > 2 ? `<span class="obrg-outros" title="${esc(rotOutros)}">+${outros.length - 2}</span>` : ''}</span>
         <span class="obrg-pontos" aria-hidden="true">${pontos}</span><span class="obrg-anel${fin && fin === todosPeds.length ? ' cheio' : ''}" style="--p:${pctPedidos(todosPeds)}" role="img" aria-label="${pctPedidos(todosPeds)}% concluído" title="${pctPedidos(todosPeds)}% das etapas de instalação (o Teste vale 10% de cada equipamento) · ${fin} de ${todosPeds.length} finalizados"><b>${pctPedidos(todosPeds)}%</b></span></div>
       ${aberto ? `<div class="obrg-detalhe"><div class="obrg-cli"><span class="obrg-prog">${fin} de ${todosPeds.length} ${todosPeds.length === 1 ? 'finalizado' : 'finalizados'}</span><span class="obrg-cli-a">${acoes}</span></div>
@@ -28611,23 +28632,26 @@ function textoMensagemPO(c, n){
   const co = c.cortesia || {}; const h = new Date().getHours(); const saud = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
   const nome = String(c.contactName || '').trim() || c.client; const eu = quem() || 'a equipe da Equiper'; const meses = Number(co.meses) || 6;
   const cab = saud + ', ' + nome + '! Sou ' + eu + ', da equipe de engenharia da Equiper.';
+  if(n === 'fim') return cab + '\n\nConcluímos as ' + (Number(co.visitas) || 2) + ' visitas de manutenção preventiva da cortesia de ' + meses + ' meses. Envio o relatório da última visita e, de novo, a proposta do contrato de manutenção preventiva, para que seus equipamentos continuem com a manutenção em dia. Fico à disposição para qualquer dúvida.';   // Fase 48
+  if(n === 'lembrete') return cab + '\n\nPassando para saber se conseguiu ver a proposta do contrato de manutenção preventiva que enviamos' + (co.reenviadoEm ? ' em ' + fmtData(String(co.reenviadoEm).slice(0, 10)) : '') + '. Fico à disposição para qualquer dúvida.';
   if(n <= 1) return cab + '\n\n' + (co.instalacoes ? 'Fizemos na sua casa as seguintes instalações: ' + co.instalacoes + '.\n\n' : '') + 'No nosso serviço oferecemos, como cortesia, ' + meses + ' meses de contrato de manutenção preventiva inclusos. Gostaria de agendar a primeira visita. Qual o melhor dia para você?';
   return cab + '\n\nEstá chegando a ' + n + 'ª visita de manutenção preventiva da cortesia de ' + meses + ' meses. Gostaria de agendar. Qual o melhor dia para você?';
 }
 async function marcarCortesia(id, campos){
   const atual = mcsTodos().find(x => String(x.id) === String(id)); if(!atual || !atual.cortesia) return false;
-  atual.cortesia = ordenarChaves(Object.assign({}, atual.cortesia, campos)); let ok = false; try{ ok = await saveMaintenanceContracts(true); }catch(e){ console.error('pós-obra: gravar', e); } return ok;
+  atual.cortesia = ordenarChaves(Object.assign({}, atual.cortesia, campos)); let ok = false; try{ ok = await saveMaintenanceContracts(true); }catch(e){ console.error('pós-obra: gravar', e); } if(ok){ try{ renderManutencoes(); }catch(e){} } return ok;   /* Fase 48: resumo de Manutenções acompanha */
 }
 function abrirMensagemPO(c, n){
   let ov = document.getElementById('poMsgOverlay'); if(ov) ov.remove();
   ov = document.createElement('div'); ov.className = 'overlay open'; ov.id = 'poMsgOverlay'; ov.style.zIndex = 100001;
-  ov.innerHTML = `<div class="modal" style="max-width:560px;"><h3>Mensagem da ${n}ª visita — ${esc(c.client)}</h3><p class="prv-hint" style="margin:2px 0 10px;">Confira e mude o que quiser antes de enviar.</p>
+  ov.innerHTML = `<div class="modal" style="max-width:560px;"><h3>${n === 'fim' ? 'Fim da cortesia' : n === 'lembrete' ? 'Lembrete do contrato' : 'Mensagem da ' + n + 'ª visita'} — ${esc(c.client)}</h3><p class="prv-hint" style="margin:2px 0 10px;">Confira e mude o que quiser antes de enviar.${n === 'fim' ? ' Anexe na conversa o PDF do relatório da última visita e o do contrato (botão "Abrir contrato" no cartão).' : ''}</p>
     <div class="field"><label for="poMsgFone">WhatsApp</label><input type="text" id="poMsgFone" value="${esc(c.contact || '')}" placeholder="(21) 90000-0000"></div>
     <div class="field"><label for="poMsgTxt">Mensagem</label><textarea id="poMsgTxt" rows="9" style="width:100%; font-family:inherit; font-size:13.5px;">${esc(textoMensagemPO(c, n))}</textarea></div>
     <div class="field-error" id="poMsgErr"></div>
     <div class="modal-actions" style="justify-content:flex-end; flex-wrap:wrap;"><button type="button" class="btn-ghost" data-pom="fechar">Fechar</button><button type="button" class="btn-ghost" data-pom="copiar">Copiar texto</button><button type="button" class="btn-primary" data-pom="whats">Abrir WhatsApp</button></div></div>`;
   document.body.appendChild(ov);
-  const marcar = () => marcarCortesia(c.id, { ['msg' + n]: hojeStr() }).then(() => renderPosObra());
+  const co0 = c.cortesia || {};   // Fase 48: fim = contrato reenviado; lembrete = último contato
+  const marcar = () => marcarCortesia(c.id, n === 'fim' ? { msgFim: hojeStr(), reenviadoEm: co0.reenviadoEm || hojeStr(), reenviadoPor: co0.reenviadoPor || quem() || undefined } : n === 'lembrete' ? { lembreteEm: hojeStr() } : { ['msg' + n]: hojeStr() }).then(() => renderPosObra());
   ov.addEventListener('click', async (e) => {
     if(e.target === ov){ ov.remove(); return; } const b = e.target.closest('[data-pom]'); if(!b) return; const a = b.dataset.pom; const txt = ov.querySelector('#poMsgTxt').value;
     if(a === 'fechar'){ ov.remove(); return; }
@@ -28635,8 +28659,25 @@ function abrirMensagemPO(c, n){
     if(a === 'whats'){ const fone = ov.querySelector('#poMsgFone').value; if(String(fone || '').replace(/\D/g, '').length < 10){ ov.querySelector('#poMsgErr').textContent = 'Informe um WhatsApp com DDD.'; return; } openWhatsapp(toWhatsappNumber(fone), txt); ov.remove(); marcar(); }
   });
 }
+// Fase 48: registros da obra para abrir o contrato (os que já têm contrato; senão, os da obra finalizada de origem)
+function regsContratoPO(c){
+  const k = fold(c.client); const comCm = registros().filter(r => fold(nomeCliente(r)) === k && r.contratoManut); if(comCm.length) return comCm;
+  let fins = []; try{ fins = cmClientesFinalizados(); }catch(e){}
+  const g = fins.find(x => x.chave === (c.cortesia || {}).origem) || fins.find(x => fold(x.nome) === k); return g ? g.regs : [];
+}
+// Fase 48: "Não aprovou" também resolve a pendência do contrato na obra ("Não quis contrato"), como o botão da janela do contrato
+async function contratoRecusadoPO(c){
+  const regs = registros().filter(r => fold(nomeCliente(r)) === fold(c.client) && r.contratoManut && !['ja_tem', 'recusou', 'aprovado'].includes(r.contratoManut.status)); if(!regs.length) return 0;
+  const agora = new Date().toISOString(); regs.forEach(r => { r.contratoManut = Object.assign({}, r.contratoManut, { status: 'recusou', atualizadoEm: agora, atualizadoPor: quem() || null, enviadoEm: agora, enviadoPor: quem() || null }); r.atualizadoEm = agora; });
+  try{ await store.save(true); renderGestor(); }catch(e){ console.error('pós-obra: contrato não aprovado', e); } return regs.length;
+}
+// Fase 48: selo no cartão do cliente em Obras e Pedidos enquanto a cortesia estiver ativa
+function chipCortesia(nome){
+  const c = mcDoCliente(fold(nome)); if(!c || !c.cortesia || typeof c.cortesia !== 'object' || c.cortesia.decisao) return '';
+  return `<span class="prv-chip po-cort obrg-cm-chip" title="Manutenção preventiva de cortesia pós-obra (Manutenções › Pós-obra)">Cortesia até ${esc(fmtData(addMonths(c.cortesia.inicio, Number(c.cortesia.meses) || 6)))}</span>`;
+}
 let poBox = null;
-function posObraBadge(){ const el = document.getElementById('prvPosObraN'); if(!el) return; const n = posObraLista().filter(c => !c.cortesia.decisao).map(etapaPO).filter(e => (e.etapa === 'visita' && !e.agendada && e.dias <= 15) || e.etapa === 'reenviar').length; el.textContent = n ? ' ' + n : ''; }
+function posObraBadge(){ const el = document.getElementById('prvPosObraN'); if(!el) return; const n = posObraLista().filter(c => !c.cortesia.decisao).map(etapaPO).filter(e => (e.etapa === 'visita' && !e.agendada && e.dias <= 15) || e.etapa === 'reenviar' || (e.etapa === 'resposta' && e.alertaResposta)).length; el.textContent = n ? ' ' + n : ''; }   /* Fase 48: + sem resposta */
 function posObraAtualizar(){ posObraBadge(); if(poBox && poBox.style.display !== 'none' && !(document.activeElement && poBox.contains(document.activeElement))) renderPosObra(); }
 function cardPO(c, e){
   const co = c.cortesia; const passos = [];
@@ -28647,11 +28688,12 @@ function cardPO(c, e){
   }
   passos.push(`<span class="po-et${e.etapa === 'reenviar' ? ' atual' : e.etapa === 'resposta' ? ' feita' : ''}">${e.etapa === 'resposta' ? '✓' : e.etapa === 'reenviar' ? '●' : '○'} Reenviar contrato</span>`, `<span class="po-et${e.etapa === 'resposta' ? ' atual' : ''}">${e.etapa === 'resposta' ? '●' : '○'} Resposta do cliente</span>`);
   let semEquip = false; try{ semEquip = !!(window.PREV_API && PREV_API.unidadesDoCliente) && !PREV_API.unidadesDoCliente(c.client).length; }catch(_){}
-  const regs = registros().filter(r => fold(nomeCliente(r)) === fold(c.client) && r.contratoManut);
+  const regs = regsContratoPO(c);   // Fase 48
   let acoes = '';
   if(e.etapa === 'visita' && !e.agendada){ const m = co['msg' + e.n]; acoes = `<button type="button" class="btn-whatsapp" style="margin-top:0;" data-po="msg" data-id="${esc(c.id)}">💬 Mensagem da ${e.n}ª visita</button>${m ? `<span class="prv-hint" style="margin:0;">enviada ${esc(fmtData(m))}</span>` : ''}<input type="date" data-po-data="${esc(c.id)}" title="Data combinada com o cliente"><button type="button" class="btn-ghost" data-po="agendar" data-id="${esc(c.id)}">Agendar visita</button>`; }
   else if(e.etapa === 'visita') acoes = `<span class="maint-scheduled-tag">${e.n}ª visita agendada para ${esc(fmtData(e.agendada))}</span>`;
-  else if(e.etapa === 'reenviar') acoes = `<span class="prv-hint" style="margin:0;">Cortesia concluída: envie o relatório da última visita e o contrato de novo.</span>${regs.length ? `<button type="button" class="btn-ghost" data-po="contrato" data-ids="${esc(regs.map(r => r.id).join(','))}">Abrir contrato</button>` : ''}`;
+  else if(e.etapa === 'reenviar') acoes = `<span class="prv-hint" style="margin:0; flex-basis:100%;">Cortesia concluída: envie o relatório da última visita e o contrato de novo.</span><button type="button" class="btn-whatsapp" style="margin-top:0;" data-po="msgfim" data-id="${esc(c.id)}">💬 Mensagem de fim da cortesia</button>${regs.length ? `<button type="button" class="btn-ghost" data-po="contrato" data-ids="${esc(regs.map(r => r.id).join(','))}">Abrir contrato</button>` : ''}<button type="button" class="btn-ghost" data-po="reenviado" data-id="${esc(c.id)}" title="Já mandou o contrato por outro meio (e-mail, em mãos)">✓ Contrato reenviado</button>`;   // Fase 48
+  else if(e.etapa === 'resposta') acoes = `<span class="maint-scheduled-tag${e.alertaResposta ? ' po-sem-resp' : ''}" style="flex-basis:100%;">Contrato reenviado em ${esc(fmtData(e.reenviadoEm))}${e.semResposta ? ' · sem resposta há ' + e.semResposta + (e.semResposta === 1 ? ' dia' : ' dias') : ''}</span>${regs.length ? `<button type="button" class="btn-primary" data-po="aprovou" data-ids="${esc(regs.map(r => r.id).join(','))}" title="Abre o contrato na aprovação: o cliente vai para o controle de visitas e o Financeiro">✓ Cliente aprovou</button>` : ''}<button type="button" class="btn-ghost" data-po="naoaprovou" data-id="${esc(c.id)}">Não aprovou</button><button type="button" class="btn-whatsapp" style="margin-top:0;" data-po="lembrete" data-id="${esc(c.id)}">💬 Lembrete</button>${co.lembreteEm ? `<span class="prv-hint" style="margin:0;">lembrete ${esc(fmtData(co.lembreteEm))}</span>` : ''}${regs.length ? `<button type="button" class="btn-ghost" data-po="contrato" data-ids="${esc(regs.map(r => r.id).join(','))}">Abrir contrato</button>` : ''}`;   // Fase 48
   return `<div class="maint-row"><div class="maint-row-top"><div class="maint-row-client">${esc(c.client)} <span class="prv-chip gray">cortesia ${esc(fmtData(co.inicio))} → ${esc(fmtData(e.fim))}</span>${semEquip ? ' <span class="prv-chip amber" title="O técnico precisa dos equipamentos para o relatório da visita">sem equipamentos em Configuração por cliente</span>' : ''}</div>
     <button type="button" class="btn-ghost oe-mini" data-po="cancelar" data-id="${esc(c.id)}" title="Tirar da cortesia (fica no histórico)">Cancelar cortesia</button></div>
     ${co.instalacoes ? `<div class="po-inst">Instalações: ${esc(co.instalacoes)}</div>` : ''}${c.contactName || c.contact ? `<div class="po-inst">Contato: ${esc([c.contactName, c.contact].filter(Boolean).join(' · '))}</div>` : ''}
@@ -28674,14 +28716,14 @@ function renderPosObra(){
       { tom: 'azul', icone: 'total', numero: ativos.length, rotulo: 'Em cortesia', sub: '' },
       { tom: atr.length ? 'vermelho' : aAg.length ? 'amarelo' : 'neutro', icone: aAg.length ? 'alerta' : 'ok', numero: aAg.length, rotulo: 'Visitas a agendar', sub: atr.length ? atr.length + (atr.length === 1 ? ' atrasada' : ' atrasadas') : 'vencem em até 15 dias' },
       { tom: 'verde', icone: 'relogio', numero: agend.length, rotulo: 'Visitas agendadas', sub: '' },
-      { tom: fimC.length ? 'amarelo' : 'neutro', icone: 'ok', numero: fimC.length, rotulo: 'Cortesia concluída', sub: 'reenviar o contrato' },
+      { tom: fimC.some(x => x.e.alertaResposta) ? 'vermelho' : fimC.length ? 'amarelo' : 'neutro', icone: 'ok', numero: fimC.length, rotulo: 'Cortesia concluída', sub: fimC.length ? [[fimC.filter(x => x.e.etapa === 'reenviar').length, ' a reenviar'], [fimC.filter(x => x.e.etapa === 'resposta').length, ' aguardando resposta'], [fimC.filter(x => x.e.alertaResposta).length, ' sem resposta há 15 dias']].filter(p => p[0]).map(p => p[0] + p[1]).join(' · ') : 'reenviar o contrato' },   /* Fase 48 */
       { tom: 'neutro', icone: 'alerta', numero: sem.length, rotulo: 'Obras finalizadas sem cortesia', sub: 'inicie uma a uma' } ])}</div>
     <div style="padding:0 20px 24px;">
       ${ativos.length ? ativos.map(x => cardPO(x.c, x.e)).join('') : '<div class="empty-state">Nenhum cliente em cortesia. A cortesia começa ao gerar o contrato de uma obra finalizada, ou pelo botão "Iniciar cortesia" abaixo.</div>'}
       <details class="po-det"${ativos.length ? '' : ' open'}><summary>Obras finalizadas sem cortesia (${sem.length})</summary>
         ${!carregado ? '<div class="empty-state">Carregando obras…</div>' : sem.length ? sem.map(x => `<div class="po-sem"><div><b>${esc(x.g.nome)}</b><div class="prv-hint" style="margin:0;">${[x.st && x.st.status === 'recusou' ? 'marcado "Não quis contrato"' : '', x.st && x.st.geradoEm ? 'contrato gerado em ' + esc(fmtData(x.st.geradoEm.slice(0, 10))) + (x.st.status === 'enviado' ? ' · enviado' : '') : x.st && x.st.status === 'recusou' ? '' : 'contrato ainda não gerado'].filter(Boolean).join(' · ')}</div></div><button type="button" class="btn-ghost oe-mini" data-po="iniciar" data-chave="${esc(x.g.chave)}">Iniciar cortesia</button></div>`).join('') : '<div class="empty-state">Nenhuma obra finalizada fora do controle de visitas.</div>'}
       </details>
-      ${hist.length ? `<details class="po-det"><summary>Histórico (${hist.length})</summary>${hist.map(x => { const r = ROT_FIM[x.c.cortesia.decisao] || [x.c.cortesia.decisao, 'gray']; return `<div class="po-sem"><div><b>${esc(x.c.client)}</b><div class="prv-hint" style="margin:0;">cortesia desde ${esc(fmtData(x.c.cortesia.inicio))} · ${x.e.feitas.length} ${x.e.feitas.length === 1 ? 'visita feita' : 'visitas feitas'}${x.c.cortesia.decididoEm ? ' · ' + esc(fmtData(x.c.cortesia.decididoEm)) : ''}</div></div><span class="prv-chip ${r[1]}">${esc(r[0])}</span></div>`; }).join('')}</details>` : ''}
+      ${hist.length ? `<details class="po-det"><summary>Histórico (${hist.length})</summary>${hist.map(x => { const r = ROT_FIM[x.c.cortesia.decisao] || [x.c.cortesia.decisao, 'gray']; return `<div class="po-sem"><div><b>${esc(x.c.client)}</b><div class="prv-hint" style="margin:0;">cortesia desde ${esc(fmtData(x.c.cortesia.inicio))} · ${x.e.feitas.length} ${x.e.feitas.length === 1 ? 'visita feita' : 'visitas feitas'}${x.c.cortesia.decididoEm ? ' · ' + esc(fmtData(x.c.cortesia.decididoEm)) : ''}</div></div><span style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;"><span class="prv-chip ${r[1]}">${esc(r[0])}</span>${x.c.cortesia.decisao === 'aprovado' ? '' : `<button type="button" class="btn-ghost oe-mini" data-po="reabrir" data-id="${esc(x.c.id)}" title="Volta para a lista, na etapa em que estava">↩ Reabrir</button>`}</span></div>`; }).join('')}</details>` : ''}
     </div></div>`;
 }
 async function abrirPosObra(container){
@@ -28691,8 +28733,14 @@ async function abrirPosObra(container){
       const b = e.target.closest('[data-po]'); if(!b) return; const a = b.dataset.po; const c = b.dataset.id != null ? mcsTodos().find(x => String(x.id) === String(b.dataset.id)) : null;
       if(a === 'iniciar'){ const x = posObraSemCortesia().find(y => y.g.chave === b.dataset.chave); if(x) abrirIniciarCortesia(x.g, (x.st && x.st.geradoEm) ? x.st.geradoEm.slice(0, 10) : hojeStr()); return; }
       if(a === 'contrato'){ abrirContratoManut(b.dataset.ids.split(',')); return; }
+      if(a === 'aprovou'){ abrirContratoManut(b.dataset.ids.split(','), { aprovar: true }); return; }   // Fase 48: a aprovação encerra a cortesia (Fase 47)
       if(!c) return; const e2 = etapaPO(c);
       if(a === 'msg'){ abrirMensagemPO(c, e2.n || 1); return; }
+      if(a === 'msgfim'){ abrirMensagemPO(c, 'fim'); return; }   // Fase 48
+      if(a === 'lembrete'){ abrirMensagemPO(c, 'lembrete'); return; }
+      if(a === 'reenviado'){ customConfirm('Marcar que o contrato de manutenção foi reenviado a ' + c.client + ' hoje? O cartão passa a aguardar a resposta do cliente.', async () => { const ok = await marcarCortesia(c.id, { reenviadoEm: hojeStr(), reenviadoPor: quem() || undefined }); if(ok) avisar('Contrato marcado como reenviado.', 4000); renderPosObra(); }, 'Marcar reenviado'); return; }
+      if(a === 'naoaprovou'){ customConfirm('Registrar que ' + c.client + ' NÃO aprovou o contrato de manutenção? A cortesia termina: o cliente vai para o histórico e não entra no controle de visitas nem no Financeiro.', async () => { const ok = await marcarCortesia(c.id, { decisao: 'nao_aprovado', decididoEm: hojeStr(), decididoPor: quem() || undefined }); if(ok){ await contratoRecusadoPO(c); avisar('Registrado: ' + c.client + ' não aprovou o contrato.', 5000); } renderPosObra(); }, 'Registrar'); return; }
+      if(a === 'reabrir'){ customConfirm('Reabrir a cortesia pós-obra de ' + c.client + '? Ele volta para a lista, na etapa em que estava.', async () => { const ok = await marcarCortesia(c.id, { decisao: '', decididoEm: '', decididoPor: '', reabertaEm: hojeStr() }); if(ok) avisar('Cortesia reaberta.', 4000); renderPosObra(); }, 'Reabrir'); return; }
       if(a === 'agendar'){ const inp = container.querySelector(`[data-po-data="${String(c.id).replace(/"/g, '')}"]`); if(!inp || !inp.value){ avisar('Escolha a data combinada com o cliente antes de agendar.', 5000); return; } b.disabled = true; try{ await confirmMaintenanceDate(String(c.id), inp.value); }catch(err){ console.error('pós-obra: agendar', err); } renderPosObra(); return; }
       if(a === 'cancelar'){ customConfirm('Cancelar a cortesia pós-obra de ' + c.client + '? Ele sai desta lista (fica no histórico) e não entra no controle de visitas.', async () => { const ok = await marcarCortesia(c.id, { decisao: 'cancelada', decididoEm: hojeStr(), decididoPor: quem() || undefined }); if(ok) avisar('Cortesia cancelada.', 4000); renderPosObra(); }, 'Cancelar cortesia'); }
     });
@@ -29730,7 +29778,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ abrirPosObra, posObraAtualizar, posObraBadge, _po: { iniciarCortesia, oferecerCortesia, posObraSemCortesia, textoMensagemPO, renderPosObra, cardPO, mcConv, cortesiaCfg, aprovarContratoManut }, /* Fase 47 */ cmTextosContrato, cmClausulasHtml, CM_CLAUSULAS, /* Fase 46 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ abrirPosObra, posObraAtualizar, posObraBadge, _po: { iniciarCortesia, oferecerCortesia, posObraSemCortesia, textoMensagemPO, renderPosObra, cardPO, mcConv, cortesiaCfg, aprovarContratoManut, regsContratoPO, contratoRecusadoPO, chipCortesia, marcarCortesia }, /* Fase 47 */ cmTextosContrato, cmClausulasHtml, CM_CLAUSULAS, /* Fase 46 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
@@ -29938,6 +29986,11 @@ function blocoEstoque(){
 }
 // Manutenção preventiva: os MESMOS quatro números do quadro de resumo da aba Manutenções (total, em dia, próximos de vencer em até 15 dias, atrasados).
 const mcConvP = (c) => !!c && !(c.cortesia && typeof c.cortesia === 'object' && c.cortesia.decisao !== 'aprovado');   // Fase 47: cortesia pós-obra fica fora
+function poPendP(){   // Fase 48: pendências da cortesia pós-obra (Painel Gestor e Painel Alex)
+  const l = ((typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : []).filter(c => c && c.cortesia && typeof c.cortesia === 'object' && !c.cortesia.decisao && typeof cortesiaEtapa === 'function').map(c => ({ c, e: cortesiaEtapa(c) })).filter(x => x.e);
+  const vis = l.filter(x => x.e.etapa === 'visita' && !x.e.agendada && x.e.dias <= 15);
+  return { atr: vis.filter(x => x.e.dias < 0), prox: vis.filter(x => x.e.dias >= 0), reenviar: l.filter(x => x.e.etapa === 'reenviar'), semResp: l.filter(x => x.e.etapa === 'resposta' && x.e.alertaResposta) };
+}
 function blocoManutencao(){
   const lista = ((typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : []).filter(mcConvP);
   const rows = lista.map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, dias: daysUntil(prox) }; }).sort((a, b) => a.prox.localeCompare(b.prox));
@@ -30127,8 +30180,7 @@ function renderGestor(){
   const nG = (g) => eqs.filter(e => typeof oficinaEquipGrupo === 'function' && oficinaEquipGrupo(e) === g).length;
   const parados = typeof getEquipmentStaleInfo === 'function' ? eqs.filter(e => getEquipmentStaleInfo(e).stale).length : 0;
   const contratosTodos = (typeof maintenanceContracts !== 'undefined' && Array.isArray(maintenanceContracts)) ? maintenanceContracts : []; const contratos = contratosTodos.filter(mcConvP);   // Fase 47
-  const poVis = contratosTodos.filter(c => c && c.cortesia && typeof c.cortesia === 'object' && !c.cortesia.decisao && typeof cortesiaEtapa === 'function').map(c => ({ c, e: cortesiaEtapa(c) })).filter(x => x.e && x.e.etapa === 'visita' && !x.e.agendada && x.e.dias <= 15);
-  const poAtr = poVis.filter(x => x.e.dias < 0), poProx = poVis.filter(x => x.e.dias >= 0);
+  const PO = poPendP(), poAtr = PO.atr, poProx = PO.prox;   // Fase 48: a mesma conta do Painel Alex
   const mRows = contratos.map(c => { const prox = addMonths(c.lastDate, c.intervalMonths || 3); return { c, prox, dias: daysUntil(prox) }; }).sort((a, b) => a.prox.localeCompare(b.prox));
   const mAtr = mRows.filter(r => r.dias < 0), mProx = mRows.filter(r => r.dias >= 0 && r.dias <= 15), mOk = mRows.length - mAtr.length - mProx.length;
   const { rep, aten } = resumoEstoque();
@@ -30153,6 +30205,8 @@ function renderGestor(){
   add(nPrev, 'amber', 'Pendências de preventivas', 'relatórios dos técnicos com pendência', 'Abrir', 'data-pn-pag="gestor:pend"');
   add(mProx.length, 'amber', 'Contratos de manutenção vencendo em 15 dias', nomes(mProx, r => r.c.client), 'Agendar', 'data-pn-go="manutencoes"');
   add(poProx.length, 'amber', 'Pós-obra: visitas de cortesia vencendo em 15 dias', nomes(poProx, x => x.c.client), 'Agendar', 'data-pn-go="manutencoes" data-pn-sub="prvManutTabPosObra"');   // Fase 47
+  add(PO.reenviar.length, 'amber', 'Pós-obra: cortesia concluída, reenviar o contrato', nomes(PO.reenviar, x => x.c.client), 'Reenviar', 'data-pn-go="manutencoes" data-pn-sub="prvManutTabPosObra"');   // Fase 48
+  add(PO.semResp.length, 'amber', 'Pós-obra: contrato reenviado sem resposta há 15 dias', nomes(PO.semResp, x => x.c.client), 'Ver', 'data-pn-go="manutencoes" data-pn-sub="prvManutTabPosObra"');
   add(cmPend.length, 'amber', 'Contratos de manutenção a enviar', 'obras finalizadas sem contrato enviado', 'Enviar', 'data-pn-go="obras" data-pn-sub="obrgSubFin"');
   add(manPend.length, 'amber', 'Manuais de operação a enviar', 'obras finalizadas sem manual enviado', 'Enviar', 'data-pn-go="obras" data-pn-sub="obrgSubFin"');
   add(osPronto ? osSt('decidir') : 0, 'gray', 'OS a definir', 'cobrar ou não cobrar', 'Decidir', 'data-pn-go="os" data-pn-sub="prvOsTabDecisao"');
@@ -30259,6 +30313,9 @@ function renderAlex(){
     const si = porEtapa('aguardando_sinal'); add(si.length, 'amber', 'Aguardando pagamento do sinal', cliDe(si) + (cliDe(si) === 1 ? ' cliente' : ' clientes'), 'Ver', 'data-pn-etapa="aguardando_sinal"');
   }
   add(pendOS, 'amber', 'Registros aguardando cadastro de OS', 'atividades, quadros e equipamentos concluídos sem OS', 'Cadastrar', 'data-pn-go="os" data-pn-sub="prvOsTabAguardando"');
+  { const PO = poPendP(); const nm = (l) => l.slice(0, 3).map(x => x.c.client).join(' · ') + (l.length > 3 ? ' · +' + (l.length - 3) : ''); const at = 'data-pn-go="manutencoes" data-pn-sub="prvManutTabPosObra"';   // Fase 48: cortesia pós-obra também no Painel Alex
+    add(PO.atr.length, 'red', 'Pós-obra: visitas de cortesia atrasadas', nm(PO.atr), 'Agendar', at); add(PO.prox.length, 'amber', 'Pós-obra: visitas de cortesia vencendo em 15 dias', nm(PO.prox), 'Agendar', at);
+    add(PO.reenviar.length, 'amber', 'Pós-obra: cortesia concluída, reenviar o contrato', nm(PO.reenviar), 'Reenviar', at); add(PO.semResp.length, 'amber', 'Pós-obra: contrato reenviado sem resposta há 15 dias', nm(PO.semResp), 'Ver', at); }
   add(est.rep.length, 'amber', 'Itens de estoque em reposição', est.rep.slice(0, 3).map(i => i.name).join(' · ') + (est.rep.length > 3 ? ' · +' + (est.rep.length - 3) : ''), 'Repor', 'data-pn-go="estoque"');
   if(obrasPronto){ const ac = porEtapa('aguardando_compra').filter(x => diasDesde(emDe(x)) <= 7); add(ac.length, 'gray', 'Aguardando compra (até 7 dias)', nomesDe(ac, 3), 'Ver', 'data-pn-etapa="aguardando_compra"'); }
   add(est.aten.length, 'gray', 'Itens de estoque no mínimo', est.aten.slice(0, 3).map(i => i.name).join(' · ') + (est.aten.length > 3 ? ' · +' + (est.aten.length - 3) : ''), 'Ver', 'data-pn-go="estoque"');
