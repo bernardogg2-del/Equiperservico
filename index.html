@@ -229,6 +229,13 @@
   .mini-meta-item{ display:inline-flex; align-items:center; gap:5px; font-size: 11.5px; color: var(--text-dim); }
   .mini-meta-item.mini-est{ color: var(--text); font-weight:600; }   /* Fase 51: chegada prevista */
   .tecnico-task-est{ font-size:11.5px; font-weight:600; color: var(--text-dim); margin-top:2px; }
+  .addr-conf-item{ border:1px solid var(--border); border-radius:10px; padding:10px 12px 4px; margin:0 0 10px; }   /* Fase 52 */
+  .addr-conf-item > .addr-conf-cli{ font-weight:700; font-size:13.5px; margin:0 0 6px; }
+  .addr-conf-item .field{ margin-bottom:8px; }
+  .addr-conf-cheg{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .addr-conf-cheg input{ width:150px; flex:0 0 auto; }
+  .addr-conf-cheg .addr-conf-pad{ font-size:11.5px; color:var(--text-dim); }
+  .addr-conf-nota{ font-size:12px; color:var(--text-dim); margin:-4px 0 12px; }
   .mini-meta-item svg{ width:13px; height:13px; flex-shrink:0; color: var(--text-dim); }
   .mini-meta-item.is-retorno{ color: var(--accent); font-weight:600; }
   .mini-meta-item.is-retorno svg{ color: var(--accent); }
@@ -4566,8 +4573,9 @@
 <!-- Modal: confirmar/completar endereços antes de enviar no WhatsApp -->
 <div class="overlay" id="addressConfirmOverlay">
   <div class="modal">
-    <h3>Confirmar endereços</h3>
+    <h3>Confirmar endereços e horários</h3>
     <p class="sub">Confira ou complete os endereços antes de enviar a agenda pelo WhatsApp. Endereços preenchidos aqui ficam salvos no cadastro do cliente.</p>
+    <p class="addr-conf-nota">A chegada prevista já vem com o horário padrão da posição. Mudar aqui vale só para esta atividade (o padrão não muda) e <b>não vai na mensagem do técnico</b>: aparece na Agenda e na mensagem da equipe (Marcelo).</p>
     <div id="addressConfirmBody"></div>
     <div class="modal-actions">
       <button type="button" class="btn-ghost" id="cancelAddressConfirm">Cancelar</button>
@@ -7123,12 +7131,14 @@ function wirePairButtons(container){
 
 // Fase 51: mesma ordem do "Enviar mensagem" (arraste na aba Técnicos; sem ordem = criação) e a mesma estimativa de chegada da mensagem
 function ordemDaMensagem(a, b){ const ao = (typeof a.order === 'number') ? a.order : a.id; const bo = (typeof b.order === 'number') ? b.order : b.id; return ao - bo; }
+// Fase 52: horário mudado num envio fica só na atividade (chegadaPrevista); a tabela padrão (ARRIVAL_WINDOWS) nunca muda
+function chegadaDaTarefa(t, total, idx){ return String((t && t.chegadaPrevista) || '').trim() || janelaDeChegada(total, idx); }
 function janelaDeChegada(total, idx){ try{ const w = ARRIVAL_WINDOWS[total]; return (w && w[idx]) || ''; }catch(e){ return ''; } }
 function estimativaChegada(s, tecnico, dataStr){
   if(!s || !tecnico || !dataStr || !Array.isArray(services)) return '';
   const tarefas = services.filter(x => x.date === dataStr && getServiceTechnicians(x).includes(tecnico)).sort(ordemDaMensagem);
   const ids = new Set([s.id].concat(Array.isArray(s.pairMembers) ? s.pairMembers.map(m => m && m.id) : []).map(String));
-  const idx = tarefas.findIndex(x => ids.has(String(x.id))); return idx < 0 ? '' : janelaDeChegada(tarefas.length, idx);
+  const idx = tarefas.findIndex(x => ids.has(String(x.id))); return idx < 0 ? '' : chegadaDaTarefa(tarefas[idx], tarefas.length, idx);   // Fase 52
 }
 function buildMiniCardElement(s, opt){
   // Etapa 9: opções de técnico pra atribuir a este serviço — fonte migrada pra users (tech).
@@ -8457,7 +8467,7 @@ async function rescheduleService(id, newDate){
   const targets = svc.pairId ? services.filter(x => x.pairId === svc.pairId) : [svc];
   const prevDates = targets.map(t => t.date); // pra desfazer se a gravação falhar
   const prevStatus = targets.map(t => t.status);   // Fase 31
-  targets.forEach(t => { t.date = newDate; acertarAtribuidoAoAgendar(t); });
+  targets.forEach(t => { if(t.chegadaPrevista && t.date !== newDate) t.chegadaPrevista = '';   /* Fase 52 */ t.date = newDate; acertarAtribuidoAoAgendar(t); });
 
   let prevScheduledFor, contract;
   if(svc.maintenanceContractId){
@@ -13730,7 +13740,8 @@ function buildAllTechniciansMessage(includeEstimates){
     const windows = includeEstimates ? ARRIVAL_WINDOWS[tasks.length] : null;
     tasks.forEach((s, i) => {
       let line = `${i + 1}. ${s.client}${s.description ? ' — ' + s.description : ''}${s.isRetorno ? ' (retorno)' : ''}`;   // Fase 50
-      if(windows && windows[i]) line += ` (chegada estimada: ${windows[i]})`;
+      const chegada = includeEstimates ? (String(s.chegadaPrevista || '').trim() || (windows && windows[i]) || '') : '';   // Fase 52: a mudada no envio, senão o padrão
+      if(chegada) line += ` (chegada estimada: ${chegada})`;
       if(s.pairId){
         const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id);
         if(partner) line += ` [dupla com ${partner.technician}]`;
@@ -13857,12 +13868,14 @@ function openAddressConfirm(t){
   if(tasks.length === 0){
     body.innerHTML = `<p class="sub">Nenhum serviço agendado para ${sendAgendaMode === 'hoje' ? 'hoje' : 'amanhã'}.</p>`;
   } else {
-    body.innerHTML = tasks.map(s => {
+    body.innerHTML = tasks.map((s, i) => {
       const addr = s.address || findClientAddress(s.client) || '';
+      const pad = janelaDeChegada(tasks.length, i);   // Fase 52: padrão da posição; a da atividade, se já foi mudada
       return `
-        <div class="field">
-          <label>${escapeHtml(s.client)}</label>
-          <input type="text" data-addrconfirm="${s.id}" value="${escapeHtml(addr)}" placeholder="Endereço (opcional)">
+        <div class="addr-conf-item">
+          <div class="addr-conf-cli">${i + 1}. ${escapeHtml(s.client)}</div>
+          <div class="field"><label>Endereço</label><input type="text" data-addrconfirm="${s.id}" value="${escapeHtml(addr)}" placeholder="Endereço (opcional)"></div>
+          <div class="field"><label>Chegada prevista</label><div class="addr-conf-cheg"><input type="text" data-chegadaconfirm="${s.id}" data-padrao="${escapeHtml(pad)}" value="${escapeHtml(chegadaDaTarefa(s, tasks.length, i))}" placeholder="${escapeHtml(pad || 'ex.: 10:30–11:00')}" maxlength="40"><span class="addr-conf-pad">${pad ? 'padrão ' + escapeHtml(pad) : 'sem padrão para ' + tasks.length + ' atividades'}</span></div></div>
         </div>
       `;
     }).join('');
@@ -13893,6 +13906,11 @@ document.getElementById('confirmAddressSend').addEventListener('click', async ()
     }
   });
 
+  document.querySelectorAll('[data-chegadaconfirm]').forEach(inp => {   // Fase 52: só a atividade guarda o horário mudado; igual ao padrão ou vazio = padrão
+    const svc = services.find(x => String(x.id) === String(inp.dataset.chegadaconfirm)); if(!svc) return;
+    const v = inp.value.trim(), pad = inp.dataset.padrao || '';
+    if(v && v !== pad) svc.chegadaPrevista = v; else if(svc.chegadaPrevista) svc.chegadaPrevista = '';
+  });
   document.getElementById('addressConfirmOverlay').classList.remove('open');
   addressConfirmContext = null;
 
@@ -13942,7 +13960,7 @@ function renderTecnicosAmanha(){
             <div class="tecnico-task-body">
               ${seloManutHtml(s)}<div class="tecnico-task-client">${escapeHtml(s.client)}</div>
               ${s.description ? `<div class="tecnico-task-desc">${escapeHtml(s.description)}</div>` : ''}
-              <div class="tecnico-task-est">${janelaDeChegada(tasks.length, i) ? '🕒 Chegada prevista ' + escapeHtml(janelaDeChegada(tasks.length, i)) : ''}</div>
+              <div class="tecnico-task-est">${chegadaDaTarefa(s, tasks.length, i) ? '🕒 Chegada prevista ' + escapeHtml(chegadaDaTarefa(s, tasks.length, i)) : ''}</div>
             </div>
           </div>
         `;
@@ -13987,7 +14005,7 @@ function renderTecnicosAmanha(){
               if(svc) svc.order = idx;
               const idxEl = child.querySelector('.tecnico-task-index');
               if(idxEl) idxEl.textContent = (idx + 1) + '.';
-              const estEl = child.querySelector('.tecnico-task-est'); if(estEl){ const j = janelaDeChegada(list.children.length, idx); estEl.textContent = j ? '🕒 Chegada prevista ' + j : ''; }   // Fase 51
+              const estEl = child.querySelector('.tecnico-task-est'); if(estEl){ const j = chegadaDaTarefa(svc, list.children.length, idx); estEl.textContent = j ? '🕒 Chegada prevista ' + j : ''; }   // Fase 51
             });
             saveServices(); try{ renderDayBoxes(); }catch(e){}   // Fase 51: Hoje/Amanhã acompanham a nova ordem
           }
