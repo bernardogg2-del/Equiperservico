@@ -227,6 +227,8 @@
      pra mostrar; ícones pequenos e consistentes, sem emoji. */
   .mini-meta{ display:flex; flex-wrap:wrap; gap: 6px 14px; margin-top: 8px; }
   .mini-meta-item{ display:inline-flex; align-items:center; gap:5px; font-size: 11.5px; color: var(--text-dim); }
+  .mini-meta-item.mini-est{ color: var(--text); font-weight:600; }   /* Fase 51: chegada prevista */
+  .tecnico-task-est{ font-size:11.5px; font-weight:600; color: var(--text-dim); margin-top:2px; }
   .mini-meta-item svg{ width:13px; height:13px; flex-shrink:0; color: var(--text-dim); }
   .mini-meta-item.is-retorno{ color: var(--accent); font-weight:600; }
   .mini-meta-item.is-retorno svg{ color: var(--accent); }
@@ -1497,6 +1499,11 @@
   .ret-hist-o{ font-size:13px; white-space:pre-wrap; color:var(--text); margin-top:2px; }
   .ret-hist-vazio{ color:var(--text-dim); font-style:italic; }
   .ret-hist-m{ font-size:12px; color:var(--amber); margin-top:2px; }
+  .ret-hist-link{ cursor:pointer; border-radius:8px; margin-left:-6px; margin-right:-6px; padding-left:6px; padding-right:6px; }   /* Fase 51 */
+  .ret-hist-link:hover, .ret-hist-link:focus-visible{ background:rgba(0,0,0,0.045); outline:none; }
+  :root[data-theme="dark"] .ret-hist-link:hover, :root[data-theme="dark"] .ret-hist-link:focus-visible{ background:rgba(255,255,255,0.06); }
+  .ret-hist-ver{ font-size:11.5px; font-weight:700; color:var(--amber); margin-top:3px; }
+  .det-voltar{ margin:0 0 10px; }
   .os-processed-row{ font-size:12.5px; color: var(--text-dim); padding:6px 0; border-bottom:1px solid var(--line); }
   .os-processed-row b{ color: var(--text); font-weight:600; }
   /* Cadastros e OS — refinamentos escopados a #tabOS, pra não afetar Hoje/Agenda/Manutenções/
@@ -6259,7 +6266,7 @@ function obsDaVisita(s){
 function entradaVisita(o){
   const par = o.pairId && Array.isArray(services) ? services.find(x => x.pairId === o.pairId && x.id !== o.id) : null;
   let obs = obsDaVisita(o); if(par){ const ob2 = obsDaVisita(par); if(ob2) obs = (obs ? '[' + (o.technician || 'técnico 1') + '] ' + obs + '\n' : '') + '[' + (par.technician || 'técnico 2') + '] ' + ob2; }
-  return { data: o.date || '', tecnicos: (par ? [o.technician, par.technician] : getServiceTechnicians(o)).filter(Boolean).join(' e '), inicio: o.checkIn || '', fim: o.checkOut || '', obs, motivo: String(o.returnReason || (par && par.returnReason) || '').trim() };
+  return { id: o.id, data: o.date || '', tecnicos: (par ? [o.technician, par.technician] : getServiceTechnicians(o)).filter(Boolean).join(' e '), inicio: o.checkIn || '', fim: o.checkOut || '', obs, motivo: String(o.returnReason || (par && par.returnReason) || '').trim() };   // Fase 51: id da atividade da visita
 }
 function historicoDeVisitas(s, prof){
   prof = prof || 0; if(!s || prof > 30) return [];
@@ -6267,11 +6274,18 @@ function historicoDeVisitas(s, prof){
   if(!s.isRetorno) return [];
   const o = origemDoRetorno(s); return o ? historicoDeVisitas(o, prof + 1).concat([entradaVisita(o)]) : [];
 }
+// Fase 51: atividade de cada visita do histórico (id gravado na visita ou cadeia retornoDeId) para abrir os detalhes com fotos e observação
+function atividadesDasVisitas(s){
+  const cad = []; let cur = origemDoRetorno(s), g = 0; while(cur && g++ < 30){ cad.unshift(cur); cur = origemDoRetorno(cur); }
+  const h = historicoDeVisitas(s); const porId = (id) => id != null && Array.isArray(services) ? (services.find(x => String(x.id) === String(id)) || null) : null;
+  return h.map((v, i) => porId(v && v.id) || (cad.length === h.length ? cad[i] : null));
+}
 function rotuloObsVisita(s, base){ const k = historicoDeVisitas(s).length; return k ? 'Observação da visita ' + (k + 1) : base; }
 function dataCurtaVisita(d){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '/' + m[2] : ''; }
 function historicoVisitasHtml(s){
   const h = historicoDeVisitas(s); if(!h.length) return '';
-  return `<div class="ret-hist"><div class="ret-hist-t">↩ Retorno — ${h.length + 1}ª visita · histórico</div>${h.map((v, i) => `<div class="ret-hist-i"><div class="ret-hist-c">Visita ${i + 1}${v.data ? ' · ' + escapeHtml(dataCurtaVisita(v.data)) : ''}${v.tecnicos ? ' · ' + escapeHtml(v.tecnicos) : ''}</div>${v.obs ? `<div class="ret-hist-o">${escapeHtml(v.obs)}</div>` : '<div class="ret-hist-o ret-hist-vazio">sem observação</div>'}${v.motivo ? `<div class="ret-hist-m">Motivo do retorno: ${escapeHtml(v.motivo)}</div>` : ''}</div>`).join('')}</div>`;
+  const ativs = atividadesDasVisitas(s);   // Fase 51: visita com a atividade carregada abre os detalhes (fotos, áudios, observação)
+  return `<div class="ret-hist"><div class="ret-hist-t">↩ Retorno — ${h.length + 1}ª visita · histórico</div>${h.map((v, i) => `<div class="ret-hist-i${ativs[i] ? ' ret-hist-link" role="button" tabindex="0" data-verdetalhe="' + escapeHtml(String(ativs[i].id)) + '" title="Abrir a atividade desta visita' : ''}"><div class="ret-hist-c">Visita ${i + 1}${v.data ? ' · ' + escapeHtml(dataCurtaVisita(v.data)) : ''}${v.tecnicos ? ' · ' + escapeHtml(v.tecnicos) : ''}</div>${v.obs ? `<div class="ret-hist-o">${escapeHtml(v.obs)}</div>` : '<div class="ret-hist-o ret-hist-vazio">sem observação</div>'}${v.motivo ? `<div class="ret-hist-m">Motivo do retorno: ${escapeHtml(v.motivo)}</div>` : ''}${ativs[i] ? '<div class="ret-hist-ver">Ver fotos e detalhes ›</div>' : ''}</div>`).join('')}</div>`;
 }
 function historicoVisitasTexto(s){   // linhas para a mensagem de WhatsApp do técnico
   const h = historicoDeVisitas(s);
@@ -6305,6 +6319,16 @@ async function reconciliarHistoricoRetornos(){
   }catch(e){ console.error('histórico dos retornos', e); return 0; }
   finally{ reconciliandoHistRet = false; }
 }
+// Fase 51: clique/Enter numa visita do histórico abre a atividade daquela visita; dentro dos detalhes do retorno ganha "← Voltar"
+let detalheVoltarPendente = null;
+function abrirVisitaDoHistorico(el){
+  const id = el.dataset.verdetalhe; const alvo = Array.isArray(services) ? services.find(x => String(x.id) === String(id)) : null;
+  if(!alvo){ alert('A atividade desta visita não está carregada neste aparelho.'); return; }
+  const ov = document.getElementById('detailsOverlay'); detalheVoltarPendente = (ov && ov.classList.contains('open') && currentDetailsServiceId != null && String(currentDetailsServiceId) !== String(alvo.id)) ? currentDetailsServiceId : null;
+  openServiceDetails(alvo.id);
+}
+document.addEventListener('click', (e) => { const el = e.target && e.target.closest ? e.target.closest('[data-verdetalhe]') : null; if(!el) return; e.preventDefault(); e.stopPropagation(); abrirVisitaDoHistorico(el); }, true);
+document.addEventListener('keydown', (e) => { if(e.key !== 'Enter' && e.key !== ' ') return; const el = e.target && e.target.closest ? e.target.closest('[data-verdetalhe]') : null; if(!el) return; e.preventDefault(); e.stopPropagation(); abrirVisitaDoHistorico(el); }, true);
 // "Precisa retornar" marcado DEPOIS de concluir a atividade (ou concluída sem ter gerado o retorno): cria o retorno agora, uma única vez por atividade/dupla
 async function garantirRetornoAposConclusao(svc){
   if(!svc || svc.status !== 'concluido' || !svc.needsReturn || svc.retornoCriado) return false;
@@ -6651,6 +6675,8 @@ async function gerarPdfDaAtividade(id, btn){
 
 let currentDetailsServiceId = null;
 async function openServiceDetails(id){
+  const voltarPara = detalheVoltarPendente; detalheVoltarPendente = null;   // Fase 51: aberto a partir do histórico de um retorno
+  { const dov = document.getElementById('detailsOverlay'); if(dov && dov.parentNode !== document.body) document.body.appendChild(dov); }   // Fase 51: abre também no perfil Técnico
   currentDetailsServiceId = id;
   const s = services.find(x => x.id === id);
   if(!s) return;
@@ -6670,6 +6696,7 @@ async function openServiceDetails(id){
 
   const body = document.getElementById('detailsModalBody');
   body.innerHTML = `
+    ${voltarPara != null ? '<div class="det-voltar"><button type="button" class="btn-ghost oe-mini" data-detvoltar="' + escapeHtml(String(voltarPara)) + '">← Voltar para o retorno</button></div>' : ''}
     ${seloManutHtml(s)}<h3>${escapeHtml(s.client)}</h3>
     <p class="sub">${shortLabel(s.date)} · ${technicianLine}</p>
     <div class="status-tag ${s.status}" style="display:inline-block; margin-bottom:14px;">${statusLabelOf(s.status)}</div>
@@ -6919,6 +6946,7 @@ async function openServiceDetails(id){
       renderAll();
     });
   });
+  { const bv = body.querySelector('[data-detvoltar]'); if(bv) bv.addEventListener('click', () => { const v = services.find(x => String(x.id) === String(bv.dataset.detvoltar)); if(v) openServiceDetails(v.id); }); }   // Fase 51
   document.getElementById('detailsOverlay').classList.add('open');
 }
 
@@ -7093,7 +7121,16 @@ function wirePairButtons(container){
   });
 }
 
-function buildMiniCardElement(s){
+// Fase 51: mesma ordem do "Enviar mensagem" (arraste na aba Técnicos; sem ordem = criação) e a mesma estimativa de chegada da mensagem
+function ordemDaMensagem(a, b){ const ao = (typeof a.order === 'number') ? a.order : a.id; const bo = (typeof b.order === 'number') ? b.order : b.id; return ao - bo; }
+function janelaDeChegada(total, idx){ try{ const w = ARRIVAL_WINDOWS[total]; return (w && w[idx]) || ''; }catch(e){ return ''; } }
+function estimativaChegada(s, tecnico, dataStr){
+  if(!s || !tecnico || !dataStr || !Array.isArray(services)) return '';
+  const tarefas = services.filter(x => x.date === dataStr && getServiceTechnicians(x).includes(tecnico)).sort(ordemDaMensagem);
+  const ids = new Set([s.id].concat(Array.isArray(s.pairMembers) ? s.pairMembers.map(m => m && m.id) : []).map(String));
+  const idx = tarefas.findIndex(x => ids.has(String(x.id))); return idx < 0 ? '' : janelaDeChegada(tarefas.length, idx);
+}
+function buildMiniCardElement(s, opt){
   // Etapa 9: opções de técnico pra atribuir a este serviço — fonte migrada pra users (tech).
   let techOptions = `<option value="">Selecionar técnico...</option>`;
   tecnicosAtuaisOrdenados().forEach(nome => {
@@ -7105,6 +7142,8 @@ function buildMiniCardElement(s){
   // passam a aparecer no card quando têm valor real, pra não poluir com "—" em toda atividade
   // que ainda não começou ou não tem endereço cadastrado.
   const metaItems = [];
+  { const est = (opt && opt.tecnico && (s.status === 'aguardando' || s.status === 'atribuido')) ? estimativaChegada(s, opt.tecnico, opt.data || s.date) : '';   // Fase 51
+    if(est) metaItems.push(`<span class="mini-meta-item mini-est" title="Estimativa de chegada (a mesma da mensagem)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Chegada prevista ${escapeHtml(est)}</span>`); }
   if(s.checkIn){
     metaItems.push(`<span class="mini-meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${escapeHtml(s.checkIn)}${s.checkOut ? '–' + escapeHtml(s.checkOut) : ''}</span>`);
   }
@@ -7154,14 +7193,16 @@ function wireMiniCardContainer(container){
 
 function renderMiniBox(containerId, dateStr){
   const container = document.getElementById(containerId);
-  const dayServices = groupPaired(services.filter(s => s.date === dateStr).sort((a,b) => a.id - b.id));
+  const tecDe = (s) => (getGroupedServiceTechnicians(s)[0] || '');   // Fase 51: sem técnico primeiro, depois por técnico na ordem do "Enviar mensagem"
+  const dayServices = groupPaired(services.filter(s => s.date === dateStr).sort((a,b) => a.id - b.id)).sort((a, b) => tecDe(a).localeCompare(tecDe(b), 'pt-BR') || ordemDaMensagem(a, b));
   if(dayServices.length === 0){
     container.innerHTML = `<div class="mini-empty">Nenhum serviço agendado.</div>`;
     return;
   }
   container.innerHTML = '';
   dayServices.forEach(s => {
-    container.appendChild(buildMiniCardElement(s));
+    const tecs = getGroupedServiceTechnicians(s);
+    container.appendChild(buildMiniCardElement(s, tecs.length === 1 ? { tecnico: tecs[0], data: dateStr } : null));   // Fase 51: chegada prevista (técnico único)
   });
   wireMiniCardContainer(container);
 }
@@ -7373,7 +7414,7 @@ function renderTodayByTechnician(){
     if(tasks.length === 0){
       cardsWrap.innerHTML = `<div class="mini-empty">Nenhuma atividade hoje.</div>`;
     } else {
-      tasks.forEach(s => cardsWrap.appendChild(buildMiniCardElement(s)));
+      tasks.slice().sort(ordemDaMensagem).forEach(s => cardsWrap.appendChild(buildMiniCardElement(s, { tecnico: name, data: t })));   // Fase 51: ordem do "Enviar mensagem" + chegada prevista
     }
     section.appendChild(cardsWrap);
     container.appendChild(section);
@@ -13901,6 +13942,7 @@ function renderTecnicosAmanha(){
             <div class="tecnico-task-body">
               ${seloManutHtml(s)}<div class="tecnico-task-client">${escapeHtml(s.client)}</div>
               ${s.description ? `<div class="tecnico-task-desc">${escapeHtml(s.description)}</div>` : ''}
+              <div class="tecnico-task-est">${janelaDeChegada(tasks.length, i) ? '🕒 Chegada prevista ' + escapeHtml(janelaDeChegada(tasks.length, i)) : ''}</div>
             </div>
           </div>
         `;
@@ -13945,8 +13987,9 @@ function renderTecnicosAmanha(){
               if(svc) svc.order = idx;
               const idxEl = child.querySelector('.tecnico-task-index');
               if(idxEl) idxEl.textContent = (idx + 1) + '.';
+              const estEl = child.querySelector('.tecnico-task-est'); if(estEl){ const j = janelaDeChegada(list.children.length, idx); estEl.textContent = j ? '🕒 Chegada prevista ' + j : ''; }   // Fase 51
             });
-            saveServices();
+            saveServices(); try{ renderDayBoxes(); }catch(e){}   // Fase 51: Hoje/Amanhã acompanham a nova ordem
           }
         });
       }catch(e){ console.error('Falha ao iniciar arraste de prioridade', e); }
