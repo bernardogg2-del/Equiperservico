@@ -649,6 +649,10 @@
   .service-client{ font-size: 15px; font-weight:700; }
   /* Fase 27: selo "Cliente de manutenção" no alto dos cartões de atividade e de OS */
   .selo-manut-linha{ margin:0 0 5px; line-height:1; }
+  .selo-obra{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; letter-spacing:.02em; padding:3px 9px; border-radius:999px; white-space:normal; background:rgba(26,86,219,0.08); color:#1a56db; border:1px solid rgba(26,86,219,0.30); }   /* Fase 50 */
+  .mini-card .selo-obra{ font-size:9.5px; padding:2px 7px; }
+  :root[data-theme="dark"] .selo-obra{ background:rgba(96,150,255,0.16); color:#A9C4FF; border-color:rgba(96,150,255,0.45); }
+  #f-obraSelo{ margin:0 0 8px; }
   .selo-manut{ display:inline-flex; align-items:center; gap:4px; font-size:10.5px; font-weight:700; letter-spacing:.02em; padding:3px 9px; border-radius:999px; white-space:nowrap; background:rgba(111,66,193,0.10); color:#5B3AA8; border:1px solid rgba(111,66,193,0.35); }
   .mini-card .selo-manut{ font-size:9.5px; padding:2px 7px; }
   :root[data-theme="dark"] .selo-manut{ background:rgba(167,139,250,0.16); color:#C4B5FD; border-color:rgba(167,139,250,0.45); }
@@ -1485,6 +1489,14 @@
     white-space:nowrap;
   }
   .os-empty{ color: var(--text-dim); font-size: 13.5px; padding: 20px 0; font-style:italic; text-align:center; }
+  .ret-hist{ margin:10px 0 12px; padding:10px 12px; border:1px solid var(--warning-line); background:var(--warning-soft); border-radius:10px; }   /* Fase 50 */
+  .ret-hist-t{ font-size:11.5px; font-weight:700; color:var(--amber); text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
+  .ret-hist-i{ padding:6px 0 4px; border-top:1px dashed var(--warning-line); }
+  .ret-hist-t + .ret-hist-i{ border-top:none; }
+  .ret-hist-c{ font-size:12px; font-weight:700; color:var(--text); }
+  .ret-hist-o{ font-size:13px; white-space:pre-wrap; color:var(--text); margin-top:2px; }
+  .ret-hist-vazio{ color:var(--text-dim); font-style:italic; }
+  .ret-hist-m{ font-size:12px; color:var(--amber); margin-top:2px; }
   .os-processed-row{ font-size:12.5px; color: var(--text-dim); padding:6px 0; border-bottom:1px solid var(--line); }
   .os-processed-row b{ color: var(--text); font-weight:600; }
   /* Cadastros e OS — refinamentos escopados a #tabOS, pra não afetar Hoje/Agenda/Manutenções/
@@ -6234,6 +6246,65 @@ function isMultiTechRecord(s){
 //   sempre na mesma ordem não importa de qual lado a chamada partiu — pra que ambos disputem a
 //   MESMA transação, igual já acontece pra dupla nova.
 function retornoObsText(svc){ return `Retorno referente ao atendimento de ${shortLabel(svc.date)}. Motivo: ${(svc.returnReason && svc.returnReason.trim()) ? svc.returnReason.trim() : (svc.observations || '(sem observação)')}`; }
+// Fase 50: histórico das visitas no retorno. O retorno nasce com a Observação VAZIA (é a da próxima visita) e com historicoVisitas =
+// visitas anteriores {data, tecnicos, inicio, fim, obs, motivo}. Retorno antigo (texto "Retorno referente…" dentro da Observação) é lido
+// pela cadeia retornoDeId quando a atividade de origem está carregada.
+function listaHist(v){ return Array.isArray(v) ? v.filter(Boolean) : (v && typeof v === 'object' ? Object.keys(v).sort((a, b) => Number(a) - Number(b)).map(k => v[k]).filter(Boolean) : []); }
+function origemDoRetorno(s){ return s && s.retornoDeId != null && Array.isArray(services) ? (services.find(x => String(x.id) === String(s.retornoDeId)) || null) : null; }
+function obsDaVisita(s){
+  const t = String((s && s.observations) || '');
+  if(s && s.isRetorno && !s.historicoVisitas){ const o = origemDoRetorno(s); if(o){ try{ const pre = retornoObsText(o); if(t.startsWith(pre)) return t.slice(pre.length).trim(); }catch(e){} } }
+  return t.trim();
+}
+function entradaVisita(o){
+  const par = o.pairId && Array.isArray(services) ? services.find(x => x.pairId === o.pairId && x.id !== o.id) : null;
+  let obs = obsDaVisita(o); if(par){ const ob2 = obsDaVisita(par); if(ob2) obs = (obs ? '[' + (o.technician || 'técnico 1') + '] ' + obs + '\n' : '') + '[' + (par.technician || 'técnico 2') + '] ' + ob2; }
+  return { data: o.date || '', tecnicos: (par ? [o.technician, par.technician] : getServiceTechnicians(o)).filter(Boolean).join(' e '), inicio: o.checkIn || '', fim: o.checkOut || '', obs, motivo: String(o.returnReason || (par && par.returnReason) || '').trim() };
+}
+function historicoDeVisitas(s, prof){
+  prof = prof || 0; if(!s || prof > 30) return [];
+  if(s.historicoVisitas) return listaHist(s.historicoVisitas);
+  if(!s.isRetorno) return [];
+  const o = origemDoRetorno(s); return o ? historicoDeVisitas(o, prof + 1).concat([entradaVisita(o)]) : [];
+}
+function rotuloObsVisita(s, base){ const k = historicoDeVisitas(s).length; return k ? 'Observação da visita ' + (k + 1) : base; }
+function dataCurtaVisita(d){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? m[3] + '/' + m[2] : ''; }
+function historicoVisitasHtml(s){
+  const h = historicoDeVisitas(s); if(!h.length) return '';
+  return `<div class="ret-hist"><div class="ret-hist-t">↩ Retorno — ${h.length + 1}ª visita · histórico</div>${h.map((v, i) => `<div class="ret-hist-i"><div class="ret-hist-c">Visita ${i + 1}${v.data ? ' · ' + escapeHtml(dataCurtaVisita(v.data)) : ''}${v.tecnicos ? ' · ' + escapeHtml(v.tecnicos) : ''}</div>${v.obs ? `<div class="ret-hist-o">${escapeHtml(v.obs)}</div>` : '<div class="ret-hist-o ret-hist-vazio">sem observação</div>'}${v.motivo ? `<div class="ret-hist-m">Motivo do retorno: ${escapeHtml(v.motivo)}</div>` : ''}</div>`).join('')}</div>`;
+}
+function historicoVisitasTexto(s){   // linhas para a mensagem de WhatsApp do técnico
+  const h = historicoDeVisitas(s);
+  if(!h.length) return (s && s.isRetorno && obsDaVisita(s)) ? ['↩️ *Retorno:* ' + obsDaVisita(s)] : [];
+  const l = ['↩️ *Retorno — ' + (h.length + 1) + 'ª visita*'];
+  h.forEach((v, i) => { l.push('🗒️ *Visita ' + (i + 1) + (v.data ? ' (' + dataCurtaVisita(v.data) + (v.tecnicos ? ', ' + v.tecnicos : '') + ')' : '') + ':* ' + (v.obs || 'sem observação')); if(v.motivo) l.push('   ↳ Motivo do retorno: ' + v.motivo); });
+  return l;
+}
+// o retorno já criado (e ainda não concluído) acompanha o que o técnico muda depois na visita de origem: observação ou motivo
+function atualizarHistoricoNoRetorno(svc){
+  if(!svc || !svc.retornoCriado || !Array.isArray(services)) return false;
+  const ret = services.find(x => x.retornoDeId != null && String(x.retornoDeId) === String(svc.id) && x.status !== 'concluido'); if(!ret) return false;
+  if(!ret.historicoVisitas){ if(ret.status !== 'aguardando') return false; ret.observations = retornoObsText(svc); return true; }   // retorno antigo: como antes
+  const h = listaHist(ret.historicoVisitas).slice(); if(!h.length) return false;
+  h[h.length - 1] = Object.assign({}, h[h.length - 1], entradaVisita(svc)); ret.historicoVisitas = h; return true;
+}
+// Gestor: retornos antigos ainda em aberto passam para o formato novo (histórico separado, Observação só da visita atual)
+let reconciliandoHistRet = false;
+async function reconciliarHistoricoRetornos(){
+  if(reconciliandoHistRet || currentRole !== 'manager' || !Array.isArray(services)) return 0;
+  reconciliandoHistRet = true;
+  try{
+    const mud = [];
+    services.forEach(s => { if(!s || !s.isRetorno || s.historicoVisitas || s.status === 'concluido') return; const o = origemDoRetorno(s); if(!o) return;
+      let pre = ''; try{ pre = retornoObsText(o); }catch(e){ return; } const t = String(s.observations || ''); if(!t.startsWith(pre)) return;
+      mud.push({ s, antes: t }); s.historicoVisitas = historicoDeVisitas(o).concat([entradaVisita(o)]); s.observations = t.slice(pre.length).trim(); });
+    if(!mud.length) return 0;
+    if(!(await saveServices(true))){ mud.forEach(m => { delete m.s.historicoVisitas; m.s.observations = m.antes; }); return 0; }
+    try{ renderAll(); }catch(e){}
+    return mud.length;
+  }catch(e){ console.error('histórico dos retornos', e); return 0; }
+  finally{ reconciliandoHistRet = false; }
+}
 // "Precisa retornar" marcado DEPOIS de concluir a atividade (ou concluída sem ter gerado o retorno): cria o retorno agora, uma única vez por atividade/dupla
 async function garantirRetornoAposConclusao(svc){
   if(!svc || svc.status !== 'concluido' || !svc.needsReturn || svc.retornoCriado) return false;
@@ -6295,7 +6366,8 @@ async function createRetornoIfNeeded(svc){
       status: 'aguardando',
       checkIn: '',
       checkOut: '',
-      observations: retornoObsText(svc),
+      observations: '',                                                   // Fase 50: a Observação é a da próxima visita
+      historicoVisitas: historicoDeVisitas(svc).concat([entradaVisita(svc)]),   // visitas anteriores (com a de agora)
       isRetorno: true,
       retornoDeId: svc.id
     };
@@ -6510,7 +6582,7 @@ function renderPersonDetailsBlock(svc, label){
     ${isManager && isDone ? `
     <div class="field"><label>Início</label><input type="time" data-mfcheckin="${svc.id}" value="${svc.checkIn || ''}"></div>
     <div class="field"><label>Fim</label><input type="time" data-mfcheckout="${svc.id}" value="${svc.checkOut || ''}"></div>
-    <div class="field"><label>Observação</label><textarea data-mfobs="${svc.id}">${escapeHtml(svc.observations || '')}</textarea></div>
+    <div class="field"><label>${escapeHtml(rotuloObsVisita(svc, 'Observação'))}</label><textarea data-mfobs="${svc.id}">${escapeHtml(obsDaVisita(svc))}</textarea></div>
     <button type="button" class="btn-ghost" data-mfsave="${svc.id}">Salvar alterações</button>
     ` : `
     <div class="field">
@@ -6519,7 +6591,7 @@ function renderPersonDetailsBlock(svc, label){
         ${svc.checkIn ? `Início: <b>${svc.checkIn}</b>` : 'Ainda não iniciado'}${svc.checkOut ? ` &nbsp;·&nbsp; Fim: <b>${svc.checkOut}</b>` : ''}
       </div>
     </div>
-    ${svc.observations ? `<div class="field"><label>Observação do técnico</label><div>${escapeHtml(svc.observations)}</div></div>` : ''}
+    ${obsDaVisita(svc) ? `<div class="field"><label>${escapeHtml(rotuloObsVisita(svc, 'Observação do técnico'))}</label><div>${escapeHtml(obsDaVisita(svc))}</div></div>` : ''}
     `}
     ${photosHtml ? `<div class="field"><label>Fotos do técnico</label><div class="photo-row">${photosHtml}</div></div>` : ''}
     ${audiosHtml ? `<div class="field"><label>Áudios do técnico</label><div class="audio-row">${audiosHtml}</div></div>` : ''}
@@ -6530,7 +6602,7 @@ function renderPersonDetailsBlock(svc, label){
       <div class="manual-fill-form" id="manualFillForm-${svc.id}" style="display:none;">
         <div class="field"><label>Início</label><input type="time" data-mfcheckin="${svc.id}" value="${svc.checkIn || ''}"></div>
         <div class="field"><label>Fim</label><input type="time" data-mfcheckout="${svc.id}" value="${svc.checkOut || ''}"></div>
-        <div class="field"><label>Observação</label><textarea data-mfobs="${svc.id}">${escapeHtml(svc.observations || '')}</textarea></div>
+        <div class="field"><label>${escapeHtml(rotuloObsVisita(svc, 'Observação'))}</label><textarea data-mfobs="${svc.id}">${escapeHtml(obsDaVisita(svc))}</textarea></div>
         <button type="button" class="btn-primary" data-mfsave="${svc.id}">Marcar como concluída</button>
       </div>
     </div>` : ''}
@@ -6555,13 +6627,13 @@ async function gerarPdfDaAtividade(id, btn){
       for(const p of getServiceMedia(svc, 'photos')){
         try{ fotos.push(await midiaComoDataUrl(p)); }catch(e){ console.warn('pdf da atividade: foto não baixou', e); fotos.push(null); }
       }
-      return { tecnico: nome, inicio: svc.checkIn || '', fim: svc.checkOut || '', observacao: svc.observations || '', fotos };
+      return { tecnico: nome, inicio: svc.checkIn || '', fim: svc.checkOut || '', observacao: obsDaVisita(svc), fotos };   // Fase 50
     };
     const pessoas = partner
       ? [await pessoa(s, s.technician || 'Técnico 1'), await pessoa(partner, partner.technician || 'Técnico 2')]
       : [await pessoa(s, getServiceTechnicians(s).join(' e '))];
-    const blob = PREV_API.gerarPdfAtividade({ cliente: s.client, data: s.date, endereco: s.address, descricao: s.description,
-      numeroOS: s.numeroOS, status: statusLabelOf(s.status), pessoas });
+    const blob = PREV_API.gerarPdfAtividade({ cliente: s.client, data: s.date, endereco: s.address, descricao: [s.description, s.obraRotulo ? 'Obra: ' + s.obraRotulo : ''].filter(Boolean).join('\n'),   /* Fase 50 */
+      numeroOS: s.numeroOS, status: statusLabelOf(s.status), pessoas, historico: historicoDeVisitas(s) });   // Fase 50
     const base = String(s.client || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const nome = 'Relatorio-Atividade-' + (base || 'cliente') + (s.date ? '-' + s.date : '') + '.pdf';
     if(window.PASTA_PDF && PASTA_PDF.ok === true) PASTA_PDF.salvar(blob, nome, { tipo: 'Atividades', cliente: s.client });   // Fase 44
@@ -6615,6 +6687,7 @@ async function openServiceDetails(id){
       ? `<div class="instr-section" id="instrEditorDetails"></div>`
       : renderInstructionViewHtml(s)}
 
+    ${historicoVisitasHtml(s)}
     ${partner
       ? renderPersonDetailsBlock(s, s.technician || 'Técnico 1') + renderPersonDetailsBlock(partner, partner.technician || 'Técnico 2')
       : renderPersonDetailsBlock(s, '')
@@ -6887,6 +6960,7 @@ function repeatService(svc, dates){
         // Atividade de obra: o checklist de instalação (relatório do técnico) acompanha cada dia repetido
         if(source.obraRegistroId) copy.obraRegistroId = source.obraRegistroId;
         if(source.obraPedidoId) copy.obraPedidoId = source.obraPedidoId;
+        if(source.obraRotulo) copy.obraRotulo = source.obraRotulo;   // Fase 50
         if(Array.isArray(source.obraRegistroIds) && source.obraRegistroIds.length) copy.obraRegistroIds = source.obraRegistroIds.slice();
         // Orientações do gestor fazem parte da definição do serviço (como descrição/endereço):
         // acompanham a repetição, com cópias independentes dos arrays.
@@ -8407,7 +8481,7 @@ function renderPendingStyleList(containerId, pending){
       </div>
       ${s.lembrete && !s.date ? `<div class="pending-origem pending-lembrete">📝 Lembrete${s.lembretePor ? ' de ' + escapeHtml(s.lembretePor) : ''}${s.lembreteEm ? ' em ' + escapeHtml(new Date(s.lembreteEm).toLocaleDateString('pt-BR')) : ''} — ainda sem data: use Reagendar para marcar o dia</div>` : ''}
       ${s.pendenciaRelId && window.PREV_API && PREV_API.origemAtividade && PREV_API.origemAtividade(s) ? `<div class="pending-origem">🛠 ${escapeHtml(PREV_API.origemAtividade(s))}</div>` : (s.description ? `<div class="pending-obs">${escapeHtml(s.description)}</div>` : '')}
-      ${s.observations ? `<div class="pending-obs">${escapeHtml(s.observations)}</div>` : ''}
+      ${historicoVisitasHtml(s)}${obsDaVisita(s) ? `<div class="pending-obs">${escapeHtml(obsDaVisita(s))}</div>` : ''}
       <div class="pending-actions">
         <button class="btn-ghost" data-fillmanual="${s.id}">Preencher conclusão</button>
         <div class="pending-reschedule">
@@ -13614,7 +13688,7 @@ function buildAllTechniciansMessage(includeEstimates){
     }
     const windows = includeEstimates ? ARRIVAL_WINDOWS[tasks.length] : null;
     tasks.forEach((s, i) => {
-      let line = `${i + 1}. ${s.client}${s.description ? ' — ' + s.description : ''}`;
+      let line = `${i + 1}. ${s.client}${s.description ? ' — ' + s.description : ''}${s.isRetorno ? ' (retorno)' : ''}`;   // Fase 50
       if(windows && windows[i]) line += ` (chegada estimada: ${windows[i]})`;
       if(s.pairId){
         const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id);
@@ -13675,6 +13749,8 @@ function buildAgendaMessage(t){
       const bloco = [];
       bloco.push(`${i + 1}. 👤 *Cliente:* ${s.client}`);
       if(s.description) bloco.push(`🛠️ *Serviço:* ${s.description}`);
+      if(s.obraRotulo) bloco.push(`🏗️ *Obra:* ${s.obraRotulo}`);   // Fase 50: pedidos da obra
+      historicoVisitasTexto(s).forEach(l => bloco.push(l));   // Fase 50: histórico das visitas do retorno
       let dupla = '';
       if(s.pairId){
         const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id);
@@ -14043,7 +14119,7 @@ function renderOS(){
             <label>Horários</label>
             <div class="mono">${s.checkIn ? `Início: <b>${s.checkIn}</b>` : '—'}${s.checkOut ? ` &nbsp;·&nbsp; Fim: <b>${s.checkOut}</b>` : ''}</div>
           </div>
-          ${s.observations ? `<div class="field"><label>Observação do técnico</label><div>${escapeHtml(s.observations)}</div></div>` : ''}
+          ${historicoVisitasHtml(s)}${obsDaVisita(s) ? `<div class="field"><label>${escapeHtml(rotuloObsVisita(s, 'Observação do técnico'))}</label><div>${escapeHtml(obsDaVisita(s))}</div></div>` : ''}
           ${midiaBtnHtml}
           ${photosHtml ? `<div class="field"><label>Fotos do técnico</label><div class="photo-row">${photosHtml}</div></div>` : ''}
           ${audiosHtml ? `<div class="field"><label>Áudios do técnico</label><div class="audio-row">${audiosHtml}</div></div>` : ''}
@@ -14364,7 +14440,9 @@ async function ligarContatoCliente(nome, contato, fone, origem){
 // Fase 27: selo "Cliente de manutenção" — cliente no controle de visitas, ou atividade ligada a um contrato de manutenção
 function ehClienteManutencao(s){ if(!s) return false; if(s.maintenanceContractId != null && s.maintenanceContractId !== '') return true;
   const k = chaveClienteLigada(s.client); return !!k && Array.isArray(maintenanceContracts) && maintenanceContracts.some(c => c && c.client && chaveClienteLigada(c.client) === k); }
-function seloManutHtml(s, comValor){ return ehClienteManutencao(s) ? '<div class="selo-manut-linha"><span class="selo-manut" title="Cliente com contrato de manutenção preventiva (está no controle de visitas)">🔧 Cliente de manutenção</span>' + (comValor ? valorManutHtml(s) : '') + '</div>' : ''; }
+function seloManutHtml(s, comValor){ return (ehClienteManutencao(s) ? '<div class="selo-manut-linha"><span class="selo-manut" title="Cliente com contrato de manutenção preventiva (está no controle de visitas)">🔧 Cliente de manutenção</span>' + (comValor ? valorManutHtml(s) : '') + '</div>' : '') + seloObraHtml(s); }
+// Fase 50: atividade ligada a Obras e Pedidos mostra os pedidos num selo (o "O que precisa ser feito" fica livre para a visita)
+function seloObraHtml(s){ if(!s || !(s.obraRegistroId || s.obraRotulo)) return ''; return '<div class="selo-manut-linha"><span class="selo-obra" title="Atividade ligada à obra (Obras e Pedidos)">🏗 Obra' + (s.obraRotulo ? ' · ' + escapeHtml(s.obraRotulo) : '') + '</span></div>'; }
 // Fase 32: valor da preventiva (plano do Financeiro) ao lado do selo, no Cadastros e OS. Meses = intervalo entre visitas do controle de visitas (padrão 3).
 function valorManutHtml(s){
   try{
@@ -14466,7 +14544,8 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
 function renderAll(){
   if(currentRole === 'manager') setTimeout(varrerRetornosPendentes, 0);
   if(currentRole === 'manager') setTimeout(reconciliarVisitasConcluidas, 0);
-  if(currentRole === 'manager') setTimeout(reconciliarStatusAtribuidos, 0);   // Fase 31: com dia e técnico não fica "Aguardando técnico"
+  if(currentRole === 'manager') setTimeout(reconciliarStatusAtribuidos, 0);
+  if(currentRole === 'manager') setTimeout(reconciliarHistoricoRetornos, 0);   // Fase 50: retornos antigos em aberto → histórico das visitas   // Fase 31: com dia e técnico não fica "Aguardando técnico"
   if(currentRole === 'manager') setTimeout(reconciliarContatosClientes, 0);   // Fase 26: contato e telefone iguais em Clientes, controle de visitas e Financeiro   // Fase 23: atividade de preventiva concluída sempre chega ao controle de visitas
   renderTechList();
   renderDayBoxes();
@@ -14488,6 +14567,7 @@ let modalLembrete = false;      // modo "Lembrete": sem data; a atividade entra 
 function openModal(prefillDate, opts){
   if(overlay.parentNode !== document.body) document.body.appendChild(overlay);   // Fase 45: a janela mora dentro do #managerView, escondido no perfil Técnico
   window.__obraAtiv = null; modalLembrete = !!(opts && opts.lembrete);
+  { const so = document.getElementById('f-obraSelo'); if(so) so.remove(); const fd = document.getElementById('f-desc'); if(fd && fd.dataset.ph0) fd.placeholder = fd.dataset.ph0; }   // Fase 50: tira o selo da obra de um agendamento anterior
   pendingDate = prefillDate || selectedDate || todayStr();
   document.getElementById('f-date').value = modalLembrete ? '' : pendingDate;
   document.getElementById('f-date-field').style.display = modalLembrete ? 'none' : '';
@@ -14549,7 +14629,8 @@ document.getElementById('submitAddBtn').addEventListener('click', (e) => {
     const description = document.getElementById('f-desc').value.trim();
     const address = document.getElementById('f-addr').value.trim();
     if((!date && !modalLembrete) || !client || !description){
-      alert(modalLembrete ? 'Preencha o cliente e o que precisa ser feito.' : 'Preencha data, cliente e o que precisa ser feito.');
+      alert(modalLembrete ? 'Preencha o cliente e o que precisa ser feito.' : (window.__obraAtiv && date && client ? 'Escreva o que o técnico vai fazer nesta visita (os pedidos da obra já vão junto, no selo).' : 'Preencha data, cliente e o que precisa ser feito.'));   // Fase 50
+      if(window.__obraAtiv && !description){ const fd = document.getElementById('f-desc'); if(fd) fd.focus(); }
       return;
     }
 
@@ -16725,9 +16806,10 @@ function renderTechView(){
           <input type="text" data-returnreason="${s.id}" value="${escapeHtml(s.returnReason || '')}" placeholder="Ex: falta peça, cliente pediu outro dia... (se deixar em branco, usa a observação)">
         </div>
       </div>
+      ${historicoVisitasHtml(s)}
       <div class="field">
-        <label>Observação</label>
-        <textarea data-obs="${s.id}" placeholder="Descreva o que foi feito, peças usadas, pendências...">${escapeHtml(s.observations || '')}</textarea>
+        <label>${escapeHtml(rotuloObsVisita(s, 'Observação'))}</label>
+        <textarea data-obs="${s.id}" placeholder="Descreva o que foi feito, peças usadas, pendências...">${escapeHtml(obsDaVisita(s))}</textarea>
       </div>
       <div class="field">
         <label>Fotos</label>
@@ -16871,8 +16953,7 @@ function renderTechView(){
       const svc = services.find(x => x.id === id);
       if(svc){
         svc.returnReason = e.target.value;
-        const ret = svc.retornoCriado ? services.find(x => x.retornoDeId === svc.id && x.status === 'aguardando') : null;
-        if(ret) ret.observations = retornoObsText(svc);              // o retorno já criado acompanha o motivo digitado depois
+        atualizarHistoricoNoRetorno(svc);              // Fase 50: o retorno já criado acompanha o motivo digitado depois
         await saveServices();
       }
     });
@@ -16958,7 +17039,7 @@ function renderTechView(){
       const id = Number(e.target.dataset.obs);
       const svc = services.find(x => x.id === id);
       if(svc){
-        svc.observations = e.target.value;
+        svc.observations = e.target.value; atualizarHistoricoNoRetorno(svc);   // Fase 50
         await saveServices();
       }
     });
@@ -25003,12 +25084,15 @@ function gerarPdfAtividade(dados){
 
   // ---------------- serviço ----------------
   if(String(dados.descricao || '').trim()) blocoTexto('Serviço', dados.descricao, C.ink, 'Serviço (continuação)');
+  const histPdf = Array.isArray(dados.historico) ? dados.historico.filter(Boolean) : [];   // Fase 50: retorno com as visitas anteriores
+  if(histPdf.length) blocoTexto('Visitas anteriores (retorno — ' + (histPdf.length + 1) + 'ª visita)', histPdf.map((v, i) => 'Visita ' + (i + 1) + (v.data ? ' · ' + fmtData(v.data) : '') + (v.tecnicos ? ' · ' + v.tecnicos : '') + ':\n' + (v.obs || 'sem observação') + (v.motivo ? '\nMotivo do retorno: ' + v.motivo : '')).join('\n\n'), C.ink, 'Visitas anteriores (continuação)');
+  const rotObsPdf = histPdf.length ? 'Observação da visita ' + (histPdf.length + 1) : 'Observação do técnico';
 
   // ---------------- por técnico: observação e fotos ----------------
   pessoas.forEach(p => {
     const sufixo = dupla ? ' — ' + (p.tecnico || 'Técnico') : '';
     if(dupla && horario(p)){ garantir(8); setF('sansB', 8.5, C.dim); txt((p.tecnico || 'Técnico') + ' · ' + horario(p), M, y + 4); y += 7; }
-    if(String(p.observacao || '').trim()) blocoTexto('Observação do técnico' + sufixo, p.observacao, C.red, 'Observação do técnico' + sufixo + ' (continuação)');
+    if(String(p.observacao || '').trim()) blocoTexto(rotObsPdf + sufixo, p.observacao, C.red, rotObsPdf + sufixo + ' (continuação)');   // Fase 50
     const fotos = p.fotos || [];
     if(!fotos.length) return;
     const colW = (W - 2 * 3) / 3, maxH = 46;
@@ -26065,7 +26149,7 @@ function problemaSolucao(l){
   if(l.origem !== 'atividade') return { problema: '', solucao: '' };
   const s = (typeof services !== 'undefined' ? services : []).find(x => x && String(x.id) === String(l.refId));
   const problema = String((s && s.description) || (l.descricao && l.descricao !== l.cliente ? l.descricao : '') || '').trim(); // sem descrição: não repete o nome do cliente
-  const solucao = String((s && s.observations) || l.obs || '').trim();
+  const solucao = String((s && (typeof obsDaVisita === 'function' ? obsDaVisita(s) : s.observations)) || l.obs || '').trim();   // Fase 50
   return { problema, solucao: solucao === problema ? '' : solucao };
 }
 function linhaDeQuadro(q, nomeTipo){ return { origem: 'quadro', refId: q.id, cliente: q.cliente || '', descricao: 'Quadro de comando — ' + (nomeTipo || q.tipoNome || ''), data: String(q.testadoEm || q.criadoEm || '').slice(0, 10), tecnicos: [q.iniciouMontagemPor, q.montadoPor, q.iniciouTestePor, q.testadoPor].filter(Boolean).filter((v, i, a) => a.indexOf(v) === i), inicio: null, fim: null }; }
@@ -27724,11 +27808,14 @@ async function mudarAndamento(rid, pid, trilha, novo){
   if(lib.length) avisar(avisoLiberacao(nomeCliente(r), lib), 9000);
   if(trilha === 'i' && i0 === 'aguardando_sinal' && window.QUADROS_API && QUADROS_API.liberarSinal){ try{ const n = await QUADROS_API.liberarSinal(rid, pid); if(n) avisar(n === 1 ? 'Quadro reservado liberado para a Oficina.' : n + ' quadros reservados liberados para a Oficina.', 5000); }catch(e){} }   // revisão 7
 }
-function abrirAgendamentoObra(r, descricao, vinculo){
+function abrirAgendamentoObra(r, rotulo, vinculo){   // Fase 50: os pedidos vão no selo; "O que precisa ser feito" fica vazio e obrigatório
   const nome = nomeCliente(r);
   if(typeof openModal !== 'function'){ avisar('Não foi possível abrir o agendamento agora.'); return; }
-  openModal();                                                                          // o mesmo "+ Agendar serviço" da Agenda, já preenchido
-  document.getElementById('f-client').value = nome; document.getElementById('f-desc').value = descricao;
+  openModal();                                                                          // o mesmo "+ Agendar serviço" da Agenda
+  vinculo = Object.assign({}, vinculo, { rotulo: rotulo || '' });
+  document.getElementById('f-client').value = nome; const fdesc = document.getElementById('f-desc'); fdesc.value = '';
+  if(!fdesc.dataset.ph0) fdesc.dataset.ph0 = fdesc.placeholder; fdesc.placeholder = 'O que o técnico vai fazer nesta visita (ex.: instalar o smartstart e ajustar a altura do aquecedor)';
+  const campoDesc = fdesc.closest('.field') || fdesc.parentNode; if(campoDesc && campoDesc.parentNode){ const so = document.createElement('div'); so.id = 'f-obraSelo'; so.innerHTML = '<span class="selo-obra">🏗 Obra' + (rotulo ? ' · ' + esc(rotulo) : '') + '</span>'; campoDesc.parentNode.insertBefore(so, campoDesc); }
   const end = typeof findClientAddress === 'function' ? findClientAddress(nome) : ''; if(end) document.getElementById('f-addr').value = end;
   window.__obraAtiv = vinculo;                                                          // a atividade salva leva junto a obra (e o pedido): o técnico vê o checklist
   setTimeout(() => { const d = document.getElementById('f-desc'); if(d) d.focus(); }, 60);
@@ -27802,14 +27889,14 @@ if(window.QUADROS_API && QUADROS_API.aoMudar) QUADROS_API.aoMudar(() => {   // s
 });
 function criarAtividade(rid, pid){
   const r = porId(rid); const p = r && r.pedidos && r.pedidos[pid]; if(!p) return;
-  abrirAgendamentoObra(r, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), { reg: rid, ped: pid });
+  abrirAgendamentoObra(r, 'Pedido ' + p.numero + (p.descricao ? ' — ' + p.descricao : ''), { reg: rid, ped: pid });   // Fase 50: vai no selo
 }
 const registrosDoCliente = (r) => { const k = fold(nomeCliente(r)); return registros().filter(x => fold(nomeCliente(x)) === k).sort((a, b) => EMPRESAS.findIndex(e => e[0] === a.empresa) - EMPRESAS.findIndex(e => e[0] === b.empresa)); };
 function criarAtividadeObra(rid){
   const r = porId(rid); if(!r) return; const regs = registrosDoCliente(r); const nums = regs.flatMap(x => pedidosDe(x).filter(p => !p.cancelado).map(p => p.numero));
-  abrirAgendamentoObra(r, 'Instalação — ' + (nums.length ? 'pedidos ' + nums.join(', ') : 'obra'), { reg: regs[0].id, ped: null, regs: regs.map(x => x.id) });    // uma atividade só para a obra inteira (Equiper e Eqp)
+  abrirAgendamentoObra(r, nums.length ? (nums.length === 1 ? 'Pedido ' : 'Pedidos ') + nums.join(', ') : '', { reg: regs[0].id, ped: null, regs: regs.map(x => x.id) });   // Fase 50: vai no selo    // uma atividade só para a obra inteira (Equiper e Eqp)
 }
-function vincularAtividade(svc){ const a = window.__obraAtiv; if(!a || !svc) return; svc.obraRegistroId = a.reg; if(a.ped) svc.obraPedidoId = a.ped; else if(a.regs && a.regs.length > 1) svc.obraRegistroIds = a.regs.slice(); window.__obraAtiv = null; }
+function vincularAtividade(svc){ const a = window.__obraAtiv; if(!a || !svc) return; svc.obraRegistroId = a.reg; if(a.rotulo) svc.obraRotulo = a.rotulo;   /* Fase 50 */ if(a.ped) svc.obraPedidoId = a.ped; else if(a.regs && a.regs.length > 1) svc.obraRegistroIds = a.regs.slice(); window.__obraAtiv = null; }
 // =====================================================================================
 // SISTEMAS (bases de instalação) — Obras e Pedidos do Gestor: lista de sistemas com seus subitens, que o Gestor cria e edita.
 // Nascem do catálogo da manutenção preventiva (cópia: editar aqui NÃO muda a preventiva). Nó novo: obraSistemas/<id>
@@ -29843,7 +29930,7 @@ function ligarNavegacao(){
   if(window.FIN_API){ const abrirOriginal = FIN_API.abrir; FIN_API.abrir = async function(){ const u = document.getElementById('finSidebarUser'); if(u) u.textContent = (typeof currentFinanceiroName !== 'undefined' && currentFinanceiroName) || ''; mostrarSecao('painel'); return abrirOriginal.apply(this, arguments); }; }
 }
 ligarNavegacao();
-window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ _pv49: { prevGerar, prevRefazer, prevAtualizarParcelas, prevOpcoesTipo, prevCamposParcela, prevPular, prevDespular }, /* Fase 49 */ abrirPosObra, posObraAtualizar, posObraBadge, _po: { iniciarCortesiaManual, posObraRemovidas, marcarForaPO, iniciarCortesia, oferecerCortesia, posObraSemCortesia, textoMensagemPO, renderPosObra, cardPO, mcConv, cortesiaCfg, aprovarContratoManut, regsContratoPO, contratoRecusadoPO, chipCortesia, marcarCortesia }, /* Fase 47 */ cmTextosContrato, cmClausulasHtml, CM_CLAUSULAS, /* Fase 46 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
+window.OBR_API = { cmEscolherEquipamentos, /* Fase 41 */ _ob50: { criarAtividadeObra, criarAtividade }, /* Fase 50 */ _pv49: { prevGerar, prevRefazer, prevAtualizarParcelas, prevOpcoesTipo, prevCamposParcela, prevPular, prevDespular }, /* Fase 49 */ abrirPosObra, posObraAtualizar, posObraBadge, _po: { iniciarCortesiaManual, posObraRemovidas, marcarForaPO, iniciarCortesia, oferecerCortesia, posObraSemCortesia, textoMensagemPO, renderPosObra, cardPO, mcConv, cortesiaCfg, aprovarContratoManut, regsContratoPO, contratoRecusadoPO, chipCortesia, marcarCortesia }, /* Fase 47 */ cmTextosContrato, cmClausulasHtml, CM_CLAUSULAS, /* Fase 46 */ ppDados, uiPP, ppIntervalo, renderPrevPag, ppPdf, /* Fase 40 */ prevPlanoDoCliente, /* Fase 32 */ prevLigarContato, prevLigarTodos, aprovarContratoManut, /* Fase 26 */ aprovacaoHtml, aprovacaoEvento, abrirAprovacaoPedidos, aprovarPedidoManut, nAguardandoAprov, atualizarAprovacaoTelas, /* Fase 22 */ _teste: { ligadosPrev, contatoPrev, prevPreencherLigados, visitasDoAno, /* Fase 26 */ uiA, itensAprovacao, cobrancaDoPedido, estadoPedManut, vistaManut, garantirCobrancaPedido, pedidoInativo, mudarAprovacao, prevClientes, prevGerar, prevGerarTodos, prevLiberar, prevFaltas, prevMarcarEnviada, renderAvisosFinPrev, coletarEventos, prevSituacao, prevAtualizarParcelas, prevRefazer, formPlano, renderPrev, montarPrev, uiV, valorMensalDe, vencDe, prevRegs, ehPrev, obraCompletaDe, liberarParcelasObraCompleta, regsObraDoCliente, pdfDoCliente: (ids) => pdfDoCliente(ids.split(',').map(porId)), mensagemRelatorioObra: (ids) => mensagemRelatorioObra(ids.split(',').map(porId).filter(Boolean)), fold, sistemas: () => sistemas(), garantirSistemas, abrirAddSistema, abrirAddEquip, alternarLib, definirEtapa, estadoSub, subitensDe, storeSis: () => storeSis, renderGestor: () => renderGestor(), uid, abrirEditarEquip, moverEquip }, renderAvisosFinPrev, novoClientePrev, /* ganchos de teste/diagnóstico (revisão 7) */ instalacoes: () => inst, contratosManutPendentes: cmPendentes, manuaisPendentes: manPendentes, abrirManualOperacao, abrirManuais, abrirContratoManut, abrirPrecosContrato, abrirContratosManut, sincronizarOs, reconciliarOs, registros, pedidosDe, internoDe, obraDe, mudarAndamento, FASE_INTERNA, rotObra, nomeCliente, estadoEtapa, abrirTodosClientes: () => { uiG.clientes = new Set(uiG.chaves); renderGestor(); }, andamentoPrincipal, uiG, uiC, eventosCal: () => coletarEventos({ empresa: uiC.empresa, recebidos: uiC.recebidos, modo: 'obras' }), renderAgendados, registrosDaAba: (k) => registrosDaAba(k, 'obras'), ehFinalizado, inst, estadoSub, criarPedidoManutencao, etapasDe, resumoPedido, montarSlotTecnico, vincularAtividade, iniciarGestor, flushInstalacao: () => enviarInst({}), reconciliar, dadosRelatorio, baixarRelatorioObra, sistemas, storeSis, importarDaPreventiva, abrirSistema, abrirGestor, renderGestor, STATUS_OBRA, abrir: () => mostrarSecao('obras'), render: renderLista, totais, parseValor, dividirValor, pctsDe, mostrarSecao, garantirCarregado, store, abrirNovo, abrirDetalhe };
 })();
 
 // =====================================================================================
