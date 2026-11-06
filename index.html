@@ -1221,6 +1221,15 @@
   .photo-source-modal{ max-width: 360px; }
   .photo-source-actions{ display:flex; flex-direction:column; gap:10px; margin-top: 14px; }
   .photo-source-actions .btn-primary, .photo-source-actions .btn-ghost{ width:100%; padding: 14px 16px; font-size: 15px; text-align:center; }
+  .ret-tec{ margin:0 0 14px; }   /* Fase 54: retiradas por técnico */
+  .ret-tec-t{ font-size:12px; font-weight:700; color: var(--text-dim); margin:0 0 8px; text-transform:uppercase; letter-spacing:.03em; }
+  .ret-tec-t span{ font-weight:500; text-transform:none; letter-spacing:0; }
+  .ret-tec-lista{ display:flex; flex-wrap:wrap; gap:8px; }
+  .ret-tec-chip{ display:flex; align-items:baseline; gap:8px; padding:8px 12px; border:1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel); color: var(--text); cursor:pointer; font: inherit; text-align:left; }
+  .ret-tec-chip b{ font-size:13.5px; }
+  .ret-tec-chip .n{ font-family: var(--mono); font-weight:700; font-size:15px; }
+  .ret-tec-chip .d{ font-size:11.5px; color: var(--text-dim); }
+  .ret-tec-chip.on{ border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
   .fin-os-row{
     display:flex; flex-wrap:wrap; align-items:center; gap:10px; justify-content:space-between;
     padding:12px 14px; border:1px solid var(--line); border-radius: var(--radius); margin-bottom:8px;
@@ -3555,6 +3564,7 @@
         <select id="estoqueRetTecnicoFiltro"><option value="">Todos os técnicos</option></select>
         <input type="date" id="estoqueRetDe" title="De"><input type="date" id="estoqueRetAte" title="Até">
       </div>
+      <div id="estoqueRetPorTec" class="ret-tec" style="padding:0 20px;"></div>
       <div id="estoqueRetiradasList" style="padding:0 20px 30px;"></div>
     </div>
 
@@ -19807,10 +19817,11 @@ function renderEstoqueRetiradas(){
   const q = (document.getElementById('estoqueRetSearch').value || '').trim().toLowerCase();
   const de = document.getElementById('estoqueRetDe').value, ate = document.getElementById('estoqueRetAte').value;
   let list = estoqueRetiradasStore.items.slice();
-  if(sel.value) list = list.filter(r => (r.technicianName || r.technician) === sel.value);
   if(de) list = list.filter(r => (r.createdAt || '').slice(0, 10) >= de);
   if(ate) list = list.filter(r => (r.createdAt || '').slice(0, 10) <= ate);
   if(q) list = list.filter(r => (r.technicianName || r.technician || '').toLowerCase().includes(q) || (r.items || []).some(i => (i.name || '').toLowerCase().includes(q)));
+  renderRetiradasPorTecnico(list, sel.value, de, ate);   // Fase 54: conta com a busca e o período, antes do filtro de técnico
+  if(sel.value) list = list.filter(r => (r.technicianName || r.technician) === sel.value);
   list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
   document.getElementById('estoqueRetCount').textContent = `(${estoqueRetiradasStore.items.length})`;
   box.innerHTML = list.length ? list.map(r => {
@@ -19822,6 +19833,25 @@ function renderEstoqueRetiradas(){
     </div>`;
   }).join('') : '<div class="painel-block-empty">Nenhuma retirada encontrada.</div>';
   box.querySelectorAll('[data-estoqueret]').forEach(row => row.addEventListener('click', () => abrirDetalheRetirada(Number(row.dataset.estoqueret))));
+}
+// Fase 54: número de retiradas (e de itens) por técnico, na busca/período escolhidos; tocar filtra a lista por ele
+function retiradasPorTecnico(list){
+  const m = {};
+  list.forEach(r => { const t = r.technicianName || r.technician || '—'; m[t] = m[t] || { tecnico: t, retiradas: 0, itens: 0 }; m[t].retiradas++; m[t].itens += (r.items || []).length; });
+  return Object.values(m).sort((a, b) => b.retiradas - a.retiradas || b.itens - a.itens || a.tecnico.localeCompare(b.tecnico, 'pt-BR'));
+}
+function renderRetiradasPorTecnico(list, atual, de, ate){
+  const box = document.getElementById('estoqueRetPorTec'); if(!box) return;
+  const linhas = retiradasPorTecnico(list);
+  if(!linhas.length){ box.innerHTML = ''; return; }
+  const br = (d) => d ? d.split('-').reverse().join('/') : '';
+  const periodo = de && ate ? `de ${br(de)} a ${br(ate)}` : de ? `desde ${br(de)}` : ate ? `até ${br(ate)}` : 'todo o histórico';
+  box.innerHTML = `<div class="ret-tec-t">Retiradas por técnico <span>· ${periodo}</span></div><div class="ret-tec-lista">` + linhas.map(l =>
+    `<button type="button" class="ret-tec-chip${l.tecnico === atual ? ' on' : ''}" data-rettec="${escapeHtml(l.tecnico)}"><b>${escapeHtml(l.tecnico)}</b><span class="n">${l.retiradas}</span><span class="d">${l.retiradas === 1 ? 'retirada' : 'retiradas'} · ${l.itens} ${l.itens === 1 ? 'item' : 'itens'}</span></button>`).join('') + '</div>';
+  box.querySelectorAll('[data-rettec]').forEach(b => b.addEventListener('click', () => {
+    const sel = document.getElementById('estoqueRetTecnicoFiltro'), t = b.dataset.rettec;
+    sel.value = sel.value === t ? '' : t; renderEstoqueRetiradas();
+  }));
 }
 ['estoqueRetSearch','estoqueRetTecnicoFiltro','estoqueRetDe','estoqueRetAte'].forEach(id => {
   document.getElementById(id).addEventListener(id === 'estoqueRetSearch' ? 'input' : 'change', renderEstoqueRetiradas);
