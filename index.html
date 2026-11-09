@@ -235,6 +235,23 @@
   .addr-conf-cheg{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .addr-conf-cheg input{ width:150px; flex:0 0 auto; }
   .addr-conf-cheg .addr-conf-pad{ font-size:11.5px; color:var(--text-dim); }
+  .cheg-esc [hidden]{ display:none !important; }   /* Fase 55: chegada prevista por ícone + 2 horários */
+  .cheg-btn{ display:inline-flex; align-items:center; gap:8px; padding:8px 12px 8px 10px; border:1px solid var(--line); border-radius:999px; background: var(--panel); color: var(--text); font: inherit; font-size:14px; font-weight:600; cursor:pointer; }
+  .cheg-btn:hover{ border-color: var(--accent-line); }
+  .cheg-btn[aria-expanded="true"]{ border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .cheg-ico{ width:26px; height:26px; border-radius:50%; background: var(--accent-soft); color: var(--accent); display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .cheg-ico svg{ width:16px; height:16px; }
+  .cheg-tag{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color: var(--text-dim); background: var(--panel-2); border-radius:999px; padding:2px 7px; }
+  .cheg-car{ width:12px; height:12px; color: var(--text-dim); transition: transform .15s; }
+  .cheg-btn[aria-expanded="true"] .cheg-car{ transform: rotate(180deg); }
+  .cheg-pop{ margin-top:8px; padding:12px; border:1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel-2); }
+  .cheg-linha{ display:flex; gap:10px; flex-wrap:wrap; }
+  .cheg-linha label{ display:flex; flex-direction:column; gap:4px; font-size:11.5px; font-weight:600; color: var(--text-dim); text-transform:none; margin:0; }
+  .cheg-linha select{ min-width:104px; font-size:15px; font-weight:600; padding:8px 10px; }
+  .cheg-rod{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px; }
+  .cheg-rod .cheg-pad{ font-size:11.5px; color: var(--text-dim); margin-right:auto; }
+  .cheg-link{ background:none; border:none; padding:4px 2px; color: var(--accent); font: inherit; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .cheg-ok{ padding:6px 16px; border-radius:999px; border:none; background: var(--accent); color:#fff; font: inherit; font-size:13px; font-weight:700; cursor:pointer; }
   .addr-conf-nota{ font-size:12px; color:var(--text-dim); margin:-4px 0 12px; }
   .mini-meta-item svg{ width:13px; height:13px; flex-shrink:0; color: var(--text-dim); }
   .mini-meta-item.is-retorno{ color: var(--accent); font-weight:600; }
@@ -7174,6 +7191,66 @@ function wirePairButtons(container){
 // Fase 51: mesma ordem do "Enviar mensagem" (arraste na aba Técnicos; sem ordem = criação) e a mesma estimativa de chegada da mensagem
 function ordemDaMensagem(a, b){ const ao = (typeof a.order === 'number') ? a.order : a.id; const bo = (typeof b.order === 'number') ? b.order : b.id; return ao - bo; }
 // Fase 52: horário mudado num envio fica só na atividade (chegadaPrevista); a tabela padrão (ARRIVAL_WINDOWS) nunca muda
+// Fase 55: escolher a chegada prevista por ícone + dois horários (Das / às). O valor continua "HH:MM–HH:MM" (Fase 52).
+function chegadaPartes(v){
+  const m = String(v || '').match(/(\d{1,2}):(\d{2})\s*(?:–|—|-|às|as|até|a)\s*(\d{1,2}):(\d{2})/i); if(!m) return null;
+  const h = (a, b) => String(Number(a)).padStart(2, '0') + ':' + b; return { ini: h(m[1], m[2]), fim: h(m[3], m[4]) };
+}
+function chegadaMin(h){ const p = String(h || '').split(':').map(Number); return p[0] * 60 + (p[1] || 0); }
+function chegadaHora(min){ min = Math.max(0, Math.min(23 * 60 + 45, min)); return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
+function chegadaRotulo(v){ const p = chegadaPartes(v); return p ? p.ini + ' às ' + p.fim : (String(v || '').trim() || 'Sem horário'); }
+function chegadaOpcoes(sel){
+  const hs = []; for(let m = 6 * 60; m <= 20 * 60; m += 15) hs.push(chegadaHora(m));
+  if(sel && !hs.includes(sel)){ hs.push(sel); hs.sort(); }
+  return hs.map(h => `<option value="${h}"${h === sel ? ' selected' : ''}>${h}</option>`).join('');
+}
+function chegadaEscolhaHtml(id, valor, pad){
+  const p = chegadaPartes(valor) || chegadaPartes(pad) || { ini: '10:30', fim: '11:00' };
+  const ehPad = !!pad && valor === pad;
+  return `<div class="cheg-esc" data-chegesc="${id}">
+      <input type="hidden" data-chegadaconfirm="${id}" data-padrao="${escapeHtml(pad)}" value="${escapeHtml(valor)}">
+      <button type="button" class="cheg-btn" data-chegabrir="${id}" aria-expanded="false" title="Escolher o horário de chegada">
+        <span class="cheg-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+        <span class="cheg-txt">${escapeHtml(chegadaRotulo(valor))}</span><span class="cheg-tag"${ehPad ? '' : ' hidden'}>padrão</span>
+        <svg class="cheg-car" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2.5 4.5 6 8l3.5-3.5"/></svg>
+      </button>
+      <div class="cheg-pop" hidden>
+        <div class="cheg-linha"><label>Das<select data-chegini="${id}">${chegadaOpcoes(p.ini)}</select></label><label>às<select data-chegfim="${id}">${chegadaOpcoes(p.fim)}</select></label></div>
+        <div class="cheg-rod"><span class="cheg-pad">${pad ? 'padrão ' + escapeHtml(pad) : 'sem padrão para esta posição'}</span>${pad ? `<button type="button" class="cheg-link" data-chegpadrao="${id}">Voltar ao padrão</button>` : `<button type="button" class="cheg-link" data-chegsem="${id}">Sem horário</button>`}<button type="button" class="cheg-ok" data-chegok="${id}">OK</button></div>
+      </div>
+    </div>`;
+}
+function chegadaAplicar(esc, v){
+  const inp = esc.querySelector('[data-chegadaconfirm]'); inp.value = v;
+  esc.querySelector('.cheg-txt').textContent = chegadaRotulo(v);
+  const pad = inp.dataset.padrao || ''; esc.querySelector('.cheg-tag').hidden = !(pad && v === pad);
+}
+function chegadaPorNoSelect(sel, h){ if(![...sel.options].some(o => o.value === h)) sel.insertAdjacentHTML('beforeend', `<option value="${h}">${h}</option>`); sel.value = h; }
+function chegadaEscolhaEventos(box){
+  box.onclick = (e) => {
+    const b = e.target.closest && e.target.closest('[data-chegabrir],[data-chegpadrao],[data-chegsem],[data-chegok]'); if(!b) return;
+    const esc = b.closest('.cheg-esc'), pop = esc.querySelector('.cheg-pop'), btn = esc.querySelector('.cheg-btn');
+    if(b.dataset.chegabrir){
+      const abrir = pop.hidden;
+      box.querySelectorAll('.cheg-pop').forEach(x => { x.hidden = true; }); box.querySelectorAll('.cheg-btn').forEach(x => x.setAttribute('aria-expanded', 'false'));
+      pop.hidden = !abrir; btn.setAttribute('aria-expanded', String(abrir)); return;
+    }
+    const inp = esc.querySelector('[data-chegadaconfirm]');
+    if(b.dataset.chegpadrao){ const p = chegadaPartes(inp.dataset.padrao); if(p){ chegadaPorNoSelect(esc.querySelector('[data-chegini]'), p.ini); chegadaPorNoSelect(esc.querySelector('[data-chegfim]'), p.fim); } chegadaAplicar(esc, inp.dataset.padrao || ''); }
+    else if(b.dataset.chegsem) chegadaAplicar(esc, '');
+    pop.hidden = true; btn.setAttribute('aria-expanded', 'false');
+  };
+  box.onchange = (e) => {
+    const s = e.target; if(!s.matches || !s.matches('[data-chegini],[data-chegfim]')) return;
+    const esc = s.closest('.cheg-esc'), si = esc.querySelector('[data-chegini]'), sf = esc.querySelector('[data-chegfim]');
+    if(s === si){   // mudar o início leva o fim junto (mesma duração)
+      const ant = chegadaPartes(esc.querySelector('[data-chegadaconfirm]').value) || chegadaPartes(esc.querySelector('[data-chegadaconfirm]').dataset.padrao);
+      const dur = ant ? Math.max(15, chegadaMin(ant.fim) - chegadaMin(ant.ini)) : 30;
+      chegadaPorNoSelect(sf, chegadaHora(chegadaMin(si.value) + dur));
+    } else if(chegadaMin(sf.value) <= chegadaMin(si.value)) chegadaPorNoSelect(sf, chegadaHora(chegadaMin(si.value) + 30));
+    chegadaAplicar(esc, si.value + '–' + sf.value);
+  };
+}
 function chegadaDaTarefa(t, total, idx){ return String((t && t.chegadaPrevista) || '').trim() || janelaDeChegada(total, idx); }
 function janelaDeChegada(total, idx){ try{ const w = ARRIVAL_WINDOWS[total]; return (w && w[idx]) || ''; }catch(e){ return ''; } }
 function estimativaChegada(s, tecnico, dataStr){
@@ -13918,10 +13995,11 @@ function openAddressConfirm(t){
         <div class="addr-conf-item">
           <div class="addr-conf-cli">${i + 1}. ${escapeHtml(s.client)}</div>
           <div class="field"><label>Endereço</label><input type="text" data-addrconfirm="${s.id}" value="${escapeHtml(addr)}" placeholder="Endereço (opcional)"></div>
-          <div class="field"><label>Chegada prevista</label><div class="addr-conf-cheg"><input type="text" data-chegadaconfirm="${s.id}" data-padrao="${escapeHtml(pad)}" value="${escapeHtml(chegadaDaTarefa(s, tasks.length, i))}" placeholder="${escapeHtml(pad || 'ex.: 10:30–11:00')}" maxlength="40"><span class="addr-conf-pad">${pad ? 'padrão ' + escapeHtml(pad) : 'sem padrão para ' + tasks.length + ' atividades'}</span></div></div>
+          <div class="field"><label>Chegada prevista</label><div class="addr-conf-cheg">${chegadaEscolhaHtml(s.id, chegadaDaTarefa(s, tasks.length, i), pad)}</div></div>
         </div>
       `;
     }).join('');
+    chegadaEscolhaEventos(body);   // Fase 55
   }
   document.getElementById('addressConfirmOverlay').classList.add('open');
 }
