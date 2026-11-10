@@ -2965,6 +2965,33 @@
   .pg-area-b > .pn-bloco{ display:block; width:auto; border:0; box-shadow:none; padding:12px 0 0; margin:0; border-radius:0; background:transparent; } .pg-area-b > .pn-bloco > .pn-bloco-h{ display:none; }
   .pg-area-b .pn-barra{ margin-top:12px; }
   #finPainelView{ padding:4px 0 28px; } #finPainelView .pn-head{ margin:6px 2px 14px; }
+  .fpb{ margin:0 0 6px; }   /* Fase 57: busca de pagamentos de um cliente */
+  .fpb-campo{ position:relative; }
+  .fpb-campo input{ width:100%; padding:11px 12px 11px 38px; font-size:14.5px; border-radius:12px; border:1px solid var(--f8-edge, var(--line)); background:var(--surface); color:var(--text); box-shadow:var(--f8-sh-1); }
+  .fpb-ic{ position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:15px; opacity:.6; pointer-events:none; }
+  .fpb-res:empty{ display:none; }
+  .fpb-res{ margin-top:10px; background:var(--surface); border:1px solid var(--f8-edge, var(--line)); border-radius:12px; padding:12px; box-shadow:var(--f8-sh-1); }
+  .fpb-msg{ font-size:13px; color:var(--text-dim); }
+  .fpb-cls{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .fpb-cl{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--text); cursor:pointer; min-height:0; }
+  .fpb-cl b{ font-size:13.5px; } .fpb-cl span{ font-size:11.5px; color:var(--text-dim); }
+  .fpb-cl:hover{ border-color:var(--ink); }
+  .fpb-h{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .fpb-h .fpb-nome{ font-size:16px; font-weight:800; color:var(--text); flex:1; min-width:0; }
+  .fpb-tot{ display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px; margin:10px 0 4px; }
+  .fpb-tot .pg-k{ box-shadow:none; } .fpb-tot .pg-k .v{ font-size:18px; }
+  @media (max-width:640px){ .fpb-tot{ grid-template-columns:repeat(2, minmax(0,1fr)); } }
+  .fpb-g{ margin-top:12px; border-top:1px solid var(--line); padding-top:10px; }
+  .fpb-gh{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .fpb-gh small{ flex:1 1 200px; min-width:0; font-size:11.5px; color:var(--text-dim); }
+  .fpb-p{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; row-gap:4px; width:100%; text-align:left; background:none; border:0; border-top:1px dashed var(--line); padding:8px 2px; margin:0; color:var(--text); cursor:pointer; font:inherit; font-size:13px; min-height:0; border-radius:0; box-shadow:none; }
+  .fpb-gh + .fpb-p{ margin-top:6px; }
+  .fpb-p:hover .fpb-pt b{ text-decoration:underline; }
+  .fpb-pt{ flex:1 1 55%; min-width:0; } .fpb-pt b{ font-weight:650; } .fpb-pt small{ display:block; color:var(--text-dim); font-size:11.5px; }
+  .fpb-pv{ font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .fpb-p .obr-st{ font-size:11px; padding:2px 8px; white-space:nowrap; }
+  .fpb-venc{ color:var(--danger, #b4232a); font-weight:700; }
+  .fpb-vazio{ font-size:12.5px; color:var(--text-dim); padding:6px 2px 0; }
   .fp-sem{ grid-template-columns:repeat(7, minmax(0,1fr)); } .fp-sem .pg-f b{ font-size:12.5px; }
   @media (max-width:640px){ #finPainelView{ padding:4px 12px 90px; } }
   .pg-fase{ font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); margin:12px 0 6px; }
@@ -29980,6 +30007,55 @@ function parcelasFin(){            // todas as parcelas vivas (pedido cancelado 
       out.push({ r, p, st, origem: modoDe(r), cliente: nomeCliente(r), valor: Number(p.valor) || 0, data: p.agendadoPara || '', pagoEm: p.pagoEm ? String(p.pagoEm).slice(0, 10) : '', enviadoEm: p.enviadoEm ? String(p.enviadoEm).slice(0, 10) : '', liberadoEm: p.liberadoEm ? String(p.liberadoEm).slice(0, 10) : '' }); }); });
   return out;
 }
+// Fase 57: busca de todos os pagamentos de um cliente (Obras e Pedidos, Pedidos de manutenção, OS e Manutenções preventivas).
+uiP.busca = ''; uiP.cli = '';
+const fpChave = (nome) => (typeof chaveClienteLigada === 'function' ? chaveClienteLigada(nome) : fold(nome));   // mesma chave de nome da Fase 26
+const FPB_ORDEM = { obras: 0, manut: 1, os: 2, prev: 3 };
+function fpClientes(){       // um item por cliente, com os registros dele (as duas empresas, todas as origens)
+  const m = new Map();
+  todosRegistros().forEach(r => { const nome = String(nomeCliente(r) || '').trim(); const k = fpChave(nome); if(!k) return; let c = m.get(k); if(!c) m.set(k, c = { k, nome, regs: [] }); c.regs.push(r); });
+  return [...m.values()];
+}
+const fpDoCliente = (c, todasP) => { const ids = new Set(c.regs.map(r => r.id)); return todasP.filter(x => ids.has(x.r.id)); };
+function fpQuando(x, hoje){
+  if(x.st === 'recebido') return x.pagoEm ? 'recebido em ' + fmtData(x.pagoEm) : 'recebido';
+  if(x.data) return x.data < hoje && x.st !== 'nao_liberado' ? '<span class="fpb-venc">venceu ' + fmtData(x.data) + '</span>' : x.data === hoje ? 'previsto para hoje' : 'previsto para ' + fmtData(x.data);
+  return x.enviadoEm ? 'enviada em ' + fmtData(x.enviadoEm) + ' · sem data' : 'sem data programada';
+}
+function fpClienteHtml(c, todasP, hoje){
+  const l = fpDoCliente(c, todasP); const sm = (a) => soma(a.map(x => x.valor));
+  const rec = l.filter(x => x.st === 'recebido'), nl = l.filter(x => x.st === 'nao_liberado'), ab = l.filter(x => x.st !== 'recebido' && x.st !== 'nao_liberado'), venc = ab.filter(x => x.data && x.data < hoje);
+  const qt = (a, um, vs) => a.length + ' ' + (a.length === 1 ? um : vs);
+  const tile = (v, rot, d, tom) => `<div class="pg-k"><div class="v">${esc(brl(v))}</div><div class="l">${esc(rot)}</div><div class="d ${tom || ''}">${esc(d)}</div></div>`;
+  const tot = `<div class="fpb-tot">${tile(sm(l), 'Total', qt(l, 'parcela', 'parcelas'))}${tile(sm(rec), 'Recebido', qt(rec, 'parcela', 'parcelas'), rec.length ? 'up' : '')}${tile(sm(ab), 'Em aberto', qt(ab, 'parcela', 'parcelas'))}${tile(sm(venc), 'Vencido', venc.length ? qt(venc, 'parcela', 'parcelas') : 'nada vencido', venc.length ? 'dn' : '')}${tile(sm(nl), 'Não liberado', qt(nl, 'parcela', 'parcelas'))}</div>`;
+  const regs = c.regs.slice().sort((a, b) => (FPB_ORDEM[modoDe(a)] - FPB_ORDEM[modoDe(b)]) || String(a.empresa || '').localeCompare(String(b.empresa || '')));
+  const grupos = regs.map(r => {
+    const o = modoDe(r); const ps = l.filter(x => x.r.id === r.id).map((x, i) => ({ x, i })).sort((a, b) => ((a.x.st === 'recebido' ? a.x.pagoEm : a.x.data) || '9999').localeCompare((b.x.st === 'recebido' ? b.x.pagoEm : b.x.data) || '9999') || a.i - b.i).map(y => y.x);
+    const emp = (EMPRESAS.find(e => e[0] === r.empresa) || [0, ''])[1];
+    const abR = ps.filter(x => x.st !== 'recebido'), recR = ps.filter(x => x.st === 'recebido');
+    let semParc = ''; if(!ps.length){ let ap = 0; try{ ap = o === 'obras' ? (totais(r).aProgramar || 0) : 0; }catch(e){} semParc = `<div class="fpb-vazio">Nenhuma parcela lançada${ap > 0 ? ' · ' + esc(brl(ap)) + ' ainda sem parcelas programadas' : ''}.</div>`; }
+    const linhas = ps.map(x => { const peds = new Map(pedidosDe(r).map(p => [String(p.numero), p])); const ped = x.p.pedido ? peds.get(String(x.p.pedido)) : null;
+      const sub = [x.p.pedido ? (o === 'os' ? 'OS ' : 'Pedido ') + esc(x.p.pedido) + (ped && ped.descricao ? ' · ' + esc(ped.descricao) : '') + (ped && pedidoInativo(r, ped) ? (ped.cancelado ? ' (cancelado)' : ' (não aprovado)') : '') : '', fpQuando(x, hoje), x.p.forma ? esc(x.p.forma) : ''].filter(Boolean).join(' · ');
+      return `<button type="button" class="fpb-p" data-fpb-reg="${esc(r.id)}"><span class="fpb-pt"><b>${esc(x.p.tipo || 'Parcela')}</b><small>${sub}</small></span><span class="fpb-pv">${esc(brl(x.valor))}</span><span class="obr-st obr-st-${esc(x.st)}">${esc(rotuloStatus(x.st))}</span></button>`; }).join('');
+    return `<div class="fpb-g"><div class="fpb-gh"><span class="pgc-ev-o pgc-ev-o-${esc(o)}">${esc(rotOrigem(o))}</span>${emp ? `<span class="obr-emp obr-emp-${esc(r.empresa)}">${esc(emp)}</span>` : ''}<small>${ps.length ? qt(ps, 'parcela', 'parcelas') + (recR.length ? ' · recebido ' + esc(brl(sm(recR))) : '') + (abR.length ? ' · a receber ' + esc(brl(sm(abR))) : '') : ''}</small><button type="button" class="pn-ver" data-fpb-reg="${esc(r.id)}">Abrir ›</button></div>${linhas}${semParc}</div>`;
+  }).join('');
+  return `<div class="fpb-h"><span class="fpb-nome">${esc(c.nome)}</span><button type="button" class="btn-ghost oe-mini" data-fpb-limpar>Limpar busca</button></div>${tot}${grupos}`;
+}
+function fpBuscaHtml(){
+  const q = fold(uiP.busca); if(!uiP.cli && q.length < 2) return '';
+  if(!carregado) return '<div class="fpb-msg">Carregando os pagamentos…</div>';
+  const hoje = hojeStr(); const todos = fpClientes(); const todasP = parcelasFin();
+  let c = uiP.cli ? todos.find(x => x.k === uiP.cli) : null;
+  if(!c){
+    const ach = todos.filter(x => fold(x.nome).includes(q)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    if(!ach.length) return `<div class="fpb-msg">Nenhum cliente com “${esc(String(uiP.busca).trim())}” no Financeiro.</div>`;
+    if(ach.length > 1) return `<div class="fpb-msg">${ach.length} clientes encontrados — escolha um:</div><div class="fpb-cls">${ach.slice(0, 24).map(x => { const l = fpDoCliente(x, todasP); const ab = l.filter(p => p.st !== 'recebido' && p.st !== 'nao_liberado');
+      return `<button type="button" class="fpb-cl" data-fpb-cli="${esc(x.k)}"><b>${esc(x.nome)}</b><span>${l.length} ${l.length === 1 ? 'parcela' : 'parcelas'}${ab.length ? ' · ' + esc(brl(soma(ab.map(p => p.valor)))) + ' em aberto' : ''}</span></button>`; }).join('')}</div>${ach.length > 24 ? `<div class="fpb-msg" style="margin-top:8px;">e mais ${ach.length - 24} — continue digitando para filtrar.</div>` : ''}`;
+    c = ach[0];
+  }
+  return fpClienteHtml(c, todasP, hoje);
+}
+function atualizarBuscaFin(){ const el = document.getElementById('fpBuscaRes'); if(el) el.innerHTML = fpBuscaHtml(); }
 function renderPainelFin(){
   const box = document.getElementById('finPainelView'); if(!box || box.style.display === 'none') return;
   const hoje = hojeStr(); const dias = (d) => d ? Math.floor((Date.parse(hoje) - Date.parse(d)) / 86400000) : 0; const semana = somarDiasFin(hoje, 7);
@@ -30043,13 +30119,21 @@ function renderPainelFin(){
   const diasSem = [0, 1, 2, 3, 4, 5, 6].map(i => somarDiasFin(hoje, i)); const DOWC = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
   const cSem = `<div class="pg-funil fp-sem">${diasSem.map(d => { const l = abertas.filter(x => x.data === d); const dow = new Date(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)).getDay(); return `<button type="button" class="pg-f ${l.length && d === hoje ? 'r' : ''} ${l.length && d !== hoje ? 'g' : ''}" data-fp-go="${goDe(l)}" data-fp-aba="agendados"><b>${l.length ? esc(brl(soma_(l)).replace('R$', '').trim()) : '—'}</b><span>${DOWC[dow]} ${d.slice(8, 10)}</span></button>`; }).join('')}</div><div class="pg-nota">${vencidas.length ? `<b>${vencidas.length}</b> com a data já passada (${esc(brl(soma_(vencidas)))}) · ` : ''}${proximas.length + deHoje.length} ${proximas.length + deHoje.length === 1 ? 'pagamento previsto' : 'pagamentos previstos'} até ${fmtData(semana)}</div>${abrir(goDe(abertas), 'Abrir o calendário de pagamentos')}`;
   const sSem = area('semana', 'Próximos 7 dias', carregado ? `${brl(soma_(deHoje.concat(proximas)))} previstos · ${vencidas.length} vencidos` : 'carregando…', [vencidas.length ? 'r' : 'g'], cSem);
-  box.innerHTML = `<div class="pn-head"><div><div class="pn-title">Painel</div><div class="pn-sub">${esc(dataHojeFin())}</div></div></div><div class="pg"><div class="pg-col pg-col-a">${bEx}${bPulso}</div><div class="pg-col pg-col-b"><div class="pg-sec-t">Por área</div>${sOs}${sObras}${sMan}${sPrev}${sSem}</div></div>`;
+  const focoB = document.activeElement && document.activeElement.id === 'fpBusca' ? [document.activeElement.selectionStart, document.activeElement.selectionEnd] : null;   // Fase 57
+  const bBusca = `<div class="fpb"><div class="fpb-campo"><span class="fpb-ic" aria-hidden="true">🔎</span><input type="search" id="fpBusca" placeholder="Buscar todos os pagamentos de um cliente…" autocomplete="off" aria-label="Buscar todos os pagamentos de um cliente" value="${esc(uiP.busca)}"></div><div class="fpb-res" id="fpBuscaRes">${fpBuscaHtml()}</div></div>`;
+  box.innerHTML = `<div class="pn-head"><div><div class="pn-title">Painel</div><div class="pn-sub">${esc(dataHojeFin())}</div></div></div>${bBusca}<div class="pg"><div class="pg-col pg-col-a">${bEx}${bPulso}</div><div class="pg-col pg-col-b"><div class="pg-sec-t">Por área</div>${sOs}${sObras}${sMan}${sPrev}${sSem}</div></div>`;
+  if(focoB){ const inp = document.getElementById('fpBusca'); if(inp){ try{ inp.focus(); inp.setSelectionRange(focoB[0], focoB[1]); }catch(e){} } }   // Fase 57
 }
 const somarDiasFin = (x, n) => { const [y, m, d] = x.split('-').map(Number); const dt = new Date(y, m - 1, d + n); return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
 function dataHojeFin(){ const d = new Date(); const t = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }); return t.charAt(0).toUpperCase() + t.slice(1); }
 function ligarPainelFin(){
   const box = document.getElementById('finPainelView'); if(!box || box._fpLigado) return; box._fpLigado = true;
+  box.addEventListener('input', (e) => { if(e.target && e.target.id === 'fpBusca'){ uiP.busca = e.target.value; uiP.cli = ''; atualizarBuscaFin(); } });   // Fase 57: digitar só redesenha o resultado
+  box.addEventListener('keydown', (e) => { if(e.key === 'Escape' && e.target && e.target.id === 'fpBusca' && (uiP.busca || uiP.cli)){ e.preventDefault(); e.target.value = ''; uiP.busca = ''; uiP.cli = ''; atualizarBuscaFin(); } });
   box.addEventListener('click', (e) => {
+    const fc = e.target.closest('[data-fpb-cli]'); if(fc){ const c = fpClientes().find(x => x.k === fc.dataset.fpbCli); if(c){ uiP.cli = c.k; uiP.busca = c.nome; const inp = document.getElementById('fpBusca'); if(inp) inp.value = c.nome; atualizarBuscaFin(); } return; }   // Fase 57
+    const fl = e.target.closest('[data-fpb-limpar]'); if(fl){ uiP.busca = ''; uiP.cli = ''; const inp = document.getElementById('fpBusca'); if(inp){ inp.value = ''; try{ inp.focus(); }catch(_){} } atualizarBuscaFin(); return; }
+    const fr = e.target.closest('[data-fpb-reg]'); if(fr){ if(porId(fr.dataset.fpbReg)) abrirDetalhe(fr.dataset.fpbReg); return; }
     const sec = e.target.closest('[data-fp-sec]'); if(sec){ const k = sec.dataset.fpSec; if(uiP.abertas.has(k)) uiP.abertas.delete(k); else uiP.abertas.add(k); renderPainelFin(); return; }
     const g = e.target.closest('[data-fp-go]'); if(g){ const aba = g.dataset.fpAba; if(g.dataset.fpGo === 'prev'){ uiV.aba = aba === 'agendados' ? 'calendario' : aba === 'valores' ? 'valores' : 'pagamentos'; mostrarSecao('prev'); return; }   // Fase 19
       mostrarSecao(g.dataset.fpGo); if(aba && abasDoModo().some(([k]) => k === aba)){ ui.empresa = aba; const t = document.querySelector('#obrTabs [data-emp="' + aba + '"]'); if(t) t.click(); else renderLista(); } }
