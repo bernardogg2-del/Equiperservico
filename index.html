@@ -442,7 +442,7 @@
     border-radius: 2px;
     padding: 9px 11px;
     margin-bottom: 8px;
-    cursor: pointer;
+    cursor: grab; user-select: none; -webkit-user-select: none;   /* Fase 61: o cartão todo arrasta (clique rápido abre) */
   }
   .tecnico-task:last-child{ margin-bottom:0; }
   .tecnico-task-drag{
@@ -467,6 +467,11 @@
   .tecnico-card.tec60-sem .tecnico-task{ background: var(--panel); }
   .tec60-quem{ font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
   .tec60-dica{ font-size: 11.5px; color: var(--text-dim); margin: -4px 0 10px; line-height: 1.4; }
+  .tecnico-card.tec60-sem{ grid-column: 1 / -1; padding: 12px 18px; }   /* Fase 61: linha de baixo inteira; os técnicos ficam na de cima */
+  .tecnico-card.tec60-sem .tecnico-card-head{ margin-bottom: 8px; padding-bottom: 8px; }
+  .tecnico-card.tec60-sem .tecnico-tasklist{ display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; min-height: 40px; }
+  .tecnico-card.tec60-sem .tecnico-task{ margin-bottom: 0; }
+  .tecnico-card.tec60-sem .tecnico-empty{ grid-column: 1 / -1; padding: 8px 0; }
   .tecnico-phone-row{ display:flex; gap:8px; margin-bottom: 12px; }
   .tecnico-phone-input{ flex: 2; font-size: 12px; padding: 7px 9px; }
   .btn-whatsapp{
@@ -14187,15 +14192,12 @@ function atividadesSemTecnico(dia){
   return { doDia, semDia };
 }
 function cartaoSemTecnicoHtml(dia){
-  const { doDia, semDia } = atividadesSemTecnico(dia);
+  const { doDia } = atividadesSemTecnico(dia);   // Fase 61: "Sem dia marcado" saiu do quadro
   const item = (at, comQuem) => { const q = comQuem ? tecnicosDaDupla(at).filter(Boolean) : [];   // (selo de manutenção igual aos cartões dos técnicos)
     return `<div class="tecnico-task status-${at.status}" data-id="${at.id}"><div class="tecnico-task-drag" title="Arraste para um técnico">⋮⋮</div><div class="tecnico-task-body">${seloManutHtml(at)}<div class="tecnico-task-client">${escapeHtml(at.client)}</div>${at.description ? `<div class="tecnico-task-desc">${escapeHtml(at.description)}</div>` : ''}${q.length ? `<div class="tec60-quem">👤 ${escapeHtml(q.join(' e '))}</div>` : ''}</div></div>`; };
-  return `<div class="tecnico-card-head"><div class="tecnico-card-name">Sem técnico</div><div class="tecnico-card-count mono">${doDia.length + semDia.length}</div></div>
-    <div class="tec60-dica">Arraste para um técnico. Para tirar o técnico, arraste de volta para "Neste dia".</div>
-    <div class="tec60-sub">Neste dia <span>(${doDia.length})</span></div>
-    <div class="tecnico-tasklist" data-tech="" data-semtec="dia">${doDia.length ? doDia.map(s => item(s, false)).join('') : '<div class="tecnico-empty">Nenhuma atividade sem técnico.</div>'}</div>
-    <div class="tec60-sub">Sem dia marcado <span>(${semDia.length})</span></div>
-    <div class="tecnico-tasklist" data-tech="" data-semtec="semdia">${semDia.length ? semDia.map(s => item(s, true)).join('') : '<div class="tecnico-empty">Nenhuma.</div>'}</div>`;
+  return `<div class="tecnico-card-head"><div class="tecnico-card-name">Sem técnico</div><div class="tecnico-card-count mono">${doDia.length}</div></div>
+    <div class="tec60-dica">Atividades deste dia sem técnico. Arraste para um técnico; para tirar o técnico, arraste de volta para cá.</div>
+    <div class="tecnico-tasklist" data-tech="" data-semtec="dia">${doDia.length ? doDia.map(s => item(s, false)).join('') : '<div class="tecnico-empty">Nenhuma atividade sem técnico.</div>'}</div>`;
 }
 function renderTecnicosAmanha(){
   const nwd = getSendAgendaDate();
@@ -14210,7 +14212,6 @@ function renderTecnicosAmanha(){
 
   const grid = document.getElementById('tecnicosGrid');
   grid.innerHTML = '';
-  { const semTec = document.createElement('div'); semTec.className = 'tecnico-card tec60-sem'; semTec.innerHTML = cartaoSemTecnicoHtml(tomorrow); grid.appendChild(semTec); }   // Fase 60
 
   TECHS.forEach(t => {
     const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
@@ -14257,20 +14258,20 @@ function renderTecnicosAmanha(){
     `;
     grid.appendChild(card);
   });
+  { const semTec = document.createElement('div'); semTec.className = 'tecnico-card tec60-sem'; semTec.innerHTML = cartaoSemTecnicoHtml(tomorrow); grid.appendChild(semTec); }   // Fase 60 (Fase 61: depois dos técnicos, linha de baixo)
 
   grid.querySelectorAll('.tecnico-tasklist').forEach(list => {
     list.addEventListener('click', (e) => {
-      if(e.target.closest('.tecnico-task-drag')) return;
-      const taskEl = e.target.closest('.tecnico-task');
+      const taskEl = e.target.closest('.tecnico-task');   // Fase 61: clique rápido em qualquer ponto do cartão (inclusive no ⋮⋮) abre os detalhes
       if(taskEl) openServiceDetails(Number(taskEl.dataset.id));
     });
     if(typeof Sortable !== 'undefined'){
       try{
         new Sortable(list, {
           animation: 150,
-          handle: '.tecnico-task-drag',
           filter: '.status-concluido',
-          draggable: '.tecnico-task',
+          draggable: '.tecnico-task',   // Fase 61: o cartão todo arrasta (antes só o ⋮⋮), como no Resumo da Semana
+          delay: 120, delayOnTouchOnly: true, touchStartThreshold: 4,   // no celular: segurar um instante para arrastar; rolagem continua livre
           group: list.dataset.semtec === 'semdia' ? { name: 'tecnicos', put: false } : 'tecnicos',   // Fase 59: arrastar de um técnico para outro (Fase 60: "Sem dia marcado" só entrega)
           forceFallback: true,
           fallbackOnBody: true,   // Fase 59: o clone flutua sobre a página (como no Resumo da Semana), sem ficar preso no cartão do técnico
