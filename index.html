@@ -1549,6 +1549,11 @@
   .os-ret56-i:first-child.os-ret56-r{ margin-top:0; padding-top:0; border-top:none; }
   .os-ret56-sim{ color: var(--amber); font-weight:700; }
   .os-ret56-nao{ color: var(--text-dim); font-weight:600; }
+  .os-ret58-tag{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.03em; text-transform:uppercase; padding:1px 7px; border-radius:6px; margin-right:6px; vertical-align:1px; border:1px solid; }   /* Fase 58 */
+  .os-ret58-ret{ color:#b45309; border-color:rgba(180,83,9,.35); background:rgba(180,83,9,.08); }
+  .os-ret58-rei{ color:#1F6E45; border-color:rgba(44,138,90,.35); background:rgba(44,138,90,.10); }
+  .os-ret58-q{ font-size:11.5px; color: var(--text-dim); margin-top:1px; }
+  :root[data-theme="dark"] .os-ret58-ret{ color:#f0b36a; } :root[data-theme="dark"] .os-ret58-rei{ color:#86D6A6; }
   /* Cadastros e OS — refinamentos escopados a #tabOS, pra não afetar Hoje/Agenda/Manutenções/
      Clientes que reaproveitam algumas destas mesmas classes (.os-empty, .os-retorno-tag,
      .maint-section-title, .field, .photo-thumb, .audio-item). */
@@ -14244,14 +14249,31 @@ function osEquipRetirados(s){
   const ids = new Set(); osMembrosDoItem(s).forEach(m => equipmentWithdrawalOriginIds(m).forEach(id => ids.add(String(id))));
   return (Array.isArray(oficinaEquipamentos) ? oficinaEquipamentos : []).filter(eq => eq && eq.originServiceId != null && ids.has(String(eq.originServiceId)));
 }
+// Fase 58: equipamentos da Oficina ligados à atividade — retirados nela (Fase 56) e reinstalados por ela (atividade de reinstalação).
+function osEquipDoItem(s){
+  const membros = osMembrosDoItem(s), out = [], vistos = new Set();
+  const add = (eq, papel) => { const k = papel + ':' + String(eq.id); if(vistos.has(k)) return; vistos.add(k); out.push({ eq, papel }); };
+  osEquipRetirados(s).forEach(eq => add(eq, 'retirada'));
+  const ids = new Set(membros.map(m => String(m.id)));
+  const eqIds = new Set(membros.map(m => m.oficinaEquipamentoId).filter(x => x != null && x !== '').map(String));
+  (Array.isArray(oficinaEquipamentos) ? oficinaEquipamentos : []).forEach(eq => {
+    if(eq && ((eq.id != null && eqIds.has(String(eq.id))) || (eq.reinstallationServiceId != null && ids.has(String(eq.reinstallationServiceId))))) add(eq, 'reinstalacao');
+  });
+  return out;
+}
+function osDiaLocal(iso){ const d = new Date(iso); return isNaN(d) ? '' : d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function osRetiradaRetornoHtml(s){
-  const membros = osMembrosDoItem(s), retirados = osEquipRetirados(s);
+  const membros = osMembrosDoItem(s), itens = osEquipDoItem(s);
   const precisa = membros.some(m => m.needsReturn);
-  if(!retirados.length && !precisa) return '';
-  const linhas = retirados.map(eq => {
+  if(!itens.length && !precisa) return '';
+  const nR = itens.filter(i => i.papel === 'retirada').length, nI = itens.length - nR;
+  const linhas = itens.map(({ eq, papel }) => {
     const st = OFICINA_STATUS_LABELS[eq.status] || '';
     const mot = String(eq.observation || '').trim();
-    return `<div class="os-ret56-i"><span class="os-ret56-n">🔧 ${escapeHtml(eq.equipment || 'Equipamento')}</span>${st ? `<span class="os-ret56-st">${escapeHtml(st)}</span>` : ''}${mot ? `<div class="os-ret56-m">Motivo: ${escapeHtml(mot)}</div>` : ''}</div>`;
+    const tag = papel === 'retirada' ? '<span class="os-ret58-tag os-ret58-ret">Retirada</span>' : '<span class="os-ret58-tag os-ret58-rei">Reinstalação</span>';
+    const dia = papel === 'reinstalacao' && eq.withdrawnAt ? osDiaLocal(eq.withdrawnAt) : '';
+    const quem = papel === 'reinstalacao' ? (dia ? 'Retirado em ' + shortLabel(dia) : '') + (eq.withdrawnBy ? (dia ? ' por ' : 'Retirado por ') + eq.withdrawnBy : '') : '';
+    return `<div class="os-ret56-i">${tag}<span class="os-ret56-n">🔧 ${escapeHtml(eq.equipment || 'Equipamento')}</span>${st ? `<span class="os-ret56-st">${escapeHtml(st)}</span>` : ''}${mot ? `<div class="os-ret56-m">${papel === 'retirada' ? 'Motivo' : 'Motivo da retirada'}: ${escapeHtml(mot)}</div>` : ''}${quem ? `<div class="os-ret58-q">${escapeHtml(quem)}</div>` : ''}</div>`;
   });
   let ret;
   if(precisa){
@@ -14263,7 +14285,8 @@ function osRetiradaRetornoHtml(s){
     ret = `<span class="os-ret56-sim">↩ Precisa retornar: Sim</span>${urg ? ' · urgente' : ''}${quando ? ' · ' + escapeHtml(quando) : ''}${motivo ? `<div class="os-ret56-m">Motivo do retorno: ${escapeHtml(motivo)}</div>` : ''}`;
   } else ret = `<span class="os-ret56-nao">↩ Precisa retornar: Não</span>`;
   linhas.push(`<div class="os-ret56-i os-ret56-r">${ret}</div>`);
-  return `<div class="field os-ret56"><label>${retirados.length ? (retirados.length === 1 ? 'Equipamento retirado' : retirados.length + ' equipamentos retirados') + ' e retorno' : 'Retorno'}</label><div>${linhas.join('')}</div></div>`;
+  const titulo = nR && nI ? 'Equipamentos retirados e reinstalados e retorno' : nR ? (nR === 1 ? 'Equipamento retirado' : nR + ' equipamentos retirados') + ' e retorno' : nI ? (nI === 1 ? 'Equipamento reinstalado' : nI + ' equipamentos reinstalados') + ' e retorno' : 'Retorno';
+  return `<div class="field os-ret56"><label>${titulo}</label><div>${linhas.join('')}</div></div>`;
 }
 function renderOS(){
   const box = document.getElementById('osList');
@@ -14293,7 +14316,7 @@ function renderOS(){
     const tecnicos = osTecnicosDoItem(s);
     if(tecnicoSel && !tecnicos.includes(tecnicoSel)) return false;
     if(termo){
-      const alvo = osNormalizarTexto([s.client, s.address, s.description, s.observations, tecnicos.join(' '), osEquipRetirados(s).map(eq => eq.equipment).join(' ')].join(' '));   // Fase 56
+      const alvo = osNormalizarTexto([s.client, s.address, s.description, s.observations, tecnicos.join(' '), osEquipDoItem(s).map(i => i.eq.equipment).join(' ')].join(' '));   // Fase 56 (+ Fase 58: reinstalação)
       if(!alvo.includes(termo)) return false;
     }
     return true;
