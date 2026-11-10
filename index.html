@@ -13896,7 +13896,45 @@ function toWhatsappNumber(raw){
   return digits;
 }
 
+// Fase 63: mensagem do Marcelo com destaques e emojis; o que é feito na Oficina diz "em oficina" e "Início estimado …" no lugar da chegada.
+const NUM_EMOJI = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+function tipoOficinaDaAtividade(s){
+  const d = String((s && s.description) || '').trim();
+  if(s && s.internoTipo === 'quadro') return 'quadro';
+  if(s && s.internoTipo) return 'equip';
+  if(/^Montagem de quadro de comando —/.test(d)) return 'quadro';
+  if(/^Manutenção do equipamento —/.test(d)) return 'equip';
+  return '';
+}
+function descricaoEmOficina(s){
+  const d = String(s.description || '').trim(); if(!d || !tipoOficinaDaAtividade(s) || /\b(em|na) oficina\b/i.test(d)) return d;
+  const i = d.indexOf(' — '); return i > 0 ? d.slice(0, i) + ' *em oficina*' + d.slice(i) : d + ' *em oficina*';
+}
+function mensagemEquipeMarcelo(){
+  const nwd = getSendAgendaDate(); const dia = nwd.date; const [y, m, d] = dia.split('-').map(Number);
+  const dayWord = nwd.isToday ? 'hoje' : (nwd.isTomorrow ? 'amanhã' : DOW_FULL[nwd.dowIdx]);
+  let msg = `📅 *AGENDA DA EQUIPE* — ${dayWord}, ${d} de ${MONTHS[m - 1]}\n`;
+  TECHS.forEach(t => {
+    const tasks = services.filter(s => s.date === dia && getServiceTechnicians(s).includes(t.name))
+      .sort((a, b) => ((typeof a.order === 'number') ? a.order : a.id) - ((typeof b.order === 'number') ? b.order : b.id));
+    msg += `\n👷 *${t.name}*${tasks.length ? ` (${tasks.length} ${tasks.length === 1 ? 'atividade' : 'atividades'})` : ''}\n`;
+    if(!tasks.length){ msg += `_Nenhum serviço agendado._\n`; return; }
+    const windows = ARRIVAL_WINDOWS[tasks.length];
+    tasks.forEach((s, i) => {
+      const tipo = tipoOficinaDaAtividade(s), desc = descricaoEmOficina(s);
+      let l = `${NUM_EMOJI[i] || (i + 1) + '.'} *${s.client}*${s.isRetorno ? ' ↩️ _retorno_' : ''}\n`;
+      if(desc) l += `      ${tipo === 'quadro' ? '⚡' : tipo ? '🔧' : '📝'} ${desc}\n`;
+      const hora = String(s.chegadaPrevista || '').trim() || (windows && windows[i]) || '';   // Fase 52: a mudada no envio, senão o padrão
+      if(hora) l += tipo ? `      🛠️ Início estimado da ${tipo === 'quadro' ? 'montagem' : 'manutenção'}: *${hora}*\n` : `      🕒 Chegada estimada: *${hora}*\n`;
+      if(s.pairId){ const partner = services.find(x => x.pairId === s.pairId && x.id !== s.id); if(partner) l += `      👥 Dupla com ${partner.technician}\n`; }
+      else if(isMultiTechRecord(s)){ const others = s.technicians.filter(nm => nm !== t.name); if(others.length) l += `      👥 Dupla com ${others.join(', ')}\n`; }
+      msg += l;
+    });
+  });
+  return msg;
+}
 function buildAllTechniciansMessage(includeEstimates){
+  if(includeEstimates) return mensagemEquipeMarcelo();   // Fase 63: a do Marcelo tem formato próprio; a do Alex (sem horários) fica como era
   const nwd = getSendAgendaDate();
   const tomorrow = nwd.date;
   const [y,m,d] = tomorrow.split('-').map(Number);
