@@ -1541,6 +1541,14 @@
   .det-voltar{ margin:0 0 10px; }
   .os-processed-row{ font-size:12.5px; color: var(--text-dim); padding:6px 0; border-bottom:1px solid var(--line); }
   .os-processed-row b{ color: var(--text); font-weight:600; }
+  .os-ret56-i + .os-ret56-i{ border-top:1px dashed var(--line); margin-top:6px; padding-top:6px; }   /* Fase 56: retirada e retorno */
+  .os-ret56-n{ font-weight:700; color: var(--text); }
+  .os-ret56-st{ display:inline-block; font-size:11px; font-weight:600; color: var(--text-dim); background: var(--panel); border:1px solid var(--line); border-radius:999px; padding:1px 8px; margin-left:6px; vertical-align:1px; }
+  .os-ret56-m{ font-size:12.5px; color: var(--text); margin-top:2px; white-space:pre-wrap; }
+  .os-ret56-r{ margin-top:8px; padding-top:7px; border-top:1px solid var(--line); }
+  .os-ret56-i:first-child.os-ret56-r{ margin-top:0; padding-top:0; border-top:none; }
+  .os-ret56-sim{ color: var(--amber); font-weight:700; }
+  .os-ret56-nao{ color: var(--text-dim); font-weight:600; }
   /* Cadastros e OS — refinamentos escopados a #tabOS, pra não afetar Hoje/Agenda/Manutenções/
      Clientes que reaproveitam algumas destas mesmas classes (.os-empty, .os-retorno-tag,
      .maint-section-title, .field, .photo-thumb, .audio-item). */
@@ -12350,6 +12358,7 @@ function attachRealtimeOficinaEquipamentosListener(){
     if(currentRole === 'oficina') renderOficinaView();
     if(currentRole === 'oficina' && oeCurrentDetalheId !== null) renderOficinaEquipDetalhe(oeCurrentDetalheId);
     if(currentRole === 'manager' && activeTab === 'oficinagestor') renderOficinaGestorTab();
+    if(currentRole === 'manager' && activeTab === 'os') renderOS();   // Fase 56: retirada aparece no cartão do Cadastros e OS
   }, (err) => {
     console.error('Falha na sincronização em tempo real dos equipamentos da Oficina:', err);
   });
@@ -14202,6 +14211,33 @@ async function excluirDaListaOS(id){
   renderOS();
 }
 
+// Fase 56: equipamentos retirados para a Oficina nesta atividade (dupla antiga: os dois registros) e "Precisa retornar".
+function osMembrosDoItem(s){ return (s.isLegacyPair && Array.isArray(s.pairMembers)) ? s.pairMembers : [s]; }
+function osEquipRetirados(s){
+  const ids = new Set(); osMembrosDoItem(s).forEach(m => equipmentWithdrawalOriginIds(m).forEach(id => ids.add(String(id))));
+  return (Array.isArray(oficinaEquipamentos) ? oficinaEquipamentos : []).filter(eq => eq && eq.originServiceId != null && ids.has(String(eq.originServiceId)));
+}
+function osRetiradaRetornoHtml(s){
+  const membros = osMembrosDoItem(s), retirados = osEquipRetirados(s);
+  const precisa = membros.some(m => m.needsReturn);
+  if(!retirados.length && !precisa) return '';
+  const linhas = retirados.map(eq => {
+    const st = OFICINA_STATUS_LABELS[eq.status] || '';
+    const mot = String(eq.observation || '').trim();
+    return `<div class="os-ret56-i"><span class="os-ret56-n">🔧 ${escapeHtml(eq.equipment || 'Equipamento')}</span>${st ? `<span class="os-ret56-st">${escapeHtml(st)}</span>` : ''}${mot ? `<div class="os-ret56-m">Motivo: ${escapeHtml(mot)}</div>` : ''}</div>`;
+  });
+  let ret;
+  if(precisa){
+    const motivo = membros.map(m => String(m.returnReason || '').trim()).find(Boolean) || '';
+    const urg = membros.some(m => m.needsReturn && m.returnUrgent);
+    const ids = membros.map(m => m.id);
+    const r = services.find(x => x.isRetorno && ids.includes(x.retornoDeId));
+    const quando = r ? (r.status === 'concluido' ? 'retorno já feito' + (r.date ? ' em ' + shortLabel(r.date) : '') : (r.date ? 'retorno agendado para ' + shortLabel(r.date) : 'retorno aguardando dia')) : '';
+    ret = `<span class="os-ret56-sim">↩ Precisa retornar: Sim</span>${urg ? ' · urgente' : ''}${quando ? ' · ' + escapeHtml(quando) : ''}${motivo ? `<div class="os-ret56-m">Motivo do retorno: ${escapeHtml(motivo)}</div>` : ''}`;
+  } else ret = `<span class="os-ret56-nao">↩ Precisa retornar: Não</span>`;
+  linhas.push(`<div class="os-ret56-i os-ret56-r">${ret}</div>`);
+  return `<div class="field os-ret56"><label>${retirados.length ? (retirados.length === 1 ? 'Equipamento retirado' : retirados.length + ' equipamentos retirados') + ' e retorno' : 'Retorno'}</label><div>${linhas.join('')}</div></div>`;
+}
 function renderOS(){
   const box = document.getElementById('osList');
   const badge = document.getElementById('osBadge');
@@ -14230,7 +14266,7 @@ function renderOS(){
     const tecnicos = osTecnicosDoItem(s);
     if(tecnicoSel && !tecnicos.includes(tecnicoSel)) return false;
     if(termo){
-      const alvo = osNormalizarTexto([s.client, s.address, s.description, s.observations, tecnicos.join(' ')].join(' '));
+      const alvo = osNormalizarTexto([s.client, s.address, s.description, s.observations, tecnicos.join(' '), osEquipRetirados(s).map(eq => eq.equipment).join(' ')].join(' '));   // Fase 56
       if(!alvo.includes(termo)) return false;
     }
     return true;
@@ -14301,6 +14337,7 @@ function renderOS(){
             <label>Horários</label>
             <div class="mono">${s.checkIn ? `Início: <b>${s.checkIn}</b>` : '—'}${s.checkOut ? ` &nbsp;·&nbsp; Fim: <b>${s.checkOut}</b>` : ''}</div>
           </div>
+          ${osRetiradaRetornoHtml(s)}
           ${historicoVisitasHtml(s)}${obsDaVisita(s) ? `<div class="field"><label>${escapeHtml(rotuloObsVisita(s, 'Observação do técnico'))}</label><div>${escapeHtml(obsDaVisita(s))}</div></div>` : ''}
           ${midiaBtnHtml}
           ${photosHtml ? `<div class="field"><label>Fotos do técnico</label><div class="photo-row">${photosHtml}</div></div>` : ''}
