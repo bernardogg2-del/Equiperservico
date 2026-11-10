@@ -460,6 +460,13 @@
   .tecnico-tasklist{ min-height: 44px; border-radius: 6px; }   /* Fase 59: toda lista recebe atividade arrastada de outro técnico */
   .tecnico-tasklist .tecnico-empty{ border: 1px dashed var(--line); border-radius: 6px; }
   .tecnico-tasklist.tec59-alvo{ outline: 2px dashed var(--teal); outline-offset: 3px; }
+  .tecnico-card.tec60-sem{ background: var(--surface-2); border-style: dashed; }   /* Fase 60: quadro "Sem técnico" */
+  .tec60-sub{ font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-dim); margin: 4px 0 6px; display:flex; gap:6px; align-items:center; }
+  .tec60-sub span{ font-weight: 600; letter-spacing: 0; text-transform: none; }
+  .tec60-sub + .tecnico-tasklist{ margin-bottom: 12px; }
+  .tecnico-card.tec60-sem .tecnico-task{ background: var(--panel); }
+  .tec60-quem{ font-size: 11.5px; color: var(--text-dim); margin-top: 3px; }
+  .tec60-dica{ font-size: 11.5px; color: var(--text-dim); margin: -4px 0 10px; line-height: 1.4; }
   .tecnico-phone-row{ display:flex; gap:8px; margin-bottom: 12px; }
   .tecnico-phone-input{ flex: 2; font-size: 12px; padding: 7px 9px; }
   .btn-whatsapp{
@@ -14100,50 +14107,95 @@ function tarefasDoTecnicoNoDia(nome, dia, exceto){
   return services.filter(s => s.date === dia && s.id !== exceto && getServiceTechnicians(s).includes(nome))
     .sort((a, b) => ((typeof a.order === 'number') ? a.order : a.id) - ((typeof b.order === 'number') ? b.order : b.id));
 }
-function checarMoverAtividade(svc, de, para){
+// Fase 60: "de" ou "para" vazio = quadro "Sem técnico"; agendar = dia (atividade vinda de "Sem dia marcado").
+function tecnicosDaDupla(svc){
+  if(svc.pairId){ return services.filter(x => x.pairId === svc.pairId).flatMap(x => getServiceTechnicians(x)); }
+  return getServiceTechnicians(svc);
+}
+function checarMoverAtividade(svc, de, para, agendar){
   if(!svc) return 'Atividade não encontrada.';
-  if(!para || de === para) return 'Mesmo técnico.';
+  if((de || '') === (para || '')) return 'Mesmo técnico.';
   if(svc.status === 'concluido') return 'Atividade já concluída: o técnico não muda.';
-  if(svc.status === 'em_andamento') return `Atividade já iniciada por ${de}: o técnico não muda por aqui.`;
-  const techs = getServiceTechnicians(svc);
-  if(!techs.includes(de)) return `A atividade não é mais de ${de}. A tela foi atualizada.`;
+  if(svc.status === 'em_andamento') return `Atividade já iniciada${de ? ' por ' + de : ''}: o técnico não muda por aqui.`;
+  const techs = getServiceTechnicians(svc), dupla = isMultiTechRecord(svc) || !!svc.pairId;
+  if(agendar){
+    if(svc.date) return 'A atividade já tem dia. A tela foi atualizada.';
+    if(!para) return 'Solte num técnico para agendar.';
+    if(dupla && !tecnicosDaDupla(svc).includes(para)) return `Atividade de dupla (${tecnicosDaDupla(svc).join(' e ')}): solte num dos dois ou troque a dupla pela Agenda.`;
+    return '';
+  }
+  if(de){ if(!techs.includes(de)) return `A atividade não é mais de ${de}. A tela foi atualizada.`; }
+  else if(techs.length) return 'A atividade já tem técnico. A tela foi atualizada.';
+  if(!para){ if(svc.pairId) return 'Dupla antiga: para tirar um dos técnicos, use a Agenda.'; return ''; }
   if(techs.includes(para)) return `${para} já está nesta atividade (dupla).`;
   if(svc.pairId){ const par = services.find(x => x.pairId === svc.pairId && x.id !== svc.id); if(par && getServiceTechnicians(par).includes(para)) return `${para} já está nesta atividade (dupla).`; }
   return '';
 }
-async function moverAtividadeEntreTecnicos(id, de, para, pos){
+async function moverAtividadeEntreTecnicos(id, de, para, pos, agendar){
+  de = de || ''; para = para || '';
   const svc = services.find(x => x.id === id);
-  const erro = checarMoverAtividade(svc, de, para); if(erro) return { ok: false, erro };
-  const destino = tarefasDoTecnicoNoDia(para, svc.date, svc.id), origem = tarefasDoTecnicoNoDia(de, svc.date, svc.id);
+  const erro = checarMoverAtividade(svc, de, para, agendar); if(erro) return { ok: false, erro };
+  const dia = agendar || svc.date;
+  const destino = para ? tarefasDoTecnicoNoDia(para, dia, svc.id) : [], origem = de ? tarefasDoTecnicoNoDia(de, dia, svc.id) : [];
   const mexidos = [svc].concat(destino, origem);
   const antes = mexidos.map(x => ({ x, technician: x.technician, technicians: x.technicians === undefined ? undefined : x.technicians.slice(), status: x.status, order: x.order }));
-  if(isMultiTechRecord(svc)){
-    svc.technicians = getServiceTechnicians(svc).map(nm => nm === de ? para : nm);
+  const techs = getServiceTechnicians(svc);
+  if(agendar && (isMultiTechRecord(svc) || svc.pairId)){ /* dupla: solta num dos seus técnicos — só ganha o dia */ }
+  else if(!para){   // tira o técnico que saiu
+    if(isMultiTechRecord(svc)){ const resto = techs.filter(nm => nm !== de); svc.technician = resto[0] || null; delete svc.technicians; }
+    else { svc.technician = null; if(svc.technicians !== undefined) delete svc.technicians; if(svc.status === 'atribuido') svc.status = 'aguardando'; }
+  } else if(isMultiTechRecord(svc)){
+    svc.technicians = techs.map(nm => nm === de ? para : nm);
     if(svc.technician === de || !svc.technicians.includes(svc.technician)) svc.technician = svc.technicians[0];
   } else {
     svc.technician = para;
     if(svc.technicians !== undefined) delete svc.technicians;
   }
-  acertarAtribuidoAoAgendar(svc);
-  const p = Math.max(0, Math.min(destino.length, Number(pos) || 0));
-  destino.splice(p, 0, svc); destino.forEach((x, i) => { x.order = i; }); origem.forEach((x, i) => { x.order = i; });
-  const ok = await saveServices();
-  if(!ok){
-    antes.forEach(a => { a.x.technician = a.technician; if(a.technicians === undefined) delete a.x.technicians; else a.x.technicians = a.technicians; a.x.status = a.status; if(a.order === undefined) delete a.x.order; else a.x.order = a.order; });
-    return { ok: false, erro: 'Não foi possível salvar a troca. Verifique sua internet e tente novamente.' };
-  }
+  if(!agendar) acertarAtribuidoAoAgendar(svc);
+  if(para){ const p = Math.max(0, Math.min(destino.length, Number(pos) || 0)); destino.splice(p, 0, svc); destino.forEach((x, i) => { x.order = i; }); }
+  origem.forEach((x, i) => { x.order = i; });
+  const desfaz = () => antes.forEach(a => { a.x.technician = a.technician; if(a.technicians === undefined) delete a.x.technicians; else a.x.technicians = a.technicians; a.x.status = a.status; if(a.order === undefined) delete a.x.order; else a.x.order = a.order; });
+  const ok = agendar ? await rescheduleService(svc.id, agendar) : await saveServices();   // rescheduleService: dia (dupla antiga e contrato juntos) + grava tudo
+  if(!ok){ desfaz(); return { ok: false, erro: 'Não foi possível salvar. Verifique sua internet e tente novamente.' }; }
   return { ok: true, svc };
 }
-function pedirMoverAtividade(id, de, para, pos){
+function rotuloDiaCurto(dia){ const [y, m, d] = String(dia).split('-').map(Number); const dt = new Date(y, m - 1, d); return DOW_FULL[dt.getDay()] + ', ' + String(d).padStart(2, '0') + '/' + String(m).padStart(2, '0'); }
+function pedirMoverAtividade(id, de, para, pos, agendar){
+  de = de || ''; para = para || '';
   const svc = services.find(x => x.id === id);
-  const erro = checarMoverAtividade(svc, de, para); if(erro){ if(erro !== 'Mesmo técnico.') avisoNaoBloqueante(erro, 6000); return; }
-  const dupla = isMultiTechRecord(svc) ? ' A dupla fica ' + getServiceTechnicians(svc).map(nm => nm === de ? para : nm).join(' e ') + '.' : '';
-  customConfirm(`Passar "${svc.client || 'atividade'}" de ${de} para ${para}?${dupla}`, async () => {
-    const r = await moverAtividadeEntreTecnicos(id, de, para, pos);
+  const erro = checarMoverAtividade(svc, de, para, agendar); if(erro){ if(erro !== 'Mesmo técnico.') avisoNaoBloqueante(erro, 6000); return; }
+  const nome = svc.client || 'atividade';
+  let msg;
+  if(agendar){ const era = tecnicosDaDupla(svc).filter(Boolean); const dupla = isMultiTechRecord(svc) || !!svc.pairId;
+    msg = `Agendar "${nome}" para ${rotuloDiaCurto(agendar)}${dupla ? ' com a dupla ' + era.join(' e ') : ' com ' + para + (era.length && !era.includes(para) ? ' (estava com ' + era.join(' e ') + ')' : '')}?`; }
+  else if(!para) msg = isMultiTechRecord(svc) ? `Tirar ${de} de "${nome}"? A atividade fica só com ${getServiceTechnicians(svc).filter(nm => nm !== de).join(' e ')}.` : `Tirar "${nome}" de ${de}? A atividade fica sem técnico neste dia.`;
+  else if(!de) msg = `Passar "${nome}" para ${para}?`;
+  else msg = `Passar "${nome}" de ${de} para ${para}?` + (isMultiTechRecord(svc) ? ' A dupla fica ' + getServiceTechnicians(svc).map(nm => nm === de ? para : nm).join(' e ') + '.' : '');
+  customConfirm(msg, async () => {
+    const r = await moverAtividadeEntreTecnicos(id, de, para, pos, agendar);
     try{ renderAll(); }catch(e){ console.error(e); }
     if(!r.ok){ alert('⚠️ ' + r.erro); return; }
-    avisoNaoBloqueante(`"${svc.client || 'Atividade'}" passou para ${para}. Se a agenda já foi enviada, reenvie para ${de} e ${para}.`, 7000);
-  }, 'Passar');
+    const avisar = [de, para].filter(Boolean).join(' e ');
+    avisoNaoBloqueante((agendar ? `"${nome}" agendada para ${rotuloDiaCurto(agendar)}.` : para ? `"${nome}" passou para ${para}.` : `"${nome}" ficou sem ${de}.`) + (avisar ? ` Se a agenda já foi enviada, reenvie para ${avisar}.` : ''), 7000);
+  }, agendar ? 'Agendar' : para ? 'Passar' : 'Tirar');
+}
+// Quadro "Sem técnico" (1º cartão da aba Técnicos).
+function atividadesSemTecnico(dia){
+  const doDia = services.filter(s => s.date === dia && s.status !== 'concluido' && !getServiceTechnicians(s).length).sort((a, b) => a.id - b.id);
+  const vistos = new Set();
+  const semDia = services.filter(s => !s.date && s.status !== 'concluido').sort((a, b) => a.id - b.id).filter(s => { if(!s.pairId) return true; if(vistos.has(s.pairId)) return false; vistos.add(s.pairId); return true; });
+  return { doDia, semDia };
+}
+function cartaoSemTecnicoHtml(dia){
+  const { doDia, semDia } = atividadesSemTecnico(dia);
+  const item = (at, comQuem) => { const q = comQuem ? tecnicosDaDupla(at).filter(Boolean) : [];   // (selo de manutenção igual aos cartões dos técnicos)
+    return `<div class="tecnico-task status-${at.status}" data-id="${at.id}"><div class="tecnico-task-drag" title="Arraste para um técnico">⋮⋮</div><div class="tecnico-task-body">${seloManutHtml(at)}<div class="tecnico-task-client">${escapeHtml(at.client)}</div>${at.description ? `<div class="tecnico-task-desc">${escapeHtml(at.description)}</div>` : ''}${q.length ? `<div class="tec60-quem">👤 ${escapeHtml(q.join(' e '))}</div>` : ''}</div></div>`; };
+  return `<div class="tecnico-card-head"><div class="tecnico-card-name">Sem técnico</div><div class="tecnico-card-count mono">${doDia.length + semDia.length}</div></div>
+    <div class="tec60-dica">Arraste para um técnico. Para tirar o técnico, arraste de volta para "Neste dia".</div>
+    <div class="tec60-sub">Neste dia <span>(${doDia.length})</span></div>
+    <div class="tecnico-tasklist" data-tech="" data-semtec="dia">${doDia.length ? doDia.map(s => item(s, false)).join('') : '<div class="tecnico-empty">Nenhuma atividade sem técnico.</div>'}</div>
+    <div class="tec60-sub">Sem dia marcado <span>(${semDia.length})</span></div>
+    <div class="tecnico-tasklist" data-tech="" data-semtec="semdia">${semDia.length ? semDia.map(s => item(s, true)).join('') : '<div class="tecnico-empty">Nenhuma.</div>'}</div>`;
 }
 function renderTecnicosAmanha(){
   const nwd = getSendAgendaDate();
@@ -14158,6 +14210,7 @@ function renderTecnicosAmanha(){
 
   const grid = document.getElementById('tecnicosGrid');
   grid.innerHTML = '';
+  { const semTec = document.createElement('div'); semTec.className = 'tecnico-card tec60-sem'; semTec.innerHTML = cartaoSemTecnicoHtml(tomorrow); grid.appendChild(semTec); }   // Fase 60
 
   TECHS.forEach(t => {
     const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
@@ -14218,7 +14271,7 @@ function renderTecnicosAmanha(){
           handle: '.tecnico-task-drag',
           filter: '.status-concluido',
           draggable: '.tecnico-task',
-          group: 'tecnicos',   // Fase 59: arrastar de um técnico para outro
+          group: list.dataset.semtec === 'semdia' ? { name: 'tecnicos', put: false } : 'tecnicos',   // Fase 59: arrastar de um técnico para outro (Fase 60: "Sem dia marcado" só entrega)
           forceFallback: true,
           fallbackOnBody: true,   // Fase 59: o clone flutua sobre a página (como no Resumo da Semana), sem ficar preso no cartão do técnico
           fallbackTolerance: 3,
@@ -14231,9 +14284,10 @@ function renderTecnicosAmanha(){
               const id = Number(evt.item.dataset.id), de = evt.from.dataset.tech, para = evt.to.dataset.tech;
               const pos = typeof evt.newDraggableIndex === 'number' ? evt.newDraggableIndex : evt.newIndex;
               renderTecnicosAmanha();   // a tela volta ao que era até confirmar
-              pedirMoverAtividade(id, de, para, pos);
+              pedirMoverAtividade(id, de, para, pos, evt.from.dataset.semtec === 'semdia' ? getSendAgendaDate().date : null);   // Fase 60
               return;
             }
+            if(list.dataset.semtec){ renderTecnicosAmanha(); return; }   // Fase 60: ordem dentro do quadro "Sem técnico" não conta
             Array.from(list.children).forEach((child, idx) => {
               const svc = services.find(s => s.id === Number(child.dataset.id));
               if(svc) svc.order = idx;
