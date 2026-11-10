@@ -457,6 +457,9 @@
   .tecnico-task.sortable-ghost{ opacity: 0.35; }
   .tecnico-task.sortable-chosen{ background: var(--line); }
   .tecnico-empty{ color: var(--text-dim); font-size: 13px; font-style:italic; text-align:center; padding: 10px 0; }
+  .tecnico-tasklist{ min-height: 44px; border-radius: 6px; }   /* Fase 59: toda lista recebe atividade arrastada de outro técnico */
+  .tecnico-tasklist .tecnico-empty{ border: 1px dashed var(--line); border-radius: 6px; }
+  .tecnico-tasklist.tec59-alvo{ outline: 2px dashed var(--teal); outline-offset: 3px; }
   .tecnico-phone-row{ display:flex; gap:8px; margin-bottom: 12px; }
   .tecnico-phone-input{ flex: 2; font-size: 12px; padding: 7px 9px; }
   .btn-whatsapp{
@@ -554,6 +557,10 @@
      nada selecionável e cursor de "segurando" na página toda — mesmo quando o mouse passa por
      cima de outros textos no caminho. */
   body.week-dragging, body.week-dragging *{ user-select:none !important; -webkit-user-select:none !important; cursor: grabbing !important; }
+  /* Fase 59: o clone que segue o mouse NÃO pode ter transição — o Sortable soma cada passo ao transform atual do clone e,
+     com a transição herdada do cartão (hover), o clone ficava parado no lugar de origem em vez de acompanhar a mão. */
+  .sortable-fallback{ transition: none !important; }
+  .tecnico-task.sortable-fallback{ opacity: 1 !important; box-shadow: var(--shadow-md); cursor: grabbing; background: var(--surface-2); }
   /* O clone que segue o mouse (fallback do Sortable, agora no body): parece um cartão "levantado". */
   .week-client-bar.sortable-fallback{
     opacity: 1 !important; box-shadow: var(--shadow-md); cursor: grabbing;
@@ -14087,6 +14094,57 @@ document.getElementById('confirmAddressSend').addEventListener('click', async ()
   renderAll();
 });
 
+// Fase 59: passar a atividade de um técnico para outro (arrastando na aba Técnicos). Mesma regra do seletor de técnico da Agenda
+// (onTechSelectChange): technician muda, a lista antiga technicians sai (individual); dupla troca só quem saiu. Tudo lê esses campos.
+function tarefasDoTecnicoNoDia(nome, dia, exceto){
+  return services.filter(s => s.date === dia && s.id !== exceto && getServiceTechnicians(s).includes(nome))
+    .sort((a, b) => ((typeof a.order === 'number') ? a.order : a.id) - ((typeof b.order === 'number') ? b.order : b.id));
+}
+function checarMoverAtividade(svc, de, para){
+  if(!svc) return 'Atividade não encontrada.';
+  if(!para || de === para) return 'Mesmo técnico.';
+  if(svc.status === 'concluido') return 'Atividade já concluída: o técnico não muda.';
+  if(svc.status === 'em_andamento') return `Atividade já iniciada por ${de}: o técnico não muda por aqui.`;
+  const techs = getServiceTechnicians(svc);
+  if(!techs.includes(de)) return `A atividade não é mais de ${de}. A tela foi atualizada.`;
+  if(techs.includes(para)) return `${para} já está nesta atividade (dupla).`;
+  if(svc.pairId){ const par = services.find(x => x.pairId === svc.pairId && x.id !== svc.id); if(par && getServiceTechnicians(par).includes(para)) return `${para} já está nesta atividade (dupla).`; }
+  return '';
+}
+async function moverAtividadeEntreTecnicos(id, de, para, pos){
+  const svc = services.find(x => x.id === id);
+  const erro = checarMoverAtividade(svc, de, para); if(erro) return { ok: false, erro };
+  const destino = tarefasDoTecnicoNoDia(para, svc.date, svc.id), origem = tarefasDoTecnicoNoDia(de, svc.date, svc.id);
+  const mexidos = [svc].concat(destino, origem);
+  const antes = mexidos.map(x => ({ x, technician: x.technician, technicians: x.technicians === undefined ? undefined : x.technicians.slice(), status: x.status, order: x.order }));
+  if(isMultiTechRecord(svc)){
+    svc.technicians = getServiceTechnicians(svc).map(nm => nm === de ? para : nm);
+    if(svc.technician === de || !svc.technicians.includes(svc.technician)) svc.technician = svc.technicians[0];
+  } else {
+    svc.technician = para;
+    if(svc.technicians !== undefined) delete svc.technicians;
+  }
+  acertarAtribuidoAoAgendar(svc);
+  const p = Math.max(0, Math.min(destino.length, Number(pos) || 0));
+  destino.splice(p, 0, svc); destino.forEach((x, i) => { x.order = i; }); origem.forEach((x, i) => { x.order = i; });
+  const ok = await saveServices();
+  if(!ok){
+    antes.forEach(a => { a.x.technician = a.technician; if(a.technicians === undefined) delete a.x.technicians; else a.x.technicians = a.technicians; a.x.status = a.status; if(a.order === undefined) delete a.x.order; else a.x.order = a.order; });
+    return { ok: false, erro: 'Não foi possível salvar a troca. Verifique sua internet e tente novamente.' };
+  }
+  return { ok: true, svc };
+}
+function pedirMoverAtividade(id, de, para, pos){
+  const svc = services.find(x => x.id === id);
+  const erro = checarMoverAtividade(svc, de, para); if(erro){ if(erro !== 'Mesmo técnico.') avisoNaoBloqueante(erro, 6000); return; }
+  const dupla = isMultiTechRecord(svc) ? ' A dupla fica ' + getServiceTechnicians(svc).map(nm => nm === de ? para : nm).join(' e ') + '.' : '';
+  customConfirm(`Passar "${svc.client || 'atividade'}" de ${de} para ${para}?${dupla}`, async () => {
+    const r = await moverAtividadeEntreTecnicos(id, de, para, pos);
+    try{ renderAll(); }catch(e){ console.error(e); }
+    if(!r.ok){ alert('⚠️ ' + r.erro); return; }
+    avisoNaoBloqueante(`"${svc.client || 'Atividade'}" passou para ${para}. Se a agenda já foi enviada, reenvie para ${de} e ${para}.`, 7000);
+  }, 'Passar');
+}
 function renderTecnicosAmanha(){
   const nwd = getSendAgendaDate();
   const tomorrow = nwd.date;
@@ -14111,7 +14169,7 @@ function renderTecnicosAmanha(){
 
     let tasksHtml = '';
     if(tasks.length === 0){
-      tasksHtml = `<div class="tecnico-empty">Nenhum serviço agendado.</div>`;
+      tasksHtml = `<div class="tecnico-tasklist" data-tech="${escapeHtml(t.name)}"><div class="tecnico-empty">Nenhum serviço agendado.</div></div>`;   // Fase 59: recebe atividade arrastada
     } else {
       tasksHtml = `<div class="tecnico-tasklist" data-tech="${escapeHtml(t.name)}">`;
       tasks.forEach((s, i) => {
@@ -14159,9 +14217,23 @@ function renderTecnicosAmanha(){
           animation: 150,
           handle: '.tecnico-task-drag',
           filter: '.status-concluido',
+          draggable: '.tecnico-task',
+          group: 'tecnicos',   // Fase 59: arrastar de um técnico para outro
           forceFallback: true,
+          fallbackOnBody: true,   // Fase 59: o clone flutua sobre a página (como no Resumo da Semana), sem ficar preso no cartão do técnico
           fallbackTolerance: 3,
-          onEnd: function(){
+          onStart: function(){ document.body.classList.add('week-dragging'); },   // mesma classe da semana: sem seleção de texto, cursor "segurando"
+          onMove: function(evt){ document.querySelectorAll('.tecnico-tasklist.tec59-alvo').forEach(x => x.classList.remove('tec59-alvo')); if(evt.to !== evt.from) evt.to.classList.add('tec59-alvo'); return true; },
+          onEnd: function(evt){
+            document.body.classList.remove('week-dragging');
+            document.querySelectorAll('.tecnico-tasklist.tec59-alvo').forEach(x => x.classList.remove('tec59-alvo'));
+            if(evt && evt.to && evt.from && evt.to !== evt.from){   // Fase 59: soltou em outro técnico
+              const id = Number(evt.item.dataset.id), de = evt.from.dataset.tech, para = evt.to.dataset.tech;
+              const pos = typeof evt.newDraggableIndex === 'number' ? evt.newDraggableIndex : evt.newIndex;
+              renderTecnicosAmanha();   // a tela volta ao que era até confirmar
+              pedirMoverAtividade(id, de, para, pos);
+              return;
+            }
             Array.from(list.children).forEach((child, idx) => {
               const svc = services.find(s => s.id === Number(child.dataset.id));
               if(svc) svc.order = idx;
