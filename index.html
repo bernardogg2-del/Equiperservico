@@ -13914,11 +13914,13 @@ function mensagemEquipeMarcelo(){
   const nwd = getSendAgendaDate(); const dia = nwd.date; const [y, m, d] = dia.split('-').map(Number);
   const dayWord = nwd.isToday ? 'hoje' : (nwd.isTomorrow ? 'amanhã' : DOW_FULL[nwd.dowIdx]);
   let msg = `📅 *AGENDA DA EQUIPE* — ${dayWord}, ${d} de ${MONTHS[m - 1]}\n`;
+  let comAtividade = 0;   // Fase 64: técnico sem nada agendado não entra na mensagem
   TECHS.forEach(t => {
     const tasks = services.filter(s => s.date === dia && getServiceTechnicians(s).includes(t.name))
       .sort((a, b) => ((typeof a.order === 'number') ? a.order : a.id) - ((typeof b.order === 'number') ? b.order : b.id));
-    msg += `\n👷 *${t.name}*${tasks.length ? ` (${tasks.length} ${tasks.length === 1 ? 'atividade' : 'atividades'})` : ''}\n`;
-    if(!tasks.length){ msg += `_Nenhum serviço agendado._\n`; return; }
+    if(!tasks.length) return;   // Fase 64: sem atividade, o técnico não aparece
+    comAtividade++;
+    msg += `\n👷 *${t.name}* (${tasks.length} ${tasks.length === 1 ? 'atividade' : 'atividades'})\n`;
     const windows = ARRIVAL_WINDOWS[tasks.length];
     tasks.forEach((s, i) => {
       const tipo = tipoOficinaDaAtividade(s), desc = descricaoEmOficina(s);
@@ -13931,6 +13933,7 @@ function mensagemEquipeMarcelo(){
       msg += l;
     });
   });
+  if(!comAtividade) msg += `\n_Nenhum serviço agendado._\n`;   // Fase 64
   return msg;
 }
 function buildAllTechniciansMessage(includeEstimates){
@@ -13942,6 +13945,7 @@ function buildAllTechniciansMessage(includeEstimates){
   const dayWord = nwd.isToday ? 'hoje' : (nwd.isTomorrow ? 'amanhã' : DOW_FULL[nwd.dowIdx]);
 
   let msg = `Agenda da equipe de ${dayWord} (${label}):\n\n`;
+  let comAtividade = 0;   // Fase 64: técnico sem nada agendado não entra na mensagem
 
   TECHS.forEach(t => {
     const tasks = services.filter(s => s.date === tomorrow && getServiceTechnicians(s).includes(t.name))
@@ -13951,11 +13955,9 @@ function buildAllTechniciansMessage(includeEstimates){
         return ao - bo;
       });
 
+    if(tasks.length === 0) return;   // Fase 64: sem atividade, o técnico não aparece
+    comAtividade++;
     msg += `*${t.name}*\n`;
-    if(tasks.length === 0){
-      msg += `Nenhum serviço agendado.\n\n`;
-      return;
-    }
     const windows = includeEstimates ? ARRIVAL_WINDOWS[tasks.length] : null;
     tasks.forEach((s, i) => {
       let line = `${i + 1}. ${s.client}${s.description ? ' — ' + s.description : ''}${s.isRetorno ? ' (retorno)' : ''}`;   // Fase 50
@@ -13972,6 +13974,7 @@ function buildAllTechniciansMessage(includeEstimates){
     });
     msg += '\n';
   });
+  if(!comAtividade) msg += `Nenhum serviço agendado.\n`;   // Fase 64
 
   return msg;
 }
