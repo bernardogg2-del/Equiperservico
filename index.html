@@ -14858,6 +14858,7 @@ async function updateClientRecord(id, newNameRaw, newAddressRaw){
 
   const oldName = c.name;
   const nameChanged = c.name.toLowerCase() !== newName.toLowerCase();
+  const nomeMudou67 = String(oldName || '').trim() !== newName; if(nomeMudou67) cli67Marcar(c, oldName);   // Fase 67: o nome antigo fica anotado até a troca chegar em todos os lugares
   c.name = newName;
   c.address = newAddress;
 
@@ -14882,8 +14883,81 @@ async function updateClientRecord(id, newNameRaw, newAddressRaw){
   await saveClients();
   await saveServices();
   await saveMaintenanceContracts();
+  if(nomeMudou67){ try{ await cli67Propagar(c, true); }catch(e){ console.error('Fase 67: nome do cliente nos outros lugares', e); } }   // Fase 67
   renderAll();
   return true;
+}
+
+// ===== Fase 67 (12/11): trocar o nome em Clientes vale em todos os lugares =====
+// [nó do banco, nome da área para o aviso, chave de ABAS_POR_NO (acesso do Gestor), campos com o nome do cliente]
+const CLI67_NOS = [
+  ['oficinaEquipamentos', 'Oficina', 'oficinaEquipamentos', ['client']],
+  ['galleryPhotos', 'Galeria', 'galeria', ['client']],
+  ['quadrosComando', 'Quadros de comando', 'quadros', ['cliente']],
+  ['ordensServico', 'Ordens de serviço', 'ordensServico', ['cliente', 'itens.*.cliente']],
+  ['obrasPedidos', 'Obras, Pedidos e Financeiro', 'obras', ['cliente', 'contratoManut.dados.cliente', 'manualOperacao.dados.cliente']],
+  ['contratosManutencao', 'Contratos e manuais avulsos', 'contratosManutencao', ['cliente', 'contratoManut.dados.cliente', 'manualOperacao.dados.cliente']],
+  ['orcamentos', 'Orçamentos', 'orcamentos', ['cliente']],
+  ['preventivoUnidades', 'Equipamentos da preventiva', 'preventivo', ['cliente']],
+  ['preventivoRelatorios', 'Relatórios de preventiva', 'preventivo', ['cliente']]
+];
+// Mesmo cliente (chave da Fase 26) → nome novo, mantendo o "Preventiva –" da frente. Outro cliente: devolve igual.
+function cli67Troca(v, kOld, novo){ if(typeof v !== 'string' || !v.trim() || chaveClienteLigada(v) !== kOld) return v; const m = /^\s*(preventiva\s*[–-]\s*)/i.exec(v); return (m ? m[1] : '') + novo; }
+function cli67Marcar(c, antigo){ antigo = String(antigo || '').trim(); if(!c || !antigo) return; const l = Array.isArray(c.renomePend) ? c.renomePend.slice() : []; if(!l.includes(antigo)) l.push(antigo); c.renomePend = l; }
+// Troca num registro seguindo os caminhos ('a.b.c'; '*' = todos os filhos). Devolve os campos de 1º nível que mudaram.
+function cli67NoRegistro(r, campos, kOld, novo){ const mud = new Set();
+  campos.forEach(c => { const p = c.split('.'); (function anda(o, i){ if(!o || typeof o !== 'object') return; const k = p[i];
+    if(k === '*'){ Object.keys(o).forEach(kk => anda(o[kk], i + 1)); return; }
+    if(i === p.length - 1){ const nv = cli67Troca(o[k], kOld, novo); if(nv !== o[k]){ o[k] = nv; mud.add(p[0]); } } else anda(o[k], i + 1); })(r, 0); });
+  return Array.from(mud); }
+const cli67Espera = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('tempo esgotado')), ms))]);
+// Lê o nó e grava só os campos que mudam; as telas abertas recebem pela sincronização normal. Devolve quantos registros mudaram.
+async function cli67NoBanco(no, campos, kOld, novo){
+  if(!rtdb) throw new Error('Firebase indisponível');
+  const sn = await cli67Espera(rtdb.ref(no).get(), 20000); const raw = sn.exists() ? sn.val() : {}; const up = {}; let q = 0;
+  Object.keys(raw || {}).forEach(k => { const r = raw[k]; if(!r || typeof r !== 'object') return; const mud = cli67NoRegistro(r, campos, kOld, novo); if(mud.length){ q++; mud.forEach(f => { up[no + '/' + k + '/' + f] = r[f]; }); } });
+  if(q) await cli67Espera(rtdb.ref().update(up), 20000);
+  return q; }
+let cli67EmCurso = false; const cli67Tentados = new Set();
+// Leva o nome atual do cadastro a todos os lugares onde ainda está um nome antigo anotado (c.renomePend). Tudo certo → apaga a anotação.
+async function cli67Propagar(c, avisar){
+  const pend = Array.isArray(c && c.renomePend) ? c.renomePend.filter(Boolean) : []; if(!pend.length) return null;
+  const novo = c.name, feitos = [], falhas = [], pulados = [];
+  cli67EmCurso = true;
+  try{
+    for(const antigo of pend){
+      const kOld = chaveClienteLigada(antigo); if(!kOld) continue;
+      if(clients.some(x => x && x !== c && chaveClienteLigada(x.name) === kOld)){ pulados.push(antigo); continue; }   // existe outro cadastro com o nome antigo: não mistura os dois
+      let nS = 0; services.forEach(s => { const nv = cli67Troca(s.client, kOld, novo); if(nv !== s.client){ s.client = nv; nS++; } });
+      if(nS){ if(await saveServices(true)) feitos.push('Atividades (' + nS + ')'); else falhas.push('Atividades'); }
+      let nM = 0; maintenanceContracts.forEach(m => { const nv = cli67Troca(m.client, kOld, novo); if(nv !== m.client){ m.client = nv; nM++; } });
+      if(nM){ if(await saveMaintenanceContracts(true)) feitos.push('Manutenções (' + nM + ')'); else falhas.push('Manutenções'); }
+      for(const [no, rotulo, chave, campos] of CLI67_NOS){
+        if(!podeGravarNoLigado(chave)){ if(!falhas.includes(rotulo)) falhas.push(rotulo); continue; }
+        try{ const q = await cli67NoBanco(no, campos, kOld, novo); if(q) feitos.push(rotulo + ' (' + q + ')'); }
+        catch(e){ console.error('Fase 67: ' + no, e); if(!falhas.includes(rotulo)) falhas.push(rotulo); }
+      }
+    }
+    if(!falhas.length){ c.renomePend = null; await saveClients(true); }
+  } finally { cli67EmCurso = false; }
+  if(avisar){
+    if(feitos.length) avisoNaoBloqueante('Nome atualizado também em: ' + feitos.join(', ') + '.');
+    if(pulados.length) alert('Existe outro cadastro com o nome "' + pulados.join('", "') + '". Para não misturar os dois clientes, o nome não foi trocado nos outros lugares.');
+    if(falhas.length) alert('O nome novo ainda não chegou em: ' + falhas.join(', ') + ' (sem internet ou sem acesso a essa área).\n\nFica anotado: o app termina a troca sozinho quando um Gestor com acesso abrir o app com internet.');
+  }
+  return { feitos, falhas, pulados };
+}
+// Gestor, a cada renderAll: termina as trocas de nome que ficaram pendentes (uma tentativa por sessão para cada cadastro).
+async function cli67Pendentes(){
+  if(cli67EmCurso || currentRole !== 'manager' || !Array.isArray(clients) || !podeGravarNoLigado('clients')) return 0;
+  let q = 0;
+  for(const c of clients.slice()){
+    if(!c || !Array.isArray(c.renomePend) || !c.renomePend.length) continue;
+    const marca = String(c.id) + '|' + c.renomePend.join('|') + '|' + c.name; if(cli67Tentados.has(marca)) continue; cli67Tentados.add(marca);
+    try{ const r = await cli67Propagar(c, false); if(r && r.feitos.length){ q++; avisoNaoBloqueante('Nome de ' + c.name + ' atualizado em: ' + r.feitos.join(', ') + '.'); } }catch(e){ console.error('Fase 67: pendência de nome', e); }
+  }
+  if(q){ try{ renderAll(); }catch(e){} }
+  return q;
 }
 
 // ===== Fase 26 (28/10): Clientes ↔ controle de visitas ↔ preventivas do Financeiro — a mesma pessoa de contato e o mesmo telefone =====
@@ -15015,6 +15089,7 @@ function renderAll(){
   if(currentRole === 'manager') setTimeout(reconciliarVisitasConcluidas, 0);
   if(currentRole === 'manager') setTimeout(reconciliarStatusAtribuidos, 0);
   if(currentRole === 'manager') setTimeout(reconciliarHistoricoRetornos, 0);   // Fase 50: retornos antigos em aberto → histórico das visitas   // Fase 31: com dia e técnico não fica "Aguardando técnico"
+  if(currentRole === 'manager') setTimeout(cli67Pendentes, 0);   // Fase 67: nome do cliente igual em todos os lugares
   if(currentRole === 'manager') setTimeout(reconciliarContatosClientes, 0);   // Fase 26: contato e telefone iguais em Clientes, controle de visitas e Financeiro   // Fase 23: atividade de preventiva concluída sempre chega ao controle de visitas
   renderTechList();
   renderDayBoxes();
