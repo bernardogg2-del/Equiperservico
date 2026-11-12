@@ -1645,6 +1645,23 @@
     text-align:center; font-style:italic; padding: 32px 10px;
     background: var(--surface-2); border-radius: var(--radius);
   }
+  /* Fase 68: Clientes › Nomes sem cadastro */
+  .cli68-box{ background: var(--panel); border:1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-sm); padding: 14px 18px; margin-bottom: 22px; }
+  .cli68-box:empty{ display:none; }
+  .cli68-head{ display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .cli68-t{ font-size:14.5px; font-weight:600; }
+  .cli68-s{ font-size:12.5px; color: var(--text-dim); margin-top:2px; }
+  .cli68-resumo{ font-size:13px; margin:12px 0 4px; }
+  .cli68-resumo button{ background:none; border:0; padding:0; color: var(--red); font:inherit; font-weight:600; cursor:pointer; text-decoration:underline; }
+  .cli68-erro{ font-size:12.5px; color: var(--red); margin-top:6px; }
+  .cli68-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; padding:10px 0; border-top:1px solid var(--line); }
+  .cli68-row.oculto{ opacity:.6; }
+  .cli68-n{ flex:1 1 220px; min-width:0; }
+  .cli68-n b{ display:block; font-size:14px; font-weight:600; overflow-wrap:anywhere; }
+  .cli68-n span{ display:block; font-size:12px; color: var(--text-dim); margin-top:2px; }
+  .cli68-row select{ flex:1 1 200px; min-width:0; max-width:320px; }
+  .cli68-row button{ white-space:nowrap; }
+  @media (max-width: 640px){ .cli68-row select{ flex-basis:100%; max-width:none; } }
   .pending-header{ margin-bottom: 12px; }
   .pending-title{ font-size: 14.5px; font-weight:600; color: var(--red); }
   .pending-row{
@@ -4158,6 +4175,7 @@
         <button type="button" class="btn-primary" id="addClienteBtn">+ Adicionar cliente</button>
       </div>
     </div>
+    <div id="cli68Box" class="cli68-box"></div>
     <div class="field" style="max-width:360px;">
       <label for="clienteSearchInput">Buscar cliente</label>
       <div class="search-clear-wrap">
@@ -15021,6 +15039,7 @@ async function reconciliarContatosClientes(){
 }
 
 function renderClientes(){
+  if(!cli68.desenhado) cli68Desenhar();   // Fase 68: caixa "Nomes sem cadastro"
   const box = document.getElementById('clientesList');
   if(!box) return;
   const term = (document.getElementById('clienteSearchInput').value || '').trim().toLowerCase();
@@ -15083,6 +15102,105 @@ document.getElementById('addClienteBtn').addEventListener('click', async () => {
     renderClientes();
   }
 });
+
+// ===== Fase 68 (12/11): Clientes › Nomes sem cadastro =====
+const CLI68_OCULTOS = 'equiperNomesSemCadastro:ocultos';
+const cli68 = { lista: null, erros: [], lendo: false, ocupado: false, verOcultos: false, desenhado: false };
+function cli68Ocultos(){ try{ const l = JSON.parse(localStorage.getItem(CLI68_OCULTOS) || '[]'); return new Set(Array.isArray(l) ? l : []); }catch(e){ return new Set(); } }
+function cli68Esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function cli68GravaOcultos(st){ try{ localStorage.setItem(CLI68_OCULTOS, JSON.stringify(Array.from(st))); }catch(e){} }
+// Nomes escritos num registro, seguindo os caminhos da Fase 67 ('a.b.c'; '*' = todos os filhos). Só lê.
+function cli68Valores(r, campos){ const out = [];
+  campos.forEach(c => { const p = c.split('.'); (function anda(o, i){ if(!o || typeof o !== 'object') return; const k = p[i];
+    if(k === '*'){ Object.keys(o).forEach(kk => anda(o[kk], i + 1)); return; }
+    if(i === p.length - 1){ if(typeof o[k] === 'string' && o[k].trim()) out.push(o[k]); } else anda(o[k], i + 1); })(r, 0); });
+  return out; }
+// Cadastros parecidos com o nome escrito: um contém o outro, ou a 1ª palavra é igual.
+function cli68Parecidos(k){ const p1 = k.split(' ')[0]; return clients.filter(c => { const kc = chaveClienteLigada(c && c.name); if(!kc) return false; return kc.includes(k) || k.includes(kc) || (p1.length >= 3 && kc.split(' ')[0] === p1); }); }
+// Lê tudo e devolve { lista: [{chave, nome, onde:{área: vezes}, total, sugestao}], erros: [áreas que não deu para ler] }. Não grava nada.
+async function cli68Varrer(){
+  const mapa = new Map(), erros = [];
+  const conta = (v, rotulo, cid) => { if(typeof v !== 'string' || !v.trim()) return; const k = chaveClienteLigada(v); if(!k || k === 'oficina' || k === 'oficina equiper') return;
+    let e = mapa.get(k); if(!e){ e = { chave: k, nome: stripPreventivaPrefix(v).replace(/\s+/g, ' ').trim(), onde: {}, total: 0, ids: new Set() }; mapa.set(k, e); }
+    e.onde[rotulo] = (e.onde[rotulo] || 0) + 1; e.total++; if(cid != null && cid !== '') e.ids.add(String(cid)); };
+  services.forEach(sv => { if(sv) conta(sv.client, 'Atividades'); });
+  maintenanceContracts.forEach(m => { if(m) conta(m.client, 'Manutenções'); });
+  for(const [no, rotulo, chave, campos] of CLI67_NOS){
+    if(!podeGravarNoLigado(chave)){ erros.push(rotulo); continue; }
+    try{ if(!rtdb) throw new Error('Firebase indisponível'); const sn = await cli67Espera(rtdb.ref(no).get(), 20000); const raw = sn.exists() ? sn.val() : {};
+      Object.keys(raw || {}).forEach(id => { const r = raw[id]; if(!r || typeof r !== 'object') return; cli68Valores(r, campos).forEach(v => conta(v, rotulo, r.clienteId)); }); }
+    catch(e){ console.error('Fase 68: ' + no, e); erros.push(rotulo); }
+  }
+  const cad = new Set(clients.map(c => chaveClienteLigada(c && c.name)));
+  const lista = Array.from(mapa.values()).filter(e => !cad.has(e.chave)).sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome));
+  lista.forEach(e => { const ids = Array.from(e.ids); const c = ids.length === 1 ? clients.find(x => x && String(x.id) === ids[0]) : null; e.sugestao = c ? String(c.id) : ''; delete e.ids; });   // registro ligado pelo id a um cadastro com outro nome
+  return { lista, erros };
+}
+function cli68LinhaHtml(e, oculto){
+  const onde = Object.keys(e.onde).map(a => cli68Esc(a) + ' ' + e.onde[a]).join(' · ');
+  const par = cli68Parecidos(e.chave).sort((a, b) => a.name.localeCompare(b.name)); const idsPar = new Set(par.map(c => String(c.id)));
+  const op = (c) => '<option value="' + cli68Esc(String(c.id)) + '"' + (e.sugestao === String(c.id) ? ' selected' : '') + '>' + cli68Esc(c.name) + '</option>';
+  const todos = clients.filter(c => c && c.name && !idsPar.has(String(c.id))).sort((a, b) => a.name.localeCompare(b.name));
+  return '<div class="cli68-row' + (oculto ? ' oculto' : '') + '" data-cli68k="' + cli68Esc(e.chave) + '">'
+    + '<div class="cli68-n"><b>' + cli68Esc(e.nome) + '</b><span>' + onde + (e.sugestao ? ' · já ligado a um cadastro numa obra' : '') + '</span></div>'
+    + '<select data-cli68sel aria-label="Cliente certo"><option value="">É o cliente…</option>' + (par.length ? '<optgroup label="Parecidos">' + par.map(op).join('') + '</optgroup><optgroup label="Todos os clientes">' + todos.map(op).join('') + '</optgroup>' : todos.map(op).join('')) + '</select>'
+    + '<button type="button" class="btn-primary" data-cli68="ligar">Ligar</button>'
+    + '<button type="button" class="btn-ghost" data-cli68="criar">Criar cadastro</button>'
+    + '<button type="button" class="btn-ghost" data-cli68="' + (oculto ? 'mostrar' : 'ocultar') + '">' + (oculto ? 'Voltar à lista' : 'Ocultar') + '</button></div>';
+}
+function cli68Desenhar(){
+  const box = document.getElementById('cli68Box'); if(!box) return;
+  if(currentRole !== 'manager'){ box.innerHTML = ''; return; }
+  cli68.desenhado = true;
+  let h = '<div class="cli68-head"><div><div class="cli68-t">Nomes sem cadastro</div><div class="cli68-s">Nomes escritos nas atividades, Oficina, obras, OS, orçamentos e demais telas que não têm cadastro igual em Clientes.</div></div>'
+    + '<button type="button" class="btn-ghost" data-cli68="procurar"' + (cli68.lendo || cli68.ocupado ? ' disabled' : '') + '>' + (cli68.lendo ? 'Procurando…' : cli68.ocupado ? 'Trocando…' : cli68.lista ? '↻ Procurar de novo' : '🔎 Procurar') + '</button></div>';
+  if(cli68.lista){
+    const oc = cli68Ocultos(); const vis = cli68.lista.filter(e => !oc.has(e.chave)), esc = cli68.lista.filter(e => oc.has(e.chave));
+    h += '<div class="cli68-resumo">' + (vis.length ? '<b>' + vis.length + '</b> ' + (vis.length === 1 ? 'nome sem cadastro' : 'nomes sem cadastro') + '. Em cada um: escolha o cliente certo e toque em Ligar (o nome é trocado em todos os lugares), ou crie o cadastro.' : 'Nenhum nome sem cadastro. ✓')
+      + (esc.length ? ' <button type="button" data-cli68="verocultos">' + (cli68.verOcultos ? 'Esconder' : 'Ver') + ' os ' + esc.length + ' ocultos neste computador</button>' : '') + '</div>';
+    if(cli68.erros.length) h += '<div class="cli68-erro">Não foi possível ler: ' + cli68Esc(cli68.erros.join(', ')) + ' (sem internet ou sem acesso a essa área). A lista pode estar incompleta.</div>';
+    h += vis.map(e => cli68LinhaHtml(e, false)).join('');
+    if(cli68.verOcultos) h += esc.map(e => cli68LinhaHtml(e, true)).join('');
+  }
+  box.innerHTML = h;
+}
+async function cli68Procurar(){
+  if(cli68.lendo) return; cli68.lendo = true; cli68Desenhar();
+  try{ const r = await cli68Varrer(); cli68.lista = r.lista; cli68.erros = r.erros; }
+  catch(e){ console.error('Fase 68', e); alert('Não foi possível procurar os nomes agora. Tente de novo.'); }
+  finally{ cli68.lendo = false; cli68Desenhar(); }
+}
+// O nome escrito passa a ser o nome do cadastro escolhido, em todos os lugares (troca da Fase 67).
+async function cli68Ligar(e, c){
+  if(cli68.ocupado) return null; cli68.ocupado = true; cli68Desenhar(); let r = null;
+  try{ cli67Marcar(c, e.nome); await saveClients(true); r = await cli67Propagar(c, true); }
+  catch(err){ console.error('Fase 68: ligar', err); alert('Não foi possível terminar a troca agora. Ficou anotado no cadastro: o app termina sozinho quando abrir com internet.'); }
+  finally{ cli68.ocupado = false; }
+  try{ renderAll(); }catch(err){}
+  await cli68Procurar();
+  return r;
+}
+async function cli68Criar(e){
+  let end = ''; services.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).some(sv => { if(sv && !sv.internoTipo && chaveClienteLigada(sv.client) === e.chave && sv.address && !/^oficina equiper$/i.test(String(sv.address).trim())){ end = String(sv.address).trim(); return true; } return false; });
+  const ok = await createNewClient(e.nome, end); if(!ok) return false;
+  cli68.lista = (cli68.lista || []).filter(x => x.chave !== e.chave);
+  avisoNaoBloqueante('Cadastro criado: ' + e.nome + '.'); renderClientes(); cli68Desenhar();
+  return true;
+}
+function cli68Clique(ev){
+  const b = ev.target.closest('[data-cli68]'); if(!b || b.disabled) return; const a = b.dataset.cli68;
+  if(a === 'procurar') return void cli68Procurar();
+  if(a === 'verocultos'){ cli68.verOcultos = !cli68.verOcultos; return cli68Desenhar(); }
+  const row = b.closest('[data-cli68k]'); const e = row && (cli68.lista || []).find(x => x.chave === row.dataset.cli68k); if(!e || cli68.ocupado || cli68.lendo) return;
+  if(a === 'ocultar' || a === 'mostrar'){ const oc = cli68Ocultos(); if(a === 'ocultar') oc.add(e.chave); else oc.delete(e.chave); cli68GravaOcultos(oc); return cli68Desenhar(); }
+  if(a === 'criar') return void customConfirm('Criar o cadastro "' + e.nome + '" em Clientes?', () => { cli68Criar(e); }, 'Criar cadastro');
+  if(a === 'ligar'){
+    const id = row.querySelector('[data-cli68sel]').value; const c = clients.find(x => x && String(x.id) === String(id));
+    if(!c){ alert('Escolha na lista o cliente certo para "' + e.nome + '".'); return; }
+    customConfirm('Trocar "' + e.nome + '" por "' + c.name + '" em todos os lugares (' + e.total + (e.total === 1 ? ' vez' : ' vezes') + ')?\n\nOs registros passam a ser do cliente ' + c.name + '. Para voltar, só trocando um por um.', () => { cli68Ligar(e, c); }, 'Trocar');
+  }
+}
+(function(){ const box = document.getElementById('cli68Box'); if(box) box.addEventListener('click', cli68Clique); })();
 
 function renderAll(){
   if(currentRole === 'manager') setTimeout(varrerRetornosPendentes, 0);
