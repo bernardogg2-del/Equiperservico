@@ -10798,6 +10798,13 @@ function relatorioCompraSelecao(categoria){
   alerta.sort(cmp); complemento.sort(cmp);
   return { alerta, complemento };
 }
+// Fase 72: unidade de medida ao lado da quantidade no relatório de compra ('m' = metro; o resto = peça).
+function rel72Un(cont){ return cont === 'm' ? 'm' : 'pç'; }
+function rel72Num(v){ return Math.round((Number(v) || 0) * 100) / 100; }
+function rel72Qtd(v, cont){ return String(rel72Num(v)).replace('.', ',') + ' ' + rel72Un(cont); }
+function rel72Totais(itens){ const t = { un: 0, m: 0 }; (itens || []).forEach(i => { t[i.cont === 'm' ? 'm' : 'un'] += Number(i.comprar) || 0; }); return { un: rel72Num(t.un), m: rel72Num(t.m) }; }
+// Total separado por unidade: "120 pç", "36 m" ou "120 pç + 36 m" (metro e peça não se somam).
+function rel72TotalTxt(itens){ const t = rel72Totais(itens), p = []; if(t.un || !t.m) p.push(rel72Qtd(t.un, 'un')); if(t.m) p.push(rel72Qtd(t.m, 'm')); return p.join(' + '); }
 function relatorioCompraAgrupado(categoria){
   const sel = relatorioCompraSelecao(categoria || null);
   const cats = {};
@@ -10805,7 +10812,7 @@ function relatorioCompraAgrupado(categoria){
   return Object.keys(cats).sort((a, b) => a.localeCompare(b, 'pt-BR')).map(cn => ({
     categoria: cn,
     itens: cats[cn].slice().sort((x, y) => ((x.st !== 'NORMAL') ? 0 : 1) - ((y.st !== 'NORMAL') ? 0 : 1) || (x.it.name || '').localeCompare(y.it.name || '', 'pt-BR'))
-      .map(r => ({ nome: r.it.name, codigo: (r.it.sku || '').trim(), medida: r.it.unit || '', situacao: r.st === 'NORMAL' ? 'Complemento' : r.st, comprar: r.buy }))
+      .map(r => ({ nome: r.it.name, codigo: (r.it.sku || '').trim(), medida: r.it.unit || '', situacao: r.st === 'NORMAL' ? 'Complemento' : r.st, comprar: r.buy, cont: contagemDe(r.it) }))
   }));
 }
 // PDF no padrão visual dos orçamentos Equiper: logo, título centralizado, linha vermelha, faixas por
@@ -10822,12 +10829,12 @@ function buildRelatorioCompraHtml(categoria){
     const linhas = g.itens.map((r, i) => {
       tot += r.comprar; nItens++;
       const cls = r.situacao === 'REPOSIÇÃO' ? 'rep' : r.situacao === 'ATENÇÃO' ? 'aten' : 'comp';
-      return `<tr class="${i % 2 ? 'alt' : ''}"><td class="nm">${escapeHtml(r.nome)}</td>${temCod ? `<td>${escapeHtml(r.codigo || '—')}</td>` : ''}<td>${escapeHtml(r.medida || '—')}</td><td class="c"><span class="pill ${cls}">${escapeHtml(r.situacao)}</span></td><td class="n">${r.comprar}</td></tr>`;
+      return `<tr class="${i % 2 ? 'alt' : ''}"><td class="nm">${escapeHtml(r.nome)}</td>${temCod ? `<td>${escapeHtml(r.codigo || '—')}</td>` : ''}<td>${escapeHtml(r.medida || '—')}</td><td class="c"><span class="pill ${cls}">${escapeHtml(r.situacao)}</span></td><td class="n">${rel72Qtd(r.comprar, r.cont)}</td></tr>`;
     }).join('');
     totalGeral += tot;
     return `<div class="cat"><div class="catbar"><span class="lbl">CATEGORIA</span><span class="catname">${escapeHtml(g.categoria)}</span><span class="cnt">${g.itens.length} ${g.itens.length === 1 ? 'item' : 'itens'}</span></div>
 <table><thead><tr><th>Item</th>${temCod ? '<th>Código</th>' : ''}<th>Medida</th><th class="c">Situação</th><th class="n">A comprar</th></tr></thead><tbody>${linhas}</tbody>
-<tfoot><tr><td colspan="${temCod ? 4 : 3}">TOTAL DA CATEGORIA</td><td class="n">${tot}</td></tr></tfoot></table></div>`;
+<tfoot><tr><td colspan="${temCod ? 4 : 3}">TOTAL DA CATEGORIA</td><td class="n">${rel72TotalTxt(g.itens)}</td></tr></tfoot></table></div>`;
   }).join('');
   const titulo = categoria ? escapeHtml(categoria) : 'Geral — todas as categorias';
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${relatorioCompraFileNameBase(categoria || null)}</title>
@@ -10857,7 +10864,7 @@ tr{ break-inside:avoid; }
 tr.alt td{ background:#f8f8fa; }
 td.nm{ font-weight:600; }
 .c{ text-align:center; } .n{ text-align:right; }
-td.n{ font-weight:800; font-size:12px; }
+td.n{ font-weight:800; font-size:12px; white-space:nowrap; }
 .pill{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:9px; font-weight:800; letter-spacing:.04em; }
 .pill.rep{ background:#D91A22; color:#fff; } .pill.aten{ background:#f5b301; color:#141416; } .pill.comp{ background:#e3e3e7; color:#444; }
 tfoot td{ background:#ececef; font-weight:800; border-top:2px solid #D91A22; border-bottom:none; }
@@ -10876,7 +10883,7 @@ ${blocos || '<div class="vazio">Nenhum item para comprar.</div>'}
 <div class="red"><span>Itens com estoque baixo</span><b>${sel.alerta.length}</b></div>
 <div><span>Itens de complemento</span><b>${sel.complemento.length}</b></div>
 <div><span>Total de itens</span><b>${nItens}</b></div>
-<div class="red"><span>Total a comprar</span><b>${totalGeral}</b></div></div>
+<div class="red"><span>Total a comprar</span><b>${rel72TotalTxt(grupos.reduce((l, g) => l.concat(g.itens), []))}</b></div></div>
 </body></html>`;
 }
 function abrirRelatorioCompraPdf(categoria){
@@ -20564,7 +20571,7 @@ let relCompraModalCat = null;
 function abrirRelCompraModal(categoria){
   relCompraModalCat = categoria || null;
   const sel = relatorioCompraSelecao(relCompraModalCat);
-  const linha = (r, baixo) => `<div class="rel-item${baixo ? ' baixo' : ''}"><div><div class="n">${escapeHtml(r.it.name)}${r.it.unit ? ' — ' + escapeHtml(r.it.unit) : ''}${relCompraModalCat ? '' : `<span class="rel-chip">${escapeHtml(r.cat)}</span>`}</div><div class="m">${r.it.sku ? 'Cód.: ' + escapeHtml(r.it.sku) + ' · ' : ''}Em estoque: ${Number(r.it.quantity) || 0} · mínimo: ${Number(r.it.minimumQuantity) || 0}${baixo ? ' · ' + r.st : ''}</div></div><div class="q" ${baixo ? 'style="color:#D91A22;"' : ''}>Comprar ${r.buy}</div></div>`;
+  const linha = (r, baixo) => `<div class="rel-item${baixo ? ' baixo' : ''}"><div><div class="n">${escapeHtml(r.it.name)}${r.it.unit ? ' — ' + escapeHtml(r.it.unit) : ''}${relCompraModalCat ? '' : `<span class="rel-chip">${escapeHtml(r.cat)}</span>`}</div><div class="m">${r.it.sku ? 'Cód.: ' + escapeHtml(r.it.sku) + ' · ' : ''}Em estoque: ${rel72Qtd(r.it.quantity, contagemDe(r.it))} · mínimo: ${rel72Qtd(r.it.minimumQuantity, contagemDe(r.it))}${baixo ? ' · ' + r.st : ''}</div></div><div class="q" ${baixo ? 'style="color:#D91A22;"' : ''}>Comprar ${rel72Qtd(r.buy, contagemDe(r.it))}</div></div>`;
   document.getElementById('estoqueRelCompraTitulo').textContent = 'Relatório de compra — ' + (relCompraModalCat || 'Geral');
   document.getElementById('estoqueRelCompraSub').textContent = `${sel.alerta.length} item(ns) com estoque baixo e ${sel.complemento.length} só complementando o estoque entram neste relatório.`;
   document.getElementById('estoqueRelCompraLista').innerHTML =
@@ -20593,6 +20600,19 @@ function ensureXlsxLib(){
   });
   return xlsxLibLoadPromise;
 }
+// Fase 72: linhas da planilha do relatório de compra. A quantidade continua número; a unidade vai na coluna ao lado.
+function relatorioCompraPlanilha72(grupos, temCod){
+  const vazios = temCod ? ['', '', ''] : ['', ''];
+  const aoa = [temCod ? ['Descrição do item', 'Código', 'Medida', 'Situação', 'Quantidade a comprar', 'Unidade'] : ['Descrição do item', 'Medida', 'Situação', 'Quantidade a comprar', 'Unidade']];
+  grupos.forEach(g => {
+    aoa.push([g.categoria.toUpperCase()]);
+    g.itens.forEach(it => aoa.push(temCod ? [it.nome, it.codigo || '—', it.medida || '—', it.situacao, it.comprar, rel72Un(it.cont)] : [it.nome, it.medida || '—', it.situacao, it.comprar, rel72Un(it.cont)]));
+    const t = rel72Totais(g.itens);
+    if(t.un || !t.m) aoa.push(['Total da categoria', ...vazios, t.un, rel72Un('un')]);
+    if(t.m) aoa.push(['Total da categoria', ...vazios, t.m, rel72Un('m')]);
+  });
+  return aoa;
+}
 let estoqueRelatorioExcelInFlight = false;
 async function exportarRelatorioCompraExcel(categoria){
   if(estoqueRelatorioExcelInFlight || !relatorioCompraDisponivel(categoria)) return;
@@ -20603,14 +20623,9 @@ async function exportarRelatorioCompraExcel(categoria){
     await ensureXlsxLib();
     const grupos = relatorioCompraAgrupado(categoria);
     const temCod = grupos.some(g => g.itens.some(i => i.codigo));
-    const aoa = [temCod ? ['Descrição do item', 'Código', 'Medida', 'Situação', 'Quantidade a comprar'] : ['Descrição do item', 'Medida', 'Situação', 'Quantidade a comprar']];
-    grupos.forEach(g => {
-      aoa.push([g.categoria.toUpperCase()]);
-      g.itens.forEach(it => aoa.push(temCod ? [it.nome, it.codigo || '—', it.medida || '—', it.situacao, it.comprar] : [it.nome, it.medida || '—', it.situacao, it.comprar]));
-      aoa.push(temCod ? ['Total da categoria', '', '', '', g.itens.reduce((n, i) => n + i.comprar, 0)] : ['Total da categoria', '', '', g.itens.reduce((n, i) => n + i.comprar, 0)]);
-    });
+    const aoa = relatorioCompraPlanilha72(grupos, temCod);   // Fase 72: com a coluna "Unidade"
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = temCod ? [{ wch: 40 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 20 }] : [{ wch: 40 }, { wch: 16 }, { wch: 14 }, { wch: 20 }];
+    ws['!cols'] = temCod ? [{ wch: 40 }, { wch: 18 }, { wch: 16 }, { wch: 14 }, { wch: 20 }, { wch: 10 }] : [{ wch: 40 }, { wch: 16 }, { wch: 14 }, { wch: 20 }, { wch: 10 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Relatório de compra');
     XLSX.writeFile(wb, relatorioCompraFileNameBase(categoria) + '.xlsx');
