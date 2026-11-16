@@ -8708,10 +8708,12 @@ function telefoneDePessoa(nome){
   try{ const m = JSON.parse(localStorage.getItem('lembreteFones') || '{}'); if(m[n]) return m[n]; }catch(e){}
   return '';
 }
+function lembreteAvisaMarcelo(nome){ return String(nome || '').trim().toLowerCase().split(/\s+/)[0] === 'bernardo'; }   // Fase 69
 async function oferecerAvisoLembrete(svc, data){
   const [y, m, d] = String(data).split('-').map(Number);
   const dia = new Date(y, m - 1, d).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
-  const quem = svc.lembretePor;
+  const autor69 = svc.lembretePor; const paraMarcelo69 = lembreteAvisaMarcelo(autor69);   // Fase 69: lembrete do Bernardo → o aviso vai para o Marcelo
+  const quem = paraMarcelo69 ? 'Marcelo' : autor69;
   if(!confirm(`Lembrete agendado para ${dia}.\n\nAvisar ${quem} pelo WhatsApp que o serviço de ${svc.client} foi agendado para esse dia?`)) return;
   let fone = telefoneDePessoa(quem);
   if(!fone){
@@ -8720,7 +8722,7 @@ async function oferecerAvisoLembrete(svc, data){
     try{ const mp = JSON.parse(localStorage.getItem('lembreteFones') || '{}'); mp[String(quem).trim().toLowerCase()] = fone; localStorage.setItem('lembreteFones', JSON.stringify(mp)); }catch(e){}
   }
   const tecs = getServiceTechnicians(svc).filter(Boolean);
-  const linhas = [`Olá, ${quem}! O lembrete que você anotou foi agendado:`, '', `*Cliente:* ${svc.client}`];
+  const linhas = [paraMarcelo69 ? `Olá, Marcelo! O lembrete anotado por ${autor69} foi agendado:` : `Olá, ${quem}! O lembrete que você anotou foi agendado:`, '', `*Cliente:* ${svc.client}`];
   if(svc.description) linhas.push(`*Serviço:* ${svc.description}`);
   if(svc.address) linhas.push(`*Endereço:* ${svc.address}`);
   linhas.push(`*Data:* ${dia}`);
@@ -15202,8 +15204,36 @@ function cli68Clique(ev){
 }
 (function(){ const box = document.getElementById('cli68Box'); if(box) box.addEventListener('click', cli68Clique); })();
 
+// ===== Fase 69 (16/11): cliente de lembrete (criado pelo Técnico) entra na lista de Clientes =====
+const cli69Tentados = new Set(); let cli69EmCurso = false;
+// Lembretes cujo cliente não tem cadastro igual em Clientes: [{id (do lembrete), chave, nome, endereco}], um por cliente.
+function cli69Faltando(){
+  const cad = new Set(clients.map(c => chaveClienteLigada(c && c.name))); const out = new Map();
+  services.forEach(sv => { if(!sv || !sv.lembreteEm || sv.internoTipo || typeof sv.client !== 'string') return; const k = chaveClienteLigada(sv.client); if(!k || k === 'oficina' || k === 'oficina equiper' || cad.has(k)) return;
+    const e0 = String(sv.address || '').trim(); const end = /^oficina equiper$/i.test(e0) ? '' : e0;
+    const ja = out.get(k); if(!ja) out.set(k, { id: sv.id, chave: k, nome: stripPreventivaPrefix(sv.client).replace(/\s+/g, ' ').trim(), endereco: end }); else if(!ja.endereco && end) ja.endereco = end; });
+  return Array.from(out.values());
+}
+// Gestor com acesso a Clientes, a cada renderAll: cadastra os clientes dos lembretes (uma tentativa por sessão para cada nome).
+async function cli69CadastrarDosLembretes(){
+  if(cli69EmCurso || currentRole !== 'manager' || !Array.isArray(clients) || !clients.length || !podeGravarNoLigado('clients')) return 0;   // lista vazia = ainda não carregou
+  const novos = cli69Faltando().filter(x => x.nome && !cli69Tentados.has(x.chave)); if(!novos.length) return 0;
+  cli69EmCurso = true; const criados = [];
+  try{
+    novos.forEach(x => { cli69Tentados.add(x.chave); let id = Number(x.id); if(!isFinite(id) || id <= 0 || clients.some(c => c && String(c.id) === String(id))) id = Date.now() + Math.floor(Math.random() * 1000000) + (nextClientIdCounter++);
+      const c = { id, name: x.nome, address: x.endereco }; clients.push(c); criados.push(c); });
+    const ok = await saveClients(true);
+    if(ok === false){ criados.forEach(c => { const i = clients.indexOf(c); if(i >= 0) clients.splice(i, 1); }); return 0; }   // não gravou: tira da tela; tenta de novo na próxima vez que abrir o app
+  }catch(e){ console.error('Fase 69: cliente de lembrete', e); return 0; }
+  finally{ cli69EmCurso = false; }
+  try{ avisoNaoBloqueante((criados.length === 1 ? 'Cliente de lembrete cadastrado em Clientes: ' : 'Clientes de lembrete cadastrados em Clientes: ') + criados.map(c => c.name).join(', ') + '.', 7000); }catch(e){}
+  try{ if(typeof activeTab !== 'undefined' && activeTab === 'clientes') renderClientes(); }catch(e){}
+  return criados.length;
+}
+
 function renderAll(){
   if(currentRole === 'manager') setTimeout(varrerRetornosPendentes, 0);
+  if(currentRole === 'manager') setTimeout(cli69CadastrarDosLembretes, 0);   // Fase 69: cliente de lembrete do Técnico entra em Clientes
   if(currentRole === 'manager') setTimeout(reconciliarVisitasConcluidas, 0);
   if(currentRole === 'manager') setTimeout(reconciliarStatusAtribuidos, 0);
   if(currentRole === 'manager') setTimeout(reconciliarHistoricoRetornos, 0);   // Fase 50: retornos antigos em aberto → histórico das visitas   // Fase 31: com dia e técnico não fica "Aguardando técnico"
