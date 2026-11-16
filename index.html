@@ -458,6 +458,7 @@
   .tecnico-task-client{ font-size: 13.5px; font-weight:600; }
   .tecnico-task-desc{ font-size: 12px; color: var(--text-dim); margin-top: 3px; line-height:1.4; }
   .tecnico-task.sortable-ghost{ opacity: 0.35; }
+  #tecnicosGrid .tecnico-task.sortable-ghost.tec71-longe{ opacity: 0.08; }   /* Fase 71: encaixe que ficou noutro cartão, longe do ponteiro */
   .tecnico-task.sortable-chosen{ background: var(--line); }
   .tecnico-empty{ color: var(--text-dim); font-size: 13px; font-style:italic; text-align:center; padding: 10px 0; }
   .tecnico-tasklist{ min-height: 44px; border-radius: 6px; }   /* Fase 59: toda lista recebe atividade arrastada de outro técnico */
@@ -14317,11 +14318,16 @@ function pedirMoverAtividade(id, de, para, pos, agendar){
 }
 // Fase 62: soltar em qualquer parte do cartão do técnico. Enquanto arrasta, acompanha o ponteiro e destaca o cartão sob a mão.
 let tec62Ponto = null, tec62Origem = null;
-function tec62CartaoEm(x, y){ const el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('#tecnicosGrid .tecnico-card') : null; }
+function tec62CartaoEm(x, y){ const el = document.elementFromPoint(x, y); const c = el && el.closest ? el.closest('#tecnicosGrid .tecnico-card') : null; return c || tec71CartaoPerto(x, y); }
+const TEC71_FOLGA = 28;   // Fase 71
+function tec71CartaoPerto(x, y){ let m = null, md = TEC71_FOLGA; document.querySelectorAll('#tecnicosGrid .tecnico-card').forEach(c => { const r = c.getBoundingClientRect(); if(!r.width && !r.height) return; const dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom), d = Math.hypot(dx, dy); if(d <= md){ md = d; m = c; } }); return m; }
 function tec62Marcar(x, y){
   tec62Ponto = { x, y }; const card = tec62CartaoEm(x, y);
   document.querySelectorAll('#tecnicosGrid .tecnico-card.tec62-alvo').forEach(c => { if(c !== card) c.classList.remove('tec62-alvo'); });
   if(card && card !== tec62Origem) card.classList.add('tec62-alvo');
+  // Fase 71: o encaixe da biblioteca pode ter ficado na lista de outro técnico; quem vale é o cartão sob o ponteiro
+  document.querySelectorAll('#tecnicosGrid .tecnico-task.sortable-ghost').forEach(g => g.classList.toggle('tec71-longe', g.closest('.tecnico-card') !== card));
+  document.querySelectorAll('#tecnicosGrid .tecnico-tasklist.tec59-alvo').forEach(l => { if(l.closest('.tecnico-card') !== card) l.classList.remove('tec59-alvo'); });
 }
 const tec62Mover = (e) => { const t = (e.touches && e.touches[0]) || e; if(t && typeof t.clientX === 'number') tec62Marcar(t.clientX, t.clientY); };
 function tec62Iniciar(list){ tec62Ponto = null; tec62Origem = list && list.closest ? list.closest('.tecnico-card') : null; ['pointermove', 'mousemove', 'touchmove'].forEach(t => document.addEventListener(t, tec62Mover, { passive: true })); }
@@ -14332,6 +14338,26 @@ function tec62ListaSobPonteiro(evt){
   let x = t && t.clientX, y = t && t.clientY;
   if(typeof x !== 'number' || typeof y !== 'number' || (x === 0 && y === 0)){ if(!tec62Ponto) return null; x = tec62Ponto.x; y = tec62Ponto.y; }
   const card = tec62CartaoEm(x, y); return card ? card.querySelector('.tecnico-tasklist') : null;
+}
+// Fase 71: onde a atividade foi solta. { semPonto:true } = sem posição do ponteiro; { lista } = lista do cartão sob o ponteiro (null = fora de todos).
+function tec71Alvo(evt){
+  const oe = evt && evt.originalEvent; const t = oe && ((oe.changedTouches && oe.changedTouches[0]) || oe);
+  let x = t && t.clientX, y = t && t.clientY;
+  if(typeof x !== 'number' || typeof y !== 'number' || (x === 0 && y === 0)){ if(!tec62Ponto) return { semPonto: true }; x = tec62Ponto.x; y = tec62Ponto.y; }
+  const card = tec62CartaoEm(x, y); return { lista: card ? card.querySelector('.tecnico-tasklist') : null };
+}
+// Decide o que fazer ao soltar: { acao:'mover', de, para, pos } | { acao:'nada', aviso? } | { acao:'ordem' }.
+function tec71Decidir(evt){
+  const from = evt.from, to = evt.to || evt.from, a = tec71Alvo(evt);
+  let alvo = to;                                   // sem posição do ponteiro: vale a lista da biblioteca (como antes)
+  if(!a.semPonto){
+    if(a.lista) alvo = a.lista;                    // qualquer parte do cartão
+    else if(to !== from) return { acao: 'nada', aviso: 'Solte em cima do cartão do técnico (ou do quadro "Sem técnico"). Nada mudou.' };
+    else alvo = from;                              // fora dos cartões, mas só mexeu na ordem da própria lista
+  }
+  if(alvo === from) return to === from ? { acao: 'ordem' } : { acao: 'nada' };   // soltou no próprio cartão
+  const pos = (alvo === to && typeof evt.newDraggableIndex === 'number') ? evt.newDraggableIndex : alvo.querySelectorAll('.tecnico-task:not(.sortable-ghost)').length;
+  return { acao: 'mover', de: from.dataset.tech || '', para: alvo.dataset.tech || '', pos };
 }
 // Quadro "Sem técnico" (1º cartão da aba Técnicos).
 function atividadesSemTecnico(dia){
@@ -14425,21 +14451,21 @@ function renderTecnicosAmanha(){
           forceFallback: true,
           fallbackOnBody: true,   // Fase 59: o clone flutua sobre a página (como no Resumo da Semana), sem ficar preso no cartão do técnico
           fallbackTolerance: 3,
+          onChange: function(){ if(tec62Ponto) tec62Marcar(tec62Ponto.x, tec62Ponto.y); },   // Fase 71
           onStart: function(){ document.body.classList.add('week-dragging'); tec62Iniciar(list); },   // mesma classe da semana: sem seleção de texto, cursor "segurando" (Fase 62: acompanha o ponteiro)
           onMove: function(evt){ document.querySelectorAll('.tecnico-tasklist.tec59-alvo').forEach(x => x.classList.remove('tec59-alvo')); if(evt.to !== evt.from) evt.to.classList.add('tec59-alvo'); return true; },
           onEnd: function(evt){
             document.body.classList.remove('week-dragging'); tec62Parar();
             document.querySelectorAll('.tecnico-tasklist.tec59-alvo').forEach(x => x.classList.remove('tec59-alvo'));
-            if(evt && evt.from && evt.to === evt.from){   // Fase 62: soltou fora das listas, em qualquer parte do cartão de outro técnico
-              const alvo = tec62ListaSobPonteiro(evt);
-              if(alvo && alvo !== evt.from){ renderTecnicosAmanha(); pedirMoverAtividade(Number(evt.item.dataset.id), evt.from.dataset.tech, alvo.dataset.tech, alvo.querySelectorAll('.tecnico-task').length, null); return; }
-            }
-            if(evt && evt.to && evt.from && evt.to !== evt.from){   // Fase 59: soltou em outro técnico
-              const id = Number(evt.item.dataset.id), de = evt.from.dataset.tech, para = evt.to.dataset.tech;
-              const pos = typeof evt.newDraggableIndex === 'number' ? evt.newDraggableIndex : evt.newIndex;
-              renderTecnicosAmanha();   // a tela volta ao que era; pedirMoverAtividade muda e redesenha na hora (Fase 62: sem confirmação)
-              pedirMoverAtividade(id, de, para, pos, evt.from.dataset.semtec === 'semdia' ? getSendAgendaDate().date : null);   // Fase 60
-              return;
+            if(evt && evt.from){   // Fase 71: vale o cartão onde soltou (qualquer parte dele), não a última lista por onde a atividade passou
+              const d = tec71Decidir(evt);
+              if(d.acao === 'mover'){
+                const id = Number(evt.item.dataset.id);
+                renderTecnicosAmanha();   // a tela volta ao que era; pedirMoverAtividade muda e redesenha na hora (Fase 62: sem confirmação)
+                pedirMoverAtividade(id, d.de, d.para, d.pos, evt.from.dataset.semtec === 'semdia' ? getSendAgendaDate().date : null);   // Fase 60
+                return;
+              }
+              if(d.acao === 'nada'){ renderTecnicosAmanha(); if(d.aviso) avisoNaoBloqueante(d.aviso, 5000); return; }
             }
             if(list.dataset.semtec){ renderTecnicosAmanha(); return; }   // Fase 60: ordem dentro do quadro "Sem técnico" não conta
             Array.from(list.children).forEach((child, idx) => {
