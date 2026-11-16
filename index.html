@@ -947,6 +947,9 @@
   .manual-fill-form{ margin-top:12px; padding:14px; background: var(--panel-2); border-radius: var(--radius); }
   .mf-acoes{ display:flex; gap:8px; flex-wrap:wrap; }   /* Fase 53 */
   .mf-dica{ font-size:12px; color: var(--text-dim); margin:-4px 0 12px; }
+  .mf70-linha{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }   /* Fase 70: cada horário com o seu botão */
+  .mf70-linha input{ flex:1 1 130px; min-width:0; }
+  .mf70-linha button{ white-space:nowrap; }
   select, input, textarea{
     font-family: var(--sans);
     background: var(--panel-2);
@@ -1662,6 +1665,10 @@
   .cli68-row select{ flex:1 1 200px; min-width:0; max-width:320px; }
   .cli68-row button{ white-space:nowrap; }
   @media (max-width: 640px){ .cli68-row select{ flex-basis:100%; max-width:none; } }
+  /* Fase 70: técnico/dupla no cartão de detalhes */
+  .det70-linha{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .det70-linha select{ flex:1 1 220px; min-width:0; }
+  .det70-dupla{ flex:1 1 180px; font-weight:600; overflow-wrap:anywhere; }
   .pending-header{ margin-bottom: 12px; }
   .pending-title{ font-size: 14.5px; font-weight:600; color: var(--red); }
   .pending-row{
@@ -6750,16 +6757,12 @@ function renderPersonDetailsBlock(svc, label){
     ${!hasData ? `<p class="sub">O técnico ainda não preencheu nada para este serviço.</p>` : ''}
     ${isManager && !isDone ? `
     <div class="manual-fill-section">
-      <button type="button" class="btn-ghost" data-togglemanual="${svc.id}">Preencher manualmente (caso o técnico não consiga)</button>
+      <button type="button" class="btn-ghost" data-togglemanual="${svc.id}">${svc.status === 'em_andamento' ? 'Ajustar horários (início ou conclusão)' : 'Preencher manualmente (caso o técnico não consiga)'}</button>
       <div class="manual-fill-form" id="manualFillForm-${svc.id}" style="display:none;">
-        <div class="field"><label>Início</label><input type="time" data-mfcheckin="${svc.id}" value="${svc.checkIn || ''}"></div>
-        <div class="field"><label>Fim</label><input type="time" data-mfcheckout="${svc.id}" value="${svc.checkOut || ''}"></div>
-        <p class="mf-dica">Técnico ainda no local? Preencha só o início e toque em "Salvar início": a atividade fica em andamento, sem fim, e o técnico conclui depois.</p>
+        <div class="field"><label>Início</label><div class="mf70-linha"><input type="time" data-mfcheckin="${svc.id}" value="${svc.checkIn || ''}"><button type="button" class="btn-ghost" data-mfstart="${svc.id}">Salvar início</button></div></div>
+        <div class="field"><label>Fim</label><div class="mf70-linha"><input type="time" data-mfcheckout="${svc.id}" value="${svc.checkOut || ''}"><button type="button" class="btn-primary" data-mfsave="${svc.id}">Salvar fim e concluir</button></div></div>
+        <p class="mf-dica">Cada horário é salvo separadamente. "Salvar início" grava só o início: a atividade fica em andamento, sem fim, e o técnico conclui depois. "Salvar fim e concluir" marca como concluída (sem horário de fim, vale a hora de agora).</p>
         <div class="field"><label>${escapeHtml(rotuloObsVisita(svc, 'Observação'))}</label><textarea data-mfobs="${svc.id}">${escapeHtml(obsDaVisita(svc))}</textarea></div>
-        <div class="mf-acoes">
-          <button type="button" class="btn-ghost" data-mfstart="${svc.id}">Salvar início (técnico ainda no local)</button>
-          <button type="button" class="btn-primary" data-mfsave="${svc.id}">Marcar como concluída</button>
-        </div>
       </div>
     </div>` : ''}
   `;
@@ -6806,6 +6809,62 @@ async function gerarPdfDaAtividade(id, btn){
 }
 
 let currentDetailsServiceId = null;
+// ===== Fase 70 (16/11): mudar o técnico ou a dupla com o cartão da atividade aberto =====
+function det70Parceiro(s){ return s && s.pairId ? (services.find(x => x.pairId === s.pairId && x.id !== s.id) || null) : null; }
+// 'L' = dupla antiga (2 registros), 'P' = dupla (1 registro), 'I' = um técnico ou nenhum
+function det70Tipo(s){ return det70Parceiro(s) ? 'L' : (getServiceTechnicians(s).length > 1 ? 'P' : 'I'); }
+function det70Linha(s){ const p = det70Parceiro(s), l = getServiceTechnicians(s);
+  return p ? '👥 ' + escapeHtml(s.technician || '—') + ' e ' + escapeHtml(p.technician || '—') : (l.length > 1 ? '👥 ' + l.map(t => escapeHtml(t)).join(' e ') : (l.length === 1 ? escapeHtml(l[0]) : 'sem técnico')); }
+function det70Pode(s){ if(currentRole !== 'manager' || !s || s.status === 'concluido' || s.status === 'em_andamento') return false; const p = det70Parceiro(s); return !(p && (p.status === 'concluido' || p.status === 'em_andamento')); }
+function det70Html(s){
+  if(!det70Pode(s)) return '';
+  if(det70Tipo(s) !== 'I') return '<div class="field"><label>Técnicos (dupla)</label><div class="det70-linha"><span class="det70-dupla">' + det70Linha(s) + '</span>'
+    + '<button type="button" class="btn-ghost" data-det70="trocar">Trocar dupla</button><button type="button" class="btn-ghost" data-det70="desfazer">Desfazer dupla</button></div></div>';
+  const atual = getServiceTechnicians(s)[0] || ''; const nomes = tecnicosAtuaisOrdenados(); if(atual && nomes.indexOf(atual) < 0) nomes.unshift(atual);
+  return '<div class="field"><label for="det70Sel">Técnico</label><div class="det70-linha"><select id="det70Sel" data-det70sel><option value="">Sem técnico</option>'
+    + nomes.map(nm => '<option value="' + escapeHtml(nm).replace(/"/g, '&quot;') + '"' + (nm === atual ? ' selected' : '') + '>' + escapeHtml(nm) + '</option>').join('')
+    + '<option value="__dupla__">👥 Indicar dupla (2 técnicos)</option></select></div></div>';
+}
+// As janelas de dupla e de confirmação precisam ficar por cima do cartão de detalhes (que vai para o fim do <body> ao abrir).
+function det70Frente(){ ['duplaOverlay', 'confirmOverlay'].forEach(id => { const el = document.getElementById(id); if(el && el.parentNode) document.body.appendChild(el); }); }
+function det70Mudar(sel){
+  const svc = services.find(x => x.id === currentDetailsServiceId); if(!svc) return;
+  if(!det70Pode(svc)){ alert('Essa atividade já está ' + (svc.status === 'concluido' ? 'concluída' : 'em andamento') + ' e não pode ter os técnicos alterados.'); det70Atualizar(); return; }
+  if(sel.value === '__dupla__'){ det70Frente(); openDuplaPicker(svc, sel); return; }
+  svc.technician = sel.value || null;                       // mesma regra do seletor da Agenda (onTechSelectChange)
+  if(svc.technicians !== undefined) delete svc.technicians;
+  svc.status = svc.technician ? 'atribuido' : 'aguardando';
+  saveServices();
+  renderAll();
+}
+function det70Clique(b){
+  const svc = services.find(x => x.id === currentDetailsServiceId); if(!svc) return;
+  det70Frente();
+  if(b.dataset.det70 === 'trocar') openDuplaEditor(svc.id); else if(b.dataset.det70 === 'desfazer') undoPair(svc.id);
+}
+// Chamada pelo renderAll: com o cartão aberto, acerta a linha do técnico, o selo de status e o campo. Se virou/deixou de ser dupla,
+// o cartão é montado de novo (o resto dele depende disso), guardando o texto que estava sendo digitado e a rolagem.
+function det70Atualizar(){
+  try{
+    const ov = document.getElementById('detailsOverlay'), box = document.getElementById('det70Tec'); if(!ov || !box || !ov.classList.contains('open') || currentDetailsServiceId == null) return;
+    let svc = services.find(x => x.id === currentDetailsServiceId);
+    if(!svc){ closeServiceDetails(); return; }   // o registro saiu (parte removida ao desfazer uma dupla antiga)
+    const tipo = det70Tipo(svc);
+    if(tipo !== box.dataset.det70tipo || tipo === 'L'){
+      if(tipo === box.dataset.det70tipo && box.innerHTML === det70Html(svc)) return;
+      const d = document.getElementById('editDescInput'), txt = d ? d.value : null, m = ov.querySelector('.modal'), topo = m ? m.scrollTop : 0;
+      openServiceDetails(svc.id).then(() => { const d2 = document.getElementById('editDescInput'); if(d2 && txt != null) d2.value = txt; const m2 = ov.querySelector('.modal'); if(m2) m2.scrollTop = topo; });
+      return;
+    }
+    const sub = document.getElementById('det70Sub'); if(sub){ const h = shortLabel(svc.date) + ' · ' + det70Linha(svc); if(sub.innerHTML !== h) sub.innerHTML = h; }
+    const st = document.getElementById('det70Status'); if(st){ const c = 'status-tag ' + svc.status; if(st.className !== c) st.className = c; const t = statusLabelOf(svc.status); if(st.textContent !== t) st.textContent = t; }
+    const h = det70Html(svc), sel = document.getElementById('det70Sel');
+    if(box.innerHTML !== h){ if(sel && document.activeElement === sel){ const a = getServiceTechnicians(svc)[0] || ''; if(sel.value !== '__dupla__' && sel.value !== a) sel.value = a; } else box.innerHTML = h; }   // seletor em uso: só acerta o valor
+  }catch(e){ console.error('Fase 70: técnico no cartão', e); }
+}
+document.addEventListener('change', (e) => { const t = e.target; if(t && t.matches && t.matches('[data-det70sel]')) det70Mudar(t); });
+document.addEventListener('click', (e) => { const b = e.target && e.target.closest ? e.target.closest('[data-det70]') : null; if(b) det70Clique(b); });
+
 async function openServiceDetails(id){
   const voltarPara = detalheVoltarPendente; detalheVoltarPendente = null;   // Fase 51: aberto a partir do histórico de um retorno
   { const dov = document.getElementById('detailsOverlay'); if(dov && dov.parentNode !== document.body) document.body.appendChild(dov); }   // Fase 51: abre também no perfil Técnico
@@ -6830,8 +6889,9 @@ async function openServiceDetails(id){
   body.innerHTML = `
     ${voltarPara != null ? '<div class="det-voltar"><button type="button" class="btn-ghost oe-mini" data-detvoltar="' + escapeHtml(String(voltarPara)) + '">← Voltar para o retorno</button></div>' : ''}
     ${seloManutHtml(s)}<h3>${escapeHtml(s.client)}</h3>
-    <p class="sub">${shortLabel(s.date)} · ${technicianLine}</p>
-    <div class="status-tag ${s.status}" style="display:inline-block; margin-bottom:14px;">${statusLabelOf(s.status)}</div>
+    <p class="sub" id="det70Sub">${shortLabel(s.date)} · ${technicianLine}</p>
+    <div class="status-tag ${s.status}" id="det70Status" style="display:inline-block; margin-bottom:14px;">${statusLabelOf(s.status)}</div>
+    <div id="det70Tec" data-det70tipo="${det70Tipo(s)}">${det70Html(s)}</div>
 
     ${s.status !== 'concluido' ? `
     <div class="field">
@@ -15249,6 +15309,7 @@ function renderAll(){
   renderTecnicosAmanha();
   renderManutencoes();
   renderOS();
+  det70Atualizar();   // Fase 70: cartão de detalhes aberto acompanha a troca de técnico/dupla
   if(currentRole === 'tech') renderTechView();
   if(activeTab === 'painel') renderPainelDeControle();
 }
