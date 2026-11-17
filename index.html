@@ -26809,7 +26809,7 @@ function esc(t){ return String(t == null ? '' : t).replace(/[&<>"']/g, c => ({'&
 function fmtD(iso){ try{ const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '')); if(m) return m[3] + '/' + m[2] + '/' + m[1]; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
 function fmtDH(iso){ try{ const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); }catch(e){ return ''; } }
 function quem(){ return (typeof currentManagerName !== 'undefined' && currentManagerName) || (typeof currentActingName === 'function' && currentActingName()) || ''; }
-const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['preventiva', 'Cliente Preventiva'], ['visita_orcamento', 'Visita Orçamento'], ['pedido_manutencao', 'Gerou pedido de manutenção'], ['outro', 'Outro']];
+const MOTIVOS = [['garantia', 'Garantia'], ['cortesia', 'Cortesia'], ['retrabalho', 'Retrabalho'], ['obra', 'Obra (já cobrada no pedido fechado)'], ['preventiva', 'Cliente Preventiva'], ['visita_orcamento', 'Visita Orçamento'], ['pedido_manutencao', 'Gerou pedido de manutenção'], ['equip_oficina', 'Equipamento em oficina'], ['nao_finalizado', 'Não finalizado'], ['outro', 'Outro']];   // Fase 73: equip_oficina, nao_finalizado
 const store = createEstoqueStore('ordensServico', '⚠️ Não foi possível salvar a ordem de serviço. Verifique sua internet e tente novamente.');
 let carregado = false, carregando = null;
 aoSairDoPerfil(() => { carregado = false; carregando = null; }); // M1
